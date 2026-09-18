@@ -1,25 +1,30 @@
 {
   "project": "BCP",
-  "version": "POC_V0_1",
+  "version": "POC_V0_2_1_ZERO_TOUCH",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "CI_PASS_ANDROID_APK_BUILT_FIELD_UNVERIFIED",
-  "last_completed_atomic_action": "GitHub Actions run #4 passed; PC tests passed; Android debug APK built and SHA-256 verified",
-  "next_action": "Install BCP Edge APK on old Android phone and start BCP PC node for FIELD TEST 01",
+  "status": "AUTO_PAIRING_TELEMETRY_CI_PASS_PC_EVERGREEN_READY_FIELD_UNVERIFIED",
+  "last_completed_atomic_action": "Build BCP Edge v0.2.1 auto-discovery/auto-pairing/telemetry APK and publish install-once PC evergreen agent",
+  "next_action": "Install evergreen PC agent once, update old phone to BCP Edge v0.2.1, then run zero-touch FIELD TEST 02",
   "evidence": {
-    "github_run_id": 35391193942,
-    "github_run_number": 4,
-    "head_sha": "759be60b31b0e73f0f80de57acf149713e0aa002",
-    "artifact_id": 10565937901,
+    "github_run_id": 35396511043,
+    "github_run_number": 21,
+    "head_sha": "28f2a6d69956b8ad51748879613e434b55b40564",
+    "artifact_id": 10568221718,
     "artifact_name": "android-b-edge-debug-apk",
-    "artifact_digest": "sha256:0b6db61ab3e8b2bc49ba7ec37b437f78a8e3436293b123cb73d7b2ff0c8c694e",
-    "apk_sha256": "d5bc4c6c538ac2f39b630044012f84303a528521f8a49f1327b0736c92db1d3a"
+    "artifact_digest": "sha256:2eeeedd17e8a009a35c1979dc0e92295ca59ba907e4668dadeced208a8612246",
+    "apk_sha256": "9c1096bffdb9c766f220590cb7fb817be8c28ff9ba713d33fbb016e41191c0c8",
+    "pc_installer_commit": "822647616ba5389ba9766634fb792bad921aab7e",
+    "server_commit": "ea3a53cb53c0e775d73c3b855b58a806b84e1478",
+    "pairing_architecture_commit": "546321e6a57d0548c213275af112e4ae9d14ea22"
   },
   "field_gates": [
-    "PC node starts on real 4-GB Windows PC",
-    "APK installs on old Android phone",
-    "LAN /health succeeds from phone",
-    "checkpoint commit succeeds",
+    "Evergreen PC installer passes on target Windows PC",
+    "Resident agent survives reboot/logon",
+    "BCP Edge v0.2.1 discovers PC without manual IP/token/project entry",
+    "Pairing succeeds automatically on trusted LAN",
+    "Phone telemetry reaches PC diagnostics endpoint",
+    "Checkpoint commit succeeds",
     "restart + resume returns same committed revision",
-    "idempotent replay does not create a second revision"
+    "If LAN discovery fails, classify blocker before implementing Bluetooth/QR fallback"
   ]
 }
