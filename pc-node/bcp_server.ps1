@@ -100,7 +100,7 @@ function Authorized($headers) {
 
 $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Any,$Port)
 $listener.Start()
-Write-Host "[BCP] Windows native server v0.2.0 listening on TCP $Port"
+Write-Host "[BCP] Windows native server v0.2.1 listening on TCP $Port"
 Write-Host "[BCP] Pairing open: $(-not (Test-Path $PairedFile))"
 
 while($true){
@@ -117,7 +117,7 @@ while($true){
             Send-Json $stream 200 @{
                 ok=$true
                 service="BCP PC Node Windows Native"
-                version="0.2.0"
+                version="0.2.1"
                 pairing_open=(-not (Test-Path $PairedFile))
                 pc_name=$env:COMPUTERNAME
                 time=(Get-Date).ToUniversalTime().ToString("o")
@@ -149,6 +149,27 @@ while($true){
 
         if(-not (Authorized $req.headers)){
             Send-Json $stream 401 @{error="unauthorized"}
+            continue
+        }
+
+        if($req.method -eq "GET" -and $path -eq "/v1/diagnostics"){
+            $heartbeatPath=Join-Path $TelemetryDir "heartbeat.json"
+            $heartbeat=$null
+            if(Test-Path $heartbeatPath){
+                try{$heartbeat=Get-Content $heartbeatPath -Raw|ConvertFrom-Json}catch{}
+            }
+            $phone=@()
+            if(Test-Path $PhoneTelemetry){
+                try{$phone=@(Get-Content $PhoneTelemetry -Tail 30 | ForEach-Object {try{$_|ConvertFrom-Json}catch{}})}catch{}
+            }
+            Send-Json $stream 200 @{
+                ok=$true
+                server_version="0.2.1"
+                pc_name=$env:COMPUTERNAME
+                paired=(Test-Path $PairedFile)
+                heartbeat=$heartbeat
+                recent_phone_events=$phone
+            }
             continue
         }
 
