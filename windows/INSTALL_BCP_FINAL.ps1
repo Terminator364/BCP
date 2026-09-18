@@ -1,8 +1,13 @@
-param([switch]$SelfTest)
+param(
+    [switch]$SelfTest,
+    [switch]$IntegrationTest,
+    [string]$ChatRootOverride = "",
+    [string]$ChatPythonOverride = ""
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$InstallerVersion = "0.3.0"
+$InstallerVersion = "0.3.1"
 $RuleName = "BCP Local LAN 8765"
 $Port = 8765
 $ScriptRoot = Split-Path -Parent $PSCommandPath
@@ -19,7 +24,9 @@ function Write-JsonAtomic($Object, [string]$Path) {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     $tmp = Join-Path $dir (".tmp-" + [Guid]::NewGuid().ToString("N") + ".json")
     try {
-        $Object | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $tmp -Encoding UTF8
+        $json = $Object | ConvertTo-Json -Depth 20
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($tmp, $json, $utf8NoBom)
         Move-Item -Force -LiteralPath $tmp -Destination $Path
     } finally { Remove-Item -Force -LiteralPath $tmp -ErrorAction SilentlyContinue }
 }
@@ -61,12 +68,15 @@ function Stop-OldBcpListener {
         $proc = Get-CimInstance Win32_Process -Filter ("ProcessId=" + $pidValue) -ErrorAction SilentlyContinue
         $cmd = if ($proc) { [string]$proc.CommandLine } else { "" }
         $name = if ($proc) { [string]$proc.Name } else { "" }
-        $isBcp = ($cmd -match "(?i)bcp_server|ChatGPT_ManagedApps\\bcp|BCP PC Node") -or (($name -match "(?i)python|powershell") -and ($cmd -match "(?i)8765"))
+        $isBcp = ($cmd -match "(?i)bcp_server|ChatGPT_ManagedApps\\bcp|BCP PC Node|server.py") -or (($name -match "(?i)python|powershell") -and ($cmd -match "(?i)8765"))
         if (-not $isBcp) { throw "PORT_8765_IN_USE_BY_NON_BCP pid=$pidValue name=$name" }
         Stop-Process -Id $pidValue -Force -ErrorAction Stop
     }
 }
 function Ensure-NetworkAndFirewall {
+    if ($IntegrationTest) {
+        return [pscustomobject]@{ InterfaceAlias="CI_LOOPBACK"; InterfaceIndex=0; NetworkCategory="Private"; IPv4="127.0.0.1" }
+    }
     $cfg = Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq "Up" } | Select-Object -First 1
     if (-not $cfg) { throw "NO_ACTIVE_IPV4_INTERFACE" }
     $profile = Get-NetConnectionProfile -InterfaceIndex $cfg.InterfaceIndex -ErrorAction Stop
@@ -95,18 +105,31 @@ if ($SelfTest) {
     $raw = Get-Content -Raw -LiteralPath $BundledServer -Encoding UTF8
     if ($raw -notmatch 'SERVER_VERSION = "0.3.0"') { throw "SELFTEST_SERVER_VERSION_MISMATCH" }
     if ($raw -notmatch '/pair' -or $raw -notmatch '/v1/telemetry') { throw "SELFTEST_REQUIRED_ENDPOINTS_MISSING" }
+
+    $probeDir = Join-Path ([System.IO.Path]::GetTempPath()) ("bcp-json-selftest-" + [Guid]::NewGuid().ToString("N"))
+    $probePath = Join-Path $probeDir "probe.json"
+    try {
+        Write-JsonAtomic ([ordered]@{schema=1;probe="utf8-no-bom"}) $probePath
+        $bytes = [System.IO.File]::ReadAllBytes($probePath)
+        if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+            throw "SELFTEST_JSON_UTF8_BOM_PRESENT"
+        }
+        [System.Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json | Out-Null
+    } finally {
+        Remove-Item -Recurse -Force -LiteralPath $probeDir -ErrorAction SilentlyContinue
+    }
     Write-Host "BCP_INSTALLER_SELFTEST=PASS"
     exit 0
 }
 
-if (-not (Is-Admin)) {
+if (-not $IntegrationTest -and -not (Is-Admin)) {
     Start-Process -FilePath "powershell.exe" -Verb RunAs -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-File",$PSCommandPath) | Out-Null
     exit 0
 }
 
 $startedAt = UtcNow
-$ChatRoot = Join-Path $env:LOCALAPPDATA "Tunnel_PC_G4"
-$ChatPython = Join-Path $ChatRoot "runtime\python.exe"
+$ChatRoot = if ($ChatRootOverride) { $ChatRootOverride } else { Join-Path $env:LOCALAPPDATA "Tunnel_PC_G4" }
+$ChatPython = if ($ChatPythonOverride) { $ChatPythonOverride } else { Join-Path $ChatRoot "runtime\python.exe" }
 $ManagedRoot = Join-Path $env:LOCALAPPDATA "ChatGPT_ManagedApps"
 $AppRoot = Join-Path $ManagedRoot "bcp"
 $Logs = Join-Path $AppRoot "logs"
@@ -121,7 +144,9 @@ New-Item -ItemType Directory -Force -Path $AppRoot,$Logs,$State,$Telemetry,$Rece
 
 function Stage([string]$Name, [string]$Status, [string]$Detail = "") {
     $o = [ordered]@{ ts=UtcNow; installer_version=$InstallerVersion; stage=$Name; status=$Status; detail=$Detail }
-    Add-Content -LiteralPath $InstallLog -Value ($o | ConvertTo-Json -Compress -Depth 8) -Encoding UTF8
+    $line = ($o | ConvertTo-Json -Compress -Depth 8) + [Environment]::NewLine
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::AppendAllText($InstallLog, $line, $utf8NoBom)
     Write-Host ("[{0}] {1} {2}" -f $Status,$Name,$Detail)
 }
 
@@ -178,8 +203,8 @@ try {
     $receipt = [ordered]@{
         schema="bcp.install.receipt/1";status="PASS";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;
         chatgpt_pc_root=$ChatRoot;chatgpt_pc_python=$ChatPython;chatgpt_pc_cli=$cli;app_root=$AppRoot;pc_ipv4=$net.IPv4;
-        network_profile=$net.NetworkCategory;firewall_rule=$RuleName;local_health=$true;lan_health=$true;server_version=[string]$localHealth.version;
-        scheduled_task_created=$false;manual_ip_token_required=$false;next="Open BCP Edge; automatic discovery/pairing should complete."
+        network_profile=$net.NetworkCategory;firewall_rule=if($IntegrationTest){"CI_BYPASS"}else{$RuleName};local_health=$true;lan_health=$true;server_version=[string]$localHealth.version;
+        scheduled_task_created=$false;manual_ip_token_required=$false;integration_test=[bool]$IntegrationTest;next="Open BCP Edge; automatic discovery/pairing should complete."
     }
     $receiptPath = Join-Path $ReceiptDir ("install-" + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ") + ".json")
     Write-JsonAtomic $receipt $receiptPath
@@ -194,13 +219,13 @@ try {
     Write-Host "Local health: PASS"
     Write-Host "LAN health: PASS"
     Write-Host ""
-    Write-Host "On the old phone: reopen BCP Edge. Do not type IP/token/project."
+    if (-not $IntegrationTest) { Write-Host "On the old phone: reopen BCP Edge. Do not type IP/token/project." }
     exit 0
 }
 catch {
     $message = $_.Exception.Message
     Stage "INSTALL" "FAIL" $message
-    $receipt = [ordered]@{schema="bcp.install.receipt/1";status="FAIL";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;error=$message;scheduled_task_created=$false;logs=$InstallLog}
+    $receipt = [ordered]@{schema="bcp.install.receipt/1";status="FAIL";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;error=$message;scheduled_task_created=$false;integration_test=[bool]$IntegrationTest;logs=$InstallLog}
     $receiptPath = Join-Path $ReceiptDir ("install-fail-" + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ") + ".json")
     Write-JsonAtomic $receipt $receiptPath
     Copy-Item -Force -LiteralPath $receiptPath -Destination (Join-Path $ChatRoot "logs\BCP_LAST_INSTALL_RECEIPT.json") -ErrorAction SilentlyContinue
