@@ -1,0 +1,15 @@
+{
+  "project": "BCP",
+  "version": "POC_V0_1",
+  "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
+  "status": "POC_IMPLEMENTED_LOCAL_TESTABLE_ANDROID_CI_PREPARED_FIELD_UNVERIFIED",
+  "last_completed_atomic_action": "Create public GitHub repository and populate first vertical slice",
+  "next_action": "Run Android CI and verify APK artifact",
+  "field_gates": [
+    "PC node starts on real 4-GB Windows PC",
+    "B-Edge APK builds in public CI",
+    "APK installs on old Android phone",
+    "LAN checkpoint commit succeeds",
+    "restart + resume returns same committed revision"
+  ]
+}
