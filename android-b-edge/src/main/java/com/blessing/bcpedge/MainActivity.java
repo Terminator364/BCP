@@ -2,179 +2,147 @@ package com.blessing.bcpedge;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.view.View;
 import android.widget.*;
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
+import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
-    private EditText server, token, project, completed, next;
-    private TextView output;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
-    private SharedPreferences prefs;
+    private BcpClient client;
+    private TextView status, detail, output;
+    private Button connect, checkpoint, resume;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        prefs = getSharedPreferences("bcp", MODE_PRIVATE);
+        client = new BcpClient(this);
 
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(18);
-        root.setPadding(pad, pad, pad, pad);
+        int pad = dp(20);
+        root.setPadding(pad,pad,pad,pad);
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("BCP Edge · POC V0.1");
-        title.setTextSize(24);
+        title.setText("BCP Edge · B-EDGE");
+        title.setTextSize(25);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
 
-        TextView info = new TextView(this);
-        info.setText("Client de continuité pour le téléphone ancien. Test LAN contrôlé.");
-        info.setPadding(0, dp(6), 0, dp(12));
-        root.addView(info);
+        TextView subtitle = new TextView(this);
+        subtitle.setText("Découverte, appairage, télémétrie et reprise automatiques");
+        subtitle.setPadding(0,dp(6),0,dp(16));
+        root.addView(subtitle);
 
-        server = field(root, "Serveur", prefs.getString("server", "http://192.168.1.2:8765"));
-        token = field(root, "Token", prefs.getString("token", ""));
-        project = field(root, "Projet", prefs.getString("project", "buildhub"));
-        completed = field(root, "Dernière action terminée", "BCP Edge installed");
-        next = field(root, "Prochaine action", "Verify restart + resume");
+        status = new TextView(this);
+        status.setText("DÉMARRAGE");
+        status.setTextSize(22);
+        status.setTypeface(Typeface.DEFAULT_BOLD);
+        root.addView(status);
 
-        Button health = button(root, "Tester /health");
-        Button resume = button(root, "Reprendre le projet");
-        Button checkpoint = button(root, "Enregistrer checkpoint");
+        detail = new TextView(this);
+        detail.setText("Initialisation...");
+        detail.setPadding(0,dp(6),0,dp(18));
+        root.addView(detail);
+
+        connect = button(root, "CONNECTER AUTOMATIQUEMENT");
+        checkpoint = button(root, "ENREGISTRER CHECKPOINT");
+        resume = button(root, "REPRENDRE LE PROJET");
 
         output = new TextView(this);
-        output.setTextIsSelectable(true);
         output.setTypeface(Typeface.MONOSPACE);
-        output.setPadding(0, dp(14), 0, dp(30));
+        output.setTextIsSelectable(true);
+        output.setPadding(0,dp(18),0,dp(24));
         root.addView(output);
 
-        health.setOnClickListener(v -> runNet(() ->
-            request("GET", cleanBase() + "/health", null, null)));
-
-        resume.setOnClickListener(v -> {
-            savePrefs();
-            runNet(() -> request("GET",
-                cleanBase() + "/v1/projects/" + enc(project.getText().toString()) + "/resume",
-                null, null));
-        });
-
-        checkpoint.setOnClickListener(v -> {
-            savePrefs();
-            String idem = "android-" + UUID.randomUUID();
-            String body = "{\"type\":\"checkpoint\",\"payload\":{"
-                + "\"status\":\"ACTIVE\","
-                + "\"last_completed_action\":" + q(completed.getText().toString()) + ","
-                + "\"next_action\":" + q(next.getText().toString())
-                + "}}";
-            runNet(() -> request("POST",
-                cleanBase() + "/v1/projects/" + enc(project.getText().toString()) + "/events",
-                body, idem));
-        });
+        connect.setOnClickListener(v -> autoConnect());
+        checkpoint.setOnClickListener(v -> runAction("CHECKPOINT", () ->
+                client.checkpoint("B-EDGE paired and telemetry active",
+                        "Restart PC/phone and verify automatic resume")));
+        resume.setOnClickListener(v -> runAction("RESUME", () -> client.resume()));
 
         setContentView(scroll);
+        autoConnect();
     }
 
-    private EditText field(LinearLayout root, String hint, String value) {
-        EditText e = new EditText(this);
-        e.setHint(hint);
-        e.setText(value);
-        e.setSingleLine(false);
-        root.addView(e, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-        return e;
+    private void autoConnect() {
+        setBusy(true);
+        output.setText("");
+        io.submit(() -> {
+            try {
+                JSONObject r = client.connectAutomatically((stage, d) ->
+                        runOnUiThread(() -> {
+                            status.setText(stage);
+                            detail.setText(d);
+                        }));
+                runOnUiThread(() -> {
+                    status.setText("CONNECTÉ");
+                    detail.setText("PC appairé automatiquement · projet buildhub");
+                    output.setText(r.toString(2));
+                    setBusy(false);
+                });
+            } catch (Exception ex) {
+                runOnUiThread(() -> {
+                    String m = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+                    status.setText(classify(m));
+                    detail.setText("Diagnostic automatique: " + m);
+                    output.setText("La télémétrie locale a conservé l'étape d'échec.");
+                    setBusy(false);
+                });
+            }
+        });
+    }
+
+    private interface Action { JSONObject run() throws Exception; }
+
+    private void runAction(String name, Action action) {
+        setBusy(true);
+        io.submit(() -> {
+            try {
+                JSONObject r = action.run();
+                runOnUiThread(() -> {
+                    status.setText(name + " OK");
+                    output.setText(r.toString(2));
+                    setBusy(false);
+                });
+            } catch (Exception ex) {
+                runOnUiThread(() -> {
+                    status.setText(name + " ÉCHEC");
+                    output.setText(ex.getMessage());
+                    setBusy(false);
+                });
+            }
+        });
+    }
+
+    private String classify(String message) {
+        if (message.contains("PC_NOT_FOUND")) return "PC NON TROUVÉ";
+        if (message.contains("NO_LAN_IPV4")) return "RÉSEAU LOCAL ABSENT";
+        if (message.contains("PAIRING")) return "APPAIRAGE ÉCHOUÉ";
+        if (message.contains("HTTP_401")) return "AUTHENTIFICATION ÉCHOUÉE";
+        return "CONNEXION ÉCHOUÉE";
+    }
+
+    private void setBusy(boolean busy) {
+        connect.setEnabled(!busy);
+        checkpoint.setEnabled(!busy);
+        resume.setEnabled(!busy);
     }
 
     private Button button(LinearLayout root, String text) {
         Button b = new Button(this);
         b.setText(text);
-        root.addView(b);
+        root.addView(b, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
         return b;
     }
 
     private int dp(int v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
-    }
-
-    private String cleanBase() {
-        String s = server.getText().toString().trim();
-        while (s.endsWith("/")) s = s.substring(0, s.length()-1);
-        return s;
-    }
-
-    private void savePrefs() {
-        prefs.edit()
-            .putString("server", cleanBase())
-            .putString("token", token.getText().toString().trim())
-            .putString("project", project.getText().toString().trim())
-            .apply();
-    }
-
-    private interface NetCall { String call() throws Exception; }
-
-    private void runNet(NetCall c) {
-        output.setText("...");
-        io.submit(() -> {
-            try {
-                String r = c.call();
-                runOnUiThread(() -> output.setText(r));
-            } catch (Exception ex) {
-                runOnUiThread(() -> output.setText(
-                    "ERROR\n" + ex.getClass().getSimpleName() + ": " + ex.getMessage()));
-            }
-        });
-    }
-
-    private String request(String method, String url, String body, String idem) throws Exception {
-        HttpURLConnection c = (HttpURLConnection)new URL(url).openConnection();
-        c.setRequestMethod(method);
-        c.setConnectTimeout(7000);
-        c.setReadTimeout(10000);
-        c.setRequestProperty("Accept", "application/json");
-
-        if (!url.endsWith("/health")) {
-            c.setRequestProperty("Authorization", "Bearer " + token.getText().toString().trim());
-        }
-        if (idem != null) c.setRequestProperty("Idempotency-Key", idem);
-
-        if (body != null) {
-            c.setDoOutput(true);
-            c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            try (OutputStream os = c.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
-            }
-        }
-
-        int code = c.getResponseCode();
-        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
-        return "HTTP " + code + "\n" + readAll(in);
-    }
-
-    private static String readAll(InputStream in) throws IOException {
-        if (in == null) return "";
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buf = new byte[4096];
-        int n;
-        while ((n = in.read(buf)) >= 0) out.write(buf, 0, n);
-        return out.toString("UTF-8");
-    }
-
-    private static String q(String s) {
-        return "\"" + s.replace("\\","\\\\").replace("\"","\\\"")
-                .replace("\n","\\n").replace("\r","\\r") + "\"";
-    }
-
-    private static String enc(String s) {
-        try { return URLEncoder.encode(s.trim(), "UTF-8"); }
-        catch (Exception e) { return s.trim(); }
     }
 
     @Override protected void onDestroy() {
