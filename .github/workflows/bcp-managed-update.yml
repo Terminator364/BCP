@@ -51,9 +51,9 @@ jobs:
               "schema": 1,
               "package_type": "managed_app_update",
               "target_app": "bcp",
-              "sequence": 202609180400,
+              "sequence": 202609190401,
               "version": version,
-              "update_id": "bcp-server-" + version + "-auto-update-bootstrap",
+              "update_id": "bcp-server-" + version + "-recovery-bridge",
               "files": [{"path": "server.py", "sha256": sha}],
               "manifest_patch": {
                   "test_timeout": 45,
@@ -90,7 +90,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bcp-managed-update-0.4.0
+          name: bcp-managed-update
           path: |
             package/manifest.json
             package/payload/server.py
