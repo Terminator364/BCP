@@ -8,11 +8,16 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import sqlite3
+import subprocess
+import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
 from urllib.parse import unquote, urlparse
+from urllib.request import Request, urlopen
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -20,8 +25,12 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.3.1"
+SERVER_VERSION = "0.4.0"
+SERVER_FILE = Path(__file__).resolve()
+UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
+AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
 DB_LOCK = threading.RLock()
+UPDATE_LOCK = threading.RLock()
 
 
 def utc_now() -> str:
@@ -95,7 +104,10 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
         "edge_version": str(pair.get("edge_version") or "")[:40],
         "project": str(pair.get("project") or "")[:128],
     }
-    allowed = {"accepted", "last_event_type", "last_event_ts", "status", "revision"}
+    allowed = {
+        "accepted", "last_event_type", "last_event_ts", "status", "revision",
+        "target_version", "update_result", "auto_update"
+    }
     if isinstance(extra, dict):
         for k in allowed:
             if k in extra:
@@ -105,6 +117,279 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
     with (root / "BCP_EVENTS.jsonl").open("a", encoding="utf-8") as f:
         f.write(canonical_json(rec) + "\n")
     return True
+
+
+
+def _version_tuple(value: str):
+    base = str(value or "").split("-", 1)[0].strip()
+    out = []
+    for part in base.split("."):
+        try:
+            out.append(int(part))
+        except Exception:
+            out.append(0)
+    while len(out) < 3:
+        out.append(0)
+    return tuple(out[:4])
+
+
+def _fetch_bytes(url: str, max_bytes: int = 2_000_000) -> bytes:
+    prefix = "https://raw.githubusercontent.com/Terminator364/BCP/"
+    if not str(url).startswith(prefix):
+        raise ValueError("update_url_not_allowlisted")
+    req = Request(str(url), headers={"User-Agent": "BCP-Updater/" + SERVER_VERSION})
+    with urlopen(req, timeout=12) as r:
+        data = r.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        raise ValueError("update_payload_too_large")
+    return data
+
+
+def _fetch_json(url: str) -> dict:
+    data = json.loads(_fetch_bytes(url, 512_000).decode("utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("update_manifest_not_object")
+    return data
+
+
+def _write_update_state(obj: dict) -> None:
+    atomic_json(STATE_DIR / "server_update.json", obj)
+
+
+def server_update_status(check_remote: bool = True) -> dict:
+    local = read_json(STATE_DIR / "server_update.json", {}) or {}
+    out = {
+        "ok": True,
+        "current_version": SERVER_VERSION,
+        "auto_update": True,
+        "manifest_url": UPDATE_MANIFEST_URL,
+        "last_state": local.get("state", "NONE"),
+        "last_checked_at": local.get("checked_at"),
+        "last_update_at": local.get("updated_at"),
+    }
+    if not check_remote:
+        return out
+    manifest = _fetch_json(UPDATE_MANIFEST_URL)
+    target = str(manifest.get("version") or "")
+    url = str(manifest.get("url") or "")
+    sha = str(manifest.get("sha256") or "").lower()
+    if not target or not url or len(sha) != 64:
+        raise ValueError("update_manifest_incomplete")
+    out.update({
+        "target_version": target,
+        "available": _version_tuple(target) > _version_tuple(SERVER_VERSION),
+        "channel": str(manifest.get("channel") or "stable"),
+        "sha256": sha,
+        "url": url,
+        "checked_at": utc_now(),
+    })
+    _write_update_state({
+        "schema": "bcp.server_update/1",
+        "state": "UPDATE_AVAILABLE" if out["available"] else "UP_TO_DATE",
+        "current_version": SERVER_VERSION,
+        "target_version": target,
+        "checked_at": out["checked_at"],
+        "updated_at": local.get("updated_at"),
+    })
+    return out
+
+
+def _candidate_selftest(path: Path) -> dict:
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    p = subprocess.run(
+        [sys.executable, str(path), "--selftest"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=45,
+        creationflags=flags,
+    )
+    tail = (p.stdout or "")[-4000:]
+    if p.returncode != 0 or "BCP_SERVER_SELFTEST=PASS" not in tail:
+        raise RuntimeError("candidate_selftest_failed:" + tail[-1200:])
+    return {"returncode": p.returncode, "pass": True}
+
+
+def apply_server_update() -> dict:
+    with UPDATE_LOCK:
+        st = server_update_status(check_remote=True)
+        if not st.get("available"):
+            return {
+                "ok": True,
+                "result": "NO_UPDATE",
+                "current_version": SERVER_VERSION,
+                "target_version": st.get("target_version", SERVER_VERSION),
+                "restart_required": False,
+            }
+
+        target = str(st["target_version"])
+        payload = _fetch_bytes(str(st["url"]), 2_000_000)
+        actual = hashlib.sha256(payload).hexdigest()
+        if not hmac.compare_digest(actual.lower(), str(st["sha256"]).lower()):
+            raise ValueError("update_sha256_mismatch")
+
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        candidate = STATE_DIR / ("server-" + target + ".candidate.py")
+        candidate.write_bytes(payload)
+        proof = _candidate_selftest(candidate)
+
+        backup = STATE_DIR / ("server-" + SERVER_VERSION + ".backup.py")
+        shutil.copy2(SERVER_FILE, backup)
+        os.replace(candidate, SERVER_FILE)
+
+        rec = {
+            "schema": "bcp.server_update/1",
+            "state": "APPLIED_RESTART_PENDING",
+            "current_version": SERVER_VERSION,
+            "target_version": target,
+            "sha256": actual,
+            "checked_at": st.get("checked_at"),
+            "updated_at": utc_now(),
+            "selftest": proof,
+            "backup": str(backup),
+        }
+        _write_update_state(rec)
+        mirror_telemetry_status("SERVER_UPDATE_APPLIED", {
+            "status": "RESTART_PENDING",
+            "target_version": target,
+            "update_result": "APPLIED_RESTART_PENDING",
+            "auto_update": True,
+        })
+        return {
+            "ok": True,
+            "result": "APPLIED_RESTART_PENDING",
+            "current_version": SERVER_VERSION,
+            "target_version": target,
+            "restart_required": True,
+            "_backup": str(backup),
+        }
+
+
+def _restart_helper_source() -> str:
+    return r"""
+import json, os, shutil, subprocess, sys, time
+from pathlib import Path
+from urllib.request import urlopen
+
+old_pid = int(sys.argv[1])
+server_file = Path(sys.argv[2])
+backup = Path(sys.argv[3])
+bind = sys.argv[4]
+port = int(sys.argv[5])
+expected = sys.argv[6]
+state_file = Path(sys.argv[7])
+log_file = Path(sys.argv[8])
+
+def write_state(state, **extra):
+    d = {"schema":"bcp.server_update/1","state":state,"target_version":expected,"updated_at":time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    d.update(extra)
+    tmp = state_file.with_suffix(".tmp")
+    tmp.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, state_file)
+
+def alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except Exception:
+        return False
+
+deadline = time.time() + 8
+while alive(old_pid) and time.time() < deadline:
+    time.sleep(0.2)
+
+flags = 0
+for name in ("CREATE_NO_WINDOW","DETACHED_PROCESS","CREATE_NEW_PROCESS_GROUP"):
+    flags |= int(getattr(subprocess, name, 0))
+
+log_file.parent.mkdir(parents=True, exist_ok=True)
+log = open(log_file, "ab", buffering=0)
+p = subprocess.Popen([sys.executable, str(server_file), "--bind", bind, "--port", str(port)], stdout=log, stderr=log, creationflags=flags)
+
+ok = False
+for _ in range(40):
+    time.sleep(0.4)
+    try:
+        with urlopen("http://127.0.0.1:%d/health" % port, timeout=1.5) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        if data.get("ok") is True and str(data.get("version")) == expected:
+            ok = True
+            break
+    except Exception:
+        pass
+
+if ok:
+    write_state("COMMITTED", health=True, pid=p.pid)
+    raise SystemExit(0)
+
+try:
+    p.terminate()
+except Exception:
+    pass
+time.sleep(0.8)
+if backup.is_file():
+    shutil.copy2(backup, server_file)
+rollback = subprocess.Popen([sys.executable, str(server_file), "--bind", bind, "--port", str(port)], stdout=log, stderr=log, creationflags=flags)
+write_state("ROLLED_BACK", health=False, rollback_pid=rollback.pid)
+"""
+
+
+def schedule_server_restart(http_server, bind: str, port: int, result: dict) -> None:
+    backup = str(result.get("_backup") or "")
+    target = str(result.get("target_version") or "")
+    if not backup or not target:
+        raise ValueError("restart_metadata_missing")
+    helper = STATE_DIR / "server_restart_helper.py"
+    helper.write_text(_restart_helper_source(), encoding="utf-8")
+    log_file = APP_ROOT / "logs" / "server-update-restart.log"
+    flags = 0
+    for name in ("CREATE_NO_WINDOW", "DETACHED_PROCESS", "CREATE_NEW_PROCESS_GROUP"):
+        flags |= int(getattr(subprocess, name, 0))
+    subprocess.Popen(
+        [
+            sys.executable, str(helper), str(os.getpid()), str(SERVER_FILE), backup,
+            bind, str(port), target, str(STATE_DIR / "server_update.json"), str(log_file)
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=flags,
+    )
+    threading.Timer(0.8, http_server.shutdown).start()
+
+
+def start_auto_update_worker(http_server, bind: str, port: int) -> None:
+    def worker():
+        # Give pairing/telemetry priority immediately after startup.
+        time.sleep(20)
+        while True:
+            try:
+                st = server_update_status(check_remote=True)
+                mirror_telemetry_status("SERVER_UPDATE_CHECK", {
+                    "status": "AVAILABLE" if st.get("available") else "UP_TO_DATE",
+                    "target_version": st.get("target_version"),
+                    "auto_update": True,
+                })
+                if st.get("available"):
+                    result = apply_server_update()
+                    if result.get("restart_required"):
+                        schedule_server_restart(http_server, bind, port, result)
+                        return
+            except Exception as e:
+                _write_update_state({
+                    "schema": "bcp.server_update/1",
+                    "state": "CHECK_FAILED",
+                    "current_version": SERVER_VERSION,
+                    "checked_at": utc_now(),
+                    "error": str(e)[:500],
+                })
+                mirror_telemetry_status("SERVER_UPDATE_CHECK_FAILED", {
+                    "status": "DEGRADED",
+                    "update_result": type(e).__name__,
+                    "auto_update": True,
+                })
+            time.sleep(AUTO_UPDATE_INTERVAL_SECONDS)
+
+    threading.Thread(target=worker, name="BCP-AutoUpdate", daemon=True).start()
 
 
 def ensure_state() -> str:
@@ -297,7 +582,7 @@ def commit_event(project_id: str, event_type: str, payload: dict, idem: str):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "BCP/0.3"
+    server_version = "BCP/" + SERVER_VERSION
 
     def remote_ip(self):
         return self.client_address[0] if self.client_address else ""
@@ -344,6 +629,13 @@ class Handler(BaseHTTPRequestHandler):
 
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/v1/system/update":
+            try:
+                self.send_json(200, server_update_status(check_remote=True))
+            except Exception as e:
+                self.send_json(503, {"ok": False, "error": "update_check_failed", "detail": str(e)[:500], "current_version": SERVER_VERSION})
             return
 
         if path == "/v1/diagnostics":
@@ -424,6 +716,17 @@ class Handler(BaseHTTPRequestHandler):
 
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/v1/system/update/apply":
+            try:
+                result = apply_server_update()
+                public = {k: v for k, v in result.items() if not str(k).startswith("_")}
+                self.send_json(200, public)
+                if result.get("restart_required"):
+                    schedule_server_restart(self.server, str(self.server.server_address[0]), int(self.server.server_address[1]), result)
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "update_apply_failed", "detail": str(e)[:500], "current_version": SERVER_VERSION})
             return
 
         if path == "/v1/telemetry":
@@ -520,6 +823,8 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
+        assert _version_tuple("0.4.0") > _version_tuple("0.3.1")
+        assert _version_tuple("0.4.0") == (0, 4, 0)
         control = Path(td) / "control"
         control.mkdir(parents=True, exist_ok=True)
         previous = os.environ.get("BCP_CONTROL_FOLDER")
@@ -555,6 +860,7 @@ def main():
     token = ensure_state()
     server = ThreadingHTTPServer((args.bind, args.port), Handler)
     server.bcp_token = token
+    start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
     try:
         server.serve_forever(poll_interval=0.5)
