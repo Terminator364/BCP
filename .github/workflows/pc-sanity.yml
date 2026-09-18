@@ -1,0 +1,56 @@
+name: BCP PC Sanity
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "pc-node/**"
+      - "windows/**"
+      - "release/stable.json"
+      - ".github/workflows/pc-sanity.yml"
+
+concurrency:
+  group: bcp-pc-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python reference-node regression
+        run: python pc-node/test_bcp.py
+
+      - name: Parse Windows PowerShell scripts
+        shell: pwsh
+        run: |
+          $targets = @(
+            "pc-node/bcp_server.ps1",
+            "pc-node/bcp_supervisor.ps1"
+          )
+          foreach ($t in $targets) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($t, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$t : $($_.Message)" }
+              exit 1
+            }
+            Write-Host "PASS syntax: $t"
+          }
+
+      - name: Reject literal escaped-newline corruption in CMD
+        shell: bash
+        run: |
+          if grep -nF '\n' windows/INSTALL_BCP_EVERGREEN.cmd; then
+            echo "Literal escaped newline corruption found in CMD"
+            exit 1
+          fi
