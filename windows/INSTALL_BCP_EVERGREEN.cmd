@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title BCP Evergreen Installer 0.2.0
+title BCP Evergreen Installer 0.2.1
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
@@ -13,13 +13,13 @@ set "BIN=%ROOT%\bin"
 set "TELEM=%ROOT%\telemetry"
 set "SERVER=%BIN%\bcp_server.ps1"
 set "SUPERVISOR=%BIN%\bcp_supervisor.ps1"
-set "SERVER_URL=https://raw.githubusercontent.com/Terminator364/BCP/d85747e243270c44f722c88da72c5c761fb9640b/pc-node/bcp_server.ps1"
+set "SERVER_URL=https://raw.githubusercontent.com/Terminator364/BCP/ea3a53cb53c0e775d73c3b855b58a806b84e1478/pc-node/bcp_server.ps1"
 set "SUP_URL=https://raw.githubusercontent.com/Terminator364/BCP/d85747e243270c44f722c88da72c5c761fb9640b/pc-node/bcp_supervisor.ps1"
 
 if not exist "%BIN%" mkdir "%BIN%"
 if not exist "%TELEM%" mkdir "%TELEM%"
 
-echo [1/6] Downloading BCP resident components...
+echo [1/7] Downloading BCP resident components...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing '%SERVER_URL%' -OutFile '%SERVER%.new'; Invoke-WebRequest -UseBasicParsing '%SUP_URL%' -OutFile '%SUPERVISOR%.new'; Move-Item -Force '%SERVER%.new' '%SERVER%'; Move-Item -Force '%SUPERVISOR%.new' '%SUPERVISOR%'"
 if errorlevel 1 (
   echo [FAIL] Download failed.
@@ -27,13 +27,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [2/6] Setting active Windows network to Private...
+echo [2/7] Setting active Windows network to Private...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$c=Get-NetIPConfiguration ^| Where-Object {$_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq 'Up'} ^| Select-Object -First 1; if(-not $c){throw 'No active IPv4 interface'}; $p=Get-NetConnectionProfile -InterfaceIndex $c.InterfaceIndex; if($p.NetworkCategory -ne 'Private'){Set-NetConnectionProfile -InterfaceIndex $c.InterfaceIndex -NetworkCategory Private}"
 if errorlevel 1 (
   echo [WARN] Could not change network profile automatically.
 )
 
-echo [3/6] Installing local firewall rule...
+echo [3/7] Installing local firewall rule...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetFirewallRule -DisplayName 'BCP Local LAN 8765' -ErrorAction SilentlyContinue ^| Remove-NetFirewallRule -ErrorAction SilentlyContinue; New-NetFirewallRule -DisplayName 'BCP Local LAN 8765' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8765 -Profile Private -RemoteAddress LocalSubnet ^| Out-Null"
 if errorlevel 1 (
   echo [FAIL] Firewall rule could not be installed.
@@ -41,9 +41,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [4/7] Stopping obsolete BCP listeners...\npowershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -State Listen -LocalPort 8765 -ErrorAction SilentlyContinue ^| ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } catch {} }"\ntimeout /t 1 /nobreak >nul\n\necho [5/7] Registering resident agent...
+echo [4/7] Stopping obsolete BCP listener on port 8765...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -State Listen -LocalPort 8765 -ErrorAction SilentlyContinue ^| ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } catch {} }"
+timeout /t 1 /nobreak >nul
+
+echo [5/7] Registering resident agent...
 schtasks /Delete /TN "BCP Resident Agent" /F >nul 2>nul
-schtasks /Create /TN "BCP Resident Agent" /SC ONLOGON /RL HIGHEST /F /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%SUPERVISOR%"" >nul
+schtasks /Create /TN "BCP Resident Agent" /SC ONLOGON /RL HIGHEST /F /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File %SUPERVISOR%" >nul
 if errorlevel 1 (
   echo [FAIL] Scheduled task registration failed.
   pause
@@ -52,19 +56,24 @@ if errorlevel 1 (
 
 echo [6/7] Starting resident agent now...
 start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%SUPERVISOR%"
-timeout /t 3 /nobreak >nul
+timeout /t 4 /nobreak >nul
 
 echo [7/7] Local health check...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try{$r=Invoke-RestMethod -UseBasicParsing 'http://127.0.0.1:8765/health' -TimeoutSec 4; if(-not $r.ok){exit 2}; Write-Host '[PASS] BCP resident node is healthy'}catch{Write-Host '[WARN] health not ready yet:' $_.Exception.Message}"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try{$r=Invoke-RestMethod -UseBasicParsing 'http://127.0.0.1:8765/health' -TimeoutSec 4; if(-not $r.ok){exit 2}; Write-Host '[PASS] BCP resident node is healthy'}catch{Write-Host '[FAIL] health:' $_.Exception.Message; exit 3}"
+if errorlevel 1 (
+  echo [WARN] BCP agent is installed, but local health is not ready.
+  echo Diagnostics: %LOCALAPPDATA%\BCP\telemetry
+  pause
+  exit /b 1
+)
+
 echo.
 echo ============================================================
 echo BCP EVERGREEN INSTALLED
 echo ============================================================
 echo Future PC BCP server updates are automatic.
-echo Telemetry lives under:
-echo %LOCALAPPDATA%\BCP\telemetry
-echo.
-echo BCP Edge v0.2 will discover and pair automatically.
-echo No IP or token typing in normal mode.
+echo Telemetry: %LOCALAPPDATA%\BCP\telemetry
+echo BCP Edge will discover and pair automatically.
+echo No normal IP/token/project typing is required.
 echo.
 pause
