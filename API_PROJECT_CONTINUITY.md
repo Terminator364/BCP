@@ -87,3 +87,27 @@ Recovery rule:
 - A platform verification hold is classified as `PLATFORM_VERIFICATION_HOLD`.
 - It is **nonterminal**.
 - After the hold ends—or after the user stops that turn—`APIAX07` must recover the last durable state and continue from the **next uncommitted atomic action**, not from the beginning.
+
+
+## APIAX07 low-friction recovery profile
+
+Because repeated full recovery turns have triggered long platform verification holds, `APIAX07` must now use a staged recovery pattern focused on continuity and reduced tool burst, not on bypassing safety systems.
+
+### Stage A — immediate recovery response
+On `APIAX07`:
+- recover only the latest durable project pointer and already-known canonical state;
+- do **not** start broad web/GitHub/Drive/tool sweeps in the first response unless strictly required to answer the next atomic action;
+- return a compact recovery record: current mission, last committed action, next atomic action, blocking gate, and whether any field evidence is missing;
+- preserve all legitimate local/personal-device context already established;
+- do not re-explain the whole architecture.
+
+### Stage B — execution
+After the recovery record:
+- execute one atomic operation at a time;
+- checkpoint after each successful mutation;
+- serialize GitHub/Drive/build/tool work rather than launching a mixed burst;
+- if a platform verification hold appears, treat it as nonterminal and stop cleanly at the last durable checkpoint;
+- after user Stop or platform release, resume from the next uncommitted atomic action.
+
+### User-facing behavior
+The user should not need to repeatedly type recovery commands. One `APIAX07` after an interruption is sufficient. If the platform interrupts again, the project must resume from the durable checkpoint without resetting or asking the user to reconstruct prior state.
