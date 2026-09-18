@@ -17,7 +17,7 @@ public final class TelemetryStore {
             JSONObject o = new JSONObject();
             o.put("ts", System.currentTimeMillis());
             o.put("type", type);
-            o.put("edge_version", "0.2.0");
+            o.put("edge_version", "0.2.2");
             if (detail != null) o.put("detail", detail.length() > 240 ? detail.substring(0,240) : detail);
             try (FileOutputStream fos = new FileOutputStream(file, true)) {
                 fos.write((o.toString() + "\n").getBytes("UTF-8"));
