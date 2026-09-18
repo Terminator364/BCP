@@ -8,9 +8,12 @@ import android.widget.*;
 import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private final ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
     private BcpClient client;
     private TextView status, detail, output;
     private Button connect, checkpoint, resume;
@@ -68,6 +71,10 @@ public class MainActivity extends Activity {
 
         setContentView(scroll);
         autoConnect();
+        updates.check();
+        heartbeat.scheduleAtFixedRate(() -> {
+            try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
+        }, 60, 60, TimeUnit.SECONDS);
     }
 
     private void autoConnect() {
@@ -83,7 +90,10 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     status.setText("CONNECTÉ");
                     detail.setText("PC appairé automatiquement · projet buildhub");
-                    output.setText(r.toString());
+                    String pc = r.optString("pc_name", "BCP PC");
+                    String ver = r.optString("version", "");
+                    output.setText("État: OK\nPC: " + pc + (ver.isEmpty() ? "" : "\nServeur: " + ver) +
+                            "\nProjet: buildhub\nIdentifiants: masqués");
                     setBusy(false);
                 });
             } catch (Exception ex) {
@@ -150,6 +160,7 @@ public class MainActivity extends Activity {
     @Override protected void onDestroy() {
         super.onDestroy();
         io.shutdownNow();
+        heartbeat.shutdownNow();
         updates.close();
     }
 }
