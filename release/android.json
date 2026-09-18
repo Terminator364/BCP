@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "version_code": 3,
+  "version_name": "0.2.1-auto-evergreen",
+  "apk_url": "",
+  "distribution_status": "SIGNED_DISTRIBUTION_PENDING",
+  "note": "Updater is scaffolded; stable signed APK publication will be activated after signing identity is fixed."
+}
