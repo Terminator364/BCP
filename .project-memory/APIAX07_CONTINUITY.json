@@ -1,0 +1,32 @@
+{
+  "schema": "api.project-continuity/1",
+  "canonical_code": "APIAX07",
+  "project_name": "API",
+  "legacy_internal_name": "BCP",
+  "legacy_continuation_alias": "BCP CONTINUE",
+  "created_at": "2026-09-18T23:08:00+01:00",
+  "authority": {
+    "package": "BCP_PRECONCEPTION_V0_7_AX15GO_SEALED.zip",
+    "package_sha256": "50166472fd60329bc21d958f1bc97f3f410922dfd0c7f32071be35703051ebec",
+    "status": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
+    "batch": "AX15GO-BCP-20260918-V07",
+    "understanding_dossier": "BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf",
+    "understanding_dossier_sha256": "9e01e1dd5dd40d176d51c85b6d985506f6379702e94ab9201167031afce35ab3"
+  },
+  "byte_audit": {
+    "zip_entries": 80,
+    "zip_crc": "PASS",
+    "manifest_entries_checked": 79,
+    "manifest_mismatches": 0,
+    "utf8_text_source_files_read": 79,
+    "binary_pyc_integrity_verified": true
+  },
+  "first_mission": {
+    "mode": "DELIVER_FIRST",
+    "current_artifact": "BCP_FINAL_BOOTSTRAP_0_3.zip",
+    "current_artifact_sha256": "dbb8ae256bafb2ce1f72d5cab02a6dab1726e3234a3bc4e5a27ac377fb5aabd3",
+    "supersession": "deliver newer qualified artifact if one exists"
+  },
+  "reality_probe_count": 9,
+  "bookkeeping_issue": "package_state empirical_gates_open=8, adapter reality probes=9"
+}
