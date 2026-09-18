@@ -64,7 +64,7 @@ function HashFile([string]$p) { (Get-FileHash -Algorithm SHA256 $p).Hash.ToLower
 function Update-IfNeeded {
     try {
         $m=Invoke-RestMethod -UseBasicParsing $ManifestUrl -TimeoutSec 8
-        if(-not $m.server_url -or -not $m.server_sha256){return}
+        if(-not $m.server_url){return}
         $tmp=Join-Path $Bin "bcp_server.ps1.new"
         Invoke-WebRequest -UseBasicParsing $m.server_url -OutFile $tmp -TimeoutSec 15
         $got=HashFile $tmp
