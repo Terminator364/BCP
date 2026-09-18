@@ -17,7 +17,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "0.2.3";
+    private static final String EDGE_VERSION = "0.2.4";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -45,6 +45,23 @@ public final class BcpClient {
         JSONObject r = requestJson("POST", getServer() + "/v1/system/update/apply", "{}",
                 getToken(), "server-update-" + UUID.randomUUID(), 3000, 45000);
         telemetry.add("SERVER_UPDATE_ACCEPTED", r.optString("target_version", ""));
+        return r;
+    }
+
+    public JSONObject chatgptPcStatus() throws Exception {
+        ensureConnected();
+        return requestJson("GET", getServer() + "/v1/system/chatgpt-pc", null,
+                getToken(), null, 2500, 7000);
+    }
+
+    public JSONObject recoverChatgptPc() throws Exception {
+        ensureConnected();
+        telemetry.add("CHATGPT_PC_RECOVERY_REQUESTED", null);
+        JSONObject body = new JSONObject();
+        body.put("confirm", true);
+        JSONObject r = requestJson("POST", getServer() + "/v1/system/chatgpt-pc/recover",
+                body.toString(), getToken(), "chatgpt-pc-recover-" + UUID.randomUUID(), 3000, 12000);
+        telemetry.add("CHATGPT_PC_RECOVERY_ACCEPTED", r.optString("target_version", ""));
         return r;
     }
 
