@@ -71,7 +71,7 @@ jobs:
           grep -F 'applyServerUpdate' "$CLIENT" >/dev/null
           grep -F 'chatgptPcStatus' "$CLIENT" >/dev/null
           grep -F 'recoverChatgptPc' "$CLIENT" >/dev/null
-          grep -F 'RÉPARER CHATGPT-PC' "$MAIN" >/dev/null
+          grep -F 'Réparer ChatGPT-PC' "$MAIN" >/dev/null
           grep -F 'PARAMÈTRES / MISES À JOUR' "$MAIN" >/dev/null
           grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
           grep -F '0.2.4' "$TELE" >/dev/null
