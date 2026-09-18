@@ -1,0 +1,98 @@
+name: BCP Managed Server Update
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "windows/bcp_server.py"
+      - "release/server.json"
+      - ".github/workflows/bcp-managed-update.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-managed-server-update-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Server self-test
+        run: python windows/bcp_server.py --selftest
+
+      - name: Build proof-carrying managed update package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path(".")
+          server = root / "windows" / "bcp_server.py"
+          release = json.loads((root / "release" / "server.json").read_text(encoding="utf-8"))
+          raw = server.read_bytes()
+          sha = hashlib.sha256(raw).hexdigest()
+          if sha != release["sha256"]:
+              raise SystemExit(f"release hash mismatch: {sha} != {release['sha256']}")
+          version = str(release["version"])
+          if f'SERVER_VERSION = "{version}"' not in raw.decode("utf-8"):
+              raise SystemExit("server source version mismatch")
+          pkg = root / "package"
+          (pkg / "payload").mkdir(parents=True, exist_ok=True)
+          (pkg / "payload" / "server.py").write_bytes(raw)
+          manifest = {
+              "schema": 1,
+              "package_type": "managed_app_update",
+              "target_app": "bcp",
+              "sequence": 202609180400,
+              "version": version,
+              "update_id": "bcp-server-" + version + "-auto-update-bootstrap",
+              "files": [{"path": "server.py", "sha256": sha}],
+              "manifest_patch": {
+                  "test_timeout": 45,
+                  "log_paths": [
+                      "logs/http.log",
+                      "logs/install.jsonl",
+                      "logs/server-update-restart.log",
+                      "telemetry/phone-events.jsonl",
+                      "state/server_update.json"
+                  ]
+              }
+          }
+          (pkg / "manifest.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          print(json.dumps({"version": version, "sha256": sha, "sequence": manifest["sequence"]}))
+          PY
+
+      - name: Recheck package payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python package/payload/server.py --selftest
+          python - <<'PY'
+          import hashlib, json, pathlib
+          m = json.loads(pathlib.Path("package/manifest.json").read_text())
+          p = pathlib.Path("package/payload/server.py")
+          assert hashlib.sha256(p.read_bytes()).hexdigest() == m["files"][0]["sha256"]
+          assert m["target_app"] == "bcp"
+          assert m["package_type"] == "managed_app_update"
+          print("BCP_MANAGED_UPDATE_PACKAGE=PASS")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-managed-update-0.4.0
+          path: |
+            package/manifest.json
+            package/payload/server.py
+          if-no-files-found: error
+          retention-days: 7
