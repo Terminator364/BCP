@@ -81,7 +81,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     status.setText("CONNECTÉ");
                     detail.setText("PC appairé automatiquement · projet buildhub");
-                    output.setText(r.toString(2));
+                    output.setText(r.toString());
                     setBusy(false);
                 });
             } catch (Exception ex) {
@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
                 JSONObject r = action.run();
                 runOnUiThread(() -> {
                     status.setText(name + " OK");
-                    output.setText(r.toString(2));
+                    output.setText(r.toString());
                     setBusy(false);
                 });
             } catch (Exception ex) {
