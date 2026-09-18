@@ -111,3 +111,28 @@ After the recovery record:
 
 ### User-facing behavior
 The user should not need to repeatedly type recovery commands. One `APIAX07` after an interruption is sufficient. If the platform interrupts again, the project must resume from the durable checkpoint without resetting or asking the user to reconstruct prior state.
+
+
+## Ultra-light resume after a verification hold
+
+Observed sequence (2026-09-19): APIAX07 successfully began recovery and reached the step “identified control-plane state and next action”, then the ChatGPT platform showed an additional-verification hold before the turn completed.
+
+Interpretation:
+- recovery itself had started correctly;
+- do not assume APIAX07 is the cause of the hold;
+- treat the hold as a mid-turn platform interruption after partial recovery.
+
+After such a hold, DO NOT rerun the full APIAX07 recovery loop again in the same conversation.
+
+Use the continuation phrase:
+`CONTINUE ATOMIC`
+
+Semantics of `CONTINUE ATOMIC`:
+- continue from the state already identified in the interrupted turn;
+- do not redo broad recovery;
+- do not re-scan GitHub/Drive/web unless the next atomic action strictly needs one source;
+- perform only the next uncommitted atomic action;
+- checkpoint immediately after completion;
+- stop cleanly if another platform hold occurs.
+
+If the conversation has lost the previously identified state entirely, then fall back to `APIAX07` once.
