@@ -1,0 +1,54 @@
+name: BCP Windows Bootstrap Validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/INSTALL_BCP_FINAL.cmd"
+      - "windows/bcp_server.py"
+      - ".github/workflows/windows-bootstrap-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-windows-bootstrap:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: powershell
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path '.\windows\INSTALL_BCP_FINAL.ps1'),
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List *
+            throw "PowerShell parse failed"
+          }
+
+      - name: Static regression guards
+        shell: powershell
+        run: |
+          $ps = Get-Content -Raw '.\windows\INSTALL_BCP_FINAL.ps1'
+          $cmd = Get-Content -Raw '.\windows\INSTALL_BCP_FINAL.cmd'
+          if ($ps -match '(?i)\bschtasks\b' -or $cmd -match '(?i)\bschtasks\b') { throw 'Scheduled tasks are forbidden' }
+          if ($ps.Contains('^|') -or $cmd.Contains('^|')) { throw 'Caret-pipe quoting regression found' }
+          if ($ps -notmatch 'Tunnel_PC_G4') { throw 'ChatGPT-PC runtime reuse missing' }
+          if ($ps -notmatch 'ChatGPT_ManagedApps') { throw 'Managed-app integration missing' }
+          if ($ps -notmatch 'RemoteAddress LocalSubnet') { throw 'LAN firewall scope missing' }
+
+      - name: Installer self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_FINAL.ps1' -SelfTest
+
+      - name: BCP server self-test
+        shell: powershell
+        run: |
+          python '.\windows\bcp_server.py' --selftest
