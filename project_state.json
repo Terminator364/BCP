@@ -1,21 +1,22 @@
 {
   "project": "BCP",
-  "version": "POC_V0_2_1_ZERO_TOUCH",
+  "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "AUTO_PAIRING_TELEMETRY_CI_PASS_PC_EVERGREEN_READY_FIELD_UNVERIFIED",
-  "last_completed_atomic_action": "Build BCP Edge v0.2.1 auto-discovery/auto-pairing/telemetry APK and publish install-once PC evergreen agent",
-  "next_action": "Install evergreen PC agent once, update old phone to BCP Edge v0.2.1, then run zero-touch FIELD TEST 02",
+  "status": "WINDOWS_CI_PASS_FINAL_BOOTSTRAP_READY_FIELD_UNVERIFIED",
+  "last_completed_atomic_action": "Replace fragile standalone evergreen installer with ChatGPT-PC managed-app bootstrap; Windows CI validation passed",
+  "next_action": "Run BCP_FINAL_BOOTSTRAP_0_3 once on target PC, then reopen existing BCP Edge app and verify automatic discovery/pairing",
   "evidence": {
-    "github_run_id": 35396511043,
-    "github_run_number": 21,
-    "head_sha": "28f2a6d69956b8ad51748879613e434b55b40564",
-    "artifact_id": 10568221718,
-    "artifact_name": "android-b-edge-debug-apk",
-    "artifact_digest": "sha256:2eeeedd17e8a009a35c1979dc0e92295ca59ba907e4668dadeced208a8612246",
-    "apk_sha256": "9c1096bffdb9c766f220590cb7fb817be8c28ff9ba713d33fbb016e41191c0c8",
-    "pc_installer_commit": "822647616ba5389ba9766634fb792bad921aab7e",
-    "server_commit": "ea3a53cb53c0e775d73c3b855b58a806b84e1478",
-    "pairing_architecture_commit": "546321e6a57d0548c213275af112e4ae9d14ea22"
+    "windows_validation_run_id": 35399387370,
+    "windows_validation_run_number": 2,
+    "windows_validation": "success",
+    "powershell_parse": "success",
+    "static_regression_guards": "success",
+    "installer_selftest": "success",
+    "server_selftest_windows": "success",
+    "final_bootstrap_commit": "3c6d667e9390c92e9139d58dff2462207cf434b2",
+    "sqlite_windows_fix_commit": "78a6beb784a643f3b91e31b2ccf0e57d5aaf5eb1",
+    "error_ledger_commit": "36ca00d618f0b7db18048309fba2924635fb728c",
+    "local_zip_sha256": "dbb8ae256bafb2ce1f72d5cab02a6dab1726e3234a3bc4e5a27ac377fb5aabd3"
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
@@ -26,5 +27,20 @@
     "Checkpoint commit succeeds",
     "restart + resume returns same committed revision",
     "If LAN discovery fails, classify blocker before implementing Bluetooth/QR fallback"
-  ]
+  ],
+  "retired": [
+    "BCP_PC_BOOTSTRAP.cmd",
+    "BCP_PC_NATIVE_V0_1_1.zip",
+    "BCP_PC_NATIVE_V0_1_2_AUTO.zip",
+    "BCP_PC_NETWORK_REPAIR_V0_1_3.zip",
+    "INSTALL_BCP_EVERGREEN_v0.2.1.cmd"
+  ],
+  "architecture": {
+    "pc_control_plane": "ChatGPT-PC",
+    "bcp_pc_role": "managed_app",
+    "bcp_scheduled_task": false,
+    "system_python_required": false,
+    "manual_ip_token_project_required": false,
+    "telemetry_receipt_path": "%LOCALAPPDATA%\\\\Tunnel_PC_G4\\\\logs\\\\BCP_LAST_INSTALL_RECEIPT.json"
+  }
 }
