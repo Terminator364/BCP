@@ -7,6 +7,7 @@ on:
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/bcp_server.py"
+      - "release/server.json"
       - "tests/chatgpt_pc_register_contract_cli.py"
       - ".github/workflows/windows-bootstrap-validation.yml"
 
@@ -62,6 +63,22 @@ jobs:
         shell: powershell
         run: |
           python '.\windows\bcp_server.py' --selftest
+
+      - name: Release manifest integrity
+        shell: powershell
+        run: |
+          $release = Get-Content -Raw '.\release\server.json' -Encoding UTF8 | ConvertFrom-Json
+          $actual = (Get-FileHash '.\windows\bcp_server.py' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($release.sha256.ToLowerInvariant() -ne $actual) {
+            throw "release/server.json SHA-256 does not match windows/bcp_server.py"
+          }
+          $raw = Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
+          if ($raw -notmatch ('SERVER_VERSION = "' + [regex]::Escape([string]$release.version) + '"')) {
+            throw "release/server.json version does not match server source"
+          }
+          if ($release.auto_update -ne $true -or $release.rollback_on_health_failure -ne $true) {
+            throw "server release safety flags are not enabled"
+          }
 
   install-e2e-sandbox:
     strategy:
