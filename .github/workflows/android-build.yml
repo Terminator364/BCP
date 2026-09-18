@@ -7,8 +7,12 @@ on:
       - "android-b-edge/**"
       - "settings.gradle"
       - "build.gradle"
-      - "pc-node/**"
+      - "gradle.properties"
       - ".github/workflows/android-build.yml"
+
+concurrency:
+  group: bcp-android-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
