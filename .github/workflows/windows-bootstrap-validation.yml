@@ -7,16 +7,25 @@ on:
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/bcp_server.py"
+      - "tests/chatgpt_pc_register_contract_cli.py"
       - ".github/workflows/windows-bootstrap-validation.yml"
 
 permissions:
   contents: read
 
+concurrency:
+  group: bcp-windows-bootstrap-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate-windows-bootstrap:
+  static-and-selftest:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Parse PowerShell
         shell: powershell
@@ -42,8 +51,9 @@ jobs:
           if ($ps -notmatch 'Tunnel_PC_G4') { throw 'ChatGPT-PC runtime reuse missing' }
           if ($ps -notmatch 'ChatGPT_ManagedApps') { throw 'Managed-app integration missing' }
           if ($ps -notmatch 'RemoteAddress LocalSubnet') { throw 'LAN firewall scope missing' }
+          if ($ps -notmatch 'UTF8Encoding\(\$false\)') { throw 'UTF-8 no-BOM writer missing' }
 
-      - name: Installer self-test
+      - name: Installer self-test under Windows PowerShell 5.1
         shell: powershell
         run: |
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_FINAL.ps1' -SelfTest
@@ -52,3 +62,82 @@ jobs:
         shell: powershell
         run: |
           python '.\windows\bcp_server.py' --selftest
+
+  install-e2e-sandbox:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Full installer path + ChatGPT-PC registration contract + idempotent reinstall
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sandbox = Join-Path $env:RUNNER_TEMP ('bcp-e2e-' + [Guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          $env:LOCALAPPDATA = $sandbox
+          $chatRoot = Join-Path $sandbox 'Tunnel_PC_G4'
+          New-Item -ItemType Directory -Force -Path (Join-Path $chatRoot 'app'),(Join-Path $chatRoot 'logs') | Out-Null
+          Copy-Item -Force '.\tests\chatgpt_pc_register_contract_cli.py' (Join-Path $chatRoot 'app\cli.py')
+          $python = (Get-Command python).Source
+
+          function Stop-TestServer {
+            Get-NetTCPConnection -LocalPort 8765 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+              try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } catch {}
+            }
+          }
+
+          try {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_FINAL.ps1' -IntegrationTest -ChatRootOverride $chatRoot -ChatPythonOverride $python
+            if ($LASTEXITCODE -ne 0) { throw "first install failed rc=$LASTEXITCODE" }
+
+            $manifest = Join-Path $sandbox 'ChatGPT_ManagedApps\bcp\PCA_APP_MANIFEST.json'
+            if (-not (Test-Path -LiteralPath $manifest)) { throw 'manifest missing after install' }
+            $bytes = [System.IO.File]::ReadAllBytes($manifest)
+            if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+              throw 'manifest contains UTF-8 BOM'
+            }
+
+            $receipt = Get-ChildItem (Join-Path $sandbox 'ChatGPT_ManagedApps\bcp\receipts\install-*.json') | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+            if (-not $receipt) { throw 'PASS receipt missing' }
+            $r = Get-Content -Raw -LiteralPath $receipt.FullName -Encoding UTF8 | ConvertFrom-Json
+            if ($r.status -ne 'PASS' -or $r.integration_test -ne $true) { throw 'invalid PASS receipt' }
+
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_FINAL.ps1' -IntegrationTest -ChatRootOverride $chatRoot -ChatPythonOverride $python
+            if ($LASTEXITCODE -ne 0) { throw "idempotent reinstall failed rc=$LASTEXITCODE" }
+
+            $health = Invoke-RestMethod -UseBasicParsing 'http://127.0.0.1:8765/health' -TimeoutSec 4
+            if ($health.ok -ne $true) { throw 'health check failed after reinstall' }
+            Write-Host 'BCP_WINDOWS_E2E_SANDBOX=PASS'
+          }
+          finally {
+            Stop-TestServer
+            Remove-Item -Recurse -Force -LiteralPath $sandbox -ErrorAction SilentlyContinue
+          }
+
+  windows-host-network-probe:
+    runs-on: windows-latest
+    steps:
+      - name: Probe Windows networking/firewall primitives used by installer
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cfg = Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -and $_.NetAdapter.Status -eq 'Up' } | Select-Object -First 1
+          if (-not $cfg) { throw 'No active IPv4 interface on runner' }
+          $name = 'BCP CI Probe 48765'
+          try {
+            New-NetFirewallRule -DisplayName $name -Direction Inbound -Action Allow -Protocol TCP -LocalPort 48765 -RemoteAddress LocalSubnet -ErrorAction Stop | Out-Null
+            $rule = Get-NetFirewallRule -DisplayName $name -ErrorAction Stop
+            if (-not $rule) { throw 'Firewall rule readback failed' }
+            Write-Host 'BCP_WINDOWS_NETWORK_PRIMITIVES=PASS'
+          }
+          finally {
+            Get-NetFirewallRule -DisplayName $name -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+          }
