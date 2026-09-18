@@ -20,7 +20,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.3.0"
+SERVER_VERSION = "0.3.1"
 DB_LOCK = threading.RLock()
 
 
@@ -56,6 +56,55 @@ def atomic_json(path: Path, obj) -> None:
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
+
+
+def chatgpt_control_folder():
+    override = os.environ.get("BCP_CONTROL_FOLDER", "").strip()
+    if override:
+        p = Path(override)
+        return p if p.exists() else None
+    local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    cfg = read_json(local / "Tunnel_PC_G4" / "state" / "config.json", {}) or {}
+    raw = str(cfg.get("control_folder") or "").strip()
+    if not raw:
+        return None
+    p = Path(raw)
+    return p if p.exists() else None
+
+
+def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
+    """Mirror a sanitized BCP status into ChatGPT-PC's Drive control plane.
+
+    Never writes bearer tokens, raw request bodies, or arbitrary telemetry detail.
+    This is the machine-readable path ChatGPT can read without screenshots.
+    """
+    control = chatgpt_control_folder()
+    if control is None:
+        return False
+    root = control / "03_TELEMETRY" / "BCP"
+    root.mkdir(parents=True, exist_ok=True)
+    pair = read_json(PAIR_PATH, {}) or {}
+    rec = {
+        "schema": "bcp.telemetry.bridge/1",
+        "event_type": str(event_type)[:80],
+        "server_version": SERVER_VERSION,
+        "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
+        "updated_at": utc_now(),
+        "paired": bool(pair),
+        "device_name": str(pair.get("device_name") or "")[:120],
+        "edge_version": str(pair.get("edge_version") or "")[:40],
+        "project": str(pair.get("project") or "")[:128],
+    }
+    allowed = {"accepted", "last_event_type", "last_event_ts", "status", "revision"}
+    if isinstance(extra, dict):
+        for k in allowed:
+            if k in extra:
+                v = extra[k]
+                rec[k] = v if isinstance(v, (bool, int, float)) or v is None else str(v)[:160]
+    atomic_json(root / "BCP_LATEST.json", rec)
+    with (root / "BCP_EVENTS.jsonl").open("a", encoding="utf-8") as f:
+        f.write(canonical_json(rec) + "\n")
+    return True
 
 
 def ensure_state() -> str:
@@ -306,6 +355,7 @@ class Handler(BaseHTTPRequestHandler):
                     "paired": PAIR_PATH.exists(),
                     "pair": read_json(PAIR_PATH, {}),
                     "telemetry_file": str(TELEMETRY_DIR / "phone-events.jsonl"),
+                    "telemetry_bridge_control_folder": str(chatgpt_control_folder() or ""),
                 },
             )
             return
@@ -358,6 +408,7 @@ class Handler(BaseHTTPRequestHandler):
                     "project": str(body.get("project", "buildhub"))[:128],
                 }
                 atomic_json(PAIR_PATH, pair)
+                mirror_telemetry_status("PAIRING_PASS", {"status": "CONNECTED"})
                 self.send_json(
                     200,
                     {
@@ -391,6 +442,13 @@ class Handler(BaseHTTPRequestHandler):
                                 "event": e,
                             }
                             f.write(canonical_json(rec) + "\n")
+                last = events[-1] if events and isinstance(events[-1], dict) else {}
+                mirror_telemetry_status("TELEMETRY_RECEIVED", {
+                    "accepted": min(len(events), 100),
+                    "last_event_type": last.get("type"),
+                    "last_event_ts": last.get("ts"),
+                    "status": "CONNECTED",
+                })
                 self.send_json(200, {"ok": True, "accepted": min(len(events), 100)})
             except Exception as e:
                 self.send_json(400, {"error": "telemetry_failed", "detail": str(e)})
@@ -462,6 +520,24 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
+        control = Path(td) / "control"
+        control.mkdir(parents=True, exist_ok=True)
+        previous = os.environ.get("BCP_CONTROL_FOLDER")
+        os.environ["BCP_CONTROL_FOLDER"] = str(control)
+        try:
+            assert mirror_telemetry_status("SELFTEST", {"accepted": 1, "last_event_type": "PHONE_HEARTBEAT", "status": "CONNECTED"})
+            bridge = control / "03_TELEMETRY" / "BCP" / "BCP_LATEST.json"
+            assert bridge.is_file()
+            raw = bridge.read_text(encoding="utf-8")
+            assert "token" not in raw.lower()
+            data = json.loads(raw)
+            assert data["schema"] == "bcp.telemetry.bridge/1"
+            assert data["last_event_type"] == "PHONE_HEARTBEAT"
+        finally:
+            if previous is None:
+                os.environ.pop("BCP_CONTROL_FOLDER", None)
+            else:
+                os.environ["BCP_CONTROL_FOLDER"] = previous
     print("BCP_SERVER_SELFTEST=PASS")
 
 
