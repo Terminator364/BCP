@@ -52,6 +52,27 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      - name: Edge privacy and observability regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAIN="android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
+          CLIENT="android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java"
+          TELE="android-b-edge/src/main/java/com/blessing/bcpedge/TelemetryStore.java"
+          if grep -F 'output.setText(r.toString())' "$MAIN"; then
+            echo "Raw pairing response must never be rendered in normal UI"
+            exit 1
+          fi
+          grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
+          grep -F 'stored_securely_not_displayed' "$CLIENT" >/dev/null
+          grep -F 'PHONE_HEARTBEAT' "$CLIENT" >/dev/null
+          grep -F '0.2.2' "$TELE" >/dev/null
+          if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
+            echo "Credential rendering regression detected"
+            exit 1
+          fi
+          echo "EDGE_PRIVACY_OBSERVABILITY_GUARDS=PASS"
+
       - name: Build debug APK
         run: gradle :android-b-edge:assembleDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
 
