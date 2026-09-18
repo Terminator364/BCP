@@ -17,6 +17,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String PROJECT = "buildhub";
+    private static final String EDGE_VERSION = "0.2.2";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -45,7 +46,7 @@ public final class BcpClient {
                 if (h.optBoolean("ok")) {
                     progress.onStage("CONNECTED", "PC retrouvé automatiquement");
                     telemetry.add("RECONNECT_PASS", savedServer);
-                    flushTelemetry();
+                    heartbeat("RECONNECT_PASS");
                     return h;
                 }
             } catch (Exception ignored) {
@@ -66,7 +67,7 @@ public final class BcpClient {
 
         JSONObject pairBody = new JSONObject();
         pairBody.put("device_name", Build.MANUFACTURER + " " + Build.MODEL);
-        pairBody.put("edge_version", "0.2.0");
+        pairBody.put("edge_version", EDGE_VERSION);
         pairBody.put("project", PROJECT);
 
         progress.onStage("PAIRING", "Appairage sécurisé local");
@@ -83,8 +84,8 @@ public final class BcpClient {
         prefs.edit().putString("server", server).putString("token", token).apply();
         telemetry.add("PAIRING_PASS", server);
         progress.onStage("CONNECTED", "Appairé à " + pair.optString("pc_name", "BCP PC"));
-        flushTelemetry();
-        return pair;
+        heartbeat("PAIRING_PASS");
+        return publicPairStatus(pair);
     }
 
     private String discoverLan(Progress progress) throws Exception {
@@ -177,6 +178,21 @@ public final class BcpClient {
     public JSONObject health() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/health", null, null, null, 1500, 2500);
+    }
+
+    public void heartbeat(String reason) {
+        telemetry.add("PHONE_HEARTBEAT", reason == null ? "FOREGROUND" : reason);
+        flushTelemetry();
+    }
+
+    private JSONObject publicPairStatus(JSONObject pair) throws Exception {
+        JSONObject safe = new JSONObject();
+        safe.put("paired", pair.optBoolean("paired", true));
+        safe.put("pc_name", pair.optString("pc_name", "BCP PC"));
+        safe.put("version", pair.optString("version", ""));
+        safe.put("project", PROJECT);
+        safe.put("credential", "stored_securely_not_displayed");
+        return safe;
     }
 
     private void ensureConnected() throws IOException {
