@@ -17,7 +17,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "0.2.2";
+    private static final String EDGE_VERSION = "0.2.3";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -31,6 +31,22 @@ public final class BcpClient {
     public String getServer() { return prefs.getString("server", ""); }
     public String getToken() { return prefs.getString("token", ""); }
     public String getProject() { return PROJECT; }
+    public String getEdgeVersion() { return EDGE_VERSION; }
+
+    public JSONObject serverUpdateStatus() throws Exception {
+        ensureConnected();
+        return requestJson("GET", getServer() + "/v1/system/update", null,
+                getToken(), null, 2500, 7000);
+    }
+
+    public JSONObject applyServerUpdate() throws Exception {
+        ensureConnected();
+        telemetry.add("SERVER_UPDATE_REQUESTED", null);
+        JSONObject r = requestJson("POST", getServer() + "/v1/system/update/apply", "{}",
+                getToken(), "server-update-" + UUID.randomUUID(), 3000, 45000);
+        telemetry.add("SERVER_UPDATE_ACCEPTED", r.optString("target_version", ""));
+        return r;
+    }
 
     public JSONObject connectAutomatically(Progress progress) throws Exception {
         progress.onStage("START", "BCP Edge démarre");
