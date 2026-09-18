@@ -41,7 +41,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [4/6] Registering resident agent...
+echo [4/7] Stopping obsolete BCP listeners...\npowershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -State Listen -LocalPort 8765 -ErrorAction SilentlyContinue ^| ForEach-Object { try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } catch {} }"\ntimeout /t 1 /nobreak >nul\n\necho [5/7] Registering resident agent...
 schtasks /Delete /TN "BCP Resident Agent" /F >nul 2>nul
 schtasks /Create /TN "BCP Resident Agent" /SC ONLOGON /RL HIGHEST /F /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%SUPERVISOR%"" >nul
 if errorlevel 1 (
@@ -50,11 +50,11 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [5/6] Starting resident agent now...
+echo [6/7] Starting resident agent now...
 start "" powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%SUPERVISOR%"
 timeout /t 3 /nobreak >nul
 
-echo [6/6] Local health check...
+echo [7/7] Local health check...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "try{$r=Invoke-RestMethod -UseBasicParsing 'http://127.0.0.1:8765/health' -TimeoutSec 4; if(-not $r.ok){exit 2}; Write-Host '[PASS] BCP resident node is healthy'}catch{Write-Host '[WARN] health not ready yet:' $_.Exception.Message}"
 echo.
 echo ============================================================
