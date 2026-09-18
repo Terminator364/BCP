@@ -50,3 +50,40 @@ Then obtain machine-readable ChatGPT-PC/B-Edge readback and progress the reality
 
 ## Reality-gap bookkeeping
 The AX150K adapter enumerates 9 PENDING reality probes, while package_state.json says empirical_gates_open=8. Reconcile this bookkeeping mismatch during implementation; do not drop a probe.
+
+
+## Platform verification / interruption context (observed 2026-09-19)
+
+Observed user-facing behavior:
+- During long technical/tool-heavy turns, ChatGPT may display a system message such as **“Nos systèmes effectuent quelques vérifications supplémentaires avant de répondre”**.
+- The user observed that pressing the ChatGPT **Stop** button ended both the active reasoning/tool turn and that verification hold in the UI. Treat this as an observed recovery action, **not as a guaranteed platform contract**.
+- Separate this event from `429 / Too Many Requests` and from ordinary connector/tool failures; they are not the same class of incident.
+- These platform holds must be treated as **external, nonterminal events**. They do not invalidate the API/BCP architecture, field state, commits, receipts, or prior verified work.
+
+Required API behavior:
+1. Before long/multi-tool work, persist `mission`, `last_committed_action`, `next_atomic_action`, relevant hashes/receipts, and the current field gate.
+2. Prefer small transactional batches over long mixed GitHub/Drive/build/browser bursts.
+3. On a platform verification hold:
+   - do not restart the project;
+   - do not re-run already committed mutations;
+   - do not spam retries;
+   - preserve the exact recovery pointer;
+   - if the user stops the turn, resume from the last durable checkpoint on the next turn.
+4. On `429 / Too Many Requests`:
+   - use bounded exponential backoff with jitter;
+   - serialize heavy tool calls;
+   - resume idempotently.
+5. On connector/tool transient failure:
+   - re-check the affected channel;
+   - retry only the failed atomic action when safe;
+   - require readback/receipt before marking success.
+6. Never try to evade or rewrite requests merely to bypass platform safety checks. Preserve the legitimate local/personal development context already established.
+7. The user must not be the telemetry bus. Prefer machine-readable ChatGPT-PC / B-Edge / GitHub / Drive evidence over screenshots/manual copy-paste.
+
+Cross-project policy source:
+- `.project-memory/PLATFORM_CUT_RESILIENCE.md`
+
+Recovery rule:
+- A platform verification hold is classified as `PLATFORM_VERIFICATION_HOLD`.
+- It is **nonterminal**.
+- After the hold ends—or after the user stops that turn—`APIAX07` must recover the last durable state and continue from the **next uncommitted atomic action**, not from the beginning.
