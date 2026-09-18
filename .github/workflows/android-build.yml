@@ -59,12 +59,13 @@ jobs:
           MAIN="android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
           CLIENT="android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java"
           TELE="android-b-edge/src/main/java/com/blessing/bcpedge/TelemetryStore.java"
-          if grep -F 'output.setText(r.toString())' "$MAIN"; then
-            echo "Raw pairing response must never be rendered in normal UI"
-            exit 1
-          fi
           grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
           grep -F 'stored_securely_not_displayed' "$CLIENT" >/dev/null
+          grep -F 'return publicPairStatus(pair);' "$CLIENT" >/dev/null
+          if grep -F 'return pair;' "$CLIENT"; then
+            echo "Raw pairing response must never escape connectAutomatically"
+            exit 1
+          fi
           grep -F 'PHONE_HEARTBEAT' "$CLIENT" >/dev/null
           grep -F '0.2.2' "$TELE" >/dev/null
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
