@@ -67,7 +67,8 @@ def ensure_state() -> str:
     else:
         token = TOKEN_PATH.read_text(encoding="utf-8").strip()
 
-    with sqlite3.connect(DB_PATH) as cx:
+    cx = sqlite3.connect(DB_PATH)
+    try:
         cx.execute("PRAGMA journal_mode=WAL")
         cx.execute("PRAGMA synchronous=FULL")
         cx.execute(
@@ -102,6 +103,8 @@ def ensure_state() -> str:
             """
         )
         cx.commit()
+    finally:
+        cx.close()
     return token
 
 
@@ -112,9 +115,12 @@ def connect_db():
 
 
 def get_head(project_id: str):
-    with connect_db() as cx:
+    cx = connect_db()
+    try:
         row = cx.execute("SELECT * FROM heads WHERE project_id=?", (project_id,)).fetchone()
         return dict(row) if row else None
+    finally:
+        cx.close()
 
 
 def recent_events(project_id: str, limit: int = 10):
