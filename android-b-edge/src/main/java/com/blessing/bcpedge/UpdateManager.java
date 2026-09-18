@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,8 +30,13 @@ public final class UpdateManager {
         this.listener = listener;
     }
 
-    public void check() {
-        if (checking) return;
+    public void check() { check(false); }
+
+    public void check(boolean userInitiated) {
+        if (checking) {
+            if (userInitiated) status("VÉRIFICATION DÉJÀ EN COURS");
+            return;
+        }
         checking = true;
         io.submit(() -> {
             try {
@@ -38,7 +44,10 @@ public final class UpdateManager {
                 int latest = m.optInt("version_code", 0);
                 int current = activity.getPackageManager()
                         .getPackageInfo(activity.getPackageName(), 0).versionCode;
-                if (latest <= current) return;
+                if (latest <= current) {
+                    if (userInitiated) status("BCP EDGE EST À JOUR");
+                    return;
+                }
 
                 status("MISE À JOUR B-EDGE DISPONIBLE");
                 if (Build.VERSION.SDK_INT >= 26 &&
@@ -51,18 +60,28 @@ public final class UpdateManager {
                 }
 
                 String apkUrl = m.optString("apk_url", "");
-                if (apkUrl.isEmpty()) return;
+                String apkSha256 = m.optString("apk_sha256", "").toLowerCase();
+                if (apkUrl.isEmpty() || apkSha256.length() != 64) {
+                    status("MISE À JOUR EDGE PAS ENCORE PUBLIÉE/SIGNÉE");
+                    return;
+                }
                 File apk = new File(activity.getExternalCacheDir(), "bcp-edge-update.apk");
                 download(apkUrl, apk);
-                status("MISE À JOUR TÉLÉCHARGÉE — CONFIRME L'INSTALLATION");
+                String actual = sha256(apk);
+                if (!actual.equals(apkSha256)) {
+                    if (apk.exists()) apk.delete();
+                    throw new SecurityException("APK_SHA256_MISMATCH");
+                }
+                status("MISE À JOUR TÉLÉCHARGÉE ET VÉRIFIÉE — CONFIRME L'INSTALLATION");
                 Uri uri = FileProvider.getUriForFile(activity,
                         activity.getPackageName() + ".files", apk);
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setDataAndType(uri, "application/vnd.android.package-archive");
                 i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                 activity.startActivity(i);
-            } catch (Exception ignored) {
-                // Update failures never block BCP continuity.
+            } catch (Exception ex) {
+                // Update failures never block BCP continuity, but user-triggered checks are visible.
+                if (userInitiated) status("ÉCHEC MISE À JOUR: " + ex.getClass().getSimpleName());
             } finally {
                 checking = false;
             }
@@ -93,6 +112,18 @@ public final class UpdateManager {
             int n;
             while ((n = in.read(buf)) >= 0) os.write(buf,0,n);
         }
+    }
+
+    private static String sha256(File file) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        try (InputStream in = new FileInputStream(file)) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) >= 0) md.update(buf, 0, n);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (byte b : md.digest()) sb.append(String.format("%02x", b & 0xff));
+        return sb.toString();
     }
 
     private static String readAll(InputStream in) throws IOException {
