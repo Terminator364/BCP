@@ -1,4 +1,5 @@
 name: BCP Windows Bootstrap Validation
+# BCP 0.4.1 recovery bridge qualification
 
 on:
   workflow_dispatch:
