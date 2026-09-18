@@ -13,11 +13,13 @@ public class MainActivity extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private BcpClient client;
     private TextView status, detail, output;
-    private Button connect, checkpoint, resume;\n    private UpdateManager updates;
+    private Button connect, checkpoint, resume;
+    private UpdateManager updates;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        client = new BcpClient(this);\n        updates = new UpdateManager(this, s -> { if (detail != null) detail.setText(s); });
+        client = new BcpClient(this);
+        updates = new UpdateManager(this, s -> { if (detail != null) detail.setText(s); });
 
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = new LinearLayout(this);
@@ -147,6 +149,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onDestroy() {
         super.onDestroy();
-        io.shutdownNow();\n        updates.close();
+        io.shutdownNow();
+        updates.close();
     }
 }
