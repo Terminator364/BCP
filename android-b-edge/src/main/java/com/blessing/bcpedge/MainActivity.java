@@ -1,6 +1,7 @@
 package com.blessing.bcpedge;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.graphics.Typeface;
 import android.view.View;
@@ -16,7 +17,7 @@ public class MainActivity extends Activity {
     private final ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
     private BcpClient client;
     private TextView status, detail, output;
-    private Button connect, checkpoint, resume;
+    private Button connect, checkpoint, resume, settings;
     private UpdateManager updates;
 
     @Override public void onCreate(Bundle state) {
@@ -54,6 +55,7 @@ public class MainActivity extends Activity {
         root.addView(detail);
 
         connect = button(root, "CONNECTER AUTOMATIQUEMENT");
+        settings = button(root, "PARAMÈTRES / MISES À JOUR");
         checkpoint = button(root, "ENREGISTRER CHECKPOINT");
         resume = button(root, "REPRENDRE LE PROJET");
 
@@ -64,6 +66,7 @@ public class MainActivity extends Activity {
         root.addView(output);
 
         connect.setOnClickListener(v -> autoConnect());
+        settings.setOnClickListener(v -> showSettings());
         checkpoint.setOnClickListener(v -> runAction("CHECKPOINT", () ->
                 client.checkpoint("B-EDGE paired and telemetry active",
                         "Restart PC/phone and verify automatic resume")));
@@ -108,6 +111,36 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void showSettings() {
+        final String[] choices = new String[] {
+                "État des versions",
+                "Mettre à jour le serveur PC maintenant",
+                "Vérifier la mise à jour BCP Edge"
+        };
+        new AlertDialog.Builder(this)
+                .setTitle("Paramètres BCP")
+                .setItems(choices, (dialog, which) -> {
+                    if (which == 0) {
+                        runAction("VERSIONS", () -> {
+                            JSONObject s = client.serverUpdateStatus();
+                            JSONObject out = new JSONObject();
+                            out.put("edge_version", client.getEdgeVersion());
+                            out.put("server_current", s.optString("current_version", ""));
+                            out.put("server_target", s.optString("target_version", ""));
+                            out.put("server_update_available", s.optBoolean("available", false));
+                            out.put("server_auto_update", s.optBoolean("auto_update", true));
+                            return out;
+                        });
+                    } else if (which == 1) {
+                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
+                    } else if (which == 2) {
+                        updates.check(true);
+                    }
+                })
+                .setNegativeButton("FERMER", null)
+                .show();
+    }
+
     private interface Action { JSONObject run() throws Exception; }
 
     private void runAction(String name, Action action) {
@@ -140,6 +173,7 @@ public class MainActivity extends Activity {
 
     private void setBusy(boolean busy) {
         connect.setEnabled(!busy);
+        settings.setEnabled(!busy);
         checkpoint.setEnabled(!busy);
         resume.setEnabled(!busy);
     }
