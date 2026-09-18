@@ -114,6 +114,8 @@ public class MainActivity extends Activity {
     private void showSettings() {
         final String[] choices = new String[] {
                 "État des versions",
+                "État ChatGPT-PC",
+                "Réparer ChatGPT-PC maintenant",
                 "Mettre à jour le serveur PC maintenant",
                 "Vérifier la mise à jour BCP Edge"
         };
@@ -132,8 +134,18 @@ public class MainActivity extends Activity {
                             return out;
                         });
                     } else if (which == 1) {
-                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
+                        runAction("CHATGPT-PC", () -> client.chatgptPcStatus());
                     } else if (which == 2) {
+                        new AlertDialog.Builder(this)
+                                .setTitle("Réparer ChatGPT-PC")
+                                .setMessage("Lancer le Recovery Plane borné avec la cible déjà vérifiée ?")
+                                .setPositiveButton("RÉPARER", (d, w) ->
+                                        runAction("RÉCUPÉRATION CHATGPT-PC", () -> client.recoverChatgptPc()))
+                                .setNegativeButton("ANNULER", null)
+                                .show();
+                    } else if (which == 3) {
+                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
+                    } else if (which == 4) {
                         updates.check(true);
                     }
                 })
