@@ -1,0 +1,19 @@
+{
+  "run_id": 35396511043,
+  "run_number": 21,
+  "conclusion": "success",
+  "head_sha": "28f2a6d69956b8ad51748879613e434b55b40564",
+  "pc_node_tests": "success",
+  "android_build": "success",
+  "features": [
+    "LAN auto-discovery",
+    "automatic local pairing",
+    "phone telemetry queue",
+    "telemetry forwarding",
+    "evergreen update scaffold"
+  ],
+  "artifact_id": 10568221718,
+  "artifact_digest": "sha256:2eeeedd17e8a009a35c1979dc0e92295ca59ba907e4668dadeced208a8612246",
+  "apk_sha256": "9c1096bffdb9c766f220590cb7fb817be8c28ff9ba713d33fbb016e41191c0c8",
+  "status": "CI_PASS_FIELD_UNVERIFIED"
+}
