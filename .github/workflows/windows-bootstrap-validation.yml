@@ -69,11 +69,20 @@ jobs:
         shell: powershell
         run: |
           $release = Get-Content -Raw '.\release\server.json' -Encoding UTF8 | ConvertFrom-Json
-          $actual = (Get-FileHash '.\windows\bcp_server.py' -Algorithm SHA256).Hash.ToLowerInvariant()
+          # Git may materialize CRLF on Windows; the public raw release is canonical LF UTF-8.
+          $raw = Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
+          $canonical = $raw -replace "`r`n", "`n"
+          $utf8 = New-Object System.Text.UTF8Encoding($false)
+          $bytes = $utf8.GetBytes($canonical)
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+          try {
+            $actual = ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+          } finally {
+            $sha.Dispose()
+          }
           if ($release.sha256.ToLowerInvariant() -ne $actual) {
             throw "release/server.json SHA-256 does not match windows/bcp_server.py"
           }
-          $raw = Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
           if ($raw -notmatch ('SERVER_VERSION = "' + [regex]::Escape([string]$release.version) + '"')) {
             throw "release/server.json version does not match server source"
           }
