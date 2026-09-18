@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "version": "0.2.0",
+  "pinned_commit": "d85747e243270c44f722c88da72c5c761fb9640b",
+  "server_url": "https://raw.githubusercontent.com/Terminator364/BCP/d85747e243270c44f722c88da72c5c761fb9640b/pc-node/bcp_server.ps1",
+  "supervisor_url": "https://raw.githubusercontent.com/Terminator364/BCP/d85747e243270c44f722c88da72c5c761fb9640b/pc-node/bcp_supervisor.ps1",
+  "android_note": "BCP Edge v0.2 auto-discovery/autopair build is produced by GitHub Actions"
+}
