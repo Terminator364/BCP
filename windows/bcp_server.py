@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.0"
+SERVER_VERSION = "0.4.1"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -106,7 +106,8 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
     }
     allowed = {
         "accepted", "last_event_type", "last_event_ts", "status", "revision",
-        "target_version", "update_result", "auto_update"
+        "target_version", "update_result", "auto_update",
+        "chatgpt_pc_version", "chatgpt_pc_sequence", "recovery_state"
     }
     if isinstance(extra, dict):
         for k in allowed:
@@ -118,6 +119,138 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
         f.write(canonical_json(rec) + "\n")
     return True
 
+
+
+def _file_age_seconds(path: Path) -> float | None:
+    try:
+        return max(0.0, time.time() - path.stat().st_mtime)
+    except Exception:
+        return None
+
+
+def chatgpt_pc_status() -> dict:
+    local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    root = local / "Tunnel_PC_G4"
+    active = read_json(root / "state" / "active_release.json", {}) or {}
+    heartbeat = read_json(root / "state" / "heartbeat.json", {}) or {}
+    command = read_json(root / "state" / "command_plane_health.json", {}) or {}
+    control = chatgpt_control_folder()
+    tick_path = (control / "RECOVERY" / "RECOVERY_PLANE_TICK.json") if control else None
+    result_path = (control / "RECOVERY" / "RECOVERY_BOOTSTRAP_RESULT.json") if control else None
+    tick = read_json(tick_path, {}) if tick_path else {}
+    result = read_json(result_path, {}) if result_path else {}
+    out = {
+        "ok": bool(root.exists()),
+        "install_root": str(root),
+        "control_folder_present": bool(control),
+        "active_version": str(active.get("version") or ""),
+        "active_sequence": int(active.get("sequence") or 0),
+        "heartbeat_version": str(heartbeat.get("agent_version") or ""),
+        "heartbeat_age_seconds": _file_age_seconds(root / "state" / "heartbeat.json"),
+        "command_plane_age_seconds": _file_age_seconds(root / "state" / "command_plane_health.json"),
+        "command_plane": str(command.get("command_plane") or ""),
+        "recovery_tick_age_seconds": _file_age_seconds(tick_path) if tick_path else None,
+        "recovery_phase": str((tick or {}).get("phase") or ""),
+        "recovery_result_status": str((result or {}).get("status") or ""),
+        "recovery_result_version": str((result or {}).get("version") or ""),
+        "recovery_result_sequence": int((result or {}).get("sequence") or 0),
+    }
+    return out
+
+
+def _process_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except Exception:
+        return False
+
+
+def request_chatgpt_pc_recovery() -> dict:
+    if os.name != "nt":
+        raise RuntimeError("chatgpt_pc_recovery_requires_windows")
+    local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    root = local / "Tunnel_PC_G4"
+    py = root / "runtime" / "python.exe"
+    control = chatgpt_control_folder()
+    if not py.is_file():
+        raise FileNotFoundError("chatgpt_pc_runtime_missing")
+    if control is None:
+        raise FileNotFoundError("chatgpt_pc_control_folder_missing")
+
+    target_path = control / "00_CONTEXT" / "RECOVERY_BOOTSTRAP_TARGET.json"
+    target = read_json(target_path, {}) or {}
+    if target.get("status") != "ACTIVE":
+        raise RuntimeError("recovery_target_not_active")
+    target_version = str(target.get("version") or "")
+    target_sequence = int(target.get("sequence") or 0)
+    package_file = str(target.get("package_file") or "")
+    package_sha = str(target.get("package_sha256") or "").lower()
+    if not target_version or target_sequence < 1 or not package_file or Path(package_file).name != package_file:
+        raise ValueError("recovery_target_invalid")
+    package = control / "02_UPDATES" / "AGENT" / package_file
+    if not package.is_file():
+        raise FileNotFoundError("recovery_package_not_synced")
+    actual = hashlib.sha256(package.read_bytes()).hexdigest()
+    if len(package_sha) != 64 or not hmac.compare_digest(actual, package_sha):
+        raise ValueError("recovery_package_sha256_mismatch")
+
+    active = read_json(root / "state" / "active_release.json", {}) or {}
+    release_root = Path(str(active.get("release_root") or ""))
+    candidates = [
+        control / "RECOVERY" / "recovery_update_runner_hotfix_6026.py",
+        root / "recovery_update_runner.py",
+        release_root / "tools" / "recovery_update_runner.py",
+    ]
+    runner = next((p for p in candidates if p.is_file()), None)
+    if runner is None:
+        raise FileNotFoundError("recovery_update_runner_missing")
+
+    state_path = STATE_DIR / "chatgpt_pc_recovery_request.json"
+    prior = read_json(state_path, {}) or {}
+    prior_pid = int(prior.get("pid") or 0)
+    prior_age = _file_age_seconds(state_path)
+    if prior.get("status") == "STARTED" and prior_age is not None and prior_age < 90 and _process_alive(prior_pid):
+        return {
+            "ok": True, "result": "ALREADY_RUNNING", "pid": prior_pid,
+            "target_version": target_version, "target_sequence": target_sequence
+        }
+
+    log_path = APP_ROOT / "logs" / "chatgpt-pc-recovery.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log = log_path.open("ab", buffering=0)
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    proc = subprocess.Popen(
+        [str(py), str(runner), "--install", str(root), "--control", str(control)],
+        cwd=str(root),
+        stdin=subprocess.DEVNULL,
+        stdout=log,
+        stderr=log,
+        shell=False,
+        creationflags=flags,
+        close_fds=True,
+    )
+    rec = {
+        "schema": "bcp.chatgpt_pc_recovery/1",
+        "status": "STARTED",
+        "pid": int(proc.pid),
+        "started_at": utc_now(),
+        "runner": str(runner),
+        "target_version": target_version,
+        "target_sequence": target_sequence,
+        "package_sha256": actual,
+    }
+    atomic_json(state_path, rec)
+    mirror_telemetry_status("CHATGPT_PC_RECOVERY_STARTED", {
+        "status": "RECOVERY_STARTED",
+        "chatgpt_pc_version": str(active.get("version") or ""),
+        "chatgpt_pc_sequence": int(active.get("sequence") or 0),
+        "recovery_state": "STARTED",
+        "target_version": target_version,
+    })
+    return {"ok": True, "result": "STARTED", **rec}
 
 
 def _version_tuple(value: str):
@@ -201,6 +334,7 @@ def _candidate_selftest(path: Path) -> dict:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        errors="replace",
         timeout=45,
         creationflags=flags,
     )
@@ -631,6 +765,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(401, {"error": "unauthorized"})
             return
 
+        if path == "/v1/system/chatgpt-pc":
+            try:
+                self.send_json(200, chatgpt_pc_status())
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "chatgpt_pc_status_failed", "detail": str(e)[:500]})
+            return
+
         if path == "/v1/system/update":
             try:
                 self.send_json(200, server_update_status(check_remote=True))
@@ -716,6 +857,16 @@ class Handler(BaseHTTPRequestHandler):
 
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/v1/system/chatgpt-pc/recover":
+            try:
+                body = self.read_json()
+                if body.get("confirm") is not True:
+                    raise ValueError("explicit_confirm_required")
+                self.send_json(202, request_chatgpt_pc_recovery())
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "chatgpt_pc_recovery_failed", "detail": str(e)[:500]})
             return
 
         if path == "/v1/system/update/apply":
@@ -823,8 +974,12 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.0") > _version_tuple("0.3.1")
-        assert _version_tuple("0.4.0") == (0, 4, 0)
+        assert _version_tuple("0.4.1") > _version_tuple("0.4.0")
+        assert _version_tuple("0.4.1") == (0, 4, 1)
+        source = SERVER_FILE.read_text(encoding="utf-8")
+        assert "/v1/system/chatgpt-pc/recover" in source
+        assert "recovery_package_sha256_mismatch" in source
+        assert "shell=False" in source
         control = Path(td) / "control"
         control.mkdir(parents=True, exist_ok=True)
         previous = os.environ.get("BCP_CONTROL_FOLDER")
