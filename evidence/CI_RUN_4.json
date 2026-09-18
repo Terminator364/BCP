@@ -1,0 +1,12 @@
+{
+  "run_id": 35391193942,
+  "run_number": 4,
+  "conclusion": "success",
+  "head_sha": "759be60b31b0e73f0f80de57acf149713e0aa002",
+  "pc_node_tests": "success",
+  "android_build": "success",
+  "artifact_id": 10565937901,
+  "artifact_digest": "sha256:0b6db61ab3e8b2bc49ba7ec37b437f78a8e3436293b123cb73d7b2ff0c8c694e",
+  "apk_sha256": "d5bc4c6c538ac2f39b630044012f84303a528521f8a49f1327b0736c92db1d3a",
+  "status": "CI_PASS_FIELD_UNVERIFIED"
+}
