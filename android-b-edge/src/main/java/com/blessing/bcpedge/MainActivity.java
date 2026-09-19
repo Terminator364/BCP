@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         client = new BcpClient(this);
-        updates = new UpdateManager(this, s -> { if (detail != null) detail.setText(s); });
+        updates = new UpdateManager(this, client, s -> { if (detail != null) detail.setText(s); });
 
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = new LinearLayout(this);
@@ -33,13 +33,13 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("BCP Edge · B-EDGE");
+        title.setText("BCP Edge Evergreen · B-EDGE");
         title.setTextSize(25);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Découverte, appairage, télémétrie et reprise automatiques");
+        subtitle.setText("Zéro saisie · reprise · télémétrie · mises à jour vérifiées");
         subtitle.setPadding(0,dp(6),0,dp(16));
         root.addView(subtitle);
 
@@ -73,8 +73,8 @@ public class MainActivity extends Activity {
         resume.setOnClickListener(v -> runAction("RESUME", () -> client.resume()));
 
         setContentView(scroll);
+        updates.reconcileAfterLaunch();
         autoConnect();
-        updates.check();
         heartbeat.scheduleAtFixedRate(() -> {
             try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
         }, 60, 60, TimeUnit.SECONDS);
@@ -95,9 +95,11 @@ public class MainActivity extends Activity {
                     detail.setText("PC appairé automatiquement · projet buildhub");
                     String pc = r.optString("pc_name", "BCP PC");
                     String ver = r.optString("version", "");
-                    output.setText("État: OK\nPC: " + pc + (ver.isEmpty() ? "" : "\nServeur: " + ver) +
+                    output.setText("État: OK\nB-EDGE: " + client.getEdgeVersion() +
+                            "\nPC: " + pc + (ver.isEmpty() ? "" : "\nServeur: " + ver) +
                             "\nProjet: buildhub\nIdentifiants: masqués");
                     setBusy(false);
+                    updates.check();
                 });
             } catch (Exception ex) {
                 runOnUiThread(() -> {
@@ -117,7 +119,8 @@ public class MainActivity extends Activity {
                 "État ChatGPT-PC",
                 "Réparer ChatGPT-PC maintenant",
                 "Mettre à jour le serveur PC maintenant",
-                "Vérifier la mise à jour BCP Edge"
+                "Vérifier / mettre à jour BCP Edge",
+                "Test rapide B-EDGE"
         };
         new AlertDialog.Builder(this)
                 .setTitle("Paramètres BCP")
@@ -147,6 +150,8 @@ public class MainActivity extends Activity {
                         runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
                     } else if (which == 4) {
                         updates.check(true);
+                    } else if (which == 5) {
+                        runAction("TEST RAPIDE B-EDGE", () -> client.runQuickAcceptance());
                     }
                 })
                 .setNegativeButton("FERMER", null)
