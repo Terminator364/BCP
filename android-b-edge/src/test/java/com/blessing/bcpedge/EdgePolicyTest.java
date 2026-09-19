@@ -17,6 +17,20 @@ public class EdgePolicyTest {
         assertEquals("READY", EdgePolicy.nextState(false, "EDGE_ONLY"));
     }
 
+    @Test public void resourceGovernorFailsClosedForHeavyEdgeWork() {
+        assertTrue(EdgePolicy.resourceAllowed("EDGE_R0", true, true, 6, 5, false, true));
+        assertFalse(EdgePolicy.resourceAllowed("EDGE_R1", true, false, 0, 90, true, false));
+        assertFalse(EdgePolicy.resourceAllowed("EDGE_R2", false, true, 0, 90, true, false));
+        assertFalse(EdgePolicy.resourceAllowed("EDGE_R2", false, false, 3, 90, true, false));
+        assertFalse(EdgePolicy.resourceAllowed("EDGE_R2", false, false, 0, 20, false, false));
+        assertFalse(EdgePolicy.resourceAllowed("EDGE_R2", false, false, 0, 90, true, true));
+        assertTrue(EdgePolicy.resourceAllowed("EDGE_R2", false, false, 0, 90, true, false));
+        assertEquals("HOLD_RESOURCE",
+                EdgePolicy.nextState(false, "EDGE_ONLY", "EDGE_R2", false));
+        assertEquals("READY",
+                EdgePolicy.nextState(false, "EDGE_ONLY", "EDGE_R1", true));
+    }
+
     @Test public void reconciliationCadenceIsBounded() {
         assertTrue(EdgePolicy.shouldRunSync(1_000_000L, 0L, 300_000L));
         assertFalse(EdgePolicy.shouldRunSync(1_100_000L, 1_000_000L, 300_000L));
