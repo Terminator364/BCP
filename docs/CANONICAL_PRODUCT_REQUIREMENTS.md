@@ -282,7 +282,7 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current synchronized target: **BCP 0.6.1 + B-EDGE 2.0.0-rc1 Evergreen**, requirements revision R8.
+Current synchronized target: **BCP 0.6.2 + B-EDGE 2.0.0-rc1 Evergreen**, requirements revision R8.
 
 The preserved BCP 0.6.0 / B-EDGE 2.0.0-rc1 line is field-evidenced: Drive telemetry proves a live Windows BCP 0.6.0 runtime and Drive CURRENT contains the privately signed B-EDGE 2.0.0-rc1 APK. That field-proven line MUST be reconciled with the newer Git writer fence, Nexus/Telegram transport, Progress Presence and `P0_MISSION_AUTONOMY_AND_OBSERVABLE_EXECUTION`; it MUST NOT be replaced by a lower 0.5.x line.
 
