@@ -64,7 +64,8 @@
     "telegram_observability_mvp": "docs/TELEGRAM_OBSERVABILITY_MVP.md",
     "telegram_observability_setup": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
     "rdc_network_data_saver": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
-    "home_wifi_edge_nexus_autoupdate": "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
+    "home_wifi_edge_nexus_autoupdate": "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
+    "nexus_field_gate": "docs/BCP_NEXUS_FIELD_GATE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -116,7 +117,8 @@
     ".project-memory/GIT_WRITER_LEASE_POLICY.json",
     "docs/TELEGRAM_OBSERVABILITY_MVP.md",
     "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
-    "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
+    "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
+    "docs/BCP_NEXUS_FIELD_GATE.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -745,5 +747,21 @@
     "drive_replace_current_in_place": true,
     "unchanged_version_zero_download": true,
     "zero_usd": true
+  },
+  "nexus_transport_mvp": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING_FIELD_UNVERIFIED",
+    "branch": "work/bcp/nexus-transport-mvp-20260919",
+    "base_main_sha": "91f329d0a0a1a297e0857a526d46c1ce376ec35c",
+    "worker": "nexus/cloudflare-worker/src/worker.mjs",
+    "schema": "nexus/cloudflare-worker/migrations/0001_init.sql",
+    "local_client": "windows/bcp_telegram_observability.py",
+    "local_configurator": "windows/CONFIGURE_BCP_NEXUS.ps1",
+    "ci": ".github/workflows/nexus-transport.yml",
+    "receiver_mode_target": "TELEGRAM_WEBHOOK_SINGLE_OWNER",
+    "device_transport": "HTTPS_PULL_REPLY_PUSH",
+    "direct_telegram_default_preserved": true,
+    "zero_usd_required": true,
+    "secrets_committed": false,
+    "next_gate": "CI_QUALIFY_EXACT_HEAD_THEN_LIVE_CLOUD_AUTHORIZATION_AND_HOME_WIFI_FIELD_TEST"
   }
 }
