@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CURRENT = ROOT / "release" / "current.json"
 SERVER = ROOT / "release" / "server.json"
 ANDROID = ROOT / "release" / "android.json"
+NEXUS = ROOT / "release" / "nexus_bootstrap.json"
 SERVER_SOURCE = ROOT / "windows" / "bcp_server.py"
 SPEC = ROOT / "docs" / "CANONICAL_PRODUCT_REQUIREMENTS.md"
 
@@ -33,6 +34,7 @@ def main() -> int:
     cur = load(CURRENT)
     srv = load(SERVER)
     edge = load(ANDROID)
+    nexus_manifest = load(NEXUS)
     source = SERVER_SOURCE.read_bytes()
     spec = SPEC.read_text(encoding="utf-8")
 
@@ -88,7 +90,26 @@ def main() -> int:
     if bool(android.get("auto_update_eligible")) != edge_ready:
         fail("android_auto_update_truth_mismatch")
 
-    nexus_ready = bool(nexus.get("artifact", {}).get("url") and is_sha(nexus.get("artifact", {}).get("sha256") or ""))
+    nexus_artifact = nexus.get("artifact", {}) or {}
+    nexus_ready = bool(nexus_artifact.get("url") and is_sha(nexus_artifact.get("sha256") or ""))
+    if nexus_ready:
+        actual_nexus_sha = hashlib.sha256(NEXUS.read_bytes()).hexdigest()
+        if nexus.get("version") != str(nexus_manifest.get("version")):
+            fail("nexus_version_drift")
+        if nexus_artifact.get("sha256") != actual_nexus_sha:
+            fail("nexus_manifest_sha_drift")
+        if str(nexus_manifest.get("minimum_server_version")) != str(srv.get("version")):
+            fail("nexus_server_compatibility_drift")
+        files = nexus_manifest.get("files") or []
+        if not files:
+            fail("nexus_bundle_empty")
+        for item in files:
+            rel = str(item.get("path") or "")
+            p = ROOT / rel
+            if not p.is_file():
+                fail("nexus_bundle_file_missing:" + rel)
+            if hashlib.sha256(p.read_bytes()).hexdigest() != str(item.get("sha256") or ""):
+                fail("nexus_bundle_file_sha_drift:" + rel)
     if bool(nexus.get("distribution_ready")) != nexus_ready:
         fail("nexus_distribution_truth_mismatch")
 

@@ -28,13 +28,17 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.2"
+SERVER_VERSION = "0.6.3"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
 TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
 TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
-AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
+NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json"
+NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
+NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
+NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
+AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
@@ -324,6 +328,7 @@ def external_telemetry_roots() -> list[Path]:
 def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[str]:
     """Publish sanitized runtime truth to any available synced external folder."""
     update = read_json(STATE_DIR / "server_update.json", {}) or {}
+    nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
     chat = chatgpt_pc_status()
     rec = {
         "schema": "bcp.external_runtime/1",
@@ -337,6 +342,8 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "server_sha256": hashlib.sha256(SERVER_FILE.read_bytes()).hexdigest(),
         "update_state": str(update.get("state") or "NONE")[:80],
         "update_target_version": str(update.get("target_version") or "")[:40],
+        "nexus_bootstrap_state": str(nexus.get("state") or "NONE")[:80],
+        "nexus_bootstrap_bundle_version": str(nexus.get("bundle_version") or "")[:40],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
@@ -749,6 +756,183 @@ def apply_telegram_companion_update() -> dict:
     }
 
 
+def _nexus_bootstrap_success() -> bool:
+    receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
+    return str(receipt.get("status") or "") == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
+
+
+def _nexus_safe_relpath(value: str) -> str:
+    raw = str(value or "").replace("\\", "/").strip("/")
+    if not raw or raw.startswith("/") or ".." in raw.split("/"):
+        raise ValueError("nexus_bootstrap_path_invalid")
+    allowed = (
+        "windows/BOOTSTRAP_BCP_NEXUS.ps1",
+        "windows/CONFIGURE_BCP_NEXUS.ps1",
+        "nexus/cloudflare-worker/src/worker.mjs",
+        "nexus/cloudflare-worker/migrations/0001_init.sql",
+    )
+    if raw not in allowed:
+        raise ValueError("nexus_bootstrap_path_not_allowlisted")
+    return raw
+
+
+def nexus_bootstrap_delivery_status(check_remote: bool = True) -> dict:
+    local = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+    out = {
+        "ok": True,
+        "configured": _nexus_bootstrap_success(),
+        "state": str(local.get("state") or "NONE"),
+        "bundle_version": str(local.get("bundle_version") or ""),
+        "pid": int(local.get("pid") or 0),
+        "manifest_url": NEXUS_BOOTSTRAP_MANIFEST_URL,
+    }
+    if not check_remote:
+        return out
+    manifest = _fetch_json(NEXUS_BOOTSTRAP_MANIFEST_URL)
+    if manifest.get("schema") != "bcp.nexus_bootstrap_release/1":
+        raise ValueError("nexus_bootstrap_manifest_schema")
+    version = str(manifest.get("version") or "")
+    minimum_server = str(manifest.get("minimum_server_version") or "")
+    files = manifest.get("files")
+    if not version or not isinstance(files, list) or not files:
+        raise ValueError("nexus_bootstrap_manifest_incomplete")
+    if minimum_server and _version_tuple(SERVER_VERSION) < _version_tuple(minimum_server):
+        raise ValueError("nexus_bootstrap_server_too_old")
+    missing = 0
+    for item in files:
+        if not isinstance(item, dict):
+            raise ValueError("nexus_bootstrap_file_invalid")
+        rel = _nexus_safe_relpath(item.get("path"))
+        expected = str(item.get("sha256") or "").lower()
+        url = str(item.get("url") or "")
+        if len(expected) != 64 or not url.startswith("https://raw.githubusercontent.com/Terminator364/BCP/"):
+            raise ValueError("nexus_bootstrap_file_contract_invalid")
+        target = NEXUS_BOOTSTRAP_ROOT / Path(rel)
+        actual = ""
+        if target.is_file():
+            actual = hashlib.sha256(target.read_bytes()).hexdigest()
+        if not hmac.compare_digest(actual.lower(), expected):
+            missing += 1
+    out.update({
+        "target_version": version,
+        "available": bool(missing),
+        "files_needing_update": int(missing),
+        "zero_usd": bool(manifest.get("zero_usd", True)),
+    })
+    return out
+
+
+def _monitor_nexus_bootstrap(proc: subprocess.Popen, bundle_version: str) -> None:
+    def worker():
+        try:
+            code = int(proc.wait())
+        except Exception:
+            code = -1
+        receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
+        success = str(receipt.get("status") or "") == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
+        state = "COMMITTED" if success else ("WRANGLER_RUNTIME_REQUIRED" if code == 3 else "EXITED_NO_RECEIPT")
+        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+            "schema": "bcp.nexus_bootstrap_delivery/1",
+            "state": state,
+            "bundle_version": bundle_version,
+            "pid": int(proc.pid),
+            "exit_code": code,
+            "updated_at": utc_now(),
+            "receipt_present": bool(success),
+            "spend_usd": 0.0,
+        })
+        try:
+            mirror_external_runtime_status("NEXUS_BOOTSTRAP_PROCESS_EXITED")
+        except Exception:
+            pass
+    threading.Thread(target=worker, daemon=True, name="bcp-nexus-bootstrap-monitor").start()
+
+
+def _launch_nexus_bootstrap_once(bundle_version: str) -> dict:
+    if _nexus_bootstrap_success():
+        return {"ok": True, "result": "ALREADY_CONFIGURED", "bundle_version": bundle_version}
+    if os.name != "nt":
+        return {"ok": True, "result": "STAGED_NON_WINDOWS", "bundle_version": bundle_version}
+    prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+    prior_pid = int(prior.get("pid") or 0)
+    prior_version = str(prior.get("bundle_version") or "")
+    prior_state = str(prior.get("state") or "")
+    if prior_version == bundle_version and prior_state == "LAUNCHED" and _process_alive(prior_pid):
+        return {"ok": True, "result": "ALREADY_RUNNING", "bundle_version": bundle_version, "pid": prior_pid}
+    if prior_version == bundle_version and prior_state in ("WRANGLER_RUNTIME_REQUIRED", "EXITED_NO_RECEIPT"):
+        return {"ok": True, "result": "STAGED_MANUAL_RETRY_REQUIRED", "bundle_version": bundle_version}
+
+    bootstrap = NEXUS_BOOTSTRAP_ROOT / "windows" / "BOOTSTRAP_BCP_NEXUS.ps1"
+    if not bootstrap.is_file():
+        raise FileNotFoundError("nexus_bootstrap_script_missing")
+    flags = int(getattr(subprocess, "CREATE_NEW_CONSOLE", 0)) | int(getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
+    proc = subprocess.Popen(
+        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(bootstrap)],
+        cwd=str(NEXUS_BOOTSTRAP_ROOT),
+        creationflags=flags,
+        close_fds=True,
+    )
+    atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+        "schema": "bcp.nexus_bootstrap_delivery/1",
+        "state": "LAUNCHED",
+        "bundle_version": bundle_version,
+        "pid": int(proc.pid),
+        "launched_at": utc_now(),
+        "human_gate": "CLOUDFLARE_BROWSER_AUTHORIZATION_IF_REQUIRED",
+        "spend_usd": 0.0,
+    })
+    _monitor_nexus_bootstrap(proc, bundle_version)
+    return {"ok": True, "result": "LAUNCHED", "bundle_version": bundle_version, "pid": int(proc.pid)}
+
+
+def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
+    manifest = _fetch_json(NEXUS_BOOTSTRAP_MANIFEST_URL)
+    if manifest.get("schema") != "bcp.nexus_bootstrap_release/1":
+        raise ValueError("nexus_bootstrap_manifest_schema")
+    version = str(manifest.get("version") or "")
+    minimum_server = str(manifest.get("minimum_server_version") or "")
+    files = manifest.get("files")
+    if not version or not isinstance(files, list) or not files:
+        raise ValueError("nexus_bootstrap_manifest_incomplete")
+    if minimum_server and _version_tuple(SERVER_VERSION) < _version_tuple(minimum_server):
+        raise ValueError("nexus_bootstrap_server_too_old")
+
+    staged = 0
+    for item in files:
+        rel = _nexus_safe_relpath(item.get("path"))
+        expected = str(item.get("sha256") or "").lower()
+        url = str(item.get("url") or "")
+        limit = int(item.get("max_bytes") or 500_000)
+        if len(expected) != 64 or limit < 1 or limit > 2_000_000:
+            raise ValueError("nexus_bootstrap_file_contract_invalid")
+        target = NEXUS_BOOTSTRAP_ROOT / Path(rel)
+        if target.is_file():
+            actual = hashlib.sha256(target.read_bytes()).hexdigest()
+            if hmac.compare_digest(actual.lower(), expected):
+                continue
+        payload = _fetch_bytes(url, limit)
+        actual = hashlib.sha256(payload).hexdigest()
+        if not hmac.compare_digest(actual.lower(), expected):
+            raise ValueError("nexus_bootstrap_sha256_mismatch:" + rel)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        candidate = target.with_name(target.name + ".candidate")
+        candidate.write_bytes(payload)
+        os.replace(candidate, target)
+        staged += 1
+
+    atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+        "schema": "bcp.nexus_bootstrap_delivery/1",
+        "state": "STAGED",
+        "bundle_version": version,
+        "files_staged": staged,
+        "updated_at": utc_now(),
+        "spend_usd": 0.0,
+    })
+    if auto_launch and bool(manifest.get("auto_launch_once", True)):
+        return _launch_nexus_bootstrap_once(version)
+    return {"ok": True, "result": "STAGED", "bundle_version": version, "files_staged": staged}
+
+
 def server_update_status(check_remote: bool = True) -> dict:
     local = read_json(STATE_DIR / "server_update.json", {}) or {}
     out = {
@@ -969,9 +1153,25 @@ def start_auto_update_worker(http_server, bind: str, port: int) -> None:
                         schedule_server_restart(http_server, bind, port, result)
                         return
                 else:
-                    # Companion delivery is owned by the already-resident BCP server.
-                    # This removes routine manual ZIP/PowerShell replacement after bootstrap.
-                    apply_telegram_companion_update()
+                    # Resident delivery owns small hash-pinned companions and the one-time Nexus bootstrap bundle.
+                    # The only remaining human gate is provider browser authorization when Cloudflare requires it.
+                    try:
+                        apply_telegram_companion_update()
+                    except Exception as companion_error:
+                        mirror_telemetry_status("TELEGRAM_COMPANION_UPDATE_FAILED", {
+                            "status": "DEGRADED", "update_result": type(companion_error).__name__, "auto_update": True,
+                        })
+                    try:
+                        apply_nexus_bootstrap_delivery(auto_launch=True)
+                    except Exception as nexus_error:
+                        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+                            "schema": "bcp.nexus_bootstrap_delivery/1",
+                            "state": "STAGE_FAILED",
+                            "bundle_version": "",
+                            "updated_at": utc_now(),
+                            "error": str(nexus_error)[:500],
+                            "spend_usd": 0.0,
+                        })
             except Exception as e:
                 _write_update_state({
                     "schema": "bcp.server_update/1",
@@ -2266,6 +2466,13 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(503, {"ok": False, "error": "update_check_failed", "detail": str(e)[:500], "current_version": SERVER_VERSION})
             return
 
+        if path == "/v1/system/nexus":
+            try:
+                self.send_json(200, nexus_bootstrap_delivery_status(check_remote=True))
+            except Exception as e:
+                self.send_json(503, {"ok": False, "error": "nexus_bootstrap_status_failed", "detail": str(e)[:500]})
+            return
+
         if path == "/v1/edge/update":
             try:
                 bundle = edge_update_bundle()
@@ -2455,6 +2662,13 @@ class Handler(BaseHTTPRequestHandler):
                     schedule_server_restart(self.server, str(self.server.server_address[0]), int(self.server.server_address[1]), result)
             except Exception as e:
                 self.send_json(500, {"ok": False, "error": "update_apply_failed", "detail": str(e)[:500], "current_version": SERVER_VERSION})
+            return
+
+        if path == "/v1/system/nexus/apply":
+            try:
+                self.send_json(200, apply_nexus_bootstrap_delivery(auto_launch=True))
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "nexus_bootstrap_apply_failed", "detail": str(e)[:500]})
             return
 
         if path == "/v1/telemetry":

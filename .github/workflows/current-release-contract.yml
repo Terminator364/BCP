@@ -9,6 +9,7 @@ on:
       - "release/server.json"
       - "release/android.json"
       - "release/telegram_observability.json"
+      - "release/nexus_bootstrap.json"
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
       - "windows/bcp_server.py"
@@ -21,6 +22,7 @@ on:
       - "release/server.json"
       - "release/android.json"
       - "release/telegram_observability.json"
+      - "release/nexus_bootstrap.json"
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
       - "windows/bcp_server.py"
@@ -50,6 +52,7 @@ jobs:
           python -m json.tool release/server.json > /dev/null
           python -m json.tool release/android.json > /dev/null
           python -m json.tool release/telegram_observability.json > /dev/null
+          python -m json.tool release/nexus_bootstrap.json > /dev/null
           python -m json.tool schemas/bcp_current_release.schema.json > /dev/null
 
       - name: Validate CURRENT truth contract
@@ -79,6 +82,12 @@ jobs:
               "apply_telegram_companion_update",
               "telegram_companion_sha256_mismatch",
               "telegram_companion_selftest_failed",
+              "NEXUS_BOOTSTRAP_MANIFEST_URL",
+              "nexus_bootstrap_delivery_status",
+              "apply_nexus_bootstrap_delivery",
+              "nexus_bootstrap_sha256_mismatch",
+              "/v1/system/nexus",
+              "/v1/system/nexus/apply",
           ]
           required_edge = [
               "updates",
@@ -95,9 +104,18 @@ jobs:
           worker_bytes = pathlib.Path("windows/bcp_telegram_observability.py").read_bytes()
           import hashlib
           assert companion["schema"] == "bcp.telegram_companion_release/1"
-          assert companion["minimum_server_version"] == "0.6.2"
+          assert companion["minimum_server_version"] == "0.6.3"
           assert companion["sha256"] == hashlib.sha256(worker_bytes).hexdigest()
           assert companion["url"].startswith("https://raw.githubusercontent.com/Terminator364/BCP/")
+          nexus = __import__("json").loads(pathlib.Path("release/nexus_bootstrap.json").read_text(encoding="utf-8"))
+          assert nexus["schema"] == "bcp.nexus_bootstrap_release/1"
+          assert nexus["minimum_server_version"] == "0.6.3"
+          assert nexus["auto_stage"] is True and nexus["auto_launch_once"] is True and nexus["zero_usd"] is True
+          for item in nexus["files"]:
+              p = pathlib.Path(item["path"])
+              assert p.is_file(), item["path"]
+              assert item["sha256"] == hashlib.sha256(p.read_bytes()).hexdigest(), item["path"]
+              assert item["url"].startswith("https://raw.githubusercontent.com/Terminator364/BCP/")
           assert "autoPromoteServerIfNeeded" in client
           assert "updates.check()" in pathlib.Path(
               "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
