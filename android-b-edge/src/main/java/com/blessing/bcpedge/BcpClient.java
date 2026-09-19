@@ -130,6 +130,8 @@ public final class BcpClient {
             try {
                 JSONObject h = requestJson("GET", savedServer + "/health", null, null, null, 1200, 1500);
                 if (h.optBoolean("ok")) {
+                    String fp = h.optString("identity_fingerprint", "");
+                    if (!fp.isEmpty()) prefs.edit().putString("confirmed_pc_fingerprint", fp).apply();
                     progress.onStage("CONNECTED", "PC retrouvé automatiquement");
                     telemetry.add("RECONNECT_PASS", savedServer);
                     heartbeat("RECONNECT_PASS");
@@ -144,19 +146,68 @@ public final class BcpClient {
 
         progress.onStage("DISCOVERY", "Recherche automatique du PC sur le Wi-Fi");
         telemetry.add("DISCOVERY_START", null);
-        String server = discoverLan(progress);
-        if (server == null) {
+        JSONObject candidate = discoverLan(progress);
+        if (candidate == null) {
             telemetry.add("PC_NOT_FOUND", null);
             throw new IOException("PC_NOT_FOUND");
         }
 
-        progress.onStage("PC_FOUND", server);
-        telemetry.add("PC_DISCOVERED", server);
+        String server = candidate.getString("server");
+        String pcName = candidate.optString("pc_name", "BCP PC");
+        String fingerprint = candidate.optString("identity_fingerprint", "");
+        String version = candidate.optString("version", "");
 
+        progress.onStage("PC_FOUND", pcName);
+        telemetry.add("PC_DISCOVERED", pcName + "@" + server);
+
+        String confirmed = prefs.getString("confirmed_pc_fingerprint", "");
+        if (getToken().isEmpty() && (confirmed.isEmpty() ||
+                (!fingerprint.isEmpty() && !fingerprint.equals(confirmed)))) {
+            prefs.edit()
+                    .putString("pending_pair_server", server)
+                    .putString("pending_pair_pc_name", pcName)
+                    .putString("pending_pair_fingerprint", fingerprint)
+                    .putString("pending_pair_version", version)
+                    .apply();
+            telemetry.add("PAIRING_CONFIRM_REQUIRED",
+                    pcName + (fingerprint.isEmpty() ? "" : "#" + fingerprint));
+            throw new IOException("PAIR_CONFIRM_REQUIRED");
+        }
+
+        return pairServer(server, fingerprint, progress);
+    }
+
+    public JSONObject pendingPairingInfo() throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("server", prefs.getString("pending_pair_server", ""));
+        o.put("pc_name", prefs.getString("pending_pair_pc_name", "BCP PC"));
+        o.put("identity_fingerprint", prefs.getString("pending_pair_fingerprint", ""));
+        o.put("version", prefs.getString("pending_pair_version", ""));
+        return o;
+    }
+
+    public JSONObject confirmPendingPairing(Progress progress) throws Exception {
+        String server = prefs.getString("pending_pair_server", "");
+        String fingerprint = prefs.getString("pending_pair_fingerprint", "");
+        if (server.isEmpty()) throw new IOException("PAIRING_CANDIDATE_MISSING");
+        if (!fingerprint.isEmpty()) {
+            prefs.edit().putString("confirmed_pc_fingerprint", fingerprint).apply();
+        } else {
+            // Legacy bootstrap: bind confirmation to the discovered endpoint until
+            // the server upgrades and exposes its stable identity fingerprint.
+            prefs.edit().putString("confirmed_pc_fingerprint", "legacy:" + server).apply();
+        }
+        return pairServer(server, fingerprint, progress);
+    }
+
+    private JSONObject pairServer(String server, String fingerprint, Progress progress) throws Exception {
         JSONObject pairBody = new JSONObject();
         pairBody.put("device_name", Build.MANUFACTURER + " " + Build.MODEL);
         pairBody.put("edge_version", EDGE_VERSION);
         pairBody.put("project", PROJECT);
+        if (fingerprint != null && !fingerprint.isEmpty()) {
+            pairBody.put("identity_fingerprint", fingerprint);
+        }
 
         progress.onStage("PAIRING", "Appairage sécurisé local");
         telemetry.add("PAIRING_STARTED", server);
@@ -165,17 +216,30 @@ public final class BcpClient {
 
         String token = pair.optString("token", "");
         if (token.isEmpty()) {
-            telemetry.add("PAIRING_FAIL", pair.toString());
+            telemetry.add("PAIRING_FAIL", pair.optString("error", "PAIRING_FAILED"));
             throw new IOException("PAIRING_FAILED");
         }
 
         credentials.putToken(token);
-        prefs.edit().putString("server", server).apply();
+        String returnedFingerprint = pair.optString("identity_fingerprint", "");
+        SharedPreferences.Editor ed = prefs.edit()
+                .putString("server", server)
+                .remove("pending_pair_server")
+                .remove("pending_pair_pc_name")
+                .remove("pending_pair_fingerprint")
+                .remove("pending_pair_version");
+        if (!returnedFingerprint.isEmpty()) {
+            ed.putString("confirmed_pc_fingerprint", returnedFingerprint);
+        }
+        ed.apply();
+
         telemetry.add("PAIRING_PASS", server);
         progress.onStage("CONNECTED", "Appairé à " + pair.optString("pc_name", "BCP PC"));
         heartbeat("PAIRING_PASS");
         JSONObject promoted = autoPromoteServerIfNeeded(progress);
         if (promoted != null) {
+            String fp = promoted.optString("identity_fingerprint", "");
+            if (!fp.isEmpty()) prefs.edit().putString("confirmed_pc_fingerprint", fp).apply();
             JSONObject safe = new JSONObject();
             safe.put("paired", true);
             safe.put("pc_name", promoted.optString("pc_name", pair.optString("pc_name", "BCP PC")));
@@ -187,7 +251,7 @@ public final class BcpClient {
         return publicPairStatus(pair);
     }
 
-    private String discoverLan(Progress progress) throws Exception {
+    private JSONObject discoverLan(Progress progress) throws Exception {
         String ip = localIpv4();
         if (ip == null) throw new IOException("NO_LAN_IPV4");
         String[] p = ip.split("\\.");
@@ -206,28 +270,35 @@ public final class BcpClient {
                     JSONObject h = requestJson("GET", base + "/health", null,
                             null, null, 280, 450);
                     if (h.optBoolean("ok") && h.optString("service", "").startsWith("BCP")) {
-                        return base;
+                        JSONObject found = new JSONObject();
+                        found.put("server", base);
+                        found.put("pc_name", h.optString("pc_name", "BCP PC"));
+                        found.put("version", h.optString("version", ""));
+                        found.put("identity_fingerprint",
+                                h.optString("identity_fingerprint", ""));
+                        return found.toString();
                     }
                 } catch (Exception ignored) {}
                 return null;
             }));
         }
 
-        String found = null;
+        JSONObject found = null;
         try {
             int total = futures.size();
             long deadline = System.currentTimeMillis() + 6500;
             for (int i = 0; i < total && System.currentTimeMillis() < deadline; i++) {
                 Future<String> f = cs.poll(450, TimeUnit.MILLISECONDS);
                 if (f == null) continue;
-                String s = f.get();
-                if (s != null) { found = s; break; }
+                String raw = f.get();
+                if (raw != null) { found = new JSONObject(raw); break; }
             }
         } finally {
             for (Future<String> f : futures) f.cancel(true);
             pool.shutdownNow();
         }
-        if (found != null) progress.onStage("DISCOVERY_PASS", found);
+        if (found != null) progress.onStage("DISCOVERY_PASS",
+                found.optString("pc_name", found.optString("server", "")));
         return found;
     }
 
