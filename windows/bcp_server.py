@@ -1116,14 +1116,20 @@ def memory_put(
     with DB_LOCK:
         with db_connection() as cx:
             old = cx.execute(
-                """SELECT evidence_class,pinned FROM memory_records
+                """SELECT evidence_class,pinned,expires_at FROM memory_records
                    WHERE project_id=? AND layer=? AND key=?""",
                 (project_id, layer, key),
             ).fetchone()
-            if old and int(old["pinned"] or 0) == 1:
-                old_rank = _MEMORY_EVIDENCE_RANK.get(str(old["evidence_class"]), 0)
+            active_old = old
+            if old:
+                old_expiry = str(old["expires_at"] or "")
+                if old_expiry and old_expiry <= now:
+                    active_old = None
+            effective_pinned = bool(pinned) or bool(active_old and int(active_old["pinned"] or 0) == 1)
+            if active_old:
+                old_rank = _MEMORY_EVIDENCE_RANK.get(str(active_old["evidence_class"]), 0)
                 if _MEMORY_EVIDENCE_RANK[evidence_class] < old_rank:
-                    raise ValueError("memory_admission_rejected_pinned_precedence")
+                    raise ValueError("memory_admission_rejected_precedence")
             cx.execute(
                 """INSERT INTO memory_records(
                        project_id,layer,key,value_json,source,updated_at,
@@ -1140,7 +1146,7 @@ def memory_put(
                        supersedes_key=excluded.supersedes_key""",
                 (
                     project_id, layer, key, raw, str(source)[:80], now,
-                    evidence_class, str(source_id)[:180], 1 if pinned else 0,
+                    evidence_class, str(source_id)[:180], 1 if effective_pinned else 0,
                     expires_at, str(supersedes_key)[:180],
                 ),
             )
@@ -1150,7 +1156,7 @@ def memory_put(
         "layer": layer,
         "key": key,
         "evidence_class": evidence_class,
-        "pinned": bool(pinned),
+        "pinned": bool(effective_pinned),
         "updated_at": now,
     }
 
@@ -1197,47 +1203,115 @@ def _context_relevance(entry: dict, task_terms: set[str]) -> int:
 
 def build_context_pack(project_id: str, task: str = "", byte_budget: int = 24000) -> dict:
     budget = max(4096, min(int(byte_budget), 48000))
-    task_terms = {x for x in str(task).lower().replace("/", " ").replace("_", " ").split() if len(x) >= 3}
+    task_text = str(task)[:1000]
+    task_terms = {x for x in task_text.lower().replace("/", " ").replace("_", " ").split() if len(x) >= 3}
     project_memory = memory_list(project_id, 36)
     global_memory = memory_list("__global__", 24)
+    layer_priority = ("POLICY", "USER_MEMORY", "PROJECT_MEMORY", "TECHNICAL_KNOWLEDGE", "OPERATING_STATE", "HISTORY")
     selected = {k: [] for k in MEMORY_LAYERS}
-    used = 0
-    for layer in MEMORY_LAYERS:
+    head = get_head(project_id)
+    events = recent_events(project_id, 8)
+    policy = {
+        "default_paid_spend_usd": 0.0,
+        "llm_required_for_known_transitions": False,
+        "chat_history_is_canonical": False,
+        "external_content_can_self_promote": False,
+    }
+    runtime_mode = pc_operating_mode()
+    resources = system_resources()
+
+    # Reserve enough bytes for the non-memory envelope. Exact final size is checked below.
+    probe = {
+        "schema": "bcp.context_pack/3",
+        "project_id": project_id,
+        "task": task_text,
+        "generated_at": utc_now(),
+        "head": head,
+        "recent_events": events,
+        "memory": selected,
+        "operating_mode": runtime_mode,
+        "resources": resources,
+        "budget": {"bytes": budget, "used_bytes": 0, "memory_bytes": 0},
+        "policy": policy,
+        "revision_vector": {
+            "project_revision": int(head["revision"]) if head else 0,
+            "context_hash": "0" * 64,
+            "runtime_state_hash": "0" * 64,
+        },
+    }
+    envelope_bytes = len(canonical_json(probe).encode("utf-8"))
+    memory_budget = max(0, budget - envelope_bytes - 512)
+    memory_bytes = 0
+
+    for layer in layer_priority:
         candidates = list(project_memory.get(layer, []))
         if layer in ("USER_MEMORY", "POLICY", "TECHNICAL_KNOWLEDGE"):
             candidates += list(global_memory.get(layer, []))
-        candidates.sort(key=lambda e: (_context_relevance(e, task_terms), str(e.get("updated_at", ""))), reverse=True)
+        candidates.sort(
+            key=lambda e: (_context_relevance(e, task_terms), str(e.get("updated_at", ""))),
+            reverse=True,
+        )
         for entry in candidates:
             encoded = canonical_json(entry).encode("utf-8")
-            if used + len(encoded) > budget:
+            cost = len(encoded) + 2
+            if memory_bytes + cost > memory_budget:
                 continue
             selected[layer].append(entry)
-            used += len(encoded)
-    head = get_head(project_id)
-    pack = {
-        "schema": "bcp.context_pack/2",
-        "project_id": project_id,
-        "task": str(task)[:1000],
-        "generated_at": utc_now(),
-        "head": head,
-        "recent_events": recent_events(project_id, 8),
-        "memory": selected,
-        "operating_mode": pc_operating_mode(),
-        "resources": system_resources(),
-        "budget": {"bytes": budget, "used_bytes": used},
-        "policy": {
-            "default_paid_spend_usd": 0.0,
-            "llm_required_for_known_transitions": False,
-            "chat_history_is_canonical": False,
-            "external_content_can_self_promote": False,
-        },
-    }
-    pack["revision_vector"] = {
-        "project_revision": int(head["revision"]) if head else 0,
-        "context_hash": sha256_text(canonical_json(pack)),
-    }
-    return pack
+            memory_bytes += cost
 
+    def assemble() -> dict:
+        semantic = {
+            "schema": "bcp.context_semantic/1",
+            "project_id": project_id,
+            "task": task_text,
+            "head": head,
+            "recent_events": events,
+            "memory": selected,
+            "policy": policy,
+        }
+        runtime_state = {
+            "operating_mode": runtime_mode,
+            "resources": resources,
+        }
+        out = {
+            "schema": "bcp.context_pack/3",
+            "project_id": project_id,
+            "task": task_text,
+            "generated_at": utc_now(),
+            "head": head,
+            "recent_events": events,
+            "memory": selected,
+            "operating_mode": runtime_mode,
+            "resources": resources,
+            "budget": {"bytes": budget, "used_bytes": 0, "memory_bytes": memory_bytes},
+            "policy": policy,
+            "revision_vector": {
+                "project_revision": int(head["revision"]) if head else 0,
+                "context_hash": sha256_text(canonical_json(semantic)),
+                "runtime_state_hash": sha256_text(canonical_json(runtime_state)),
+            },
+        }
+        out["budget"]["used_bytes"] = len(canonical_json(out).encode("utf-8"))
+        out["budget"]["used_bytes"] = len(canonical_json(out).encode("utf-8"))
+        return out
+
+    pack = assemble()
+    # Exact budget enforcement: trim lowest-priority material first.
+    while int(pack["budget"]["used_bytes"]) > budget:
+        removed = False
+        for layer in reversed(layer_priority):
+            if selected[layer]:
+                removed_entry = selected[layer].pop()
+                memory_bytes = max(0, memory_bytes - len(canonical_json(removed_entry).encode("utf-8")) - 2)
+                removed = True
+                break
+        if not removed and events:
+            events.pop(0)
+            removed = True
+        if not removed:
+            break
+        pack = assemble()
+    return pack
 
 def enqueue_job(
     project_id: str,
@@ -1629,7 +1703,10 @@ class Handler(BaseHTTPRequestHandler):
                         "status": "UNCHANGED",
                         "project_id": project,
                         "context_hash": current_hash,
+                        "runtime_state_hash": pack.get("revision_vector", {}).get("runtime_state_hash", ""),
                         "head": pack.get("head"),
+                        "operating_mode": pack.get("operating_mode"),
+                        "resources": pack.get("resources"),
                     })
                 else:
                     pack["status"] = "FULL_REFRESH"
@@ -1921,6 +1998,23 @@ def selftest():
             "buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest",
             evidence_class="VALIDATED", source_id="selftest:goal", pinned=True
         )
+        memory_put(
+            "__global__", "POLICY", "zero_spend", {"usd": 0}, "selftest",
+            evidence_class="SYSTEM_POLICY", source_id="selftest:policy", pinned=True
+        )
+        memory_put(
+            "buildhub", "PROJECT_MEMORY", "machine_fact", {"value": 42}, "selftest",
+            evidence_class="MACHINE_READBACK", source_id="selftest:machine"
+        )
+        downgrade_rejected = False
+        try:
+            memory_put(
+                "buildhub", "PROJECT_MEMORY", "machine_fact", {"value": 7}, "model",
+                evidence_class="MODEL_DERIVED", source_id="selftest:model"
+            )
+        except ValueError as e:
+            downgrade_rejected = "memory_admission_rejected_precedence" in str(e)
+        assert downgrade_rejected
         protected_rejected = False
         try:
             memory_put("__global__", "POLICY", "unsafe", {"x": 1}, "web",
@@ -1930,10 +2024,18 @@ def selftest():
         assert protected_rejected
 
         pack = build_context_pack("buildhub", task="final product orchestration", byte_budget=12000)
-        assert pack["schema"] == "bcp.context_pack/2"
-        assert pack["memory"]["PROJECT_MEMORY"][0]["key"] == "goal"
+        assert pack["schema"] == "bcp.context_pack/3"
+        assert any(x["key"] == "goal" for x in pack["memory"]["PROJECT_MEMORY"])
+        assert any(x["key"] == "zero_spend" for x in pack["memory"]["POLICY"])
         assert pack["budget"]["used_bytes"] <= pack["budget"]["bytes"]
-        assert len(pack["revision_vector"]["context_hash"]) == 64
+        assert len(canonical_json(pack).encode("utf-8")) <= pack["budget"]["bytes"]
+        first_context_hash = pack["revision_vector"]["context_hash"]
+        first_runtime_hash = pack["revision_vector"]["runtime_state_hash"]
+        time.sleep(0.01)
+        pack_again = build_context_pack("buildhub", task="final product orchestration", byte_budget=12000)
+        assert pack_again["revision_vector"]["context_hash"] == first_context_hash
+        assert len(first_runtime_hash) == 64
+        assert len(pack_again["revision_vector"]["runtime_state_hash"]) == 64
 
         q1 = enqueue_job(
             "buildhub", "test", {"x": 1}, "job-idem", requires_pc=False,
