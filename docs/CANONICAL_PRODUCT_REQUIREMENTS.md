@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R4
+Revision: 2026-09-19-R5
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -611,3 +611,26 @@ ChatGPT visibility is evidence-based:
 Never claim access to hidden chain-of-thought or OpenAI internal verification progress.
 
 Canonical design: `docs/TELEGRAM_OBSERVABILITY_MVP.md`.
+
+## P0/P1 — Telegram read-only observability control plane
+
+This is an additive refinement under SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE. It does not retire the Windows/B-EDGE field, durability, synchronized-release, Context Fabric, writer-fence, secret-handling or zero-spend requirements above.
+
+Current priority is to field a read-only Telegram cockpit before complex AI-agent control.
+
+MVP-0 MUST:
+- expose /status, /project <id>, /job <code>, /last, /ci and /holds;
+- aggregate only machine-readable or externally observable truth from BCP runtime, B-EDGE/PC telemetry, GitHub commits/branches/PR/Actions, BuildHub receipts, Drive receipts/checkpoints, Mission Event Journal and Model Broker state when those sources are actually accessible;
+- represent missing sources as NOT_OBSERVED/UNKNOWN rather than inventing progress;
+- use ChatGPT states OBSERVED_CHAT_ACTION, CHAT_WAITING, CHAT_PLATFORM_HOLD_REPORTED and UNKNOWN_INTERNAL_CHAT_STATE only from supported external evidence;
+- never claim access to hidden chain-of-thought, internal OpenAI verification progress or other inaccessible ChatGPT internals;
+- preserve DEFAULT_PAID_SPEND=0 USD and never auto-enable billing;
+- keep the Telegram bot token in local secret storage only; it MUST NOT be committed, synced to Drive, printed in status, or requested through ChatGPT;
+- allowlist one explicitly approved private Telegram chat for initial deployment;
+- remain read-only: mutating Telegram commands are refused until a later separately qualified stage;
+- use lightweight long polling/event-driven observation with bounded retry/backoff, small payloads and bounded cache; no aggressive polling or heavy always-on framework;
+- preserve the repository Git single-writer fence for every future Telegram-triggered mutation.
+
+Field promotion requires a normal-network Kinshasa smoke test without VPN, false country data or unofficial relay: official Bot API getMe succeeds, the user's private message is observed, sendMessage succeeds, and /status returns a truthful evidence-based response. Documentation alone is not FIELD proof.
+
+MVP-1 through MVP-4 remain future gated increments: durable Mission Event Journal integration; mission normalization/explicit action selection; short mission locator and BCPGO <code>; then Model Broker routing only through RDC field-qualified zero-cost providers.
