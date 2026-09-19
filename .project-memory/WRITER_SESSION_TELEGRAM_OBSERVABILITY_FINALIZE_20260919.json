@@ -1,0 +1,18 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "BCPGO_TELEGRAM_OBSERVABILITY_FINALIZE_STATE_20260919",
+  "project_or_mission": "API/BCP Telegram Observability post-integration state finalization",
+  "base_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
+  "created_at": "2026-09-19T10:55:00+01:00",
+  "work_branch": "work/bcp/telegram-observability-finalize-state-20260919",
+  "intended_file_scope": [
+    ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json",
+    "project_state.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Telegram Observability Qualification"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_head_reread": true,
+  "zero_usd": true
+}
