@@ -110,6 +110,31 @@ def event_key(event: dict) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def system_presence_cards(path: Path) -> dict[str, dict]:
+    root = read_json(path, {}) or {}
+    cards = root.get("cards") if isinstance(root, dict) else None
+    if not isinstance(cards, dict):
+        return {}
+    return {str(k): v for k, v in cards.items() if isinstance(v, dict)}
+
+
+def persist_system_presence_card(path: Path, card_key: str, record: dict,
+                                 limit: int = 24) -> None:
+    cards = system_presence_cards(path)
+    cards[str(card_key)] = dict(record)
+    ordered = sorted(
+        cards.items(),
+        key=lambda item: str((item[1] or {}).get("updated_at") or ""),
+    )
+    keep = max(1, min(int(limit), 64))
+    cards = dict(ordered[-keep:])
+    atomic_json(path, {
+        "schema": "bcp.telegram_system_presence/3",
+        "cards": cards,
+        "updated_at": utc_now(),
+    })
+
+
 def append_log(event: str, **fields: Any) -> None:
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     if LOG_PATH.exists() and LOG_PATH.stat().st_size > 2_000_000:
@@ -401,6 +426,17 @@ class Service:
         return str(seconds // 3600) + " h " + str((seconds % 3600) // 60) + " min"
 
     @staticmethod
+    def _mission_card_key(ev: dict, project_id: str) -> str:
+        project = clean(ev.get("project_id") or ev.get("project") or project_id, 96)
+        identity = clean(
+            ev.get("mission_id") or ev.get("job_code") or ev.get("job_id") or
+            ev.get("mission_key") or "project-current",
+            128,
+        )
+        digest = hashlib.sha256((project + "::" + identity).encode("utf-8")).hexdigest()[:24]
+        return "mission:" + digest
+
+    @staticmethod
     def _last_completed_action(events: list[dict], current: dict) -> str:
         completed = {"COMMITTED", "CHECKPOINTED", "DONE"}
         for item in reversed(events):
@@ -481,6 +517,7 @@ class Service:
             if not e.get("project_id") or str(e.get("project_id")) == self.project_id
         ]
         ev = events[-1] if events else {}
+        mission_card_key = self._mission_card_key(ev, self.project_id)
         mission_state = str(ev.get("state") or "NOT_OBSERVED").upper()
         action = clean(
             ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
@@ -547,6 +584,7 @@ class Service:
             "mission_action": action,
             "mission_next": next_action,
             "mission_step": step_key,
+            "mission_card_key": mission_card_key,
             "activity_band": activity_band,
             "human_gate": human_gate,
             "evidence_time": evidence_time,
@@ -1049,7 +1087,11 @@ class Telegram:
             return
         snap = self.service.presence_snapshot()
         path = self.service.local.state / SYSTEM_PRESENCE_PATH.name
-        prior = read_json(path, {}) or {}
+        card_key = str((snap.get("snapshot") or {}).get("mission_card_key") or "")
+        if not card_key:
+            raise RuntimeError("MISSION_CARD_KEY_MISSING")
+        cards = system_presence_cards(path)
+        prior = cards.get(card_key) or {}
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
         message_id = prior.get("message_id")
@@ -1061,8 +1103,7 @@ class Telegram:
                 updated = False
         if not updated:
             message_id = self.send(str(snap["text"]))
-        atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/2",
+        persist_system_presence_card(path, card_key, {
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "DIRECT_TELEGRAM",
@@ -1237,16 +1278,19 @@ class Nexus:
             return
         snap = self.service.presence_snapshot()
         path = self.service.local.state / SYSTEM_PRESENCE_PATH.name
-        prior = read_json(path, {}) or {}
+        card_key = str((snap.get("snapshot") or {}).get("mission_card_key") or "")
+        if not card_key:
+            raise RuntimeError("MISSION_CARD_KEY_MISSING")
+        cards = system_presence_cards(path)
+        prior = cards.get(card_key) or {}
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
-        self.live_card(str(snap["text"]), "mission:" + self.service.project_id)
-        atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/2",
+        self.live_card(str(snap["text"]), card_key)
+        persist_system_presence_card(path, card_key, {
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "NEXUS",
-            "card_key": "mission:" + self.service.project_id,
+            "card_key": card_key,
         })
 
     def run(self) -> int:
@@ -1422,6 +1466,26 @@ def selftest() -> int:
         assert "étape enregistrée" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Missions récentes" in svc.missions()
+        key_a = Service._mission_card_key(
+            {"project_id": "API/BCP", "mission_id": "mission-a"}, "API/BCP"
+        )
+        key_b = Service._mission_card_key(
+            {"project_id": "API/BCP", "mission_id": "mission-b"}, "API/BCP"
+        )
+        assert key_a != key_b
+        assert presence["snapshot"]["mission_card_key"].startswith("mission:")
+        card_state = root / "state" / "card-state-test.json"
+        persist_system_presence_card(card_state, key_a, {
+            "fingerprint": "a", "updated_at": "2026-09-19T00:00:01+00:00",
+            "transport": "TEST",
+        })
+        persist_system_presence_card(card_state, key_b, {
+            "fingerprint": "b", "updated_at": "2026-09-19T00:00:02+00:00",
+            "transport": "TEST",
+        })
+        persisted_cards = system_presence_cards(card_state)
+        assert persisted_cards[key_a]["fingerprint"] == "a"
+        assert persisted_cards[key_b]["fingerprint"] == "b"
         assert "Lecture seule" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
