@@ -45,7 +45,7 @@ jobs:
           db = sqlite3.connect(":memory:")
           db.executescript(sql)
           names = {r[0] for r in db.execute("select name from sqlite_master where type='table'")}
-          assert {"commands", "replies", "outbound", "live_cards"} <= names, names
+          assert {"commands", "replies", "outbound", "live_cards", "reports"} <= names, names
           print("BCP_NEXUS_D1_SCHEMA=PASS")
       - name: Security and transport guards
         shell: python
@@ -55,7 +55,7 @@ jobs:
           client = pathlib.Path("windows/bcp_telegram_observability.py").read_text(encoding="utf-8")
           joined = worker + "\n" + client
           for value in [
-              "/telegram/webhook", "/v1/device/commands", "/v1/device/reply", "/v1/device/push", "/v1/device/live-card",
+              "/telegram/webhook", "/v1/device/commands", "/v1/device/reply", "/v1/device/push", "/v1/device/live-card", "/v1/device/report",
               "TELEGRAM_WEBHOOK_SECRET", "BCP_DEVICE_TOKEN", "ALLOWED_CHAT_ID",
               "X-BCP-Device-ID", "NEXUS", "DIRECT_TELEGRAM", "idempotency_key",
           ]:
@@ -63,6 +63,14 @@ jobs:
           assert not re.search(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b", joined)
           assert "x-telegram-bot-api-secret-token" in worker.lower()
           assert "editMessageText" in worker
+          assert "callback_query" in worker
+          assert "answerCallbackQuery" in worker
+          assert "sendDocument" in worker
+          assert "inline_keyboard" in worker
+          assert "bcp:pdf:summary" in worker
+          assert "bcp:pdf:technical" in worker
+          assert "reports" in worker
+          assert 'version: "0.1.5"' in worker
           assert "live_cards" in worker
           assert "https://" in client
           print("BCP_NEXUS_SECURITY_CONTRACT=PASS")
