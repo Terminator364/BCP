@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R5
+Revision: 2026-09-19-R6
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -709,3 +709,36 @@ A future ChatGPT-visible-state observer may record only states exposed by the us
 
 Canonical detailed architecture:
 `docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md`.
+
+
+## P0/P1A — Correct field topology and transport independence
+
+The canonical field topology is:
+- PC-WORKER: home Wi-Fi primary.
+- B-EDGE dedicated old Android phone: same home Wi-Fi primary; no cellular fallback is assumed.
+- Current daily phone: may use Wi-Fi or mobile data, but MUST NOT be required as an always-on BCP relay.
+
+Telegram delivery MUST NOT depend on direct PC access to api.telegram.org. The system SHALL support a transport abstraction with:
+- LOCAL_LAN_OUTBOX;
+- DIRECT_TELEGRAM when healthy;
+- NEXUS_WEBHOOK/HTTPS relay after zero-cost field qualification;
+- offline store-and-forward.
+
+If direct Telegram egress fails, local BCP work continues and only the remote cockpit is degraded.
+
+The current phone's mobile data is a user-access path, not infrastructure capacity.
+
+## P0/P1A — Automatic qualified update plane
+
+Routine BCP/PC/B-EDGE upgrades MUST converge toward zero-manual distribution:
+- CI builds and qualifies coordinated artifacts;
+- a compact CURRENT manifest carries version, compatibility, source revision, hashes/signature identity, artifact location and rollback metadata;
+- unchanged manifests cause no artifact download;
+- PC stages, verifies, applies, health-checks and automatically rolls back on failure;
+- B-EDGE checks updates through WorkManager/reconnect-triggered work on allowed Wi-Fi, downloads only changed APKs to app-owned cache, verifies them, and requests only the unavoidable Android package-install approval;
+- successful install/update emits machine-readable receipts and removes temporary payloads;
+- Drive CURRENT is replaced in place only after qualification and bounded rollback history is preserved;
+- no ChatGPT scheduled automation is part of the update plane.
+
+Canonical design:
+`docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.

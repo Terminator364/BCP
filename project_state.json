@@ -63,7 +63,8 @@
     "git_writer_lease_policy": ".project-memory/GIT_WRITER_LEASE_POLICY.json",
     "telegram_observability_mvp": "docs/TELEGRAM_OBSERVABILITY_MVP.md",
     "telegram_observability_setup": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
-    "rdc_network_data_saver": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+    "rdc_network_data_saver": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
+    "home_wifi_edge_nexus_autoupdate": "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -114,7 +115,8 @@
     "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
     ".project-memory/GIT_WRITER_LEASE_POLICY.json",
     "docs/TELEGRAM_OBSERVABILITY_MVP.md",
-    "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+    "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
+    "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -134,7 +136,10 @@
     "P0_git_single_writer_integration_fence": true,
     "P1A_telegram_read_only_observability_mvp": true,
     "P0_rdc_data_saver_network_resilience": true,
-    "P0_progress_presence_during_chat_uncertainty": true
+    "P0_progress_presence_during_chat_uncertainty": true,
+    "P0_correct_home_wifi_topology": true,
+    "P1A_nexus_webhook_transport": true,
+    "P0_qualified_automatic_update_plane": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -671,9 +676,11 @@
     "installer_receipt_status": "LATE_RECEIPT_HASH_BUG_FIXED_IN_MAIN_PR26",
     "transport_decision": {
       "pc_default": "HOME_WIFI",
-      "direct_pc_telegram_home_wifi": "TCP_443_TIMEOUT",
-      "mobile_data_policy": "SELECTIVE_CONTROL_PLANE_FALLBACK_ONLY",
-      "preferred_next_transport": "B_EDGE_TELEGRAM_RELAY_WITH_LOCAL_AUTHENTICATED_PC_CHANNEL",
+      "b_edge_default": "HOME_WIFI_NO_CELLULAR_ASSUMPTION",
+      "current_phone_role": "HUMAN_CLIENT_WIFI_OR_MOBILE_NOT_RELAY",
+      "direct_pc_telegram_home_wifi": "DEGRADED_TIMEOUT_FIELD_OBSERVED",
+      "preferred_next_transport": "BCP_NEXUS_WEBHOOK_PLUS_LOCAL_PC_BEDGE_LAN",
+      "offline_fallback": "LOCAL_DURABLE_OUTBOX",
       "full_pc_hotspot_default": false
     },
     "progress_presence_target": {
@@ -718,5 +725,25 @@
       "modified_at": "2026-09-19T12:51:29.374Z"
     },
     "local_runtime_activation": "PENDING_REFRESH_FROM_PUBLISHED_PACKAGE"
+  },
+  "network_topology": {
+    "pc_worker": "HOME_WIFI_PRIMARY",
+    "b_edge_old_phone": "HOME_WIFI_PRIMARY_NO_CELLULAR_ASSUMPTION",
+    "current_phone": "HUMAN_CLIENT_WIFI_OR_MOBILE_NOT_INFRA_RELAY",
+    "telegram_direct_pc": "DEGRADED_ON_HOME_WIFI_FIELD_OBSERVED",
+    "preferred_remote_control_transport": "ZERO_USD_BCP_NEXUS_HTTPS_WEBHOOK_AFTER_FIELD_QUALIFICATION",
+    "local_control_transport": "AUTHENTICATED_PC_BEDGE_LAN",
+    "offline_behavior": "DURABLE_STORE_AND_FORWARD"
+  },
+  "automatic_update_target": {
+    "status": "REQUIREMENT_DEFINED_IMPLEMENTATION_PENDING",
+    "trigger": "QUALIFIED_RELEASE_EVENT_NOT_CHATGPT_SCHEDULED_AUTOMATION",
+    "current_manifest": true,
+    "pc_staged_verify_health_rollback": true,
+    "b_edge_wifi_only_download": true,
+    "android_final_install_confirmation_may_be_required": true,
+    "drive_replace_current_in_place": true,
+    "unchanged_version_zero_download": true,
+    "zero_usd": true
   }
 }

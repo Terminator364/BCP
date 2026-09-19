@@ -159,3 +159,20 @@ It must show:
 Technical fields remain available behind `/details`.
 
 This preserves evidence-first truthfulness while keeping Git SHA, branch/fence details and raw telemetry out of the user's normal view.
+
+
+## Home-WiFi topology correction and webhook target
+
+Field topology is now explicit:
+- PC-WORKER stays on home Wi-Fi.
+- B-EDGE old phone also stays on the same home Wi-Fi and is not assumed to have cellular data.
+- The user's current phone may use Wi-Fi or mobile data but is not an infrastructure relay.
+
+Because Telegram documents getUpdates and webhook delivery as mutually exclusive receiver modes, the steady-state design SHOULD migrate from competing long-poll consumers to one webhook-backed BCP Nexus ingress after field qualification. Local PC/B-EDGE work continues through durable LAN state/outbox even when the remote Telegram path is unavailable.
+
+The current read-only Telegram worker remains a valid fallback/diagnostic component until Nexus is qualified. A 409 getUpdates conflict is ownership/configuration conflict and MUST NOT trigger an unbounded retry loop.
+
+Automatic product updates are event-driven from qualified release metadata; they do not use ChatGPT scheduled automations.
+
+Canonical transport/update design:
+`docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
