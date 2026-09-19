@@ -125,8 +125,14 @@ jobs:
           if ($raw -notmatch ('SERVER_VERSION = "' + [regex]::Escape([string]$release.version) + '"')) {
             throw "release/server.json version does not match server source"
           }
-          if ($release.auto_update -ne $true -or $release.rollback_on_health_failure -ne $true) {
-            throw "server release safety flags are not enabled"
+          if ($release.rollback_on_health_failure -ne $true) {
+            throw "server rollback safety flag is not enabled"
+          }
+          if ([string]$release.channel -eq 'stable' -and $release.auto_update -ne $true) {
+            throw "stable server release must enable auto_update"
+          }
+          if ([string]$release.channel -eq 'candidate' -and $release.auto_update -ne $false) {
+            throw "candidate server release must keep auto_update disabled until promotion"
           }
 
   install-e2e-sandbox:
