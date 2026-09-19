@@ -57,8 +57,16 @@ jobs:
           PATHS="android-b-edge/src/main/res/xml/file_paths.xml"
 
           grep -F 'applicationId "com.blessing.bcpedge.evergreen"' "$GRADLE" >/dev/null
-          grep -F 'versionCode 110' "$GRADLE" >/dev/null
-          grep -F 'versionName "1.1.0-evergreen"' "$GRADLE" >/dev/null
+          python - <<'PY'
+          import json, pathlib
+          ar=json.loads(pathlib.Path('release/android.json').read_text(encoding='utf-8'))
+          gradle=pathlib.Path('android-b-edge/build.gradle').read_text(encoding='utf-8')
+          client=pathlib.Path('android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java').read_text(encoding='utf-8')
+          code=int(ar['version_code']); name=str(ar['version_name']); core=name.removesuffix('-evergreen')
+          assert f'versionCode {code}' in gradle, 'versionCode drift'
+          assert f'versionName "{name}"' in gradle, 'versionName drift'
+          assert f'private static final String EDGE_VERSION = "{core}";' in client, 'EDGE_VERSION drift'
+          PY
           grep -F 'BCP Edge Evergreen' "$MANIFEST" >/dev/null
           grep -F '0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617' "$UPDATE" >/dev/null
           grep -F '/v1/edge/update' "$UPDATE" >/dev/null
@@ -72,7 +80,6 @@ jobs:
           grep -F 'runQuickAcceptance' "$CLIENT" >/dev/null
           grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
           grep -F 'TEST RAPIDE B-EDGE' "$MAIN" >/dev/null
-          grep -F '1.1.0' "$CLIENT" >/dev/null
           grep -F 'trustedManifest' "$POLICY" >/dev/null
           grep -F 'EdgeOrchestrator' "$CLIENT" >/dev/null
           grep -F 'syncOrchestrationState' "$CLIENT" >/dev/null
@@ -110,7 +117,9 @@ jobs:
           sha256sum "$DEBUG" | tee android-b-edge-debug.apk.sha256
           sha256sum "$RELEASE" | tee android-b-edge-release-unsigned.apk.sha256
           /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$RELEASE" | tee android-b-edge-release.badging.txt
-          grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='110'" android-b-edge-release.badging.txt >/dev/null
+          EXPECTED_CODE=$(python -c "import json; print(json.load(open('release/android.json'))['version_code'])")
+          EXPECTED_NAME=$(python -c "import json; print(json.load(open('release/android.json'))['version_name'])")
+          grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='$EXPECTED_CODE' versionName='$EXPECTED_NAME'" android-b-edge-release.badging.txt >/dev/null
           echo "EDGE_UNSIGNED_RELEASE_CONTRACT=PASS"
 
       - name: Export Android signing verifier tool
