@@ -126,6 +126,28 @@ Before ChatGPT/agent execution, the Context Builder MUST assemble only the relev
 
 When the PC is offline, B-EDGE SHOULD precompute and prepare as much as possible: resolve project state, build work plans, prepare compact context, consult free remote models when policy allows, and queue heavy jobs as `WAITING_FOR_PC`. When the PC returns, it should receive already-prepared bounded work rather than redoing orchestration.
 
+## P0 — Synchronized product release train
+
+Normal user-facing releases MUST be coordinated product increments, not isolated micro-patches.
+
+Except for an explicitly labeled emergency hotfix, a release candidate MUST advance and qualify the coordinated set:
+- Windows/PC BCP runtime and lifecycle;
+- Android B-EDGE application;
+- PC↔B-EDGE protocol compatibility;
+- durable memory/checkpoint/orchestration state;
+- telemetry and machine-readable acceptance evidence;
+- offline/reconnect/reboot recovery;
+- resource-pressure behavior on the 4 GB PC and dedicated Android node;
+- update/rollback and Drive CURRENT distribution.
+
+A user-facing TEST/CURRENT artifact MUST NOT be presented as a meaningful product milestone if it only changes an acceptance harness or one narrow symptom while leaving the synchronized product capabilities unchanged.
+
+Each release candidate MUST publish a coverage manifest mapping implemented/tested capabilities to the current canonical requirements revision. The manifest MUST distinguish IMPLEMENTED, TESTED_STATIC, TESTED_CI, TESTED_DEVICE, FIELD_VERIFIED, DEFERRED and NOT_IMPLEMENTED.
+
+Before publication to Drive CURRENT, PC and Android artifacts MUST be built from compatible pinned revisions and their compatibility contract MUST be tested together. Device tests that can be automated or simulated MUST run before user field testing. User interaction is reserved for irreducible physical gates such as Android package installation, OS confirmation, first trust confirmation, or real-device reboot/sign-in.
+
+The release pipeline SHOULD batch multiple related P0 improvements into a coherent increment so that every user-visible release materially reduces the distance to the final specification.
+
 ## P0 — Environment constraints
 
 Design assumptions:
