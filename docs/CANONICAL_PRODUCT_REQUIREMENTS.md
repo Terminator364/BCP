@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R7
+Revision: 2026-09-19-R8
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -282,19 +282,22 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.7.
+Current synchronized target: **BCP 0.6.1 + B-EDGE 2.0.0-rc1 Evergreen**, requirements revision R8.
 
-BCP 0.4.7 keeps the 0.4.6 field-proof guarantees and adds an authenticated local B-EDGE update relay backed by the canonical Drive installer folder. The server recomputes the APK SHA-256 before exposing release metadata or bytes.
+The preserved BCP 0.6.0 / B-EDGE 2.0.0-rc1 line is field-evidenced: Drive telemetry proves a live Windows BCP 0.6.0 runtime and Drive CURRENT contains the privately signed B-EDGE 2.0.0-rc1 APK. That field-proven line MUST be reconciled with the newer Git writer fence, Nexus/Telegram transport, Progress Presence and `P0_MISSION_AUTONOMY_AND_OBSERVABLE_EXECUTION`; it MUST NOT be replaced by a lower 0.5.x line.
+
+BCP 0.6.1 is the anti-downgrade patch train that combines those lines. The version increment is mandatory because a live 0.6.0 runtime will not consume a different same-version payload through the monotonic managed updater.
 
 Promotion gate:
-- CI qualification PASS;
-- Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.7;
-- `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.7 runtime;
-- B-EDGE telemetry/readback follows.
+- exact-head coordinated CI PASS for Windows, Android, compatibility, CURRENT, Telegram and Nexus;
+- server source/version/hash and installer/acceptance target agree on 0.6.1;
+- the signed B-EDGE CURRENT APK hash/signing identity are pinned and read back;
+- merge occurs only through the Git single-writer fence;
+- the existing managed updater advances the live PC from 0.6.0 to 0.6.1 without downgrade/reinstall;
+- fresh `BCP_RUNTIME_LATEST.json` proves 0.6.1 by timestamp/version/hash;
+- B-EDGE exact-version/readback and mission-journal interruption/recovery evidence follow.
 
-No blind reinstall is allowed merely because telemetry is missing.
+No blind reinstall is allowed merely because telemetry is missing. Existing field-proven 0.6/Edge2 artifacts are preserved until their reconciled successors are proven.
 
 ## P1 — Provider/model broker and autonomous loops
 
@@ -556,7 +559,7 @@ Canonical machine-readable policy:
 
 ## P1A — Telegram mission cockpit and observable long-running work
 
-After the currently active BCP 0.4.7 field-acceptance campaign, accelerate the Telegram/BCP cockpit from a notification-only concept into a mission-control surface.
+The earlier 0.4.7 sequencing gate is superseded by the reconciled 0.6.1/R8 line. Telegram/BCP mission control and observable durable execution are now active P0 requirements and must be qualified together with field continuity rather than postponed behind an obsolete release number.
 
 Target:
 `Telegram -> BCP Mission Intake -> durable MISSION_ENVELOPE -> deterministic engine / Model Broker / workers -> append-only MISSION_EVENT_LOG -> receipts/checkpoints -> Telegram status`.

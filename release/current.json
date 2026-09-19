@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-19-R7",
+  "requirements_revision": "2026-09-19-R8",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
   "update_policy": {
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.5.1",
+      "version": "0.6.1",
       "source_manifest": "release/server.json",
       "qualification": "CI_QUALIFIED",
       "distribution_ready": true,
@@ -22,23 +22,23 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "5d555c86340d0165b2e243955205a8bb5817ea92fa3788ff242db6c43f3c4ca0"
+        "sha256": "7da4dc241f164089db94016c1f4b0a1b92ed409e4cd21fd84d6de44330aab213"
       },
-      "notes": "BCP 0.5.1 adds durable mission acceptance, append-only observable mission events, resumable next-step selection and zero-paid-spend provider admission. Managed self-update remains hash-pinned/self-tested/rollback-capable. Fresh 0.5.1 field readback is still required."
+      "notes": "Field telemetry proves BCP 0.6.0 is currently running. BCP 0.6.1 reconciles that field line with R7 durable mission continuity and is CI-qualified for managed auto-update; fresh 0.6.1 field readback is still required."
     },
     "android_b_edge": {
-      "version": "1.1.0-evergreen",
+      "version": "2.0.0-rc1-evergreen",
       "source_manifest": "release/android.json",
       "qualification": "CI_QUALIFIED",
-      "distribution_ready": false,
+      "distribution_ready": true,
       "field_verified": false,
-      "auto_update_eligible": false,
+      "auto_update_eligible": true,
       "artifact": {
         "transport": "DRIVE_LOCAL_AUTHENTICATED_RELAY",
-        "url": "",
-        "sha256": ""
+        "url": "/v1/edge/update/apk",
+        "sha256": "c1640260cbaafdd92bb69c98f6780b5b03d26ad4bf1553bce393dbaf33c8c389"
       },
-      "notes": "Source, tests and unsigned APK are CI-qualified. Stable signing and populated BCP_EDGE_CURRENT APK/hash remain required before automatic distribution."
+      "notes": "Drive CURRENT contains the privately signed B-EDGE 2.0.0-rc1 APK and its file SHA-256 matches the signed manifest. Exact installation/readback on the dedicated phone remains required before FIELD_VERIFIED."
     },
     "nexus": {
       "version": "0.1.0",
