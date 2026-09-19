@@ -721,32 +721,41 @@ class Service:
 
     def progress_event(self, ev: dict) -> str:
         state = str(ev.get("state") or "EVENT").upper()
-        job = clean(ev.get("job_code") or ev.get("job_id") or "mission", 24)
-        component = clean(ev.get("component") or ev.get("worker") or ev.get("provider") or "", 55)
-        action = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "", 130)
-        next_action = clean(ev.get("next_safe_action") or "", 130)
-        step_index = ev.get("step_index")
-        step_total = ev.get("step_total")
-        icons = {
-            "STARTED": "▶️", "DISPATCHED": "📤", "WAITING_PROVIDER": "⏳",
-            "RESULT_RECEIVED": "📥", "VALIDATING": "🔎", "COMMITTED": "✅",
-            "CHECKPOINTED": "💾", "RETRY_SCHEDULED": "🔁", "BLOCKED": "🛑",
-            "HOLD": "🟠", "DONE": "🏁", "CANCELLED": "⏹️",
-            "ACCEPTED": "📌", "PLANNED": "🧭",
+        action = clean(
+            ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
+            "Étape enregistrée.",
+            145,
+        )
+        next_action = self._human_action(ev.get("next_safe_action") or "")
+        labels = {
+            "ACCEPTED": ("📌", "mission reçue"),
+            "NORMALIZED": ("🧭", "mission préparée"),
+            "PLANNED": ("🧭", "plan prêt"),
+            "QUEUED": ("⏳", "en attente de démarrage"),
+            "STARTED": ("▶️", "travail démarré"),
+            "DISPATCHED": ("📤", "action lancée"),
+            "WAITING_PROVIDER": ("⏳", "attente d’un service externe"),
+            "RESULT_RECEIVED": ("📥", "résultat reçu"),
+            "VALIDATING": ("🔎", "vérification en cours"),
+            "COMMITTED": ("✅", "étape enregistrée"),
+            "CHECKPOINTED": ("💾", "point de reprise sauvegardé"),
+            "RETRY_SCHEDULED": ("🔁", "nouvel essai prévu"),
+            "BLOCKED": ("🛑", "blocage confirmé"),
+            "HOLD": ("🟠", "en attente"),
+            "DONE": ("🏁", "terminé"),
+            "CANCELLED": ("⏹️", "arrêté"),
         }
-        lines = [icons.get(state, "•") + " " + job + " — " + state]
+        icon, label = labels.get(state, ("•", state.replace("_", " ").lower()))
+        lines = [icon + " " + label]
         try:
-            idx = int(step_index)
-            total = int(step_total)
+            idx = int(ev.get("step_index"))
+            total = int(ev.get("step_total"))
             if 0 <= idx <= total and total > 0:
                 pct = int(round(idx * 100 / total))
-                lines.append(self._bar(idx, total) + " " + str(pct) + "% (" + str(idx) + "/" + str(total) + ")")
+                lines.append(self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total))
         except Exception:
             pass
-        if component:
-            lines.append("📍 " + component)
-        if action:
-            lines.append("• " + action)
+        lines.append("🔧 " + action)
         if next_action:
             lines.append("➡️ " + next_action)
         return "\n".join(lines)
