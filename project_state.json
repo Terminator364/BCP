@@ -4,7 +4,7 @@
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "BCP_0_4_3_CI_QUALIFIED_FIELD_PROMOTION_TRIGGER_REQUIRED",
   "last_completed_atomic_action": "BCP 0.4.3 fully qualified on managed-update, PC Sanity, Windows bootstrap/selftest and Windows E2E; B-EDGE 0.2.5 CI build PASS",
-  "next_action": "On currently installed B-EDGE 0.2.4, invoke the existing one-tap 'Mettre à jour le serveur PC maintenant' control once; then read BCP_RUNTIME_LATEST.json from Drive. No screenshot/log relay.",
+  "next_action": "Install B-EDGE 0.2.5 APK on old phone; reconnect once; verify automatic promotion of PC server from 0.3.0 to 0.4.3 and then read BCP_RUNTIME_LATEST.json from Drive.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -127,9 +127,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP043-FIELD-TRIGGER",
-    "status": "WAITING_ONE_UNAVOIDABLE_LOCAL_ACTION",
-    "next_atomic_action": "Read Drive heartbeat and verify live BCP 0.4.3 after one-tap B-EDGE server update",
+    "checkpoint_id": "APIAX07-LEGACY-BEDGE-CONFIRMED-025-APK-DELIVERED",
+    "status": "WAITING_APK_INSTALL_ON_OLD_PHONE",
+    "next_atomic_action": "After B-EDGE 0.2.5 opens, read Drive heartbeat and verify live BCP 0.4.3",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -204,12 +204,24 @@
     "field_runtime_readback": "PENDING_NO_EXTERNAL_HEARTBEAT"
   },
   "field_trigger": {
-    "reason": "No direct local-PC execution channel is available in this chat and ChatGPT-PC interactive channel remains intentionally isolated",
-    "current_edge_capability": "B-EDGE 0.2.4 already exposes authenticated one-tap BCP server update endpoint",
-    "required_user_action": "Open B-EDGE > PARAMÈTRES / MISES À JOUR > METTRE À JOUR LE SERVEUR PC MAINTENANT",
-    "expected_result": "BCP server self-updates to 0.4.3, restarts, registers per-user lifecycle launcher, and begins BCP_RUNTIME_LATEST.json heartbeat",
+    "reason": "Installed B-EDGE build is legacy and lacks settings/update controls; screenshot confirms live BCP PC server 0.3.0",
+    "required_user_action": "Install provided B-EDGE 0.2.5 APK on the old phone, then open it once",
+    "expected_result": "B-EDGE reconnects to existing PC and automatically promotes BCP server to 0.4.3",
     "screenshots_required": false,
-    "manual_ip_token_project_required": false,
-    "repeat_install_required": false
+    "manual_ip_token_project_required": false
+  },
+  "latest_field_evidence": {
+    "observed_at": "2026-09-19T01:50:33Z",
+    "source": "user-supplied photo of B-EDGE connected screen",
+    "evidence_status": "FIELD_SCREENSHOT_CONFIRMED_NOT_MACHINE_READBACK",
+    "b_edge_ui": "legacy build without settings/update controls",
+    "connection": "CONNECTED",
+    "pairing": "automatic pairing visibly successful",
+    "project": "buildhub",
+    "pc_server_service": "BCP PC Node Windows Native",
+    "pc_server_version": "0.3.0",
+    "pc_name": "MBMPC",
+    "pairing_open": true,
+    "implication": "Existing phone app predates recovery/update UI; fresh B-EDGE 0.2.5 APK required to reach automatic server promotion path."
   }
 }
