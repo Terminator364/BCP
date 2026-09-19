@@ -10,8 +10,11 @@ import java.util.List;
 
 @Dao
 public interface EdgeDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void putProject(EdgeProjectEntity project);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insertProject(EdgeProjectEntity project);
+
+    @Query("UPDATE edge_projects SET status = :status, headRevision = :headRevision, updatedAt = :updatedAt WHERE projectId = :projectId")
+    int updateProjectHeadPreservingEpoch(String projectId, String status, long headRevision, long updatedAt);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insertJob(EdgeJobEntity job);
