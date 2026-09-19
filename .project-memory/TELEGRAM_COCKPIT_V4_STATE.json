@@ -1,9 +1,9 @@
 {
   "schema": "bcp.telegram_cockpit_v4_state/1",
   "updated_at": "2026-09-19",
-  "status": "IMPLEMENTED_BRANCH_CI_PENDING",
-  "branch": "work/bcp/telegram-cockpit-v4-20260919-2307",
-  "base_main_sha": "947229b9685df7fcf94ad4fb95c7e2b2ab3d8708",
+  "status": "RECONCILED_BRANCH_CI_PENDING",
+  "branch": "work/bcp/telegram-cockpit-v4-r1-20260919-2322",
+  "base_main_sha": "bb16aa62b13737a71c662af019bae880f85ba51c",
   "requirements_revision": "2026-09-19-R10",
   "telegram_companion": "2026.09.19-human-cockpit-v4",
   "nexus": "0.1.5",
