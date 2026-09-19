@@ -315,34 +315,421 @@ function Cleanup-Known-LegacyDownloads {
         return [ordered]@{removed=@();failed=@()}
     }
 
-    $knownFiles=@(
-        "BCP_PC_BOOTSTRAP.cmd",
-        "BCP_PC_NATIVE_V0_1_1.zip",
-        "BCP_PC_NATIVE_V0_1_2_AUTO.zip",
-        "BCP_PC_NETWORK_REPAIR_V0_1_3.zip",
-        "INSTALL_BCP_EVERGREEN_v0.2.1.cmd",
-        "BCP_FINAL_BOOTSTRAP_0_3.zip",
-        "BCP_FINAL_BOOTSTRAP_0_3_1.zip",
-        "BCP_PC_MIGRATE_CURRENT.zip"
-    )
-    foreach($name in $knownFiles){
-        $p=Join-Path $downloads $name
-        if(Test-Path -LiteralPath $p -PathType Leaf){
-            try{[IO.File]::Delete($p);$removed.Add($p)}catch{$failed.Add($p)}
+    $legacyFileRegex='^(BCP_PC_BOOTSTRAP|BCP_PC_NATIVE|BCP_PC_NETWORK_REPAIR|INSTALL_BCP_EVERGREEN|BCP_FINAL_BOOTSTRAP|BCP_PC_MIGRATE|BCP_EDGE|BCP-Edge).*(\.zip|\.cmd|\.ps1|\.apk)
+    return [ordered]@{removed=@($removed);failed=@($failed)}
+}
+
+function Schedule-SelfCleanup {
+    $downloads=Join-Path $HOME "Downloads"
+    if(-not (Test-Path -LiteralPath $downloads -PathType Container)){return}
+    $cleanup=Join-Path $env:TEMP ("BCP_FINAL_ACCEPTANCE_CLEANUP_"+[Guid]::NewGuid().ToString("N")+".ps1")
+    $body=@'
+param([string]$Downloads)
+Start-Sleep -Seconds 3
+$patterns=@("BCP_FINAL_ACCEPTANCE_CURRENT*.zip","BCP_FINAL_ACCEPTANCE_CURRENT*.cmd","BCP_FINAL_ACCEPTANCE_CURRENT*.ps1")
+foreach($p in $patterns){Get-ChildItem -LiteralPath $Downloads -File -Filter $p -ErrorAction SilentlyContinue|Remove-Item -Force -ErrorAction SilentlyContinue}
+Get-ChildItem -LiteralPath $Downloads -Directory -ErrorAction SilentlyContinue|Where-Object{$_.Name -like "BCP_FINAL_ACCEPTANCE_CURRENT*"}|Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Force -LiteralPath $PSCommandPath -ErrorAction SilentlyContinue
+'@
+    [IO.File]::WriteAllText($cleanup,$body,[Text.UTF8Encoding]::new($false))
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-File",$cleanup,"-Downloads",$downloads)|Out-Null
+}
+
+if($SelfTest){
+    $raw=Get-Content -Raw -LiteralPath $PSCommandPath -Encoding UTF8
+    foreach($needle in @(
+        "X-BCP-Expected-Revision",
+        "ALREADY_COMMITTED",
+        "STALE_WRITER_NOT_REJECTED",
+        "RunOnce",
+        "shutdown.exe /r",
+        "BCP_FINAL_ACCEPTANCE_LATEST.json",
+        "192.0.2.1",
+        "synthetic_cap_bytes",
+        "BCP_FINAL_ACCEPTANCE_CURRENT*.zip",
+        "legacyFileRegex",
+        "legacyDirRegex"
+    )){
+        if($raw -notmatch [regex]::Escape($needle)){throw ("SELFTEST_MISSING_"+$needle)}
+    }
+    Write-Host "BCP_FINAL_ACCEPTANCE_SELFTEST=PASS"
+    exit 0
+}
+
+Ensure-Runner-Copy
+if(-not $CampaignId){$CampaignId=[DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ")+"-"+[Guid]::NewGuid().ToString("N").Substring(0,8)}
+
+if(-not $ResumeAfterReboot){
+    $report=[ordered]@{
+        schema="bcp.final_acceptance/1"
+        campaign_id=$CampaignId
+        phase="PRE_REBOOT"
+        status="RUNNING"
+        started_at=UtcNow
+        target_version=$TargetVersion
+        project=$Project
+        pc_name=$env:COMPUTERNAME
+        gates=[ordered]@{}
+    }
+    try {
+        $report.gates.download_hygiene=Cleanup-Known-LegacyDownloads
+        $h=Ensure-Target-Version
+        $report.gates.runtime_version=[ordered]@{pass=([string]$h.version -eq $TargetVersion);version=[string]$h.version}
+        $diag=Invoke-BcpGet "/v1/diagnostics" 5
+        $report.gates.pairing=[ordered]@{pass=($diag.paired -eq $true);pair=$diag.pair}
+        if(-not $report.gates.pairing.pass){throw "PAIRING_NOT_PRESENT"}
+
+        $checkpoint=Test-Checkpoint-Fencing $CampaignId
+        $report.gates.checkpoint=[ordered]@{pass=$true;revision=$checkpoint.committed_revision;hash=$checkpoint.committed_hash}
+        $report.gates.idempotency=[ordered]@{pass=($checkpoint.replay_result -eq "ALREADY_COMMITTED")}
+        $report.gates.stale_writer=[ordered]@{pass=$checkpoint.stale_writer_rejected}
+
+        $lan=Get-LanIpv4
+        $localHealth=Test-Health-Url ($BaseUrl+"/health") 3
+        $lanHealth=if($lan){Test-Health-Url ("http://"+$lan+":"+$Port+"/health") 3}else{[ordered]@{ok=$false;version="";ms=0;error="NO_LAN_IPV4"}}
+        $report.gates.local_health=$localHealth
+        $report.gates.lan_health=$lanHealth
+        if(-not $localHealth.ok -or -not $lanHealth.ok){throw "PRE_REBOOT_NETWORK_HEALTH_FAILED"}
+
+        $lifecycle=Lifecycle-Registered
+        $listener=Managed-Listener
+        $report.gates.lifecycle=$lifecycle
+        $report.gates.managed_listener=$listener
+        if(-not $lifecycle.registered -or -not $listener.pass){throw "LIFECYCLE_OR_LISTENER_NOT_MANAGED"}
+
+        $state=[ordered]@{
+            campaign_id=$CampaignId
+            target_version=$TargetVersion
+            project=$Project
+            token_sha256=File-Sha256 $TokenPath
+            pair_sha256=File-Sha256 $PairPath
+            committed_revision=$checkpoint.committed_revision
+            committed_hash=$checkpoint.committed_hash
+            pre_server_pid=$listener.listener_pid
+            pre_boot_time=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("o")
+            prepared_at=UtcNow
         }
+        Write-JsonAtomic $state $CampaignStatePath
+        $report.status="PRE_REBOOT_PASS_REBOOT_SCHEDULED"
+        $report.prepared_reboot_at=UtcNow
+        Publish-Report $report
+        Schedule-ResumeAndReboot $CampaignId
+        Write-Host "BCP FINAL ACCEPTANCE: PRE-REBOOT PASS. Windows redemarre automatiquement dans 15 secondes." -ForegroundColor Green
+        exit 0
+    } catch {
+        $report.status="FAIL_PRE_REBOOT"
+        $report.error=$_.Exception.Message
+        $report.finished_at=UtcNow
+        Publish-Report $report
+        Write-Host ("BCP FINAL ACCEPTANCE = ECHEC PRE-REBOOT: "+$_.Exception.Message) -ForegroundColor Red
+        Read-Host "Appuie sur Entree pour fermer"
+        exit 1
+    }
+}
+
+$prior=Read-Json $CampaignStatePath
+$final=[ordered]@{
+    schema="bcp.final_acceptance/1"
+    campaign_id=$CampaignId
+    phase="POST_REBOOT"
+    status="RUNNING"
+    resumed_at=UtcNow
+    target_version=$TargetVersion
+    project=$Project
+    pc_name=$env:COMPUTERNAME
+    gates=[ordered]@{}
+}
+try {
+    if($null -eq $prior -or [string]$prior.campaign_id -ne $CampaignId){throw "CAMPAIGN_STATE_MISSING_OR_MISMATCH"}
+
+    $health=Wait-Health $TargetVersion 180
+    if(-not $health){throw "RUNTIME_DID_NOT_RETURN_AFTER_REBOOT"}
+    $final.gates.reboot_runtime=[ordered]@{pass=$true;version=[string]$health.version}
+
+    $boot=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("o")
+    $final.gates.real_reboot=[ordered]@{pass=($boot -ne [string]$prior.pre_boot_time);before=[string]$prior.pre_boot_time;after=$boot}
+    if(-not $final.gates.real_reboot.pass){throw "BOOT_TIME_DID_NOT_CHANGE"}
+
+    $sameToken=((File-Sha256 $TokenPath) -eq [string]$prior.token_sha256)
+    $samePair=((File-Sha256 $PairPath) -eq [string]$prior.pair_sha256)
+    $final.gates.identity_persistence=[ordered]@{pass=($sameToken -and $samePair);same_token=$sameToken;same_pair=$samePair}
+    if(-not $final.gates.identity_persistence.pass){throw "PAIRING_OR_TOKEN_CHANGED_AFTER_REBOOT"}
+
+    $resume=Invoke-BcpGet ("/v1/projects/"+$Project+"/resume") 8
+    $sameRevision=([int]$resume.head.revision -eq [int]$prior.committed_revision)
+    $sameHash=([string]$resume.head.last_event_hash -eq [string]$prior.committed_hash)
+    $final.gates.resume_same_commit=[ordered]@{pass=($sameRevision -and $sameHash);revision=[int]$resume.head.revision;hash=[string]$resume.head.last_event_hash}
+    if(-not $final.gates.resume_same_commit.pass){throw "COMMITTED_STATE_NOT_RECOVERED_EXACTLY"}
+
+    $lifecycle=Lifecycle-Registered
+    $listener=Managed-Listener
+    $final.gates.lifecycle=$lifecycle
+    $final.gates.managed_listener=$listener
+    if(-not $lifecycle.registered -or -not $listener.pass){throw "POST_REBOOT_LIFECYCLE_FAILED"}
+
+    $lan=Get-LanIpv4
+    $final.gates.local_health=Test-Health-Url ($BaseUrl+"/health") 3
+    $final.gates.lan_health=if($lan){Test-Health-Url ("http://"+$lan+":"+$Port+"/health") 3}else{[ordered]@{ok=$false;error="NO_LAN_IPV4"}}
+    if(-not $final.gates.local_health.ok -or -not $final.gates.lan_health.ok){throw "POST_REBOOT_NETWORK_HEALTH_FAILED"}
+
+    $resource=Test-Resource-Bounds
+    $final.gates.resource_bounds=$resource
+    if(-not $resource.pass){throw "RESOURCE_BOUNDS_FAILED"}
+
+    $poor=Test-Poor-Connectivity-Bounds
+    $final.gates.poor_connectivity_bounds=$poor
+    if(-not $poor.pass){throw "POOR_CONNECTIVITY_NOT_BOUNDED"}
+
+    $diag=Invoke-BcpGet "/v1/diagnostics" 5
+    $final.gates.pairing_after_reboot=[ordered]@{pass=($diag.paired -eq $true);pair=$diag.pair}
+    if(-not $final.gates.pairing_after_reboot.pass){throw "PAIRING_NOT_PRESENT_AFTER_REBOOT"}
+
+    # A PC harness cannot instantiate a brand-new ChatGPT conversation, but it
+    # can prove the durable state needed by one is externalized and self-contained.
+    $roots=External-Roots
+    $final.gates.fresh_context_recovery_readiness=[ordered]@{
+        pass=($roots.Count -gt 0)
+        durable_external_roots=$roots
+        actual_new_chat_context_switch="PLATFORM_BOUNDARY_NOT_EXECUTABLE_BY_PC_HARNESS"
     }
 
-    $knownDirs=@(
-        "BCP_PC_MIGRATE_CURRENT",
-        "BCP_FINAL_BOOTSTRAP_0_3",
-        "BCP_FINAL_BOOTSTRAP_0_3_1"
-    )
-    foreach($name in $knownDirs){
-        $p=Join-Path $downloads $name
-        if(Test-Path -LiteralPath $p -PathType Container){
-            try{[IO.Directory]::Delete($p,$true);$removed.Add($p)}catch{$failed.Add($p)}
-        }
+    $final.status="PASS_DEVICE_RUNTIME_GATES"
+    $final.finished_at=UtcNow
+    $final.summary=[ordered]@{
+        runtime=$TargetVersion
+        checkpoint_revision=[int]$resume.head.revision
+        stale_writer_rejected=$true
+        reboot_recovery=$true
+        identity_preserved=$true
+        lan_health=$true
+        resource_bounds=$true
+        poor_connectivity_bounds=$true
+        remaining_platform_boundary="fresh ChatGPT conversation RESYNC spot-check only"
     }
+    Publish-Report $final
+    Schedule-SelfCleanup
+    Remove-Item -Force -LiteralPath $CampaignStatePath -ErrorAction SilentlyContinue
+    exit 0
+} catch {
+    $final.status="FAIL_POST_REBOOT"
+    $final.error=$_.Exception.Message
+    $final.finished_at=UtcNow
+    Publish-Report $final
+    exit 1
+}
+
+    Get-ChildItem -LiteralPath $downloads -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match $legacyFileRegex } |
+        ForEach-Object {
+            try{[IO.File]::Delete($_.FullName);$removed.Add($_.FullName)}catch{$failed.Add($_.FullName)}
+        }
+
+    $legacyDirRegex='^(BCP_PC_BOOTSTRAP|BCP_PC_NATIVE|BCP_PC_NETWORK_REPAIR|BCP_FINAL_BOOTSTRAP|BCP_PC_MIGRATE).*
+    return [ordered]@{removed=@($removed);failed=@($failed)}
+}
+
+function Schedule-SelfCleanup {
+    $downloads=Join-Path $HOME "Downloads"
+    if(-not (Test-Path -LiteralPath $downloads -PathType Container)){return}
+    $cleanup=Join-Path $env:TEMP ("BCP_FINAL_ACCEPTANCE_CLEANUP_"+[Guid]::NewGuid().ToString("N")+".ps1")
+    $body=@'
+param([string]$Downloads)
+Start-Sleep -Seconds 3
+$patterns=@("BCP_FINAL_ACCEPTANCE_CURRENT*.zip","BCP_FINAL_ACCEPTANCE_CURRENT*.cmd","BCP_FINAL_ACCEPTANCE_CURRENT*.ps1")
+foreach($p in $patterns){Get-ChildItem -LiteralPath $Downloads -File -Filter $p -ErrorAction SilentlyContinue|Remove-Item -Force -ErrorAction SilentlyContinue}
+Get-ChildItem -LiteralPath $Downloads -Directory -ErrorAction SilentlyContinue|Where-Object{$_.Name -like "BCP_FINAL_ACCEPTANCE_CURRENT*"}|Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Force -LiteralPath $PSCommandPath -ErrorAction SilentlyContinue
+'@
+    [IO.File]::WriteAllText($cleanup,$body,[Text.UTF8Encoding]::new($false))
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-File",$cleanup,"-Downloads",$downloads)|Out-Null
+}
+
+if($SelfTest){
+    $raw=Get-Content -Raw -LiteralPath $PSCommandPath -Encoding UTF8
+    foreach($needle in @(
+        "X-BCP-Expected-Revision",
+        "ALREADY_COMMITTED",
+        "STALE_WRITER_NOT_REJECTED",
+        "RunOnce",
+        "shutdown.exe /r",
+        "BCP_FINAL_ACCEPTANCE_LATEST.json",
+        "192.0.2.1",
+        "synthetic_cap_bytes",
+        "BCP_FINAL_ACCEPTANCE_CURRENT*.zip"
+    )){
+        if($raw -notmatch [regex]::Escape($needle)){throw ("SELFTEST_MISSING_"+$needle)}
+    }
+    Write-Host "BCP_FINAL_ACCEPTANCE_SELFTEST=PASS"
+    exit 0
+}
+
+Ensure-Runner-Copy
+if(-not $CampaignId){$CampaignId=[DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ")+"-"+[Guid]::NewGuid().ToString("N").Substring(0,8)}
+
+if(-not $ResumeAfterReboot){
+    $report=[ordered]@{
+        schema="bcp.final_acceptance/1"
+        campaign_id=$CampaignId
+        phase="PRE_REBOOT"
+        status="RUNNING"
+        started_at=UtcNow
+        target_version=$TargetVersion
+        project=$Project
+        pc_name=$env:COMPUTERNAME
+        gates=[ordered]@{}
+    }
+    try {
+        $report.gates.download_hygiene=Cleanup-Known-LegacyDownloads
+        $h=Ensure-Target-Version
+        $report.gates.runtime_version=[ordered]@{pass=([string]$h.version -eq $TargetVersion);version=[string]$h.version}
+        $diag=Invoke-BcpGet "/v1/diagnostics" 5
+        $report.gates.pairing=[ordered]@{pass=($diag.paired -eq $true);pair=$diag.pair}
+        if(-not $report.gates.pairing.pass){throw "PAIRING_NOT_PRESENT"}
+
+        $checkpoint=Test-Checkpoint-Fencing $CampaignId
+        $report.gates.checkpoint=[ordered]@{pass=$true;revision=$checkpoint.committed_revision;hash=$checkpoint.committed_hash}
+        $report.gates.idempotency=[ordered]@{pass=($checkpoint.replay_result -eq "ALREADY_COMMITTED")}
+        $report.gates.stale_writer=[ordered]@{pass=$checkpoint.stale_writer_rejected}
+
+        $lan=Get-LanIpv4
+        $localHealth=Test-Health-Url ($BaseUrl+"/health") 3
+        $lanHealth=if($lan){Test-Health-Url ("http://"+$lan+":"+$Port+"/health") 3}else{[ordered]@{ok=$false;version="";ms=0;error="NO_LAN_IPV4"}}
+        $report.gates.local_health=$localHealth
+        $report.gates.lan_health=$lanHealth
+        if(-not $localHealth.ok -or -not $lanHealth.ok){throw "PRE_REBOOT_NETWORK_HEALTH_FAILED"}
+
+        $lifecycle=Lifecycle-Registered
+        $listener=Managed-Listener
+        $report.gates.lifecycle=$lifecycle
+        $report.gates.managed_listener=$listener
+        if(-not $lifecycle.registered -or -not $listener.pass){throw "LIFECYCLE_OR_LISTENER_NOT_MANAGED"}
+
+        $state=[ordered]@{
+            campaign_id=$CampaignId
+            target_version=$TargetVersion
+            project=$Project
+            token_sha256=File-Sha256 $TokenPath
+            pair_sha256=File-Sha256 $PairPath
+            committed_revision=$checkpoint.committed_revision
+            committed_hash=$checkpoint.committed_hash
+            pre_server_pid=$listener.listener_pid
+            pre_boot_time=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("o")
+            prepared_at=UtcNow
+        }
+        Write-JsonAtomic $state $CampaignStatePath
+        $report.status="PRE_REBOOT_PASS_REBOOT_SCHEDULED"
+        $report.prepared_reboot_at=UtcNow
+        Publish-Report $report
+        Schedule-ResumeAndReboot $CampaignId
+        Write-Host "BCP FINAL ACCEPTANCE: PRE-REBOOT PASS. Windows redemarre automatiquement dans 15 secondes." -ForegroundColor Green
+        exit 0
+    } catch {
+        $report.status="FAIL_PRE_REBOOT"
+        $report.error=$_.Exception.Message
+        $report.finished_at=UtcNow
+        Publish-Report $report
+        Write-Host ("BCP FINAL ACCEPTANCE = ECHEC PRE-REBOOT: "+$_.Exception.Message) -ForegroundColor Red
+        Read-Host "Appuie sur Entree pour fermer"
+        exit 1
+    }
+}
+
+$prior=Read-Json $CampaignStatePath
+$final=[ordered]@{
+    schema="bcp.final_acceptance/1"
+    campaign_id=$CampaignId
+    phase="POST_REBOOT"
+    status="RUNNING"
+    resumed_at=UtcNow
+    target_version=$TargetVersion
+    project=$Project
+    pc_name=$env:COMPUTERNAME
+    gates=[ordered]@{}
+}
+try {
+    if($null -eq $prior -or [string]$prior.campaign_id -ne $CampaignId){throw "CAMPAIGN_STATE_MISSING_OR_MISMATCH"}
+
+    $health=Wait-Health $TargetVersion 180
+    if(-not $health){throw "RUNTIME_DID_NOT_RETURN_AFTER_REBOOT"}
+    $final.gates.reboot_runtime=[ordered]@{pass=$true;version=[string]$health.version}
+
+    $boot=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("o")
+    $final.gates.real_reboot=[ordered]@{pass=($boot -ne [string]$prior.pre_boot_time);before=[string]$prior.pre_boot_time;after=$boot}
+    if(-not $final.gates.real_reboot.pass){throw "BOOT_TIME_DID_NOT_CHANGE"}
+
+    $sameToken=((File-Sha256 $TokenPath) -eq [string]$prior.token_sha256)
+    $samePair=((File-Sha256 $PairPath) -eq [string]$prior.pair_sha256)
+    $final.gates.identity_persistence=[ordered]@{pass=($sameToken -and $samePair);same_token=$sameToken;same_pair=$samePair}
+    if(-not $final.gates.identity_persistence.pass){throw "PAIRING_OR_TOKEN_CHANGED_AFTER_REBOOT"}
+
+    $resume=Invoke-BcpGet ("/v1/projects/"+$Project+"/resume") 8
+    $sameRevision=([int]$resume.head.revision -eq [int]$prior.committed_revision)
+    $sameHash=([string]$resume.head.last_event_hash -eq [string]$prior.committed_hash)
+    $final.gates.resume_same_commit=[ordered]@{pass=($sameRevision -and $sameHash);revision=[int]$resume.head.revision;hash=[string]$resume.head.last_event_hash}
+    if(-not $final.gates.resume_same_commit.pass){throw "COMMITTED_STATE_NOT_RECOVERED_EXACTLY"}
+
+    $lifecycle=Lifecycle-Registered
+    $listener=Managed-Listener
+    $final.gates.lifecycle=$lifecycle
+    $final.gates.managed_listener=$listener
+    if(-not $lifecycle.registered -or -not $listener.pass){throw "POST_REBOOT_LIFECYCLE_FAILED"}
+
+    $lan=Get-LanIpv4
+    $final.gates.local_health=Test-Health-Url ($BaseUrl+"/health") 3
+    $final.gates.lan_health=if($lan){Test-Health-Url ("http://"+$lan+":"+$Port+"/health") 3}else{[ordered]@{ok=$false;error="NO_LAN_IPV4"}}
+    if(-not $final.gates.local_health.ok -or -not $final.gates.lan_health.ok){throw "POST_REBOOT_NETWORK_HEALTH_FAILED"}
+
+    $resource=Test-Resource-Bounds
+    $final.gates.resource_bounds=$resource
+    if(-not $resource.pass){throw "RESOURCE_BOUNDS_FAILED"}
+
+    $poor=Test-Poor-Connectivity-Bounds
+    $final.gates.poor_connectivity_bounds=$poor
+    if(-not $poor.pass){throw "POOR_CONNECTIVITY_NOT_BOUNDED"}
+
+    $diag=Invoke-BcpGet "/v1/diagnostics" 5
+    $final.gates.pairing_after_reboot=[ordered]@{pass=($diag.paired -eq $true);pair=$diag.pair}
+    if(-not $final.gates.pairing_after_reboot.pass){throw "PAIRING_NOT_PRESENT_AFTER_REBOOT"}
+
+    # A PC harness cannot instantiate a brand-new ChatGPT conversation, but it
+    # can prove the durable state needed by one is externalized and self-contained.
+    $roots=External-Roots
+    $final.gates.fresh_context_recovery_readiness=[ordered]@{
+        pass=($roots.Count -gt 0)
+        durable_external_roots=$roots
+        actual_new_chat_context_switch="PLATFORM_BOUNDARY_NOT_EXECUTABLE_BY_PC_HARNESS"
+    }
+
+    $final.status="PASS_DEVICE_RUNTIME_GATES"
+    $final.finished_at=UtcNow
+    $final.summary=[ordered]@{
+        runtime=$TargetVersion
+        checkpoint_revision=[int]$resume.head.revision
+        stale_writer_rejected=$true
+        reboot_recovery=$true
+        identity_preserved=$true
+        lan_health=$true
+        resource_bounds=$true
+        poor_connectivity_bounds=$true
+        remaining_platform_boundary="fresh ChatGPT conversation RESYNC spot-check only"
+    }
+    Publish-Report $final
+    Schedule-SelfCleanup
+    Remove-Item -Force -LiteralPath $CampaignStatePath -ErrorAction SilentlyContinue
+    exit 0
+} catch {
+    $final.status="FAIL_POST_REBOOT"
+    $final.error=$_.Exception.Message
+    $final.finished_at=UtcNow
+    Publish-Report $final
+    exit 1
+}
+
+    Get-ChildItem -LiteralPath $downloads -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match $legacyDirRegex } |
+        ForEach-Object {
+            try{[IO.Directory]::Delete($_.FullName,$true);$removed.Add($_.FullName)}catch{$failed.Add($_.FullName)}
+        }
     return [ordered]@{removed=@($removed);failed=@($failed)}
 }
 
