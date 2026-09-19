@@ -157,13 +157,24 @@ public final class EdgeOrchestrator {
             }
             String id = UUID.randomUUID().toString();
             String idem = "edge-job-" + id;
+            String actionId = "action-" + UUID.randomUUID();
             long now = System.currentTimeMillis();
+            EdgeProjectEntity project = dao.project(projectId);
+            if (project == null) {
+                ensureProject(projectId, 0, 0);
+                project = dao.project(projectId);
+            }
+            long expectedRevision = project == null ? 0 : project.headRevision;
+            long coordinatorEpoch = project == null ? 0 : project.coordinatorEpoch;
+            String inputHash = sha256(payload.toString());
+            String evidenceContract = "EFFECT_RECEIPT_REQUIRED";
             String state = dependencies != null && dependencies.length() > 0
                     ? "BLOCKED" : EdgePolicy.nextState(requiresPc, getMode());
             EdgeJobEntity job = new EdgeJobEntity(
                     id, projectId, kind, payload.toString(), state, requiresPc,
                     priority, resourceClass == null ? (requiresPc ? "PC_R3" : "EDGE_R1") : resourceClass,
-                    idem, now, now
+                    idem, actionId, expectedRevision, inputHash, coordinatorEpoch,
+                    evidenceContract, now, now
             );
             long inserted = dao.insertJob(job);
             if (inserted == -1L) {
@@ -187,6 +198,11 @@ public final class EdgeOrchestrator {
             out.put("requires_pc", requiresPc);
             out.put("priority", priority);
             out.put("resource_class", job.resourceClass);
+            out.put("action_id", job.actionId);
+            out.put("expected_revision", job.expectedRevision);
+            out.put("input_hash", job.inputHash);
+            out.put("coordinator_epoch", job.coordinatorEpoch);
+            out.put("evidence_contract", job.evidenceContract);
             out.put("state", state);
             out.put("created_at", now);
             out.put("queued", true);
@@ -221,6 +237,11 @@ public final class EdgeOrchestrator {
                 o.put("priority", j.priority);
                 o.put("resource_class", j.resourceClass);
                 o.put("idempotency_key", j.idempotencyKey);
+                o.put("action_id", j.actionId);
+                o.put("expected_revision", j.expectedRevision);
+                o.put("input_hash", j.inputHash);
+                o.put("coordinator_epoch", j.coordinatorEpoch);
+                o.put("evidence_contract", j.evidenceContract);
                 o.put("created_at", j.createdAt);
                 out.put(o);
             } catch (Exception ignored) {}
@@ -253,6 +274,11 @@ public final class EdgeOrchestrator {
                 dao.setJobState(localId, "HOLD", System.currentTimeMillis());
             }
         } catch (Exception ignored) {}
+    }
+
+    public void markJobState(String localId, String state) {
+        if (localId == null || localId.isEmpty()) return;
+        dao.setJobState(localId, state, System.currentTimeMillis());
     }
 
     public int pendingCount() {
