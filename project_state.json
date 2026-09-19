@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_1_REPORTED_COMMITTED_RUNTIME_RESTART_UNVERIFIED",
-  "last_completed_atomic_action": "Persist latest reported BCP 0.4.1 install/commit result into durable project state without replay",
-  "next_action": "Verify/recover BCP 0.4.1 runtime restart, then obtain a fresh machine-readable heartbeat/diagnostics readback; do not reinstall or replay already COMMITTED payload work",
+  "status": "FIELD_HOLD_NO_FRESH_GITHUB_RUNTIME_READBACK",
+  "last_completed_atomic_action": "Checked durable GitHub evidence for fresh BCP 0.4.1 / ChatGPT-PC 6.0.32 runtime heartbeat; no newer native heartbeat/readback exists in repository",
+  "next_action": "Check the externalized Drive/recovery telemetry source for a fresh BCP 0.4.1 heartbeat/diagnostics receipt; do not reinstall, restart blindly, or replay COMMITTED payload work",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -120,9 +120,20 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-ATOMIC-RUNTIME-VERIFY-PENDING-20260919",
-    "status": "DURABLE_STATE_UPDATED",
-    "next_atomic_action": "Verify/recover BCP 0.4.1 runtime restart and fresh heartbeat/diagnostics readback",
+    "checkpoint_id": "APIAX07-ATOMIC-GITHUB-RUNTIME-EVIDENCE-CHECK-20260919",
+    "status": "PASS_NO_FRESH_EVIDENCE_FOUND",
+    "next_atomic_action": "Check targeted Drive/recovery telemetry source for fresh BCP 0.4.1 heartbeat/diagnostics",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
+  },
+  "runtime_verification": {
+    "checked_at": "2026-09-19T02:00:00+01:00",
+    "source": "GitHub durable BCP repository state",
+    "result": "NO_FRESH_NATIVE_RUNTIME_READBACK",
+    "latest_field_checkpoint_commit": "2ca7278b979d6dbc651d8e6c7f61361884b7c0a9",
+    "latest_field_checkpoint": "CHATGPT_PC_6032_COMMITTED_BCP041_PUBLISHED_ACTIVE_READBACK_PENDING",
+    "chatgpt_pc_runtime": "UNPROVEN",
+    "bcp_0_4_1_field_install": "UNPROVEN_BY_FRESH_READBACK",
+    "last_normal_telemetry_runtime": "6.0.31",
+    "no_replay_performed": true
   }
 }
