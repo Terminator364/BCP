@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R6
+Revision: 2026-09-19-R7
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -748,3 +748,20 @@ Canonical Nexus field gate:
 `docs/BCP_NEXUS_FIELD_GATE.md`.
 
 The Nexus implementation is not ACTIVE/FIELD_VERIFIED merely because CI passes. Promotion requires a real home-WiFi health and Telegram round-trip with direct PC->Telegram allowed to remain degraded.
+
+
+## P0 — Mission autonomy and observable execution
+
+Requirement ID: `P0_MISSION_AUTONOMY_AND_OBSERVABLE_EXECUTION`.
+
+A mission MUST be persisted before significant work. Long work is decomposed into bounded durable micro-sprints with explicit context resolution, dependency plan, local deterministic work, optional qualified worker dispatch, structured result, deterministic validation, authorized idempotent mutation, receipt/readback, checkpoint and next uncommitted action.
+
+Chat is not canonical state. Worker processes and model sessions are replaceable. A committed effect is never replayed. External interruption, network loss or worker replacement is nonterminal when a durable checkpoint exists.
+
+Every mission exposes an append-only observable event log and the fields `current_step`, `last_committed_step`, `next_step`, `last_progress_at`, `worker/component`, `receipt/evidence`, `status` and `failure/hold reason`. Progress percentages may describe only finite externally verifiable plan steps; private model reasoning is never represented as progress.
+
+The scheduler is local-first. Hashing, state lookup, dependency resolution, known-error lookup, queue replay, tests and checkpointing do not consume model quota merely because a model is available. Provider use is allowed only through the Model Broker policy and `DEFAULT_PAID_SPEND = 0 USD` remains a hard invariant.
+
+Telegram is a human-first cockpit: `/status` is compact, `/details` technical, `/where` reports the durable execution pointer, and `/tail` reports recent observable events. Spontaneous notifications are reserved for meaningful checkpoints, blocks, human decisions or completion.
+
+The field topology remains unchanged: PC-WORKER and dedicated B-EDGE normally use home Wi-Fi; the current phone is a human terminal only. Direct PC-to-Telegram delivery is not a mandatory path.
