@@ -466,16 +466,21 @@ public final class BcpClient {
 
     public JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) throws Exception {
         JSONObject local = orchestrator.queueJob(kind, payload, requiresPc);
+        if (!local.optBoolean("accepted_local", false)) {
+            return local;
+        }
+        String localId = local.optString("local_id", "");
         try {
             ensureConnected();
             JSONObject body = new JSONObject();
             body.put("kind", kind);
             body.put("payload", payload);
             body.put("requires_pc", requiresPc);
-            String idem = "edge-job-" + local.optString("local_id", UUID.randomUUID().toString());
+            String idem = "edge-job-" + localId;
             JSONObject r = requestJson("POST",
                     getServer() + "/v1/projects/" + enc(PROJECT) + "/jobs",
                     body.toString(), getToken(), idem, 2200, 5000);
+            orchestrator.acknowledgeJob(localId);
             flushQueuedJobs();
             return r;
         } catch (Exception ex) {
