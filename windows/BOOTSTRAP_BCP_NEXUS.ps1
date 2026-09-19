@@ -173,9 +173,17 @@ if (-not $launcher) {
 $who = Invoke-Wrangler $launcher @("whoami","--json") -AllowFailure
 if ($who.ExitCode -ne 0) {
     Write-Host "BCP_NEXUS_HUMAN_GATE=CLOUDFLARE_LOGIN_REQUIRED"
-    Write-Host "One-time gate only: run 'npx wrangler login' in this PowerShell, finish browser authorization, then rerun this script."
+    Write-Host "One-time human gate: your browser will open for Cloudflare authorization."
     Write-Host "No Telegram token, chat ID, or device secret must be copied into chat."
-    exit 4
+    $login = Invoke-Wrangler $launcher @("login") -AllowFailure
+    if ($login.ExitCode -ne 0) {
+        throw "CLOUDFLARE_BROWSER_AUTHORIZATION_FAILED_OR_CANCELLED"
+    }
+    $who = Invoke-Wrangler $launcher @("whoami","--json") -AllowFailure
+    if ($who.ExitCode -ne 0) {
+        throw "CLOUDFLARE_AUTHORIZATION_NOT_CONFIRMED"
+    }
+    Write-Host "BCP_NEXUS_CLOUDFLARE_AUTH=PASS"
 }
 
 $workerSource = Find-SourceFile "worker.mjs"
