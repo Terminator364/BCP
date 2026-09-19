@@ -2259,8 +2259,17 @@ def selftest():
         with db_connection() as cx:
             mem_cols = {r[1] for r in cx.execute("PRAGMA table_info(memory_records)").fetchall()}
             job_cols = {r[1] for r in cx.execute("PRAGMA table_info(jobs)").fetchall()}
+            receipt_cols = {r[1] for r in cx.execute("PRAGMA table_info(job_receipts)").fetchall()}
             assert {"evidence_class","source_id","pinned","expires_at","supersedes_key"} <= mem_cols
-            assert {"action_id","priority","resource_class","expected_revision","input_hash","coordinator_epoch","evidence_contract"} <= job_cols
+            assert {
+                "action_id","priority","resource_class","expected_revision","input_hash",
+                "coordinator_epoch","evidence_contract","attempt_count","lease_until",
+                "worker_id","lease_id","started_at","finished_at","last_error"
+            } <= job_cols
+            assert {
+                "receipt_id","job_id","action_id","result","worker_id","lease_id",
+                "attempt_count","input_hash","output_hash","evidence_json","finished_at"
+            } <= receipt_cols
 
         memory_put(
             "buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest",
@@ -2326,6 +2335,46 @@ def selftest():
         except ValueError as e:
             stale_job_rejected = str(e).startswith("stale_job_revision:")
         assert stale_job_rejected
+
+        noop = enqueue_job(
+            "buildhub", "NOOP", {"probe": "executor"}, "job-noop",
+            requires_pc=True, priority=100, resource_class="PC_R3",
+            action_id="selftest-noop", expected_revision=1,
+            coordinator_epoch=1, evidence_contract="SELFTEST_TERMINAL_RECEIPT"
+        )
+        claimed = claim_next_pc_job("selftest-worker", resource_gate=False)
+        assert claimed and int(claimed["id"]) == int(noop["job_id"])
+        assert claimed["state"] == "LEASED"
+        terminal = run_claimed_pc_job(claimed, "selftest-worker")
+        assert terminal["result"] == "SUCCEEDED"
+        assert len(terminal["output_hash"]) == 64
+        snap = {int(j["id"]): j for j in jobs_snapshot("buildhub", 100)}
+        assert snap[int(noop["job_id"])]["state"] == "SUCCEEDED"
+        assert snap[int(noop["job_id"])]["terminal_receipt"]["result"] == "SUCCEEDED"
+
+        dependent_noop = enqueue_job(
+            "buildhub", "NOOP", {"probe": "dependency"}, "job-noop-dependent",
+            requires_pc=True, priority=90, resource_class="PC_R3",
+            action_id="selftest-noop-dependent", expected_revision=1,
+            coordinator_epoch=1, evidence_contract="SELFTEST_TERMINAL_RECEIPT",
+            dependencies=[noop["job_id"]]
+        )
+        assert dependent_noop["state"] == "BLOCKED"
+        claimed_dep = claim_next_pc_job("selftest-worker", resource_gate=False)
+        assert claimed_dep and int(claimed_dep["id"]) == int(dependent_noop["job_id"])
+        assert run_claimed_pc_job(claimed_dep, "selftest-worker")["result"] == "SUCCEEDED"
+
+        unsupported = enqueue_job(
+            "buildhub", "ARBITRARY_SHELL", {"command": "whoami"}, "job-unsupported",
+            requires_pc=True, priority=99, resource_class="PC_R3",
+            action_id="selftest-unsupported", expected_revision=1,
+            coordinator_epoch=1, evidence_contract="SELFTEST_REJECT"
+        )
+        assert claim_next_pc_job("selftest-worker", resource_gate=False) is None
+        unsupported_row = {int(j["id"]): j for j in jobs_snapshot("buildhub", 100)}[int(unsupported["job_id"])]
+        assert unsupported_row["state"] == "HOLD"
+        assert unsupported_row["last_error"] == "UNSUPPORTED_JOB_KIND"
+
         assert pc_operating_mode() in ("PC_AVAILABLE", "PC_MEMORY_PRESSURE")
         assert "_bcp._tcp.local" in source
         assert "start_mdns_advertiser" in source
