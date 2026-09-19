@@ -400,3 +400,18 @@ Binding:
 - all controls remain read-only in this increment;
 - optional image-card UX remains separately gated;
 - no ChatGPT scheduled automation is created or required.
+
+
+## Human Cockpit V5 binding — 2026-09-20
+
+The human-facing cockpit is further refined by `docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md`.
+
+Binding:
+- a micro-action is a concrete, externally verifiable unit of work, not a vague activity label;
+- the normal card reads the latest persisted mission and resolves current/last/next step labels from the finite mission plan when available;
+- the progress bar is derived only from verified steps in that persisted finite plan;
+- the Micro-actions button exposes a numbered journal backed by SQLite `mission_events`, with JSONL only as a compatibility fallback;
+- the human PDF includes the full numbered plan plus recent micro-actions;
+- the technical PDF includes mission metadata, receipts/evidence, hold reason, plan and journal;
+- resident event-driven updates remain local BCP/B-EDGE/Nexus behavior, not ChatGPT scheduled automations;
+- Kinshasa low-data constraints and degraded direct PC->Telegram home-Wi-Fi remain first-class product requirements.
