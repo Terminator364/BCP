@@ -1,0 +1,5 @@
+BCP Telegram Observability MVP-0 final qualification trigger
+writer=chatgpt-api-bcp-telegram-observability-mvp0-20260919-1038
+base_main=2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d
+policy=EXACT_SHA_CI_REQUIRED
+mode=READ_ONLY_MVP0
