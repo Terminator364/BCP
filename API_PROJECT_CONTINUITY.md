@@ -277,3 +277,23 @@ This preserves the prior project discussion about:
 - using alternate legitimate adapters to reduce the operational impact of ChatGPT/browser/provider interruptions without bypassing safeguards.
 
 Priority: preserve this direction now, but do not displace P0 field bring-up and continuity verification.
+
+## Cumulative cahier-des-charges updates
+
+On every recovery, load:
+- `.project-memory/SPEC_EVOLUTION_POLICY.json`
+- `docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md`
+
+Canonical interpretation of “mise à jour du cahier des charges”:
+- merge/refine/preserve the active specification;
+- never restart the specification from the newest message;
+- preserve prior requirements unless the user explicitly supersedes/deprecates them;
+- preserve requirement history, evidence and regression obligations;
+- ambiguous contradiction => `SPEC_CONFLICT_HOLD`, not silent replacement.
+
+For long-running work, the target execution model is:
+`Telegram/BCP mission intake -> durable mission envelope -> bounded micro-sprints -> append-only event journal -> receipts/checkpoints -> compact status`.
+
+A short Telegram job code is a mission locator. `BCPGO <job_code>` may resolve it only through an actually qualified BCP integration; a typed number alone is not assumed to create network connectivity.
+
+Progress reporting stores observable step/decision summaries and evidence. It does not depend on hidden model chain-of-thought.
