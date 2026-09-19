@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
         root.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Zéro saisie · reprise · télémétrie · mises à jour vérifiées");
+        subtitle.setText("Mémoire durable · orchestration · reprise · télémétrie · mises à jour vérifiées");
         subtitle.setPadding(0,dp(6),0,dp(16));
         root.addView(subtitle);
 
@@ -92,12 +92,12 @@ public class MainActivity extends Activity {
                         }));
                 runOnUiThread(() -> {
                     status.setText("CONNECTÉ");
-                    detail.setText("PC appairé automatiquement · projet buildhub");
+                    detail.setText("PC appairé automatiquement · projet " + client.getProject());
                     String pc = r.optString("pc_name", "BCP PC");
                     String ver = r.optString("version", "");
                     output.setText("État: OK\nB-EDGE: " + client.getEdgeVersion() +
                             "\nPC: " + pc + (ver.isEmpty() ? "" : "\nServeur: " + ver) +
-                            "\nProjet: buildhub\nIdentifiants: masqués");
+                            "\nProjet: " + client.getProject() + "\nIdentifiants: masqués");
                     setBusy(false);
                     updates.check();
                 });
