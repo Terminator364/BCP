@@ -193,8 +193,11 @@ if (-not $db) {
     Invoke-Wrangler $launcher @("d1","create",$DatabaseName) | Out-Null
     $db = Get-D1Database $launcher $DatabaseName
 }
-if (-not $db -or -not $db.uuid) { throw "NEXUS_D1_DATABASE_ID_NOT_RESOLVED" }
-$dbId = [string]$db.uuid
+if (-not $db) { throw "NEXUS_D1_DATABASE_ID_NOT_RESOLVED" }
+$dbId = ""
+if ($db.PSObject.Properties.Name -contains "uuid") { $dbId = [string]$db.uuid }
+if (-not $dbId -and ($db.PSObject.Properties.Name -contains "id")) { $dbId = [string]$db.id }
+if (-not $dbId) { throw "NEXUS_D1_DATABASE_ID_NOT_RESOLVED" }
 
 $wranglerConfig = Join-Path $DeployRoot "wrangler.toml"
 $toml = @"
