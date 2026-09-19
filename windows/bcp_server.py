@@ -195,6 +195,10 @@ def edge_distribution_roots() -> list[Path]:
     override = os.environ.get("BCP_EDGE_DISTRIBUTION_DIR", "").strip()
     if override:
         roots.append(Path(override))
+    # Always support an app-owned local distribution channel. This lets the
+    # coordinated PC installer stage a verified phone update even when Drive is
+    # temporarily offline or not mounted; Drive remains an optional mirror.
+    roots.append(APP_ROOT / "edge_distribution")
     candidates = [
         Path(r"G:\\Mon Drive\\API_BCP\\00_A_INSTALLER"),
         Path(r"G:\\My Drive\\API_BCP\\00_A_INSTALLER"),
@@ -1700,6 +1704,7 @@ def selftest():
         assert '"server_sha256": hashlib.sha256' in source
         assert "/v1/edge/update" in source
         assert "BCP_EDGE_CURRENT.apk" in source
+        assert 'APP_ROOT / "edge_distribution"' in source
         assert "edge_apk_sha256_mismatch" in source
         assert "identity_fingerprint" in source
         assert "pc_identity_confirmation_mismatch" in source
