@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.5.0"
+SERVER_VERSION = "0.6.0"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -767,6 +767,12 @@ def start_auto_update_worker(http_server, bind: str, port: int) -> None:
     threading.Thread(target=worker, name="BCP-AutoUpdate", daemon=True).start()
 
 
+def _ensure_sqlite_column(cx, table: str, column: str, ddl: str) -> None:
+    cols = {str(r[1]) for r in cx.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        cx.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
+
 def ensure_state() -> str:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     TELEMETRY_DIR.mkdir(parents=True, exist_ok=True)
@@ -833,9 +839,47 @@ def ensure_state() -> str:
                 idempotency_key TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
+                action_id TEXT NOT NULL DEFAULT '',
+                priority INTEGER NOT NULL DEFAULT 50,
+                resource_class TEXT NOT NULL DEFAULT 'PC_R3',
+                expected_revision INTEGER,
+                input_hash TEXT NOT NULL DEFAULT '',
+                coordinator_epoch INTEGER NOT NULL DEFAULT 0,
+                evidence_contract TEXT NOT NULL DEFAULT '',
+                attempt_count INTEGER NOT NULL DEFAULT 0,
+                lease_until TEXT,
                 UNIQUE(project_id,idempotency_key)
             )"""
         )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS job_dependencies(
+                job_id INTEGER NOT NULL,
+                depends_on_job_id INTEGER NOT NULL,
+                PRIMARY KEY(job_id, depends_on_job_id)
+            )"""
+        )
+        for col, ddl in (
+            ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'UNCLASSIFIED'"),
+            ("source_id", "source_id TEXT NOT NULL DEFAULT ''"),
+            ("pinned", "pinned INTEGER NOT NULL DEFAULT 0"),
+            ("expires_at", "expires_at TEXT"),
+            ("supersedes_key", "supersedes_key TEXT NOT NULL DEFAULT ''")
+        ):
+            _ensure_sqlite_column(cx, "memory_records", col, ddl)
+        for col, ddl in (
+            ("action_id", "action_id TEXT NOT NULL DEFAULT ''"),
+            ("priority", "priority INTEGER NOT NULL DEFAULT 50"),
+            ("resource_class", "resource_class TEXT NOT NULL DEFAULT 'PC_R3'"),
+            ("expected_revision", "expected_revision INTEGER"),
+            ("input_hash", "input_hash TEXT NOT NULL DEFAULT ''"),
+            ("coordinator_epoch", "coordinator_epoch INTEGER NOT NULL DEFAULT 0"),
+            ("evidence_contract", "evidence_contract TEXT NOT NULL DEFAULT ''"),
+            ("attempt_count", "attempt_count INTEGER NOT NULL DEFAULT 0"),
+            ("lease_until", "lease_until TEXT")
+        ):
+            _ensure_sqlite_column(cx, "jobs", col, ddl)
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_memory_project_layer_pin ON memory_records(project_id,layer,pinned,updated_at)")
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_jobs_project_state_priority ON jobs(project_id,state,priority,created_at)")
         cx.commit()
     finally:
         cx.close()
