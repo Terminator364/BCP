@@ -17,7 +17,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "0.2.5";
+    private static final String EDGE_VERSION = "1.0.0";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
