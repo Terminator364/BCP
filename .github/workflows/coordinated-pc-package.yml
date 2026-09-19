@@ -48,7 +48,13 @@ jobs:
           $version=[string]$release.version
           if(-not $version){throw 'SERVER_VERSION_MISSING'}
           if($server -notmatch ('SERVER_VERSION = "'+[regex]::Escape($version)+'"')){throw 'SOURCE_VERSION_DRIFT'}
-          $sha=(Get-FileHash -Algorithm SHA256 '.\windows\bcp_server.py').Hash.ToLowerInvariant()
+          # Canonical release hash uses LF UTF-8 bytes even when checkout materializes CRLF on Windows.
+          $canonical=$server -replace "`r`n","`n"
+          $utf8=New-Object System.Text.UTF8Encoding($false)
+          $hasher=[System.Security.Cryptography.SHA256]::Create()
+          try {
+            $sha=([BitConverter]::ToString($hasher.ComputeHash($utf8.GetBytes($canonical)))).Replace('-','').ToLowerInvariant()
+          } finally { $hasher.Dispose() }
           if($sha -ne ([string]$release.sha256).ToLowerInvariant()){throw "SERVER_SHA_MISMATCH manifest=$($release.sha256) actual=$sha"}
           if(-not [string]$release.coordinated_edge_version){throw 'EDGE_VERSION_CONTRACT_MISSING'}
 
@@ -76,7 +82,7 @@ jobs:
             source_commit='${{ github.sha }}'
             files=$hashes
           } | ConvertTo-Json -Depth 8 | Set-Content -Encoding UTF8 $root\PC_PACKAGE_MANIFEST.json
-          Compress-Archive -Path $root\* -DestinationPath BCP_PC_0_5_0.zip -Force
+          Compress-Archive -Path $root\* -DestinationPath BCP_PC_COORDINATED.zip -Force
 
       - uses: actions/upload-artifact@v4
         with:
