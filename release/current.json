@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-19-R10",
+  "requirements_revision": "2026-09-20-R11",
   "zero_usd": true,
   "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -56,16 +56,18 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.19-human-cockpit-v4",
+    "version": "2026.09.20-human-cockpit-v5",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
     "features": [
       "editable live mission card",
-      "inline refresh/current-step/missions/details controls",
-      "compact human PDF export",
-      "technical PDF export",
-      "truthful finite-plan progress only",
+      "inline refresh/current-step/micro-actions/missions/details controls",
+      "concrete numbered micro-action journal from persisted mission evidence",
+      "truthful finite-plan progress bar from persisted mission plan",
+      "expanded human PDF with plan and micro-action journal",
+      "expanded technical PDF with mission metadata/evidence",
+      "compact low-data presentation",
       "no ChatGPT scheduled automation"
     ]
   }
