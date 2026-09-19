@@ -44,7 +44,7 @@ HOLD_STATES = {
     "SPEC_CONFLICT_HOLD", "HUMAN_APPROVAL_REQUIRED", "WAITING_FOR_PC",
 }
 READ_ONLY_COMMANDS = {
-    "/start", "/help", "/status", "/project", "/job", "/last", "/ci", "/holds",
+    "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 
@@ -342,7 +342,75 @@ class Service:
         branch = clean(r.get("head_branch"), 65)
         return name + "=" + state + ((" [" + branch + "]") if branch else "")
 
+    @staticmethod
+    def _bar(done: int, total: int, width: int = 10) -> str:
+        if total <= 0:
+            return "░" * width
+        filled = max(0, min(width, round(width * done / total)))
+        return ("█" * filled) + ("░" * (width - filled))
+
     def status(self) -> str:
+        head = self._head()
+        runtime = self.local.runtime()
+        edge = self.local.edge()
+        gh = self.github.snapshot()
+        drive = self.local.drive()
+        chat = self.local.chat(self.project_id)
+
+        hb = runtime.get("_age_seconds")
+        heartbeat_ok = isinstance(hb, int) and hb <= 180
+        edge_ok = bool(edge.get("paired"))
+        github_ok = bool(gh.get("ok"))
+        drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
+        checks = [heartbeat_ok, edge_ok, github_ok, drive_ok]
+        done = sum(1 for x in checks if x)
+        total = len(checks)
+        percent = int(round(done * 100 / total)) if total else 0
+
+        global_state = str(
+            (head or {}).get("status") or runtime.get("recovery_phase") or runtime.get("status") or "UNKNOWN"
+        ).upper()
+        if "HEALTH" in global_state or "UP_TO_DATE" in global_state:
+            state_label = "🟢 Système actif"
+        elif "HOLD" in global_state or "BLOCK" in global_state or "FAIL" in global_state:
+            state_label = "🔴 Attention requise"
+        else:
+            state_label = "🟡 Actif / état partiellement observé"
+
+        chat_state = str(chat.get("state") or "UNKNOWN_INTERNAL_CHAT_STATE")
+        chat_labels = {
+            "OBSERVED_CHAT_ACTION": "✅ action externe observée",
+            "CHAT_WAITING": "⏳ réponse en attente",
+            "CHAT_PLATFORM_HOLD_REPORTED": "🟠 vérification ChatGPT signalée",
+            "UNKNOWN_INTERNAL_CHAT_STATE": "⚪ état interne non visible",
+        }
+        next_action = clean(
+            (head or {}).get("next_action") or "continuer depuis le dernier checkpoint durable",
+            170,
+        )
+        latest_ci = self._ci(gh)
+        return "\n".join([
+            "🤖 BCP Cockpit",
+            state_label,
+            "",
+            "Progression vérifiable des liaisons",
+            self._bar(done, total) + "  " + str(percent) + "% (" + str(done) + "/" + str(total) + ")",
+            "",
+            ("✅" if heartbeat_ok else "⚠️") + " PC/BCP",
+            ("✅" if edge_ok else "⚠️") + " Téléphone B-EDGE",
+            ("✅" if github_ok else "⚠️") + " GitHub",
+            ("✅" if drive_ok else "⚠️") + " Sauvegarde Drive",
+            "",
+            "ChatGPT: " + chat_labels.get(chat_state, "⚪ " + clean(chat_state, 60)),
+            "Tests: " + clean(latest_ci, 110),
+            "",
+            "➡️ Prochaine étape: " + next_action,
+            "💰 Coût: $0.00",
+            "",
+            "Détails techniques: /details",
+        ])
+
+    def details(self) -> str:
         head = self._head()
         runtime = self.local.runtime()
         edge = self.local.edge()
@@ -468,9 +536,11 @@ class Service:
 
     def help(self) -> str:
         return (
-            "BCP Telegram Observability MVP — READ ONLY\n"
-            "/status\n/project <id>\n/job <code>\n/last\n/ci\n/holds\n\n"
-            "Pas de pourcentage inventé. Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
+            "BCP Cockpit — lecture simple\n"
+            "/status — vue simple\n/details — vue technique\n"
+            "/project <id>\n/job <code>\n/last\n/ci\n/holds\n\n"
+            "Les pourcentages portent seulement sur des étapes ou liaisons vérifiables. "
+            "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
         )
 
     def dispatch(self, text: str) -> str:
@@ -481,11 +551,13 @@ class Service:
         cmd = first.split("@", 1)[0].lower()
         arg = rest[0].strip() if rest else ""
         if cmd not in READ_ONLY_COMMANDS:
-            return "MVP read-only: /status /project <id> /job <code> /last /ci /holds"
+            return "Lecture seule: /status /details /project <id> /job <code> /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
             return self.status()
+        if cmd == "/details":
+            return self.details()
         if cmd == "/project":
             return self.project(arg)
         if cmd == "/job":
@@ -653,14 +725,18 @@ def selftest() -> int:
             local=LocalTruth(root), github=FakeGitHub()
         )
         status = svc.status()
-        assert "État global: EN_COURS" in status
-        assert "GitHub CI: Windows=SUCCESS [work/test]" in status
-        assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in status
-        assert "ChatGPT: CHAT_WAITING" in status
-        assert "Spend: $0.00" in status
+        assert "🤖 BCP Cockpit" in status
+        assert "Progression vérifiable des liaisons" in status
+        assert "Téléphone B-EDGE" in status
+        assert "ChatGPT: ⏳ réponse en attente" in status
+        assert "💰 Coût: $0.00" in status
+        details = svc.details()
+        assert "État global: EN_COURS" in details
+        assert "GitHub CI: Windows=SUCCESS [work/test]" in details
+        assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
         assert "48273195" in svc.job("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
-        assert "MVP read-only" in svc.dispatch("/run")
+        assert "Lecture seule" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
