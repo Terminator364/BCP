@@ -191,3 +191,18 @@ The default status surface MUST:
 - remain independent of whether a ChatGPT response is currently generating.
 
 One bot is the normal multi-project/multi-mission cockpit. Multiple bots are not the default solution to multiple ChatGPT conversations.
+
+
+## Human Cockpit V4 binding — 2026-09-19
+
+The human-facing cockpit is further refined by `docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md`.
+
+Binding:
+- the live mission card exposes stable inline controls for refresh, exact position, missions and technical details;
+- `/report` and `/reporttech` plus matching buttons provide compact human and technical PDF snapshots;
+- callback taps are acknowledged immediately before slower refresh/export work;
+- PDF/report state is presentation-only and never canonical authority;
+- Nexus may cache sanitized report text so exports remain available during degraded direct PC->Telegram egress;
+- all controls remain read-only in this increment;
+- optional image-card UX remains separately gated;
+- no ChatGPT scheduled automation is created or required.
