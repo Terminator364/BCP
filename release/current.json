@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-19-R7",
+  "requirements_revision": "2026-09-19-R8",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
   "update_policy": {
