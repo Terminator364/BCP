@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R4
+Revision: 2026-09-19-R5
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -282,16 +282,16 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.7.
+Current coordinated target: BCP 0.6.0 + B-EDGE 1.2.0 Evergreen.
 
-BCP 0.4.7 keeps the 0.4.6 field-proof guarantees and adds an authenticated local B-EDGE update relay backed by the canonical Drive installer folder. The server recomputes the APK SHA-256 before exposing release metadata or bytes.
+BCP 0.6.0 + B-EDGE 1.2.0 keep the proven reboot/lifecycle/update foundations and move the product materially toward V2: durable Room/SQLite orchestration, multi-project state, dependency-aware queues, WorkManager reconciliation, evidence-gated canonical memory, bounded/hash-addressed Context Pack v2, resource-governed Android work, hysteretic 4 GB PC pressure handling, and enriched idempotent/fenced job envelopes.
 
 Promotion gate:
 - CI qualification PASS;
 - Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.7;
+- coordinated Windows installer + Android build + compatibility workflow PASS;
 - `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.7 runtime;
+- its timestamp/version/hash prove a live 0.6.0 runtime;
 - B-EDGE telemetry/readback follows.
 
 No blind reinstall is allowed merely because telemetry is missing.
