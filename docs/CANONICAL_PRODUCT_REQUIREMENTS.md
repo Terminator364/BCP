@@ -571,3 +571,28 @@ When a chat/provider is delayed, BCP must expose the exact last confirmed checkp
 
 Canonical detailed design:
 `docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md`.
+
+
+## P0 — Repository single-writer / Git integration fence
+
+This policy applies to all active ChatGPT project conversations, Work sessions, CI bots and future agents.
+
+Many workers may reason in parallel, but canonical repository state advances through one fenced integration path.
+
+Normal autonomous path:
+`READ_MAIN_HEAD -> UNIQUE_WORK_BRANCH -> SERIAL_MUTATIONS -> CI -> PR -> MAIN_HEAD_RECHECK -> RECONCILE_IF_MOVED -> SERIALIZED_MERGE -> READBACK`.
+
+Requirements:
+- no autonomous direct product mutation to `main`;
+- each writer records exact `base_main_sha`;
+- one work branch per conversation/session/mission;
+- concurrent file writes on the same branch are forbidden;
+- CI proof belongs only to the exact commit SHA tested;
+- moved `main` requires reconciliation and requalification before merge;
+- useful divergent work is preserved on `recovery/*` branches;
+- normal automation never force-pushes `main`;
+- Drive/release CURRENT publication must reference the exact qualified merged source SHA.
+
+Canonical protocol:
+- `docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md`
+- `.project-memory/GIT_WRITER_LEASE_POLICY.json`
