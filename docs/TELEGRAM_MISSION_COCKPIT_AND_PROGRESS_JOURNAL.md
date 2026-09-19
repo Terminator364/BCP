@@ -385,3 +385,18 @@ Binding refinements:
 - resident progress presence is driven by BCP events/heartbeats and MUST NOT depend on an active ChatGPT turn;
 - resident timers are local BCP behavior, not ChatGPT scheduled automations;
 - optional lightweight images/cards are data-saver aware and not sent on every heartbeat.
+
+
+## Human Cockpit V4 binding — 2026-09-19
+
+The human-facing cockpit is further refined by `docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md`.
+
+Binding:
+- the live mission card exposes stable inline controls for refresh, exact position, missions and technical details;
+- `/report` and `/reporttech` plus matching buttons provide compact human and technical PDF snapshots;
+- callback taps are acknowledged immediately before slower refresh/export work;
+- PDF/report state is presentation-only and never canonical authority;
+- Nexus may cache sanitized report text so exports remain available during degraded direct PC->Telegram egress;
+- all controls remain read-only in this increment;
+- optional image-card UX remains separately gated;
+- no ChatGPT scheduled automation is created or required.
