@@ -420,6 +420,12 @@ class Service:
         commits = gh.get("commits") or []
         run = runs[0] if runs else {}
         commit = commits[0] if commits else {}
+        commit_payload = commit.get("commit") if isinstance(commit, dict) else None
+        if isinstance(commit_payload, dict):
+            commit_message_raw = str(commit_payload.get("message") or "")
+        else:
+            commit_message_raw = str(commit.get("message") or "") if isinstance(commit, dict) else ""
+        commit_message = clean(commit_message_raw.splitlines()[0] if commit_message_raw.splitlines() else "", 120)
 
         stable = {
             "project": self.project_id,
@@ -435,7 +441,7 @@ class Service:
             "drive_visible": drive_ok,
             "github_visible": bool(gh.get("ok")),
             "commit_sha": clean(commit.get("sha"), 48),
-            "commit_message": clean(str(commit.get("commit", {}).get("message") if isinstance(commit.get("commit"), dict) else commit.get("message") or "").splitlines()[0], 120),
+            "commit_message": commit_message,
             "ci_name": clean(run.get("name"), 60),
             "ci_state": clean(run.get("conclusion") or run.get("status"), 30),
             "chat_state": clean(chat.get("state"), 60),
