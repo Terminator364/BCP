@@ -41,7 +41,7 @@ public interface EdgeDao {
 
     @Query("SELECT COUNT(*) FROM edge_job_dependencies d WHERE d.jobId = :jobId AND NOT EXISTS (" +
             "SELECT 1 FROM edge_receipts r WHERE r.jobId = d.dependsOnJobId " +
-            "AND r.result IN ('COMMITTED','ALREADY_COMMITTED','DONE','PASS','SUCCESS'))")
+            "AND r.result IN ('SUCCEEDED','COMMITTED','ALREADY_COMMITTED','DONE','PASS','SUCCESS'))")
     int unresolvedDependencies(String jobId);
 
     @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED','REMOTE_QUEUED') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
