@@ -2,12 +2,14 @@
   "schema": "bcp.server_release/1",
   "channel": "candidate",
   "version": "0.6.0",
-  "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "036ebe0fc749e1b588face8bc4a0a63ed0306258b35ba9c2079d9aece5b599c1",
+  "url": "https://raw.githubusercontent.com/Terminator364/BCP/d510e8bf03c87a84df3768479f7aa030079a4930/windows/bcp_server.py",
+  "sha256": "7521e5629a195b12fb2231f87ae1c101434255e998e635b96b60f182664420d7",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.0.0-rc1-evergreen",
   "requirements_revision": "2026-09-19-R4",
-  "release_train": "BCP-0.6.0_EDGE-2.0.0-rc1"
+  "release_train": "BCP-0.6.0_EDGE-2.0.0-rc1",
+  "source_commit": "d510e8bf03c87a84df3768479f7aa030079a4930",
+  "audit_executor_state": "CONTRACT_DEFINED_NOT_IMPLEMENTED"
 }
