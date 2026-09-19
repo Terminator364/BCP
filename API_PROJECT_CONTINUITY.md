@@ -172,3 +172,21 @@ Dual-conversation design is therefore part of API CORE:
 - already-dispatched bounded jobs may continue independently and are observed through BCP receipts/job state.
 
 User-experience acceptance target: interruption -> durable checkpoint -> safe takeover -> next uncommitted atomic action -> receipt, with no screenshot/manual state reconstruction.
+
+## P0 session-survival and request-context requirements
+
+These files are mandatory recovery inputs and must be loaded before expanding work:
+- `.project-memory/SESSION_SURVIVAL_INVARIANTS.md`
+- `.project-memory/PLATFORM_FRICTION_P0.md`
+- `.project-memory/USER_FRICTION_CHARTER.md`
+- `.project-memory/WHY_API_EXISTS.json`
+- `.project-memory/API_SCOPE_PROFILE.json`
+- `.project-memory/PLATFORM_CUT_RESILIENCE.md`
+- `docs/TECHNICAL_REQUEST_CONTEXT_ENVELOPE.md`
+- `docs/DUAL_CONVERSATION_CONTINUITY.md`
+
+Priority rule: until interruption-resilience and dual-conversation continuity are FIELD_VERIFIED, do not treat them as optional polish. They are P0 product requirements and take priority over nonessential expansion.
+
+Request formulation rule: when a legitimate technical task could appear ambiguous in isolation, API/BCP must automatically preserve the truthful minimum context envelope: owned/authorized target, local/controlled environment, engineering objective, narrow atomic action, boundaries, and expected evidence/rollback. This is for clarity and continuity, never for bypassing platform safeguards.
+
+Session-loss rule: assume this conversation may disappear at any time. No current-chat detail required for project recovery may remain only in chat memory.
