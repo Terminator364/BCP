@@ -46,3 +46,14 @@ If the candidate is lower, stop with `RELEASE_LINE_RECONCILIATION_REQUIRED`; do 
 The user is not the release transport. Once the reconciled line is promoted, B-EDGE should obtain qualified updates over home Wi-Fi through the existing authenticated BCP update path, with only the Android OS confirmation that cannot legitimately be automated away.
 
 This gate is about continuity and correctness; it is not a mechanism for bypassing platform or provider safeguards.
+
+## Reconciliation shape observed
+
+A direct commit comparison shows the preserved 0.6/2.0 candidate and current main are genuinely diverged, not a simple fast-forward:
+
+- candidate side: 27 commits ahead of the common history;
+- current main side: 96 commits ahead of the candidate line.
+
+The candidate-only surface is concentrated in Android/B-EDGE, coordinated packaging, and the Windows BCP server. The main-only surface contains the newer Telegram observability, Git writer fence, Nexus transport, CURRENT release contract, continuity policy, and related product requirements.
+
+Therefore the safe path is a selective reconciliation/cherry-pick/reimplementation by subsystem on one fenced work branch, followed by exact-head CI. A blind branch merge is forbidden.
