@@ -1,0 +1,68 @@
+name: BCP Final Acceptance Package
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
+      - "windows/bcp_server.py"
+      - "release/server.json"
+      - ".github/workflows/field-acceptance-package.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-final-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse acceptance PowerShell
+        shell: powershell
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1'),
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0){$errors|Format-List *; throw 'acceptance PowerShell parse failed'}
+
+      - name: Acceptance self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -SelfTest
+
+      - name: Cross-check target version and stale-writer capability
+        shell: powershell
+        run: |
+          $release=Get-Content -Raw '.\release\server.json' -Encoding UTF8|ConvertFrom-Json
+          $runner=Get-Content -Raw '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -Encoding UTF8
+          $server=Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
+          if($runner -notmatch ('\$TargetVersion = "'+[regex]::Escape([string]$release.version)+'"')){throw 'runner target != release version'}
+          if($server -notmatch 'X-BCP-Expected-Revision'){throw 'server revision precondition support missing'}
+          if($server -notmatch 'stale_revision'){throw 'server stale writer rejection missing'}
+          if($runner -notmatch 'shutdown\.exe /r /t 15'){throw 'automatic reboot stage missing'}
+          if($runner -notmatch 'RunOnce'){throw 'post-reboot continuation missing'}
+          if($runner -notmatch 'BCP_FINAL_ACCEPTANCE_LATEST\.json'){throw 'final machine-readable report missing'}
+          Write-Host 'BCP_FINAL_ACCEPTANCE_STATIC=PASS'
+
+      - name: Server self-test
+        shell: powershell
+        run: |
+          python '.\windows\bcp_server.py' --selftest
+
+      - name: Upload final acceptance package
+        uses: actions/upload-artifact@v4
+        with:
+          name: bcp-final-acceptance-current
+          path: |
+            windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd
+            windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1
+          if-no-files-found: error
