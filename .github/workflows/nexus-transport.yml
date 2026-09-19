@@ -118,6 +118,7 @@ jobs:
               "windows/CONFIGURE_BCP_NEXUS.ps1",
               "windows/BOOTSTRAP_BCP_NEXUS.ps1",
               "docs/BCP_NEXUS_FIELD_GATE.md",
+              "docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md",
           ]
           out = pathlib.Path("BCP_NEXUS_TRANSPORT_MVP.zip")
           with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as z:
