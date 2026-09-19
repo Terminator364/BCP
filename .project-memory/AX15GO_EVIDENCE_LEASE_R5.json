@@ -1,0 +1,90 @@
+{
+  "schema": "ax15go.evidence_lease/1",
+  "project": "BCP",
+  "status": "ENGINEERING_GATE_RUNTIME_UNCHANGED",
+  "purpose": "Close TOCTOU between health evidence and action without putting full probes on the interactive fast path.",
+  "rules": {
+    "lease_is_not_authentication": true,
+    "lease_is_not_authority_alone": true,
+    "health_snapshot_never_authorizes_mutation_alone": true,
+    "generation_change_invalidates_immediately": true,
+    "process_restart_invalidates_in_memory_leases": true,
+    "wall_clock_is_not_sole_freshness_oracle": true,
+    "stale_or_unknown_lease_is_not_valid": true,
+    "mutation_preconditions_checked_at_effect_boundary": true,
+    "no_full_health_probe_per_turn": true,
+    "no_polling_loop_for_lease_freshness": true,
+    "targeted_refresh_only_on_stale_or_unknown": true,
+    "retries_and_refreshes_bounded": true
+  },
+  "lease_fields": [
+    "capability",
+    "evidence_id",
+    "generation_vector",
+    "source_vector_hash",
+    "process_or_boot_generation",
+    "freshness_class",
+    "created_monotonic_local",
+    "invalidators",
+    "status"
+  ],
+  "freshness_classes": {
+    "FAST_READ_CACHE": "event-driven cached evidence; safe for non-mutating fast reads within unchanged generation vector",
+    "INTERACTIVE_CONTROL": "short-lived/event-invalidated evidence for interactive capability; targeted refresh only when stale",
+    "MUTATION_ADMISSION": "cached evidence is advisory; authoritative revision/fence/idempotency/storage preconditions are checked at effect boundary"
+  },
+  "capabilities": {
+    "LOCAL_CONTEXT_READ": {
+      "generation_vector": [
+        "project_revision",
+        "policy_revision",
+        "context_revision",
+        "coordinator_epoch"
+      ],
+      "invalidators": [
+        "PROJECT_REVISION_CHANGE",
+        "POLICY_REVISION_CHANGE",
+        "CONTEXT_REVISION_CHANGE",
+        "COORDINATOR_EPOCH_CHANGE"
+      ],
+      "commit_guard": "UNCHANGED/DELTA fast path; no global health scan"
+    },
+    "CANONICAL_MUTATION": {
+      "generation_vector": [
+        "project_revision",
+        "coordinator_epoch",
+        "fencing_token",
+        "server_identity",
+        "authority_store_generation"
+      ],
+      "invalidators": [
+        "PROJECT_REVISION_CHANGE",
+        "COORDINATOR_EPOCH_CHANGE",
+        "FENCE_CHANGE",
+        "SERVER_IDENTITY_CHANGE",
+        "PROCESS_RESTART"
+      ],
+      "commit_guard": "expected revision + current fence + idempotency + SQLite transaction at effect boundary; cached health never authorizes mutation"
+    },
+    "REMOTE_INGRESS": {
+      "generation_vector": [
+        "nexus_transport_generation",
+        "device_identity",
+        "command_sequence"
+      ],
+      "invalidators": [
+        "NEXUS_RECONNECT",
+        "DEVICE_IDENTITY_CHANGE",
+        "COMMAND_SEQUENCE_ADVANCE"
+      ],
+      "commit_guard": "remote receipt/queue is not proof of local execution; local canonical preconditions still apply"
+    }
+  },
+  "negative_controls": [
+    "green health snapshot followed by generation change before action must be rejected/refreshed",
+    "process restart must not reuse prior in-memory lease",
+    "wall-clock rollback/advance must not extend authoritative lease",
+    "remote dependency failure must not force full local re-probe storm",
+    "stale lease must not be silently promoted by a fresh unrelated dimension"
+  ]
+}
