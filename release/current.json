@@ -3,7 +3,7 @@
   "channel": "CURRENT",
   "requirements_revision": "2026-09-19-R8",
   "zero_usd": true,
-  "overall_state": "FIELD_PARTIAL_WINDOWS_VERIFIED_EDGE_VERSION_CONNECTED_NEXUS_UNVERIFIED",
+  "overall_state": "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
   "update_policy": {
     "unchanged_version_zero_download": true,
     "metered_large_download_default": false,
@@ -15,7 +15,7 @@
     "windows_bcp": {
       "version": "0.6.1",
       "source_manifest": "release/server.json",
-      "qualification": "CI_QUALIFIED",
+      "qualification": "FIELD_VERIFIED",
       "distribution_ready": true,
       "field_verified": true,
       "auto_update_eligible": true,
