@@ -517,7 +517,7 @@ public final class BcpClient {
             orchestrator.setMode("EDGE_ONLY");
             local.put("offline", true);
             local.put("queued_locally", true);
-            EdgeReconcileWorker.requestNow(context);
+            EdgeWorkScheduler.requestImmediate(context);
             return local;
         }
     }
