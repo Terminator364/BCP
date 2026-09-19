@@ -24,7 +24,7 @@
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
         "sha256": "ac9da44abb0c6506df0be9c01529e777b3b4f73daa8f50a952754f9fac1c5c43"
       },
-      "notes": "BCP 0.6.3 exact-head release contract and coordinated product CI passed. Hash-pinned self-update/rollback remains active; future convergence is 30 minutes and Nexus bootstrap staging/one-time launch is resident. Fresh field readback remains required."
+      "notes": "Fresh Drive machine readback at 2026-09-19T20:11:54Z proves BCP 0.6.3 running on MBMPC with the expected server hash, pairing active and lifecycle registered. Product FIELD_VERIFIED remains false until Nexus deployment/round-trip and remaining acceptance gates pass."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -41,7 +41,7 @@
       "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
     },
     "nexus": {
-      "version": "0.1.1",
+      "version": "0.1.2",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_QUALIFIED_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "2b9f29e4cb8d4c953cccef4bb27a2a7e4653f15d25b19ddabf10227a41f56a1d"
+        "sha256": "384450c702b7efcdc49939f4d64c902f8a6194c9628f0ca94d9e459f3af7fc88"
       },
-      "notes": "Nexus bootstrap 0.1.1 exact-head release contract and coordinated product CI passed. The four-file bundle is hash-pinned, staged by resident BCP and launched once. Cloudflare browser authorization remains the intended human gate; field round-trip is still unverified."
+      "notes": "Nexus bootstrap 0.1.2 removes the manual Node/Wrangler installation step by acquiring a pinned portable Node.js 24.21.0 runtime and exact Wrangler 4.135.0 on demand with persistent npm cache and bounded network retries. Cloudflare browser authorization remains the only intended human gate; field round-trip remains pending."
     }
   }
 }
