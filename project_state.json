@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_4_CI_QUALIFIED_LEGACY_MIGRATION_V2_READY",
-  "last_completed_atomic_action": "Diagnosed legacy supervisor/runtime race and identity migration gap; built CI-qualified migration v2 that disables legacy supervisor, migrates pairing/token, proves managed listener and authenticated diagnostics, writes durable Drive receipt, and replaced Drive CURRENT in place",
-  "next_action": "Run the refreshed API_BCP/00_A_INSTALLER/BCP_PC_MIGRATE_CURRENT.zip once on the PC; then read BCP_PC_MIGRATION_LATEST.json and live BCP heartbeat from Drive",
+  "status": "BCP_0_4_4_FIELD_RUNTIME_VERIFIED_RESTART_RECOVERY_TEST_PENDING",
+  "last_completed_atomic_action": "Verified live field runtime from machine-readable Drive telemetry after legacy migration: BCP 0.4.4 active on MBMPC, paired with B-EDGE 0.2.5, server hash matches qualified release, update state UP_TO_DATE, lifecycle registration active, ChatGPT-PC 6.0.32 alive and recovery healthy",
+  "next_action": "Perform/observe a controlled restart or equivalent lifecycle interruption and prove BCP 0.4.4 returns automatically with the same pairing/state; no reinstall or migration rerun",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-LEGACY-MIGRATION-V2-READY",
-    "status": "WAITING_ONE_LOCAL_RERUN_WITH_CORRECTED_CURRENT",
-    "next_atomic_action": "Read machine-readable migration receipt after refreshed CURRENT bridge run",
+    "checkpoint_id": "APIAX07-BCP044-FIELD-RUNTIME-VERIFIED",
+    "status": "FIELD_RUNTIME_VERIFIED_RESTART_GATE_PENDING",
+    "next_atomic_action": "Prove automatic restart/recovery of BCP 0.4.4 with same state/pairing",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -333,5 +333,43 @@
       "verify authenticated /v1/diagnostics",
       "write BCP_PC_MIGRATION_LATEST.json receipt to synced CHATGPT_PC_AGENT receipt path"
     ]
+  },
+  "latest_machine_readable_field_evidence": {
+    "source": "CHATGPT_PC_AGENT/03_TELEMETRY/BCP",
+    "runtime_file_id": "1T8RHLp_kEkkhmCODT-MPem1czRNfLiX6",
+    "telemetry_file_id": "18zhFaUphIB418nxX-4I0OJxq8EAsAzc2",
+    "observed_updated_at": "2026-09-19T02:20:44+00:00",
+    "pc_name": "MBMPC",
+    "server_version": "0.4.4",
+    "server_pid": 10324,
+    "server_file": "C:\\Users\\Lenovo\\AppData\\Local\\ChatGPT_ManagedApps\\bcp\\server.py",
+    "server_sha256": "c23e9d79262884b399cfb3abba382dae3c4b18ccbe158fe818e6497f7a493993",
+    "paired": true,
+    "edge_version": "0.2.5",
+    "edge_device": "samsung SM-A217F",
+    "project": "buildhub",
+    "update_state": "UP_TO_DATE",
+    "update_target_version": "0.4.4",
+    "auto_update": true,
+    "chatgpt_pc_active_version": "6.0.32",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "recovery_phase": "HEALTHY",
+    "recovery_result_status": "ACTIVE_POINTER_RUNTIME_CONVERGED",
+    "lifecycle_registration": {
+      "supported": true,
+      "registered": true,
+      "value_name": "BlessingControlPlane",
+      "launcher": "C:\\Users\\Lenovo\\AppData\\Local\\Tunnel_PC_G4\\runtime\\pythonw.exe"
+    },
+    "evidence_class": "FRESH_MACHINE_READABLE_FIELD_RUNTIME"
+  },
+  "artifact_hygiene": {
+    "policy": "P0",
+    "windows_migration_cleanup_commit": "dcd65b706bbe5a43f02228ee868c5fa980fcece1",
+    "windows_ci_run_id": 35415438359,
+    "windows_ci_result": "PASS",
+    "windows_behavior": "After verified success, remove only known BCP migration ZIP/CMD/PS1 artifacts and extracted BCP_PC_MIGRATE_CURRENT* folders from the user's Downloads folder; preserve failure evidence and unrelated user files",
+    "android_behavior": "Future in-app updater must use app-owned cache and delete its own update payload after verified installation; do not request broad storage access merely to clean arbitrary Downloads",
+    "current_drive_artifact_replaced_in_place": true
   }
 }
