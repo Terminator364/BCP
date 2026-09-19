@@ -98,5 +98,22 @@
     "fresh_conversation_must_recover_without_user_reexplanation": true,
     "screenshots_are_fallback_only": true,
     "legitimate_scope_must_be_durable": true
+  },
+  "diagnostic_mode": {
+    "name": "CHATGPT_PC_ISOLATION",
+    "status": "ACTIVE",
+    "telemetry_required": true,
+    "chatgpt_pc_interactive_channel": false,
+    "exit_phrase": "END ISOLATION CHATGPT-PC",
+    "note": "Temporary A/B diagnostic. Correlation only; no causal conclusion."
+  },
+  "latest_resync_report": {
+    "source": "user-pasted APIAX07 RESYNC response",
+    "reported_at": "2026-09-19",
+    "evidence_status": "REPORTED_NOT_REVERIFIED",
+    "bootstrap": "BCP_FINAL_BOOTSTRAP_0_3_1.zip",
+    "sha256": "80f049f3a3f0e962f0174eaedc5e390a48967cc75398782a63ef2c6e2b981a59",
+    "claimed_resume_point": "APIAX07 / FIELD BRING-UP / WINDOWS↔B-EDGE",
+    "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   }
 }
