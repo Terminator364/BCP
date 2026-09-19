@@ -61,8 +61,8 @@ jobs:
           if($acceptance -notmatch '\$TargetVersion = "0.6.0"'){throw 'ACCEPTANCE_VERSION_DRIFT'}
 
           # Manifest hashes canonical repository bytes (LF); normalize Windows checkout text before hashing.
-          $canonical=$server -replace "\r\n","\n"
-          if(-not $canonical.EndsWith("\n")){$canonical += "\n"}
+          $canonical=$server -replace "`r`n","`n"
+          if(-not $canonical.EndsWith("`n")){$canonical += "`n"}
           $bytes=[Text.UTF8Encoding]::new($false).GetBytes($canonical)
           $sha=[BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
           if($sha -ne ([string]$release.sha256).ToLowerInvariant()){throw "SERVER_SHA_MISMATCH manifest=$($release.sha256) canonical=$sha"}
