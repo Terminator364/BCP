@@ -67,6 +67,18 @@ jobs:
           [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\windows\INSTALL_BCP_PRODUCT_CURRENT.ps1'),[ref]$null,[ref]$errors)|Out-Null
           if($errors.Count){$errors|Format-List *;throw 'product installer parse failed'}
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_PRODUCT_CURRENT.ps1' -SelfTest
+      - name: Canonicalize packaged server bytes
+        shell: powershell
+        run: |
+          $path=(Resolve-Path '.\windows\bcp_server.py')
+          $raw=Get-Content -Raw -LiteralPath $path -Encoding UTF8
+          $canonical=$raw -replace "`r`n","`n"
+          [IO.File]::WriteAllText($path,$canonical,[Text.UTF8Encoding]::new($false))
+          $actual=(Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+          $release=Get-Content -Raw '.\release\server.json' -Encoding UTF8|ConvertFrom-Json
+          if($actual -ne ([string]$release.sha256).ToLowerInvariant()){throw "CANONICAL_SERVER_SHA_MISMATCH actual=$actual expected=$($release.sha256)"}
+          Write-Host ("BCP_CANONICAL_PACKAGED_SERVER=PASS sha="+$actual)
+
       - name: Windows package hashes
         shell: powershell
         run: |
