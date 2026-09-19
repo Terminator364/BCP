@@ -1,0 +1,17 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-nexus-browser-auth-20260919-2040",
+  "project_or_mission": "API/BCP Nexus one-click browser authorization",
+  "base_main_sha": "e15d17890afc91e6c1f2fa086f4982fd4cca7641",
+  "created_at": "2026-09-19T20:40:00+01:00",
+  "intended_file_scope": [
+    ".project-memory/writers/chat-nexus-browser-auth-20260919-2040.json",
+    "windows/BOOTSTRAP_BCP_NEXUS.ps1",
+    "docs/BCP_NEXUS_FIELD_GATE.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Nexus Transport Qualification",
+    "BCP Coordinated Product Qualification"
+  ],
+  "status": "ACTIVE_WRITER_BRANCH"
+}
