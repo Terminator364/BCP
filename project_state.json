@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-UNIFIED-DRIVE-BCP044-PUBLISHED",
-    "status": "ADVANCING",
-    "next_atomic_action": "Qualify BCP 0.4.4 CI and install Drive CURRENT APK on old phone",
+    "checkpoint_id": "APIAX07-UNIFIED-DRIVE-MAINTENANCE-ACTIVE",
+    "status": "DRIVE_CHANNEL_OPERATIONAL_BCP044_CI_QUEUED",
+    "next_atomic_action": "Complete BCP 0.4.4 qualification; install Drive CURRENT APK; verify heartbeat in API_BCP/02_TELEMETRY/BCP",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -272,19 +272,30 @@
       "previous_releases": 2,
       "rollback_archives": 2,
       "delete_temp_failed_duplicate_superseded_on_publish": true
+    },
+    "maintenance": {
+      "mode": "DAILY_CONDITION_WATCH",
+      "local_time": "08:00 Africa/Kinshasa",
+      "behavior": "Replace CURRENT in place when a newer qualified artifact exists; retain max 2 previous releases and 2 rollback archives; remove temp/failed/duplicate/superseded artifacts; preserve KEEP/audit evidence",
+      "notification": "Only on change or blocker"
+    },
+    "legacy_drive_bcp": {
+      "id": "1rZ-uJvqpcEBqybp4notMpHmXDU8nNDSa",
+      "status": "PRESERVED_COMPATIBILITY_UNTIL_NEW_TELEMETRY_FIELD_VERIFIED",
+      "cleanup_allowed": false
     }
   },
   "bcp_0_4_4": {
     "server_commit": "bd23cf82ee8991d1dc18fd94a3e18ca4c6e1f3fd",
-    "server_sha256": "45a6a1a860e2bf585e29ea61fb1ff0bb014d5f8b63fdddfe94cb668174bab446",
-    "release_commit": "e161f109cf71a16c3a1e0e18cf1e8df805e97ed1",
+    "server_sha256": "c23e9d79262884b399cfb3abba382dae3c4b18ccbe158fe818e6497f7a493993",
+    "release_commit": "c0d10a286a5a4e18d755a31811e7b479f7ad9cff",
     "sequence_commit": "5fb351e14170104ad53846015dae46d4e3e5029c",
     "installer_commit": "f13071061ae5cd4e73bfa68d9d8c6fc541549bfa",
     "requirements_commit": "3806cc199f83ff7d095ecc8f67e0ab664ffa0bf8",
     "managed_update_sequence": 202609190404,
     "preferred_external_telemetry_path": "API_BCP/02_TELEMETRY/BCP",
     "legacy_telemetry_fallback_preserved": true,
-    "ci_state": "PENDING",
+    "ci_state": "QUEUED_AFTER_SELFTEST_FIX",
     "field_runtime_readback": "PENDING"
   }
 }
