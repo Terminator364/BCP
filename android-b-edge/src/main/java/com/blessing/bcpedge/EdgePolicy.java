@@ -13,6 +13,29 @@ public final class EdgePolicy {
         return "READY";
     }
 
+    public static String nextState(boolean requiresPc, String mode, String resourceClass,
+                                   boolean localResourceAllowed) {
+        if (requiresPc && !"PC_AVAILABLE".equals(mode)) return "WAITING_FOR_PC";
+        if (!requiresPc && !localResourceAllowed) return "HOLD_RESOURCE";
+        return "READY";
+    }
+
+    public static boolean resourceAllowed(String resourceClass, boolean lowMemory,
+                                          boolean powerSave, int thermalStatus,
+                                          int batteryPct, boolean charging,
+                                          boolean metered) {
+        String rc = resourceClass == null ? "EDGE_R1" : resourceClass;
+        if ("EDGE_R0".equals(rc)) return true;
+        if (lowMemory || thermalStatus >= 4) return false; // SEVERE+
+        if ("EDGE_R1".equals(rc)) return true;
+        if ("EDGE_R2".equals(rc)) {
+            if (powerSave || thermalStatus >= 3) return false; // MODERATE+
+            if (!charging && batteryPct >= 0 && batteryPct < 40) return false;
+            return !metered;
+        }
+        return false;
+    }
+
     public static String temperature(long ageMs, boolean active) {
         if (active) return "HOT";
         if (ageMs <= 6L * 60L * 60L * 1000L) return "WARM";
