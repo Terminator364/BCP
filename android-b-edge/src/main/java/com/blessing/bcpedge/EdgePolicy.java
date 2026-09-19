@@ -25,6 +25,10 @@ public final class EdgePolicy {
         return (nowMs - lastAttemptMs) >= bounded;
     }
 
+    public static boolean canAdmitJob(int currentDepth) {
+        return currentDepth >= 0 && currentDepth < boundedQueueLimit();
+    }
+
     public static int boundedQueueLimit() { return 128; }
     public static int boundedMemoryEntries() { return 96; }
 }
