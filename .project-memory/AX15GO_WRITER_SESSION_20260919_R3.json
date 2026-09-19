@@ -1,0 +1,20 @@
+{
+  "schema": "bcp.writer_branch_metadata/1",
+  "writer_or_session_id": "chatgpt-ax15go-20260919-r3",
+  "project_or_mission": "BCP / AX15GO cross-project causal learning",
+  "base_main_sha": "1f57f0e5b0472543ff51aaf4a519e987064d4fcc",
+  "created_at": "2026-09-19",
+  "intended_file_scope": [
+    ".project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json",
+    ".project-memory/AX15GO_WRITER_SESSION_20260919_R3.json",
+    "docs/BEDGE_V2_TEST_MATRIX.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Coordinated Product Qualification exact-head",
+    "static JSON validity",
+    "no runtime/release mutation"
+  ],
+  "direct_main_write": false,
+  "reconciles_stale_pr": 57,
+  "preserves_merged_main_through": "PR #58 Telegram human cockpit V3"
+}
