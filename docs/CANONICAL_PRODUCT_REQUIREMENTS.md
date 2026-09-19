@@ -742,3 +742,9 @@ Routine BCP/PC/B-EDGE upgrades MUST converge toward zero-manual distribution:
 
 Canonical design:
 `docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
+
+
+Canonical Nexus field gate:
+`docs/BCP_NEXUS_FIELD_GATE.md`.
+
+The Nexus implementation is not ACTIVE/FIELD_VERIFIED merely because CI passes. Promotion requires a real home-WiFi health and Telegram round-trip with direct PC->Telegram allowed to remain degraded.

@@ -1,0 +1,120 @@
+name: BCP Nexus Transport Qualification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "nexus/**"
+      - "windows/bcp_telegram_observability.py"
+      - "windows/CONFIGURE_BCP_NEXUS.ps1"
+      - "docs/BCP_NEXUS_FIELD_GATE.md"
+      - "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".github/workflows/nexus-transport.yml"
+  push:
+    paths:
+      - "nexus/**"
+      - "windows/bcp_telegram_observability.py"
+      - "windows/CONFIGURE_BCP_NEXUS.ps1"
+      - "docs/BCP_NEXUS_FIELD_GATE.md"
+      - "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".github/workflows/nexus-transport.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-nexus-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nexus-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Worker syntax
+        run: node --check nexus/cloudflare-worker/src/worker.mjs
+      - name: D1 schema smoke
+        shell: python
+        run: |
+          import pathlib, sqlite3
+          sql = pathlib.Path("nexus/cloudflare-worker/migrations/0001_init.sql").read_text(encoding="utf-8")
+          db = sqlite3.connect(":memory:")
+          db.executescript(sql)
+          names = {r[0] for r in db.execute("select name from sqlite_master where type='table'")}
+          assert {"commands", "replies", "outbound"} <= names, names
+          print("BCP_NEXUS_D1_SCHEMA=PASS")
+      - name: Security and transport guards
+        shell: python
+        run: |
+          import pathlib, re
+          worker = pathlib.Path("nexus/cloudflare-worker/src/worker.mjs").read_text(encoding="utf-8")
+          client = pathlib.Path("windows/bcp_telegram_observability.py").read_text(encoding="utf-8")
+          joined = worker + "\n" + client
+          for value in [
+              "/telegram/webhook", "/v1/device/commands", "/v1/device/reply", "/v1/device/push",
+              "TELEGRAM_WEBHOOK_SECRET", "BCP_DEVICE_TOKEN", "ALLOWED_CHAT_ID",
+              "X-BCP-Device-ID", "NEXUS", "DIRECT_TELEGRAM", "idempotency_key",
+          ]:
+              assert value in joined, value
+          assert not re.search(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b", joined)
+          assert "x-telegram-bot-api-secret-token" in worker.lower()
+          assert "https://" in client
+          print("BCP_NEXUS_SECURITY_CONTRACT=PASS")
+
+  pc-client:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m py_compile windows/bcp_telegram_observability.py
+      - run: python windows/bcp_telegram_observability.py --selftest
+
+  powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and self-test Nexus configurator
+        shell: powershell
+        run: |
+          $null = [scriptblock]::Create((Get-Content -Raw '.\windows\CONFIGURE_BCP_NEXUS.ps1'))
+          & '.\windows\CONFIGURE_BCP_NEXUS.ps1' -SelfTest
+
+  package:
+    needs: [nexus-contract, pc-client, powershell]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package auditable Nexus candidate
+        shell: python
+        run: |
+          import hashlib, pathlib, zipfile
+          files = [
+              "nexus/cloudflare-worker/src/worker.mjs",
+              "nexus/cloudflare-worker/migrations/0001_init.sql",
+              "nexus/cloudflare-worker/wrangler.toml.example",
+              "windows/bcp_telegram_observability.py",
+              "windows/CONFIGURE_BCP_NEXUS.ps1",
+              "docs/BCP_NEXUS_FIELD_GATE.md",
+          ]
+          out = pathlib.Path("BCP_NEXUS_TRANSPORT_MVP.zip")
+          with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as z:
+              for name in files:
+                  z.write(name, pathlib.Path(name).name)
+          digest = hashlib.sha256(out.read_bytes()).hexdigest()
+          pathlib.Path(str(out) + ".sha256").write_text(digest + "  " + out.name + "\n", encoding="ascii")
+          print("PACKAGE_SHA256=" + digest)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-nexus-transport-${{ github.sha }}
+          path: |
+            BCP_NEXUS_TRANSPORT_MVP.zip
+            BCP_NEXUS_TRANSPORT_MVP.zip.sha256
+          if-no-files-found: error

@@ -1,0 +1,18 @@
+name = "bcp-nexus"
+main = "src/worker.mjs"
+compatibility_date = "2026-09-19"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bcp-nexus"
+database_id = "REPLACE_AFTER_D1_CREATE"
+
+[vars]
+BCP_DEVICE_ID = "pc-worker"
+
+# Set secrets with wrangler secret put; never commit values:
+# TELEGRAM_BOT_TOKEN
+# TELEGRAM_WEBHOOK_SECRET
+# BCP_DEVICE_TOKEN
+# ALLOWED_CHAT_ID
