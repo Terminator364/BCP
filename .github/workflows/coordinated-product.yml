@@ -2,6 +2,7 @@ name: BCP Coordinated Product Qualification
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
     paths:
       - "windows/bcp_server.py"
