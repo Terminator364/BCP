@@ -109,7 +109,7 @@ jobs:
           assert companion["url"].startswith("https://raw.githubusercontent.com/Terminator364/BCP/")
           nexus = __import__("json").loads(pathlib.Path("release/nexus_bootstrap.json").read_text(encoding="utf-8"))
           assert nexus["schema"] == "bcp.nexus_bootstrap_release/1"
-          assert nexus["minimum_server_version"] == "0.6.3"
+          assert nexus["minimum_server_version"] == "0.6.4"
           assert nexus["auto_stage"] is True and nexus["auto_launch_once"] is True and nexus["zero_usd"] is True
           for item in nexus["files"]:
               p = pathlib.Path(item["path"])
