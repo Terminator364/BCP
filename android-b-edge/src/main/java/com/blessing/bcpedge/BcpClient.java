@@ -256,54 +256,71 @@ public final class BcpClient {
     }
 
     private JSONObject discoverLan(Progress progress) throws Exception {
+        progress.onStage("DISCOVERY_NSD", "Recherche mDNS/NSD du PC");
+        String nsd = NsdDiscovery.discover(context, 2400L);
+        if (!nsd.isEmpty()) {
+            JSONObject found = probeServer(nsd, 700, 1000);
+            if (found != null) {
+                telemetry.add("DISCOVERY_NSD_PASS", nsd);
+                progress.onStage("DISCOVERY_PASS",
+                        found.optString("pc_name", found.optString("server", "")));
+                return found;
+            }
+            telemetry.add("DISCOVERY_NSD_STALE", nsd);
+        }
+
+        // Diagnostic fallback only: bounded /24 scan with low concurrency/deadline.
         String ip = localIpv4();
         if (ip == null) throw new IOException("NO_LAN_IPV4");
         String[] p = ip.split("\\.");
         if (p.length != 4) throw new IOException("UNSUPPORTED_SUBNET");
         String prefix = p[0] + "." + p[1] + "." + p[2] + ".";
+        telemetry.add("DISCOVERY_SUBNET_FALLBACK", prefix + "0/24");
 
-        ExecutorService pool = Executors.newFixedThreadPool(32);
+        ExecutorService pool = Executors.newFixedThreadPool(12);
         CompletionService<String> cs = new ExecutorCompletionService<>(pool);
         List<Future<String>> futures = new ArrayList<>();
-        for (int i = 1; i <= 254; i++) {
-            final String host = prefix + i;
+        for (int n = 1; n <= 254; n++) {
+            final String host = prefix + n;
             if (host.equals(ip)) continue;
             futures.add(cs.submit(() -> {
-                String base = "http://" + host + ":8765";
-                try {
-                    JSONObject h = requestJson("GET", base + "/health", null,
-                            null, null, 280, 450);
-                    if (h.optBoolean("ok") && h.optString("service", "").startsWith("BCP")) {
-                        JSONObject found = new JSONObject();
-                        found.put("server", base);
-                        found.put("pc_name", h.optString("pc_name", "BCP PC"));
-                        found.put("version", h.optString("version", ""));
-                        found.put("identity_fingerprint",
-                                h.optString("identity_fingerprint", ""));
-                        return found.toString();
-                    }
-                } catch (Exception ignored) {}
-                return null;
+                JSONObject found = probeServer("http://" + host + ":8765", 180, 320);
+                return found == null ? null : found.toString();
             }));
         }
 
         JSONObject found = null;
         try {
             int total = futures.size();
-            long deadline = System.currentTimeMillis() + 6500;
-            for (int i = 0; i < total && System.currentTimeMillis() < deadline; i++) {
-                Future<String> f = cs.poll(450, TimeUnit.MILLISECONDS);
-                if (f == null) continue;
-                String raw = f.get();
+            long deadline = System.currentTimeMillis() + 3800;
+            for (int n = 0; n < total && System.currentTimeMillis() < deadline; n++) {
+                Future<String> future = cs.poll(220, TimeUnit.MILLISECONDS);
+                if (future == null) continue;
+                String raw = future.get();
                 if (raw != null) { found = new JSONObject(raw); break; }
             }
         } finally {
-            for (Future<String> f : futures) f.cancel(true);
+            for (Future<String> future : futures) future.cancel(true);
             pool.shutdownNow();
         }
         if (found != null) progress.onStage("DISCOVERY_PASS",
                 found.optString("pc_name", found.optString("server", "")));
         return found;
+    }
+
+    private JSONObject probeServer(String base, int connectMs, int readMs) {
+        try {
+            JSONObject h = requestJson("GET", base + "/health", null, null, null, connectMs, readMs);
+            if (!h.optBoolean("ok") || !h.optString("service", "").startsWith("BCP")) return null;
+            JSONObject found = new JSONObject();
+            found.put("server", base);
+            found.put("pc_name", h.optString("pc_name", "BCP PC"));
+            found.put("version", h.optString("version", ""));
+            found.put("identity_fingerprint", h.optString("identity_fingerprint", ""));
+            return found;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static String localIpv4() throws SocketException {
