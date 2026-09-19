@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.2"
+SERVER_VERSION = "0.4.3"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -122,6 +122,66 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
 
 
 
+def lifecycle_registration_status() -> dict:
+    if os.name != "nt":
+        return {"supported": False, "registered": False, "reason": "non_windows"}
+    try:
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        value_name = "BlessingControlPlane"
+        pythonw = Path(sys.executable).with_name("pythonw.exe")
+        launcher = pythonw if pythonw.is_file() else Path(sys.executable)
+        command = f'"{launcher}" "{SERVER_FILE}" --bind 0.0.0.0 --port 8765'
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ) as key:
+            try:
+                current, _ = winreg.QueryValueEx(key, value_name)
+            except FileNotFoundError:
+                current = ""
+        return {
+            "supported": True,
+            "registered": str(current) == command,
+            "value_name": value_name,
+            "launcher": str(launcher),
+        }
+    except Exception as e:
+        return {"supported": True, "registered": False, "error": str(e)[:240]}
+
+
+def ensure_lifecycle_registration() -> dict:
+    """Ensure the same BCP managed app starts again at user logon.
+
+    This is a lifecycle launcher only: it does not create a second control plane
+    or a second resident service. Registration is per-user and idempotent.
+    """
+    if os.name != "nt":
+        return {"supported": False, "registered": False, "reason": "non_windows"}
+    try:
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        value_name = "BlessingControlPlane"
+        pythonw = Path(sys.executable).with_name("pythonw.exe")
+        launcher = pythonw if pythonw.is_file() else Path(sys.executable)
+        command = f'"{launcher}" "{SERVER_FILE}" --bind 0.0.0.0 --port 8765'
+        with winreg.CreateKeyEx(
+            winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ | winreg.KEY_WRITE
+        ) as key:
+            current = ""
+            try:
+                current, _ = winreg.QueryValueEx(key, value_name)
+            except FileNotFoundError:
+                pass
+            if str(current) != command:
+                winreg.SetValueEx(key, value_name, 0, winreg.REG_SZ, command)
+        return {
+            "supported": True,
+            "registered": True,
+            "value_name": value_name,
+            "launcher": str(launcher),
+        }
+    except Exception as e:
+        return {"supported": True, "registered": False, "error": str(e)[:240]}
+
+
 def external_telemetry_roots() -> list[Path]:
     """Return safe external folders where sanitized runtime truth can be mirrored.
 
@@ -189,6 +249,7 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "chatgpt_pc_command_plane_age_seconds": chat.get("command_plane_age_seconds"),
         "recovery_phase": str(chat.get("recovery_phase") or "")[:80],
         "recovery_result_status": str(chat.get("recovery_result_status") or "")[:80],
+        "lifecycle_registration": lifecycle_registration_status(),
     }
     written: list[str] = []
     for root in external_telemetry_roots():
@@ -1068,8 +1129,8 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.2") > _version_tuple("0.4.1")
-        assert _version_tuple("0.4.2") == (0, 4, 2)
+        assert _version_tuple("0.4.3") > _version_tuple("0.4.2")
+        assert _version_tuple("0.4.3") == (0, 4, 3)
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
@@ -1122,9 +1183,12 @@ def main():
         return 0
 
     token = ensure_state()
+    lifecycle = ensure_lifecycle_registration()
     server = ThreadingHTTPServer((args.bind, args.port), Handler)
     server.bcp_token = token
     mirror_external_runtime_status("SERVER_START")
+    if not lifecycle.get("registered", False):
+        mirror_telemetry_status("LIFECYCLE_REGISTRATION_DEGRADED", {"status": "DEGRADED"})
     start_external_heartbeat_worker()
     start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
