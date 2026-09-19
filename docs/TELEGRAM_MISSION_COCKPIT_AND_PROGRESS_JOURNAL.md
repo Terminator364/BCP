@@ -226,3 +226,71 @@ After that campaign:
 4. connect the Model Broker to field-qualified free providers;
 5. enable short-code handoff on clients that have a qualified BCP connector;
 6. run interruption, timeout, replay and low-network acceptance.
+
+
+## Progress Presence Layer — proactive certainty during opaque chat/UI delays
+
+The user must never need to infer whether work is progressing from a spinning ChatGPT UI.
+
+BCP therefore exposes a **Progress Presence Layer** over durable external evidence.
+
+### Required behavior
+
+For every BCP-managed mission:
+- emit a durable event before and after each externally observable micro-action;
+- maintain `last_event_at`, `last_checkpoint_at`, `current_component`, `current_step`, `next_safe_action`;
+- expose whether a worker/job is RUNNING, WAITING, BLOCKED, OFFLINE, DONE or UNKNOWN;
+- push Telegram updates on state transitions;
+- while waiting, send sparse adaptive heartbeats only when useful, never aggressive polling;
+- if no new externally observable evidence exists, explicitly report `NO_NEW_EXTERNAL_EVIDENCE` instead of pretending that reasoning is still progressing.
+
+### Telegram UX
+
+Add commands:
+- `/watch <job>` — subscribe to state transitions for one mission;
+- `/unwatch <job>` — stop push updates;
+- `/tail <job>` — last durable events;
+- `/where <job>` — current component, step, elapsed time, last proof and next safe action.
+
+Example:
+
+```
+MISSION 48273195
+State: WAITING_CI
+Current: GitHub Actions / qualification
+Last proof: PR #31 opened 13:24:21
+Last event: CI_STARTED 13:24:31
+Elapsed: 01:14
+Next safe action: merge only if all gates PASS
+Spend: $0.00
+```
+
+### ChatGPT-specific truthfulness
+
+BCP MUST distinguish:
+- `OBSERVED_CHAT_ACTION`: an externally evidenced ChatGPT-triggered action exists;
+- `CHAT_WAITING`: a request was dispatched and no completion evidence exists yet;
+- `CHAT_PLATFORM_HOLD_REPORTED`: a platform verification hold was explicitly reported/observed through a supported signal;
+- `UNKNOWN_INTERNAL_CHAT_STATE`: the standard ChatGPT UI exposes no supported progress telemetry;
+- `NO_NEW_EXTERNAL_EVIDENCE`: no GitHub/Drive/worker/receipt event has appeared since the last durable checkpoint.
+
+BCP MUST NOT infer hidden chain-of-thought or claim that ChatGPT is still reasoning merely because the UI spinner is visible.
+
+### Watchdog behavior
+
+If no durable event is observed for a bounded interval:
+- do not mark failure immediately;
+- show elapsed time since the last proof;
+- verify external jobs (GitHub/BuildHub/B-EDGE/worker heartbeat) where supported;
+- if all external workers are idle and the only outstanding dependency is chat/provider output, mark `WAITING_EXTERNAL_CHAT_RESULT` or `PROVIDER_PENDING_UNKNOWN`;
+- if the mission is provider-neutral and replay-safe, a qualified alternate provider may continue only under Model Broker policy;
+- committed work is never replayed.
+
+### Low-data requirement
+
+Progress Presence is RDC/data-saver aware:
+- transition-driven push by default;
+- compact text payloads;
+- adaptive heartbeats measured in minutes, not seconds;
+- no repeated full status payload when unchanged;
+- no mobile-data fallback for large artifacts.
