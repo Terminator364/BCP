@@ -53,6 +53,21 @@ public final class EdgeOrchestrator {
         }
     }
 
+    public JSONObject projectState(String projectId) {
+        JSONObject out=new JSONObject();
+        try {
+            EdgeProjectEntity p=dao.project(projectId);
+            if(p!=null){
+                out.put("project_id",p.projectId);
+                out.put("status",p.status);
+                out.put("head_revision",p.headRevision);
+                out.put("coordinator_epoch",p.coordinatorEpoch);
+                out.put("updated_at",p.updatedAt);
+            }
+        } catch(Exception ignored) {}
+        return out;
+    }
+
     public JSONArray projectRegistry() {
         JSONArray out = new JSONArray();
         for (EdgeProjectEntity p : dao.projects()) {
