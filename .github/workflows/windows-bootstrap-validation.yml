@@ -9,6 +9,7 @@ on:
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/bcp_server.py"
       - "windows/BCP_PC_MIGRATE_CURRENT.cmd"
+      - "windows/BCP_PC_MIGRATE_CURRENT.ps1"
       - "release/server.json"
       - "tests/chatgpt_pc_register_contract_cli.py"
       - ".github/workflows/windows-bootstrap-validation.yml"
@@ -69,11 +70,28 @@ jobs:
       - name: Legacy migration bridge guards
         shell: powershell
         run: |
-          $bridge = Get-Content -Raw '.\windows\BCP_PC_MIGRATE_CURRENT.cmd'
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path '.\windows\BCP_PC_MIGRATE_CURRENT.ps1'),
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List *
+            throw 'Migration PowerShell parse failed'
+          }
+
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\BCP_PC_MIGRATE_CURRENT.ps1' -SelfTest
+
+          $bridge = Get-Content -Raw '.\windows\BCP_PC_MIGRATE_CURRENT.ps1'
+          if ($bridge -notmatch 'bcp_supervisor\.ps1') { throw 'legacy supervisor retirement missing' }
+          if ($bridge -notmatch 'bcp_token\.txt' -or $bridge -notmatch 'paired_edge\.json') { throw 'legacy identity migration missing' }
+          if ($bridge -notmatch 'PORT_8765_NOT_MANAGED_BCP') { throw 'managed listener proof missing' }
+          if ($bridge -notmatch 'authenticated_diagnostics') { throw 'authenticated diagnostics proof missing' }
+          if ($bridge -notmatch 'BCP_PC_MIGRATION_LATEST\.json') { throw 'Drive receipt proof missing' }
           if ($bridge -notmatch 'c0d10a286a5a4e18d755a31811e7b479f7ad9cff') { throw 'migration bridge pin missing' }
           if ($bridge -notmatch '3ad1594a948768b15f583a7806eb7fb084935ecbcd1ccac0079ce88e43f6d53e') { throw 'installer hash pin missing' }
           if ($bridge -notmatch 'c23e9d79262884b399cfb3abba382dae3c4b18ccbe158fe818e6497f7a493993') { throw 'server hash pin missing' }
-          if ($bridge -notmatch 'RUNTIME_READBACK=PASS') { throw 'runtime readback guard missing' }
           if ($bridge -match '(?i)curl\s+http://' -or $bridge -match '(?i)Invoke-WebRequest.+http://raw') { throw 'insecure download path present' }
           Write-Host 'BCP_LEGACY_MIGRATION_BRIDGE_GUARDS=PASS'
 
@@ -81,7 +99,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bcp-pc-legacy-migration-current
-          path: windows/BCP_PC_MIGRATE_CURRENT.cmd
+          path: |
+            windows/BCP_PC_MIGRATE_CURRENT.cmd
+            windows/BCP_PC_MIGRATE_CURRENT.ps1
           if-no-files-found: error
 
       - name: Release manifest integrity
