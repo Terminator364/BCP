@@ -3,8 +3,14 @@
   "adopted_at": "2026-09-19",
   "scope": "GLOBAL_ALL_PROJECTS",
   "trigger_semantics": {
-    "phrase": "mise à jour du cahier des charges",
-    "behavior": "MERGE_REFINE_PRESERVE"
+    "phrases": [
+      "mise à jour du cahier des charges",
+      "mets à jour le cahier des charges",
+      "ajoute au cahier des charges",
+      "intègre au cahier des charges"
+    ],
+    "behavior": "SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE",
+    "mandatory_precondition": "READ_CURRENT_CANONICAL_SPEC_AND_REVISION_BEFORE_EDIT"
   },
   "invariant": "NEW_REQUIREMENTS_DO_NOT_SILENTLY_ERASE_PRIOR_ACTIVE_REQUIREMENTS",
   "operations": [
@@ -22,7 +28,10 @@
     "ambiguous_conflict_requires_hold_or_minimal_clarification": true,
     "acceptance_tests_follow_active_requirement_set": true,
     "regression_obligations_persist_unless_explicitly_retired": true,
-    "canonical_current_is_materialized_view": true
+    "canonical_current_is_materialized_view": true,
+    "chat_memory_alone_is_not_sufficient_for_spec_update": true,
+    "stale_conversation_must_refresh_canonical_spec_before_mutation": true,
+    "new_strategy_repositions_existing_requirements_without_silent_reset": true
   },
   "lifecycle": [
     "PROPOSED",
