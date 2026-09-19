@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from contextlib import contextmanager
 from ipaddress import ip_address
 from urllib.parse import unquote, urlparse
 from urllib.request import Request, urlopen
@@ -898,6 +899,15 @@ def connect_db():
     return cx
 
 
+@contextmanager
+def db_connection():
+    cx = connect_db()
+    try:
+        yield cx
+    finally:
+        cx.close()
+
+
 MEMORY_LAYERS = ("USER_MEMORY", "PROJECT_MEMORY", "TECHNICAL_KNOWLEDGE", "OPERATING_STATE", "HISTORY", "POLICY")
 
 
@@ -945,7 +955,7 @@ def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP"
         raise ValueError("memory_value_too_large")
     now = utc_now()
     with DB_LOCK:
-        with connect_db() as cx:
+        with db_connection() as cx:
             cx.execute(
                 """INSERT INTO memory_records(project_id,layer,key,value_json,source,updated_at)
                    VALUES(?,?,?,?,?,?)
@@ -959,7 +969,7 @@ def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP"
 def memory_list(project_id: str, limit_per_layer: int = 24) -> dict:
     limit_per_layer = max(1, min(int(limit_per_layer), 50))
     out = {k: [] for k in MEMORY_LAYERS}
-    with connect_db() as cx:
+    with db_connection() as cx:
         for layer in MEMORY_LAYERS:
             rows = cx.execute(
                 """SELECT key,value_json,source,updated_at FROM memory_records
@@ -1003,7 +1013,7 @@ def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_p
     state = "WAITING_FOR_PC" if requires_pc and mode == "PC_MEMORY_PRESSURE" else "READY"
     now = utc_now()
     with DB_LOCK:
-        with connect_db() as cx:
+        with db_connection() as cx:
             old = cx.execute(
                 "SELECT * FROM jobs WHERE project_id=? AND idempotency_key=?",
                 (project_id, idem),
@@ -1021,7 +1031,7 @@ def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_p
 
 def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
     limit = max(1, min(int(limit), 100))
-    with connect_db() as cx:
+    with db_connection() as cx:
         rows = cx.execute(
             "SELECT * FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT ?",
             (project_id, limit),
@@ -1144,7 +1154,7 @@ def _next_runnable_from_plan(plan: list[dict]) -> dict | None:
 
 
 def mission_get(mission_id: str, include_request: bool = False) -> dict | None:
-    with connect_db() as cx:
+    with db_connection() as cx:
         row = cx.execute("SELECT * FROM missions WHERE mission_id=?", (mission_id,)).fetchone()
     if not row:
         return None
@@ -1157,7 +1167,7 @@ def mission_get(mission_id: str, include_request: bool = False) -> dict | None:
 
 def mission_tail(mission_id: str, limit: int = 12) -> list[dict]:
     limit = max(1, min(int(limit), 50))
-    with connect_db() as cx:
+    with db_connection() as cx:
         rows = cx.execute(
             "SELECT * FROM mission_events WHERE mission_id=? ORDER BY seq DESC LIMIT ?",
             (mission_id, limit),
@@ -1490,7 +1500,7 @@ def get_head(project_id: str):
 
 def recent_events(project_id: str, limit: int = 10):
     limit = max(1, min(int(limit), 50))
-    with connect_db() as cx:
+    with db_connection() as cx:
         rows = cx.execute(
             "SELECT * FROM events WHERE project_id=? ORDER BY revision DESC LIMIT ?",
             (project_id, limit),
