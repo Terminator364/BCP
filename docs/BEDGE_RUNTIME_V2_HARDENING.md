@@ -527,3 +527,30 @@ Remote command latency has explicit tiers:
 Telegram update IDs are deduplicated into one BCP mission ID.
 
 A webhook/push acknowledgment means only `RECEIVED/QUEUED` unless execution evidence exists. It MUST NOT claim `DONE` before canonical receipt/readback.
+
+
+## 22. Context Fabric / BCP NEXUS integration
+
+B-EDGE V2 is one physical role inside the single logical BCP Context Fabric.
+
+Logical peers:
+- B-EDGE = live edge memory/coordinator target;
+- PC-WORKER = heavy fenced worker + replica;
+- BCP NEXUS = remote bootstrap/context/witness/ingress facade.
+
+B-EDGE MUST continuously maintain precomputable context projections for the universal `BCPGO` bootstrap path.
+
+Projection classes:
+- GLOBAL_CORE;
+- PROJECT_CORE per active project;
+- TASK_DELTA generated from revision change;
+- evidence references only, not all raw evidence.
+
+The remote projection is derived and rebuildable. It is not permission to upload all private B-EDGE memory.
+
+Until a dedicated remote BCP adapter is field-qualified, Google Drive-connected projection is the preferred ChatGPT-accessible bootstrap mirror.
+
+BCP NEXUS may later provide the independent witness needed for safe automatic coordinator promotion, but a free cloud candidate is not trusted until ZERO_USD + Kinshasa field gates pass.
+
+Canonical cross-project command: `BCPGO`.
+Canonical design: `docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md`.
