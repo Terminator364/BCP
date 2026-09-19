@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R1
+Revision: 2026-09-19-R2
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -125,11 +125,55 @@ No blind reinstall is allowed merely because telemetry is missing.
 After P0 continuity is field-proven:
 - add a provider-neutral Model Broker;
 - support legitimate free/zero-cost/BYOK providers as replaceable adapters;
-- make quota/capacity/cost explicit;
-- never silently spend money;
+- make quota/capacity/cost explicit and field-measured from Kinshasa before ACTIVE promotion;
+- never silently spend money; `DEFAULT_PAID_SPEND = 0 USD` is a hard invariant;
 - use bounded autonomous loops with deterministic verification;
 - integrate GitHub/BuildHub/B-EDGE jobs through receipts;
-- add Telegram or equivalent low-bandwidth cockpit for status, approvals and alerts.
+- add Telegram or equivalent low-bandwidth cockpit for status, approvals and alerts;
+- optimize for 24-hour endurance rather than maximum instantaneous LLM throughput;
+- preserve strategic provider capacity for incidents and user-facing work later in the day;
+- continue useful deterministic/local work even when all free LLM capacity is exhausted.
+
+### P1 — Mandatory 24-hour AI endurance policy
+
+A "continuous chantier" means continuous useful progress, not continuous prompting.
+
+All work escalates through this ladder:
+`EVENT_ENGINE -> RULE_ENGINE -> KNOWLEDGE_CACHE/ERROR_LEDGER -> LOW_COST_MODEL -> REASONING_MODEL -> HUMAN/CHATGPT`.
+
+A higher layer is used only when lower layers cannot safely resolve the task.
+
+The following are local/deterministic by default and MUST NOT consume LLM quota merely because a model is available: heartbeat, telemetry, synchronization, hashes, build invocation, test execution, retries/backoff, queue/outbox replay, known-error repair, checkpointing, resource observation and routine notifications.
+
+Before any model call, BCP MUST batch, deduplicate, causal-group and resolve known events locally. One event MUST NOT imply one LLM call. Offline event backlogs are compacted before model escalation.
+
+For every ACTIVE_FREE_PROVIDER, BCP MUST maintain observed capacity, reset window, recent 429/errors, latency, success history and task fit. Marketing quotas are not operational truth; real account/API telemetry is.
+
+Initial conservative allocation after field validation:
+- <= ~50% of measured free capacity for planned/background work;
+- ~25% for fallbacks and user-impacting incidents;
+- ~25% protected strategic reserve.
+
+These are bootstrap scheduling ratios, not vendor facts, and may adapt after telemetry while preserving a non-zero reserve.
+
+Every provider has a `SOFT_LIMIT`, `RESERVE_FLOOR` and `HARD_LIMIT`. Crossing the soft limit increases routing cost; background work cannot cross the reserve floor; the hard limit prevents accidental exhaustion or paid use.
+
+When free capacity becomes constrained, BCP enters `AI_CONSERVATION_MODE`: it continues tests, fuzzing, static analysis, dependency checks, benchmarks, log processing, backups, deterministic AX150K exploration and known-error remediation while sharply reducing model calls. If no compliant free model remains, only LLM-dependent work enters `FREE_MODEL_CAPACITY_HOLD`.
+
+Parallel projects share one global AI budget. Background work may never monopolize all provider capacity. User-impacting or integrity/recovery incidents may preempt a background chantier after checkpoint.
+
+The normal reasoning path uses one provider. Multi-model fan-out is forbidden by default; cross-checking is allowed only for bounded reasons such as low confidence, contradictory diagnoses, high-impact architecture, failed first attempt or an explicit audit step.
+
+Every model call MUST pass a call-admission circuit breaker that rejects/defer/reroutes duplicate, cached, unnecessary, unhealthy, over-budget, non-free, reserve-violating or retry-loop calls.
+
+Logical agents are provider-neutral. Providers are interchangeable execution engines selected by measured capability, reliability, latency and remaining free capacity, not hard-coded brand identity.
+
+Telegram/UI SHOULD expose a compact `AI_CAPACITY` abstraction (daily state, emergency reserve, long-window capacity, provider health, calls avoided, spend) while provider-specific quota units remain diagnostic detail. Silence means normal operation; routine healthy heartbeats must not spam the user.
+
+Required optimization KPIs include deterministic-operations count, LLM calls by provider/project/task, calls avoided by cache/rules/deduplication, quota consumption, 429/error rate, non-LLM incident resolution rate, time-to-recovery, reserve state and the invariant `SPEND_USD = 0.00`.
+
+Canonical detailed policy: `docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md`.
+Machine-readable provider plan: `.project-memory/AI_PROVIDER_PLAN_RDC.json`.
 
 These extensions must not displace the P0 field bring-up.
 
