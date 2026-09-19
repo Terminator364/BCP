@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "WINDOWS_CI_PASS_FINAL_BOOTSTRAP_READY_FIELD_UNVERIFIED",
-  "last_completed_atomic_action": "Replace fragile standalone evergreen installer with ChatGPT-PC managed-app bootstrap; Windows CI validation passed",
-  "next_action": "Run BCP_FINAL_BOOTSTRAP_0_3 once on target PC, then reopen existing BCP Edge app and verify automatic discovery/pairing",
+  "status": "BCP_0_4_1_REPORTED_COMMITTED_RUNTIME_RESTART_UNVERIFIED",
+  "last_completed_atomic_action": "Persist latest reported BCP 0.4.1 install/commit result into durable project state without replay",
+  "next_action": "Verify/recover BCP 0.4.1 runtime restart, then obtain a fresh machine-readable heartbeat/diagnostics readback; do not reinstall or replay already COMMITTED payload work",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -66,14 +66,17 @@
     "user_is_not_telemetry_bus": true
   },
   "latest_external_report": {
-    "source": "user-provided API conversation result",
+    "source": "prior API runtime result recovered during APIAX07 RESYNC",
     "reported_at": "2026-09-19",
-    "evidence_status": "REPORTED_NOT_REVERIFIED_IN_THIS_CONVERSATION",
-    "chatgpt_pc": "6.0.32 slot reported installed/COMMITTED",
-    "bcp": "0.4.1 reported queued",
-    "blocker": "Recovery Plane reported not correctly relaunching runtime / queue not being consumed",
+    "evidence_status": "REPORTED_NOT_REVERIFIED",
+    "chatgpt_pc": "6.0.32 reported installed/COMMITTED; interactive ChatGPT-PC channel remains isolated",
+    "bcp": "0.4.1 reported installed/COMMITTED",
+    "payload_readback": "PASS reported; 0 missing files; 0 hash errors",
+    "rollback": "reported created",
+    "runtime": "restart and fresh heartbeat not yet proven; prior restart was deferred by Resource Guard",
+    "blocker": "fresh BCP 0.4.1 runtime restart plus heartbeat/diagnostics readback",
     "recovery_artifact": "G:\\Mon Drive\\CHATGPT_PC_AGENT\\RECOVERY\\0_APIAX07_RECOVER_NOW.cmd",
-    "note": "Do not promote these statements to FIELD_VERIFIED until machine-readable telemetry/receipts confirm them."
+    "note": "Do not replay install/commit. Promote only after fresh machine-readable runtime evidence."
   },
   "must_load_on_every_recovery": [
     "API_PROJECT_CONTINUITY.md",
@@ -115,5 +118,11 @@
     "sha256": "80f049f3a3f0e962f0174eaedc5e390a48967cc75398782a63ef2c6e2b981a59",
     "claimed_resume_point": "APIAX07 / FIELD BRING-UP / WINDOWS↔B-EDGE",
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
+  },
+  "atomic_checkpoint": {
+    "checkpoint_id": "APIAX07-ATOMIC-RUNTIME-VERIFY-PENDING-20260919",
+    "status": "DURABLE_STATE_UPDATED",
+    "next_atomic_action": "Verify/recover BCP 0.4.1 runtime restart and fresh heartbeat/diagnostics readback",
+    "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   }
 }
