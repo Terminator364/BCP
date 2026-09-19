@@ -53,7 +53,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions",
+    "/tail", "/where", "/missions", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 
@@ -124,6 +124,90 @@ def append_log(event: str, **fields: Any) -> None:
         rec[key] = clean(value, 300) if isinstance(value, str) else value
     with LOG_PATH.open("a", encoding="utf-8") as h:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def _pdf_escape(text: str) -> str:
+    text = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    return text
+
+
+def _pdf_ascii(text: str) -> str:
+    replacements = {
+        "—": "-", "–": "-", "→": "->", "←": "<-", "•": "*",
+        "✅": "[OK]", "⚠️": "[!]", "⚠": "[!]", "🟢": "[OK]", "🟡": "[~]", "🟠": "[~]",
+        "🔴": "[X]", "⚪": "[ ]", "🤖": "BCP", "🎯": "NOW", "📊": "PROGRESS",
+        "➡️": "NEXT", "➡": "NEXT", "👤": "YOU", "🕒": "TIME", "⏱️": "AGE",
+        "📨": "SENT", "🌐": "NEXUS", "🧪": "TESTS", "🔧": "DETAILS", "ℹ️": "INFO",
+        "💾": "CHECKPOINT", "🏁": "DONE", "📌": "MISSION", "🧭": "PLAN",
+        "▶️": "START", "📤": "DISPATCH", "📥": "RESULT", "🔎": "VERIFY",
+        "🔁": "RETRY", "🛑": "BLOCKED", "⏹️": "STOP",
+    }
+    for src, dst in replacements.items():
+        text = text.replace(src, dst)
+    return text.encode("cp1252", errors="replace").decode("cp1252")
+
+
+def text_pdf_bytes(title: str, body: str) -> bytes:
+    # Tiny dependency-free PDF for low-data status exports.
+    lines: list[str] = []
+    for raw in (title + "\n\n" + body).splitlines():
+        raw = _pdf_ascii(raw)
+        if not raw:
+            lines.append("")
+            continue
+        while len(raw) > 92:
+            cut = raw.rfind(" ", 0, 92)
+            if cut < 24:
+                cut = 92
+            lines.append(raw[:cut].rstrip())
+            raw = raw[cut:].lstrip()
+        lines.append(raw)
+    per_page = 46
+    pages = [lines[i:i + per_page] for i in range(0, max(1, len(lines)), per_page)] or [[]]
+
+    objects: list[bytes] = []
+    # 1 Catalog, 2 Pages, 3 Helvetica font.
+    objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
+    objects.append(b"")
+    objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    page_refs: list[int] = []
+    next_obj = 4
+    for page_lines in pages:
+        page_obj = next_obj
+        stream_obj = next_obj + 1
+        next_obj += 2
+        page_refs.append(page_obj)
+        content = ["BT", "/F1 10 Tf", "48 790 Td", "12 TL"]
+        for idx, line in enumerate(page_lines):
+            if idx:
+                content.append("T*")
+            content.append("(" + _pdf_escape(line) + ") Tj")
+        content.append("ET")
+        stream = "\n".join(content).encode("cp1252", errors="replace")
+        objects.append(
+            ("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] "
+             "/Resources << /Font << /F1 3 0 R >> >> /Contents " +
+             str(stream_obj) + " 0 R >>").encode("ascii")
+        )
+        objects.append(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")
+    kids = " ".join(str(x) + " 0 R" for x in page_refs)
+    objects[1] = ("<< /Type /Pages /Kids [" + kids + "] /Count " + str(len(page_refs)) + " >>").encode("ascii")
+
+    out = bytearray(b"%PDF-1.4\n%BCP\n")
+    offsets = [0]
+    for i, obj in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out.extend(str(i).encode("ascii") + b" 0 obj\n" + obj + b"\nendobj\n")
+    xref = len(out)
+    out.extend(("xref\n0 " + str(len(objects) + 1) + "\n").encode("ascii"))
+    out.extend(b"0000000000 65535 f \n")
+    for off in offsets[1:]:
+        out.extend(f"{off:010d} 00000 n \n".encode("ascii"))
+    out.extend(
+        ("trailer\n<< /Size " + str(len(objects) + 1) + " /Root 1 0 R >>\n"
+         "startxref\n" + str(xref) + "\n%%EOF\n").encode("ascii")
+    )
+    return bytes(out)
 
 
 class Http:
