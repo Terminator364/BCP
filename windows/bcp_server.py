@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.3"
+SERVER_VERSION = "0.4.4"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -194,6 +194,12 @@ def external_telemetry_roots() -> list[Path]:
         roots.append(Path(override))
 
     candidates = [
+        # Canonical API/BCP Drive tree. Keep this first.
+        Path(r"G:\\Mon Drive\\API_BCP\\02_TELEMETRY\\BCP"),
+        Path(r"G:\\My Drive\\API_BCP\\02_TELEMETRY\\BCP"),
+        Path.home() / "My Drive" / "API_BCP" / "02_TELEMETRY" / "BCP",
+        Path.home() / "Mon Drive" / "API_BCP" / "02_TELEMETRY" / "BCP",
+        # Legacy compatibility while older ChatGPT-PC layouts are still present.
         Path(r"G:\\Mon Drive\\CHATGPT_PC_AGENT\\03_TELEMETRY\\BCP"),
         Path(r"G:\\My Drive\\CHATGPT_PC_AGENT\\03_TELEMETRY\\BCP"),
         Path.home() / "My Drive" / "CHATGPT_PC_AGENT" / "03_TELEMETRY" / "BCP",
@@ -1129,8 +1135,9 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.3") > _version_tuple("0.4.2")
-        assert _version_tuple("0.4.3") == (0, 4, 3)
+        assert _version_tuple("0.4.4") > _version_tuple("0.4.3")
+        assert _version_tuple("0.4.4") == (0, 4, 4)
+        assert "API_BCP" in source and "02_TELEMETRY" in source
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
