@@ -11,7 +11,8 @@ import androidx.room.RoomDatabase;
                 EdgeProjectEntity.class,
                 EdgeJobEntity.class,
                 EdgeMemoryEntity.class,
-                EdgeReceiptEntity.class
+                EdgeReceiptEntity.class,
+                EdgeDependencyEntity.class
         },
         version = 1,
         exportSchema = false
