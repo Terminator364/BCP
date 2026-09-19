@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_4_FIELD_RUNNING_PAIRED_NEXUS_0_1_5_PROMOTION_PENDING",
-  "last_completed_atomic_action": "Fresh Google Drive machine readback at 2026-09-19T22:49:35Z proves BCP 0.6.4 running on MBMPC, paired, hash-matching release/current, and update_state=UP_TO_DATE. Telegram V4 code/spec is merged. Nexus bootstrap is active but still reports bundle 0.1.4 LAUNCHED, so Nexus 0.1.5 and end-to-end Telegram V4 remain FIELD_UNVERIFIED.",
-  "next_action": "Wait only for the next resident convergence evidence, then verify whether Nexus bundle 0.1.5 reaches a terminal receipt and perform the home-WiFi Nexus/Telegram V4 round-trip. Do not reinstall BCP, re-enter Telegram token/chat ID, or ask the user to shuttle files/logs. If provider authorization is surfaced, request only that one explicit human authorization gate.",
+  "status": "BCP_0_6_6_MERGED_AWAITING_RESIDENT_CONVERGENCE_NEXUS_0_1_5",
+  "last_completed_atomic_action": "PR66 (BCP 0.6.6 watchdog stalled Nexus bootstrap) is merged on main and its exact-head CURRENT/coordinated CI passed. Fresh Drive runtime readback at 2026-09-19T23:33:48Z still proves BCP 0.6.4 running/paired on MBMPC with Nexus bundle 0.1.5 in WRANGLER_RUNTIME_REQUIRED (exit 3, no terminal receipt). This is pre-convergence evidence, not a failed 0.6.6 field install.",
+  "next_action": "Do not reinstall BCP, re-enter Telegram token/chat ID, or ask the user to shuttle ZIPs/logs. Let the resident 30-minute BCP update loop converge to 0.6.6, then read the next external runtime heartbeat and Nexus receipt. If fresh heartbeats remain on 0.6.4 beyond one full update interval after PR66 merge, classify the resident manifest/update-worker path as the blocker and patch that zero-touch path; otherwise continue Nexus retry/watchdog field verification and the Telegram V4 home-WiFi round-trip.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1053,5 +1053,31 @@
     "chatgpt_pc_active_version": "6.0.32",
     "chatgpt_pc_command_plane": "ALIVE",
     "conclusion": "BCP 0.6.4 resident self-update path is field-proven for this step; Nexus/Telegram V4 still requires terminal receipt and round-trip."
+  },
+  "latest_field_preconvergence_0_6_6": {
+    "observed_at_utc": "2026-09-19T23:33:48+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "evidence_status": "MACHINE_READBACK",
+    "main_merge_sha": "cb936fac70359ae43b6958a7184fba3ba45d13ec",
+    "pr": 66,
+    "pr_title": "BCP 0.6.6: watchdog stalled Nexus bootstrap",
+    "exact_head_sha": "0f8e6c1633217c7e21d86fc34a3e7147b4746005",
+    "ci": {
+      "current_release_contract_run_id": 35476070198,
+      "current_release_contract_result": "PASS",
+      "coordinated_product_run_id": 35476070216,
+      "coordinated_product_result": "PASS"
+    },
+    "release_target_version": "0.6.6",
+    "field_server_version": "0.6.4",
+    "field_server_pid": 7996,
+    "paired": true,
+    "field_update_state": "UP_TO_DATE",
+    "field_update_target_version": "0.6.4",
+    "nexus_bundle_version": "0.1.5",
+    "nexus_state": "WRANGLER_RUNTIME_REQUIRED",
+    "nexus_exit_code": 3,
+    "nexus_receipt_status": "",
+    "interpretation": "Resident machine has not yet consumed the newly merged 0.6.6 release manifest. The 0.6.4 runtime is still alive and publishing fresh telemetry. No manual user action is justified yet because the resident auto-update loop is 30 minutes."
   }
 }
