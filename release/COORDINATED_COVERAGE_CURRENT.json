@@ -1,0 +1,191 @@
+{
+  "schema": "bcp.coordinated_coverage/1",
+  "release_train": "BCP-0.6.0_EDGE-2.0.0-rc1",
+  "requirements_revision": "2026-09-19-R4+cumulative",
+  "status": "PRE_CI_CANDIDATE",
+  "capabilities": [
+    {
+      "id": "durable_edge_memory_jobs",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "Room WAL project/job/memory/receipt/dependency tables"
+    },
+    {
+      "id": "process_death_recovery",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "WorkManager periodic + immediate bounded reconciliation"
+    },
+    {
+      "id": "multi_project",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "dynamic active project registry; UI/client not fixed to buildhub"
+    },
+    {
+      "id": "queue_backpressure_and_receipts",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "bounded durable queue, no silent delete, at-least-once until positive receipt"
+    },
+    {
+      "id": "dependency_dag",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "dependency table + receipt-based unblock"
+    },
+    {
+      "id": "android_resource_governor",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "battery/charging/power-save/thermal/RAM/network metering"
+    },
+    {
+      "id": "pc_ram_hysteresis",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "88%/384MiB enter; 78%/640MiB + cooldown exit"
+    },
+    {
+      "id": "memory_admission_provenance",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "evidence classes, protected layers, pinned precedence, TTL/source"
+    },
+    {
+      "id": "context_pack_v2",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "task relevance, byte budget, context hash, FULL_REFRESH/UNCHANGED, Room offline cache"
+    },
+    {
+      "id": "job_fencing",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "idempotency + expected revision + coordinator epoch + action id + input hash + evidence contract"
+    },
+    {
+      "id": "nsd_mdns_discovery",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "_bcp._tcp.local PC advertiser; Android NSD primary; bounded /24 diagnostic fallback"
+    },
+    {
+      "id": "secure_pairing_keystore",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "stable fingerprint one-confirmation pairing + Android Keystore preserved"
+    },
+    {
+      "id": "reboot_resume",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "prior runtime proved real reboot, identity and exact checkpoint resume; 0.6 revalidation pending"
+    },
+    {
+      "id": "verified_update_rollback",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "PC managed update/rollback; Android pinned package/cert/SHA and app-owned cache"
+    },
+    {
+      "id": "bcpgO_context_fabric",
+      "component": "FABRIC",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "cumulative spec + cold bootstrap contract + revision-aware Context Pack primitives"
+    },
+    {
+      "id": "telegram_mission_cockpit",
+      "component": "NEXUS",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "mission cockpit/progress-journal architecture persisted; transport adapter remains qualification-gated"
+    },
+    {
+      "id": "encrypted_lan_transport",
+      "component": "PC+B-EDGE",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "authenticated LAN transport remains cleartext HTTP in this candidate; no false TLS claim"
+    },
+    {
+      "id": "edge_canonical_writer_migration",
+      "component": "B-EDGE",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "PC remains canonical writer until replication/fencing field gates pass"
+    },
+    {
+      "id": "qr_bootstrap_fallback",
+      "component": "B-EDGE",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "NSD primary implemented; QR remains fallback backlog"
+    }
+  ],
+  "required_field_gates": [
+    "install signed B-EDGE 2.0.0-rc1 on real old phone",
+    "install/update PC to BCP 0.6.0",
+    "NSD discovery and one-confirmation reconnect",
+    "kill Android process then WorkManager recovery",
+    "PC reboot + exact revision/hash resume",
+    "PC absent/offline queue then reconciliation",
+    "PC memory pressure + B-EDGE continued orchestration",
+    "duplicate job/idempotency and stale revision rejection",
+    "telemetry receipts without screenshots"
+  ],
+  "publication_policy": {
+    "drive_candidate_requires": "coordinated CI green + pinned-cert signed APK + APK/server hash verification + bundle manifest",
+    "drive_current_requires": "real-device field gates green"
+  }
+}
