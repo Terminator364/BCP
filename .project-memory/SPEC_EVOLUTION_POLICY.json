@@ -2,14 +2,11 @@
   "schema": "bcp.spec_evolution_policy/1",
   "adopted_at": "2026-09-19",
   "scope": "GLOBAL_ALL_PROJECTS",
-  "trigger_phrases": [
-    "mise à jour du cahier des charges",
-    "mets à jour le cahier des charges",
-    "ajoute au cahier des charges",
-    "intègre au cahier des charges"
-  ],
-  "default_semantics": "MERGE_REFINE_PRESERVE",
-  "invariant": "NEW_REQUIREMENTS_MUST_NOT_SILENTLY_ERASE_PRIOR_ACTIVE_REQUIREMENTS",
+  "trigger_semantics": {
+    "phrase": "mise à jour du cahier des charges",
+    "behavior": "MERGE_REFINE_PRESERVE"
+  },
+  "invariant": "NEW_REQUIREMENTS_DO_NOT_SILENTLY_ERASE_PRIOR_ACTIVE_REQUIREMENTS",
   "operations": [
     "ADD",
     "REFINE",
@@ -22,13 +19,12 @@
     "preserve_history_and_provenance": true,
     "silent_replacement_forbidden": true,
     "explicit_user_override_can_supersede": true,
-    "superseded_requirement_remains_in_history": true,
     "ambiguous_conflict_requires_hold_or_minimal_clarification": true,
     "acceptance_tests_follow_active_requirement_set": true,
-    "error_ledger_and_regressions_persist_unless_explicitly_retired": true,
-    "canonical_current_is_materialized_view_not_history_replacement": true
+    "regression_obligations_persist_unless_explicitly_retired": true,
+    "canonical_current_is_materialized_view": true
   },
-  "requirement_lifecycle": [
+  "lifecycle": [
     "PROPOSED",
     "ACTIVE",
     "REFINED",
@@ -36,20 +32,8 @@
     "DEPRECATED",
     "REVOKED"
   ],
-  "change_record_required_fields": [
-    "change_id",
-    "timestamp",
-    "scope",
-    "source",
-    "operation",
-    "requirement_ids",
-    "rationale_summary",
-    "before_revision",
-    "after_revision",
-    "evidence_or_user_authority"
-  ],
-  "recovery_behavior": {
-    "load_policy_before_merging_new_requirements": true,
+  "recovery": {
+    "load_before_merging_new_requirements": true,
     "reconstruct_active_set_from_canonical_plus_deltas": true,
     "do_not_restart_specification_from_latest_message": true
   }
