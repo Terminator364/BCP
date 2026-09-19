@@ -1,12 +1,12 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.19-progress-presence-1",
+  "version": "2026.09.19-human-progress-v2",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "bf9cce84c1dc9fa5051ba27175a801ba997dfb64a42396281a0c58ccda32b376",
+  "sha256": "3f19409dd0610f1206e5216fe8fc534c328c16c377908034baa87c875801f214",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first automatic progress presence. Delivered by resident BCP 0.6.3; pushes only when durable externally observable evidence changes and never exposes hidden ChatGPT reasoning."
+  "notes": "Human-first mission progress: verifiable micro-steps, honest bounded percentages, last-proof age, de-noised transitions, technical detail kept behind /details. No hidden ChatGPT reasoning is claimed."
 }

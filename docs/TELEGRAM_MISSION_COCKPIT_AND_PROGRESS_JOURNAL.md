@@ -353,3 +353,20 @@ Human-first command contract:
 Spontaneous messages are transition-driven and sparse: meaningful checkpoint, blocking condition, required human decision, or completion. Routine unchanged heartbeats do not generate chat spam.
 
 No output may expose or claim to expose private chain-of-thought. If no new durable proof exists, report an evidence-based WAITING/STALLED/PROVIDER_WAIT/PLATFORM_HOLD/NETWORK_WAIT or NO_NEW_EXTERNAL_EVIDENCE state rather than inferred hidden progress.
+
+
+## Cockpit human-first V2
+
+La vue normale Telegram est destinée à l’utilisateur, pas au débogage Git. Les numéros de PR, SHA, branches, IDs de runs et détails de transport restent disponibles dans `/details`, mais ne doivent pas encombrer le suivi courant.
+
+Le suivi normal doit afficher, quand les preuves existent :
+- la micro-action observable actuelle ou la dernière micro-action durable ;
+- une barre et un pourcentage uniquement si un vrai `step_index/step_total` borné existe ;
+- l’âge de la dernière preuve durable ;
+- un état d’activité honnête : récent, attente externe, silence à surveiller, ou absence de preuve ;
+- PC/BCP, ancien téléphone B-EDGE, Drive, Nexus et qualification avec une iconographie simple ;
+- la prochaine action en français simple.
+
+Une absence de nouvelle preuve ne signifie pas automatiquement que ChatGPT est bloqué. Le cockpit doit dire qu’aucune nouvelle preuve durable n’a été observée, puis distinguer cette situation d’un vrai état BLOCKED/HOLD enregistré.
+
+Les notifications automatiques sont transitionnelles : elles réagissent à un changement humainement utile de mission, d’étape, de liaison, de résultat de test ou de bande d’activité. Un nouveau commit ou run CI qui ne change pas la situation utile ne doit pas produire un doublon.

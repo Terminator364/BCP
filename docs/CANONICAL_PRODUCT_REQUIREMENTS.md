@@ -768,3 +768,14 @@ The scheduler is local-first. Hashing, state lookup, dependency resolution, know
 Telegram is a human-first cockpit: `/status` is compact, `/details` technical, `/where` reports the durable execution pointer, and `/tail` reports recent observable events. Spontaneous notifications are reserved for meaningful checkpoints, blocks, human decisions or completion.
 
 The field topology remains unchanged: PC-WORKER and dedicated B-EDGE normally use home Wi-Fi; the current phone is a human terminal only. Direct PC-to-Telegram delivery is not a mandatory path.
+
+
+## P0 — Cockpit humain de progression vérifiable
+
+- La vue Telegram normale est non technique ; les détails Git/PR/SHA sont relégués à `/details`.
+- Chaque mission bornée expose des micro-étapes observables ; un pourcentage n’est affiché que lorsque le dénominateur réel est connu.
+- Le cockpit expose la dernière preuve durable, son âge, l’étape actuelle et la prochaine étape.
+- Le silence n’est jamais assimilé automatiquement à un blocage ChatGPT.
+- Les changements d’état utiles sont poussés automatiquement sans spammer les états inchangés.
+- Les contraintes RDC restent P0 : faible débit, intermittence, données mobiles coûteuses, reprise locale, B-EDGE et Nexus.
+- Aucun automate ChatGPT/Work planifié n’est requis pour cette surveillance.
