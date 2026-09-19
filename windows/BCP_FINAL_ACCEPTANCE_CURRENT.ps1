@@ -315,7 +315,63 @@ function Cleanup-Known-LegacyDownloads {
         return [ordered]@{removed=@();failed=@()}
     }
 
-    $legacyFileRegex='^(BCP_PC_BOOTSTRAP|BCP_PC_NATIVE|BCP_PC_NETWORK_REPAIR|INSTALL_BCP_EVERGREEN|BCP_FINAL_BOOTSTRAP|BCP_PC_MIGRATE|BCP_EDGE|BCP-Edge).*(\.zip|\.cmd|\.ps1|\.apk)
+    $filePrefixes=@(
+        "BCP_PC_BOOTSTRAP",
+        "BCP_PC_NATIVE",
+        "BCP_PC_NETWORK_REPAIR",
+        "INSTALL_BCP_EVERGREEN",
+        "BCP_FINAL_BOOTSTRAP",
+        "BCP_PC_MIGRATE",
+        "BCP_EDGE",
+        "BCP-Edge"
+    )
+    $allowedExtensions=@(".zip",".cmd",".ps1",".apk")
+
+    Get-ChildItem -LiteralPath $downloads -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $name=$_.Name
+        $ext=$_.Extension.ToLowerInvariant()
+        $known=$false
+        foreach($prefix in $filePrefixes){
+            if($name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){
+                $known=$true
+                break
+            }
+        }
+        if($known -and $allowedExtensions -contains $ext){
+            try{
+                [IO.File]::Delete($_.FullName)
+                $removed.Add($_.FullName)
+            }catch{
+                $failed.Add($_.FullName)
+            }
+        }
+    }
+
+    $dirPrefixes=@(
+        "BCP_PC_BOOTSTRAP",
+        "BCP_PC_NATIVE",
+        "BCP_PC_NETWORK_REPAIR",
+        "BCP_FINAL_BOOTSTRAP",
+        "BCP_PC_MIGRATE"
+    )
+    Get-ChildItem -LiteralPath $downloads -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $known=$false
+        foreach($prefix in $dirPrefixes){
+            if($_.Name.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){
+                $known=$true
+                break
+            }
+        }
+        if($known){
+            try{
+                [IO.Directory]::Delete($_.FullName,$true)
+                $removed.Add($_.FullName)
+            }catch{
+                $failed.Add($_.FullName)
+            }
+        }
+    }
+
     return [ordered]@{removed=@($removed);failed=@($failed)}
 }
 
@@ -347,8 +403,9 @@ if($SelfTest){
         "192.0.2.1",
         "synthetic_cap_bytes",
         "BCP_FINAL_ACCEPTANCE_CURRENT*.zip",
-        "legacyFileRegex",
-        "legacyDirRegex"
+        "filePrefixes",
+        "allowedExtensions",
+        "dirPrefixes"
     )){
         if($raw -notmatch [regex]::Escape($needle)){throw ("SELFTEST_MISSING_"+$needle)}
     }
