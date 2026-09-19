@@ -102,11 +102,70 @@ public class MainActivity extends Activity {
                     updates.check();
                 });
             } catch (Exception ex) {
+                String m = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+                if ("PAIR_CONFIRM_REQUIRED".equals(m)) {
+                    runOnUiThread(() -> {
+                        setBusy(false);
+                        showPairingConfirmation();
+                    });
+                    return;
+                }
                 runOnUiThread(() -> {
-                    String m = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
                     status.setText(classify(m));
                     detail.setText("Diagnostic automatique: " + m);
                     output.setText("La télémétrie locale a conservé l'étape d'échec.");
+                    setBusy(false);
+                });
+            }
+        });
+    }
+
+    private void showPairingConfirmation() {
+        try {
+            JSONObject p = client.pendingPairingInfo();
+            String pc = p.optString("pc_name", "BCP PC");
+            String version = p.optString("version", "");
+            String fp = p.optString("identity_fingerprint", "");
+            String hint = fp.isEmpty() ? "empreinte disponible après mise à niveau"
+                    : fp.substring(0, Math.min(12, fp.length()));
+            new AlertDialog.Builder(this)
+                    .setTitle("Confirmer ce PC")
+                    .setMessage(pc + (version.isEmpty() ? "" : " · BCP " + version) +
+                            "\nEmpreinte: " + hint +
+                            "\n\nCette confirmation n'est demandée qu'au premier appairage.")
+                    .setPositiveButton("CONFIRMER", (d, w) -> confirmPendingPairing())
+                    .setNegativeButton("ANNULER", null)
+                    .show();
+        } catch (Exception ex) {
+            status.setText("APPAIRAGE ÉCHOUÉ");
+            detail.setText("Candidat d'appairage indisponible");
+        }
+    }
+
+    private void confirmPendingPairing() {
+        setBusy(true);
+        io.submit(() -> {
+            try {
+                JSONObject r = client.confirmPendingPairing((stage, d) ->
+                        runOnUiThread(() -> {
+                            status.setText(stage);
+                            detail.setText(d);
+                        }));
+                runOnUiThread(() -> {
+                    status.setText("CONNECTÉ");
+                    detail.setText("PC confirmé et appairé · projet buildhub");
+                    output.setText("État: OK\nB-EDGE: " + client.getEdgeVersion() +
+                            "\nPC: " + r.optString("pc_name", "BCP PC") +
+                            "\nServeur: " + r.optString("version", "") +
+                            "\nProjet: buildhub\nIdentifiants: masqués");
+                    setBusy(false);
+                    updates.check();
+                });
+            } catch (Exception ex) {
+                runOnUiThread(() -> {
+                    status.setText("APPAIRAGE ÉCHOUÉ");
+                    detail.setText("Diagnostic automatique: " +
+                            (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()));
                     setBusy(false);
                 });
             }
