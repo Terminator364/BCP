@@ -736,7 +736,7 @@ def selftest() -> int:
         assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
         assert "48273195" in svc.job("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
-        assert "MVP read-only" in svc.dispatch("/run")
+        assert "Lecture seule" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
