@@ -25,7 +25,13 @@
     "/job <code>",
     "/last",
     "/ci",
-    "/holds"
+    "/holds",
+    "/missions",
+    "/details",
+    "/where [code]",
+    "/tail [code]",
+    "/report",
+    "/reporttech"
   ],
   "chat_states": [
     "OBSERVED_CHAT_ACTION",
@@ -85,5 +91,24 @@
     "spend_usd": 0
   },
   "installer_receipt_status": "LATE_RECEIPT_HASH_BUG_FIXED_IN_MAIN_PR26",
-  "next_action": "Continue read-only cockpit validation with /ci and /holds, then harden automatic packaging/update path; do not replay already committed setup."
+  "next_action": "Qualify Telegram cockpit V4 and Nexus 0.1.5 on the exact branch head. Merge only through the serialized writer fence if all required CI gates pass, then let the qualified resident update path converge and perform one real Kinshasa button/PDF round-trip without token re-entry or manual file replacement.",
+  "candidate_v4": {
+    "status": "RECONCILED_BRANCH_CI_PENDING",
+    "branch": "work/bcp/telegram-cockpit-v4-r1-20260919-2322",
+    "base_main_sha": "bb16aa62b13737a71c662af019bae880f85ba51c",
+    "requirements_revision": "2026-09-19-R10",
+    "companion_version": "2026.09.19-human-cockpit-v4",
+    "nexus_version": "0.1.5",
+    "features": [
+      "stable inline read-only buttons",
+      "immediate callback acknowledgement",
+      "editable live card",
+      "human PDF summary",
+      "technical PDF export",
+      "Nexus cached reports during degraded direct Telegram egress",
+      "dependency-free direct PDF generation"
+    ],
+    "field_verified": false,
+    "scheduled_chatgpt_automation": false
+  }
 }

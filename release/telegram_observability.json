@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.19-human-cockpit-v3",
+  "version": "2026.09.19-human-cockpit-v4",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "7718303cb1586710dc2e2896b5c8445369e861f7ece7565b6e56636e2401b829",
+  "sha256": "ff5fce9814246ff3824d6833194f4d8645ce131a9c99843cf69f7b1334862c8c",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first multi-mission cockpit V3: truthful bounded progress, explicit user action, evidence timestamps/age, /missions, lower-noise transition alerts, and an editable live status card. Routine progress no longer requires repeated duplicate messages. No hidden ChatGPT reasoning is claimed.",
-  "requirements_revision": "2026-09-19-R9"
+  "notes": "Human-first interactive cockpit V4: V3 truthful live-card progress plus stable inline buttons for refresh/current-step/missions/details and explicit low-data PDF summary/technical exports. Direct Telegram callbacks are acknowledged promptly; reports use a dependency-free PDF path and redact common credential patterns before export. No hidden ChatGPT reasoning is claimed.",
+  "requirements_revision": "2026-09-19-R10"
 }

@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R9
+Revision: 2026-09-19-R10
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -805,3 +805,39 @@ Implementation candidate on 2026-09-19:
 - Telegram companion `2026.09.19-human-cockpit-v3` implements `/missions`, fresh B-EDGE presence, explicit human-action/timing fields, low-noise transition alerts, and one editable direct-Telegram live card;
 - Nexus `0.1.4` adds persistent D1 live-card state plus `/v1/device/live-card`, using Telegram `editMessageText` with send fallback;
 - this is CI-qualified candidate work until merged and then proven by field readback; it is not yet claimed FIELD_VERIFIED.
+
+
+## P0 — Telegram Human Cockpit V4: interactive controls and portable reports
+
+This is an additive refinement under SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE. It preserves all V3 truthfulness, low-data, single-bot, Nexus, update, security and non-ChatGPT-automation requirements.
+
+The normal Telegram mission surface MUST now support progressive disclosure through a stable read-only inline control set:
+- **Actualiser** -> current evidence-based status;
+- **Où ?** -> exact durable execution pointer;
+- **Missions** -> recent/active mission view;
+- **Détails** -> technical evidence;
+- **PDF suivi** -> compact human-readable status export;
+- **PDF technique** -> deeper diagnostics/evidence export.
+
+Requirements:
+- button callbacks are accepted only from the allowlisted private chat and acknowledged immediately;
+- routine state updates edit one live card rather than produce duplicate message spam;
+- percentages remain forbidden unless the persisted finite denominator is real;
+- the normal view uses medium-length plain French and stable visual hierarchy;
+- raw Git/PR/SHA/workflow/fence identifiers remain in the technical view unless required for a real decision;
+- exported reports are generated from the same durable evidence as the card, are timestamped snapshots, contain no secret, and never become canonical state;
+- report generation uses a lightweight dependency-free path and is explicit/milestone-driven rather than heartbeat-driven;
+- Nexus MAY cache the latest sanitized human and technical report text so a PDF request can be served while direct PC->Telegram egress is degraded;
+- report/PDF failure never blocks local mission execution;
+- optional image-card UX remains separately gated and must be low-data/cached if implemented;
+- typed commands remain available as fallbacks: `/report` and `/reporttech`;
+- no ChatGPT scheduled automation is introduced.
+
+Canonical detailed requirement:
+- `docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md`
+
+Implementation candidate on 2026-09-19:
+- direct Telegram adds inline callbacks, immediate callback acknowledgement, live-card controls and dependency-free PDF delivery;
+- Nexus adds callback routing, report cache and PDF delivery at the webhook edge;
+- CI must prove syntax, self-tests, D1 schema and secret/read-only guards on the exact candidate commit;
+- FIELD_VERIFIED remains false until real Kinshasa Telegram/Nexus button and PDF round-trips succeed.
