@@ -1,0 +1,21 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-telegram-progress-relay-20260919",
+  "project_or_mission": "API/BCP Telegram progress presence + B-EDGE relay + updater",
+  "base_main_sha": "c663427cb747a89b7f80185f49223c2afdea1428",
+  "created_at": "2026-09-19",
+  "intended_file_scope": [
+    "windows/bcp_telegram_observability.py",
+    "windows/CONFIGURE_BCP_TELEGRAM.ps1",
+    ".github/workflows/telegram-observability.yml",
+    "docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md",
+    "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md",
+    "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Telegram Observability Qualification",
+    "BCP Coordinated Product Qualification"
+  ],
+  "integration_state": "WORK_BRANCH_ONLY_UNTIL_BCP_0_4_7_FIELD_ACCEPTANCE_CLEAR"
+}

@@ -294,3 +294,22 @@ Progress Presence is RDC/data-saver aware:
 - adaptive heartbeats measured in minutes, not seconds;
 - no repeated full status payload when unchanged;
 - no mobile-data fallback for large artifacts.
+
+
+## 2026-09-19 implementation refinement — push-first presence
+
+The user must not need to type `/status` repeatedly.
+
+The read-only worker implementation candidate now treats `MISSION_EVENT_LOG.jsonl` as a push source:
+- cursor is durable and atomic;
+- first start primes without replaying old backlog;
+- later verifiable state transitions are pushed automatically;
+- rapid transitions are compacted;
+- delivery failure leaves the cursor unadvanced so reconnect can retry;
+- `/where [job]` exposes the latest durable mission state;
+- `/tail [job]` exposes recent durable micro-actions.
+
+This still does not make ordinary ChatGPT UI internals observable. A visible-client observer is a separate capability and may report only UI states actually exposed on an authorized device.
+
+The transport target and automatic-update contract are defined in:
+`docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md`.

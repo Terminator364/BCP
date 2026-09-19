@@ -684,3 +684,28 @@ The user-facing Telegram surface MUST default to a simple dashboard, not enginee
 - `/details` = technical evidence for agents/debugging;
 - raw SHAs, branches, hashes and diagnostic jargon stay in the technical view unless they are needed for a real human decision;
 - hidden reasoning progress is never converted into a fake percentage.
+
+
+## P0/P1A — Push-first progress relay and no-manual-update target
+
+This refinement preserves all prior field-acceptance, Git writer fence, zero-spend, security and data-saver requirements.
+
+User-facing progress MUST be push-first:
+- BCP-managed micro-actions emit durable mission events;
+- Telegram pushes state transitions automatically instead of requiring repeated `/status` polling;
+- `/where [job]` and `/tail [job]` expose current and recent durable proof;
+- fast event bursts may be compacted, but committed/checkpointed boundaries remain recoverable;
+- a missing event is never replaced with invented hidden reasoning.
+
+The dedicated old Android phone (B-EDGE) is the preferred low-data Telegram relay:
+- PC heavy work remains on home Wi-Fi;
+- PC<->B-EDGE remains local/authenticated;
+- when qualified and necessary, only Telegram control-plane sockets may use selective cellular egress on B-EDGE;
+- large artifacts and bulk sync must never silently move to cellular.
+
+Manual replacement of Telegram worker files is a bootstrap-only condition. The steady-state product MUST use a qualified, hash-verified, atomic, rollback-capable worker update path that preserves the locally stored bot secret and authorized chat state.
+
+A future ChatGPT-visible-state observer may record only states exposed by the user's own client/UI. It MUST NOT infer or expose hidden chain-of-thought or internal platform-verification progress.
+
+Canonical detailed architecture:
+`docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md`.

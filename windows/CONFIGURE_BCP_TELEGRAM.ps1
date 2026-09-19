@@ -303,6 +303,12 @@ try {
             timeout_seconds = 50
             aggressive_polling = $false
         }
+        presence = [ordered]@{
+            auto_push = $true
+            max_events_per_push = 6
+            waiting_heartbeat_seconds = 300
+            replay_old_backlog = $false
+        }
         budget = [ordered]@{
             paid_spend_usd = 0.0
             auto_billing = $false

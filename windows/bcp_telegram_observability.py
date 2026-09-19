@@ -24,6 +24,8 @@ DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "telegram_bot_token.txt"
 CONFIG_PATH = STATE_DIR / "telegram_observability.json"
 OFFSET_PATH = STATE_DIR / "telegram_update_offset.json"
+PRESENCE_PATH = STATE_DIR / "telegram_presence_state.json"
+MISSION_EVENT_LOG_PATH = STATE_DIR / "MISSION_EVENT_LOG.jsonl"
 LOG_PATH = APP_ROOT / "logs" / "telegram-observability.jsonl"
 
 CHAT_STATES = {
@@ -43,8 +45,14 @@ HOLD_STATES = {
     "PLATFORM_VERIFICATION_HOLD", "NETWORK_OFFLINE_QUEUEING",
     "SPEC_CONFLICT_HOLD", "HUMAN_APPROVAL_REQUIRED", "WAITING_FOR_PC",
 }
+PUSH_STATES = {
+    "ACCEPTED", "PLANNED", "STARTED", "DISPATCHED", "WAITING_PROVIDER",
+    "RESULT_RECEIVED", "VALIDATING", "COMMITTED", "CHECKPOINTED",
+    "RETRY_SCHEDULED", "BLOCKED", "HOLD", "DONE", "CANCELLED",
+}
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
+    "/tail", "/where",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 
@@ -94,6 +102,11 @@ def age_seconds(path: Path) -> int | None:
         return max(0, int(time.time() - path.stat().st_mtime))
     except Exception:
         return None
+
+
+def event_key(event: dict) -> str:
+    raw = json.dumps(event, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def append_log(event: str, **fields: Any) -> None:
@@ -253,8 +266,9 @@ class LocalTruth:
         }
 
     def mission_events(self, limit: int = 80) -> list[dict]:
+        path = self.state / MISSION_EVENT_LOG_PATH.name
         return [
-            x for x in last_jsonl(self.state / "MISSION_EVENT_LOG.jsonl", limit)
+            x for x in last_jsonl(path, limit)
             if str(x.get("state") or "").upper() in MISSION_STATES
         ]
 
@@ -516,6 +530,59 @@ class Service:
             )
         return "\n".join(lines)
 
+    def progress_event(self, ev: dict) -> str:
+        state = str(ev.get("state") or "EVENT").upper()
+        job = clean(ev.get("job_code") or ev.get("job_id") or "mission", 24)
+        component = clean(ev.get("component") or ev.get("worker") or ev.get("provider") or "", 55)
+        action = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "", 130)
+        next_action = clean(ev.get("next_safe_action") or "", 130)
+        step_index = ev.get("step_index")
+        step_total = ev.get("step_total")
+        icons = {
+            "STARTED": "▶️", "DISPATCHED": "📤", "WAITING_PROVIDER": "⏳",
+            "RESULT_RECEIVED": "📥", "VALIDATING": "🔎", "COMMITTED": "✅",
+            "CHECKPOINTED": "💾", "RETRY_SCHEDULED": "🔁", "BLOCKED": "🛑",
+            "HOLD": "🟠", "DONE": "🏁", "CANCELLED": "⏹️",
+            "ACCEPTED": "📌", "PLANNED": "🧭",
+        }
+        lines = [icons.get(state, "•") + " " + job + " — " + state]
+        try:
+            idx = int(step_index)
+            total = int(step_total)
+            if 0 <= idx <= total and total > 0:
+                pct = int(round(idx * 100 / total))
+                lines.append(self._bar(idx, total) + " " + str(pct) + "% (" + str(idx) + "/" + str(total) + ")")
+        except Exception:
+            pass
+        if component:
+            lines.append("📍 " + component)
+        if action:
+            lines.append("• " + action)
+        if next_action:
+            lines.append("➡️ " + next_action)
+        return "\n".join(lines)
+
+    def where(self, code: str = "") -> str:
+        events = self.local.mission_events(160)
+        if code:
+            events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
+        if not events:
+            return "Aucune progression durable observée pour cette mission."
+        return self.progress_event(events[-1])
+
+    def tail(self, code: str = "") -> str:
+        events = self.local.mission_events(160)
+        if code:
+            events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
+        if not events:
+            return "Aucun événement durable observé."
+        lines = ["Dernières micro-actions vérifiables"]
+        for ev in events[-8:]:
+            state = clean(ev.get("state") or "EVENT", 30)
+            step = clean(ev.get("action_summary") or ev.get("step_id") or "", 95)
+            lines.append("• " + state + ((" — " + step) if step else ""))
+        return "\n".join(lines)
+
     def holds(self) -> str:
         found = []
         for ev in self.local.mission_events(80):
@@ -538,7 +605,7 @@ class Service:
         return (
             "BCP Cockpit — lecture simple\n"
             "/status — vue simple\n/details — vue technique\n"
-            "/project <id>\n/job <code>\n/last\n/ci\n/holds\n\n"
+            "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les pourcentages portent seulement sur des étapes ou liaisons vérifiables. "
             "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
         )
@@ -551,7 +618,7 @@ class Service:
         cmd = first.split("@", 1)[0].lower()
         arg = rest[0].strip() if rest else ""
         if cmd not in READ_ONLY_COMMANDS:
-            return "Lecture seule: /status /details /project <id> /job <code> /last /ci /holds"
+            return "Lecture seule: /status /details /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -562,6 +629,10 @@ class Service:
             return self.project(arg)
         if cmd == "/job":
             return self.job(arg)
+        if cmd == "/tail":
+            return self.tail(arg)
+        if cmd == "/where":
+            return self.where(arg)
         if cmd == "/last":
             return self.last()
         if cmd == "/ci":
@@ -576,6 +647,12 @@ class Telegram:
         self.service = service
         self.http = http or Http()
         self.base = "https://api.telegram.org/bot" + token
+        presence = service.cfg.get("presence") or {}
+        self.auto_push = bool(presence.get("auto_push", True))
+        try:
+            self.max_events_per_push = max(1, min(12, int(presence.get("max_events_per_push", 6))))
+        except Exception:
+            self.max_events_per_push = 6
 
     def api(self, method: str, payload: dict, timeout: int) -> dict:
         status, obj = self.http.json(
@@ -592,6 +669,56 @@ class Telegram:
             "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
             "disable_web_page_preview": True,
         }, 20)
+
+    def _push_presence(self) -> None:
+        if not self.auto_push:
+            return
+        events = [
+            e for e in self.service.local.mission_events(200)
+            if not e.get("project_id") or str(e.get("project_id")) == self.service.project_id
+        ]
+        if not events:
+            return
+        state = read_json(PRESENCE_PATH, {}) or {}
+        last_key = str(state.get("mission_event_key") or "")
+        keys = [event_key(e) for e in events]
+        newest_key = keys[-1]
+
+        # First observation primes the cursor without replaying an old backlog.
+        if not last_key:
+            atomic_json(PRESENCE_PATH, {
+                "schema": "bcp.telegram_presence/1",
+                "mission_event_key": newest_key,
+                "updated_at": utc_now(),
+            })
+            return
+
+        if last_key not in keys:
+            # History window moved or journal was compacted. Never guess/replay.
+            atomic_json(PRESENCE_PATH, {
+                "schema": "bcp.telegram_presence/1",
+                "mission_event_key": newest_key,
+                "updated_at": utc_now(),
+                "resync": "CURSOR_PRIMED_NO_REPLAY",
+            })
+            return
+
+        idx = keys.index(last_key)
+        pending = events[idx + 1:]
+        relevant = [e for e in pending if str(e.get("state") or "").upper() in PUSH_STATES]
+        if relevant:
+            skipped = max(0, len(relevant) - self.max_events_per_push)
+            selected = relevant[-self.max_events_per_push:]
+            blocks = []
+            if skipped:
+                blocks.append("ℹ️ " + str(skipped) + " micro-actions précédentes regroupées.")
+            blocks.extend(self.service.progress_event(e) for e in selected)
+            self.send("\n\n".join(blocks))
+        atomic_json(PRESENCE_PATH, {
+            "schema": "bcp.telegram_presence/1",
+            "mission_event_key": newest_key,
+            "updated_at": utc_now(),
+        })
 
     def run(self) -> int:
         offset = int((read_json(OFFSET_PATH, {}) or {}).get("next_offset") or 0)
@@ -621,6 +748,7 @@ class Telegram:
                     atomic_json(OFFSET_PATH, {
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
+                self._push_presence()
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
                 return 0
@@ -735,6 +863,8 @@ def selftest() -> int:
         assert "GitHub CI: Windows=SUCCESS [work/test]" in details
         assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
         assert "48273195" in svc.job("48273195")
+        assert "CI patch persisted" in svc.tail("48273195")
+        assert "COMMITTED" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Lecture seule" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
