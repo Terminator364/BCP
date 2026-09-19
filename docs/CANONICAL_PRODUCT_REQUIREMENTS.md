@@ -106,16 +106,16 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.4.
+Current target: BCP 0.4.5.
 
-BCP 0.4.4 includes the external Drive runtime heartbeat bridge, the idempotent per-user Windows lifecycle launcher for the same BCP managed process, and makes API_BCP/02_TELEMETRY/BCP the preferred Drive telemetry destination while keeping the previous ChatGPT-PC tree as compatibility fallback.
+BCP 0.4.5 keeps the 0.4.4 runtime/Drive/lifecycle guarantees and adds revision preconditions for canonical mutations so a stale writer using an obsolete expected revision is rejected without changing state.
 
 Promotion gate:
 - CI qualification PASS;
 - Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.4;
+- existing managed-update path consumes 0.4.5;
 - `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.4 runtime;
+- its timestamp/version/hash prove a live 0.4.5 runtime;
 - B-EDGE telemetry/readback follows.
 
 No blind reinstall is allowed merely because telemetry is missing.
@@ -144,3 +144,24 @@ The project is not considered operationally complete until this sequence passes:
 6. Fresh conversation recovers exact state without user reconstruction.
 7. Stale writer mutation is rejected.
 8. Resource-pressure and poor-connectivity tests remain bounded.
+
+
+## Acceptance execution policy
+
+Final acceptance MUST be batched rather than performed as a sequence of manual user tests.
+
+The canonical field campaign is `BCP_FINAL_ACCEPTANCE_CURRENT` and must:
+- update BCP to the current qualified target if needed;
+- create one checkpoint with an explicit revision precondition;
+- replay the same idempotency key and prove no duplicate revision is created;
+- submit a stale-revision mutation and prove it is rejected;
+- verify loopback and LAN health;
+- snapshot pairing/token/committed revision;
+- schedule one automatic Windows reboot and resume through RunOnce;
+- prove the same pairing/token and committed revision/hash survive reboot without replay;
+- prove the managed BCP listener/lifecycle returns;
+- run bounded resource-pressure and poor-connectivity probes;
+- publish one machine-readable `BCP_FINAL_ACCEPTANCE_LATEST.json` receipt;
+- clean only its own known downloaded/extracted acceptance artifacts after success.
+
+The user must not be required to return between individual gates. One launch may cover the device/runtime acceptance campaign. A brand-new ChatGPT conversation is a platform boundary and may be spot-checked separately because the local PC harness cannot instantiate a new ChatGPT conversation itself.
