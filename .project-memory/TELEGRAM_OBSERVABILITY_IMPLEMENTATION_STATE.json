@@ -6,8 +6,8 @@
   "budget_usd": 0,
   "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
   "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
-  "status": "INTEGRATED_MAIN_FIELD_GATE_PENDING",
-  "field_status": "DOC_OK_ZERO_USD_OK_KINSHASA_FIELD_SMOKE_PENDING",
+  "status": "FIELD_RETRY_PENDING_AFTER_TRANSPORT_HARDENING",
+  "field_status": "KINSHASA_GETME_TRANSPORT_FAIL_R1_R2_READY",
   "implementation": {
     "worker": "windows/bcp_telegram_observability.py",
     "configurator": "windows/CONFIGURE_BCP_TELEGRAM.ps1",
@@ -63,5 +63,32 @@
     "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk",
     "artifact_id": 10581144182,
     "artifact_digest": "sha256:8af53ce3af16d06dcd9d6f0394b28b9bff006aa11a4c1b12b19d8f4de5fb33fe"
-  }
+  },
+  "last_field_failure": {
+    "observed_at_local": "2026-09-19T11:24:00+01:00",
+    "stage": "LOCAL_CONFIGURATOR_GETME",
+    "symptom": "TELEGRAM_API_CALL_FAILED method=getMe class=WebException",
+    "interpretation": "TRANSPORT_OR_HTTP_DETAIL_HIDDEN_BY_R1; TOKEN_VALIDITY_NOT_CONCLUDED",
+    "user_network": "NORMAL_KINSHASA_CONNECTION_REPORTED"
+  },
+  "transport_hardening": {
+    "merged_main_sha": "0b207d25a88ee0db7c4322b572d76fdef0ee57bd",
+    "patch_commit": "5531d6e96c30bff5e5ee0383f26bc9c76f64a7c2",
+    "telegram_ci_run_id": 35437374566,
+    "telegram_ci_result": "PASS",
+    "coordinated_ci_run_id": 35437374499,
+    "coordinated_ci_result": "PASS",
+    "behavior": [
+      "FORCE_TLS12_PROCESS_LOCAL",
+      "DISTINGUISH_HTTP_AUTH_FROM_TRANSPORT",
+      "BOUNDED_TRANSIENT_RETRIES",
+      "NO_TOKEN_OR_URI_LOGGING"
+    ]
+  },
+  "current_field_package": {
+    "drive_file_id": "1aWeDHNMgtaeyNEdvJhz0iEfMEFiseY3o",
+    "drive_file_name": "BCP_TELEGRAM_OBSERVABILITY_CURRENT_R2.zip",
+    "sha256": "979918eeeb518b95e19447aa05311a4f8ae136967b88fab220264d92d5172337"
+  },
+  "next_action": "Use R2 package locally; rerun configurator with secret token; record safe diagnostic (HTTP auth vs transport status) and continue only from exact result."
 }
