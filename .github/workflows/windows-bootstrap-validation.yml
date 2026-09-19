@@ -181,13 +181,26 @@ jobs:
             try { $listener.Stop() } catch {}
           }
 
-          # Discover an active IPv4 interface when the hosted runner exposes one.
-          $cfg = Get-NetIPConfiguration |
-            Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4Address } |
-            Sort-Object @{Expression={ if ($_.IPv4DefaultGateway) { 0 } else { 1 } }} |
-            Select-Object -First 1
-          if (-not $cfg) { throw 'No active IPv4 interface on runner' }
-          Write-Host ("BCP_WINDOWS_IPV4_INTERFACE=PASS alias=" + $cfg.InterfaceAlias)
+          # Avoid Get-NetIPConfiguration here: current windows-latest/Server 2025
+          # images can throw an internal CIM NetAdapter conversion error before
+          # returning any rows. Enumerate adapter + IPv4 address independently.
+          $active = $null
+          $adapters = @(Get-NetAdapter -ErrorAction Stop | Where-Object { $_.Status -eq 'Up' })
+          foreach ($adapter in $adapters) {
+            $ipv4 = @(Get-NetIPAddress -InterfaceIndex $adapter.ifIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+              Where-Object { $_.IPAddress -and $_.IPAddress -notlike '169.254.*' } |
+              Select-Object -First 1)
+            if ($ipv4.Count -gt 0) {
+              $active = [pscustomobject]@{
+                InterfaceAlias = [string]$adapter.Name
+                InterfaceIndex = [int]$adapter.ifIndex
+                IPv4 = [string]$ipv4[0].IPAddress
+              }
+              break
+            }
+          }
+          if (-not $active) { throw 'No active non-APIPA IPv4 interface on runner' }
+          Write-Host ("BCP_WINDOWS_IPV4_INTERFACE=PASS alias=" + $active.InterfaceAlias + " ip=" + $active.IPv4)
 
           # Hosted GitHub runners do not guarantee that Windows Firewall mutation
           # is permitted on every image. When mutation is available, require exact
