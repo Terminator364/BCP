@@ -16,7 +16,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 from urllib.request import Request, urlopen
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
@@ -1489,7 +1489,26 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 return
             if parts[3] == "context":
-                self.send_json(200, build_context_pack(project))
+                query = parse_qs(urlparse(self.path).query)
+                task = str((query.get("task") or [""])[0])[:1000]
+                known_hash = str((query.get("known_hash") or [""])[0])[:128]
+                try:
+                    budget = int((query.get("byte_budget") or ["24000"])[0])
+                except Exception:
+                    budget = 24000
+                pack = build_context_pack(project, task=task, byte_budget=budget)
+                current_hash = str(pack.get("revision_vector", {}).get("context_hash", ""))
+                if known_hash and hmac.compare_digest(known_hash, current_hash):
+                    self.send_json(200, {
+                        "schema": "bcp.context_pack_result/1",
+                        "status": "UNCHANGED",
+                        "project_id": project,
+                        "context_hash": current_hash,
+                        "head": pack.get("head"),
+                    })
+                else:
+                    pack["status"] = "FULL_REFRESH"
+                    self.send_json(200, pack)
                 return
             if parts[3] == "jobs":
                 self.send_json(200, {"project_id": project, "jobs": jobs_snapshot(project)})
@@ -1609,7 +1628,12 @@ class Handler(BaseHTTPRequestHandler):
                 body = self.read_json()
                 receipt = memory_put(
                     parts[2], body.get("layer"), body.get("key"),
-                    body.get("value"), body.get("source", "B-EDGE")
+                    body.get("value"), body.get("source", "B-EDGE"),
+                    evidence_class=body.get("evidence_class", "UNCLASSIFIED"),
+                    source_id=body.get("source_id", ""),
+                    pinned=bool(body.get("pinned", False)),
+                    expires_at=body.get("expires_at"),
+                    supersedes_key=body.get("supersedes_key", ""),
                 )
                 self.send_json(200, {"ok": True, **receipt})
             except Exception as e:
@@ -1622,9 +1646,23 @@ class Handler(BaseHTTPRequestHandler):
                 idem = self.headers.get("Idempotency-Key") or body.get("idempotency_key")
                 receipt = enqueue_job(
                     parts[2], body.get("kind", "generic"), body.get("payload", {}),
-                    str(idem or ""), bool(body.get("requires_pc", True))
+                    str(idem or ""), bool(body.get("requires_pc", True)),
+                    priority=body.get("priority", 50),
+                    resource_class=body.get("resource_class", ""),
+                    action_id=body.get("action_id", ""),
+                    expected_revision=body.get("expected_revision"),
+                    input_hash=body.get("input_hash", ""),
+                    coordinator_epoch=body.get("coordinator_epoch", 0),
+                    evidence_contract=body.get("evidence_contract", ""),
+                    dependencies=body.get("dependency_job_ids", []),
                 )
                 self.send_json(200, receipt)
+            except ValueError as e:
+                detail = str(e)
+                if detail.startswith("stale_job_revision:"):
+                    self.send_json(409, {"error": "stale_job_revision", "detail": detail, "project_id": parts[2], "head": get_head(parts[2])})
+                else:
+                    self.send_json(400, {"error": "job_queue_failed", "detail": detail[:500]})
             except Exception as e:
                 self.send_json(400, {"error": "job_queue_failed", "detail": str(e)[:500]})
             return
