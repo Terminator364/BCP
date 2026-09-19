@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R10
+Revision: 2026-09-20-R11
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -841,3 +841,24 @@ Implementation candidate on 2026-09-19:
 - Nexus adds callback routing, report cache and PDF delivery at the webhook edge;
 - CI must prove syntax, self-tests, D1 schema and secret/read-only guards on the exact candidate commit;
 - FIELD_VERIFIED remains false until real Kinshasa Telegram/Nexus button and PDF round-trips succeed.
+
+
+## P0 — Human-first Telegram cockpit V5
+
+The Telegram cockpit MUST expose concrete externally verifiable micro-actions rather than vague activity names.
+
+A micro-action is a bounded human-readable action such as reading a named file, checking a commit, starting a defined test, reading a test result, modifying a specific file, verifying a receipt/hash, or committing a durable checkpoint.
+
+When BCP has a persisted finite mission plan:
+- the normal view MUST show current, last completed, and next micro-action using the plan's human labels;
+- the progress bar and percentage MUST equal verified steps / total persisted steps;
+- no time-based or model-internal percentage may be invented;
+- the user MUST be able to open a numbered Micro-actions journal backed by durable mission events;
+- raw PR/SHA/run identifiers stay behind the technical details view.
+
+The human PDF MUST include the plan and recent micro-actions, not merely copy the status card. The technical PDF MUST additionally expose mission metadata, worker/component, evidence/receipt references, hold reason, plan and event journal while redacting secrets.
+
+Automatic cockpit presence/update remains resident/event-driven BCP/B-EDGE/Nexus behavior. It MUST NOT use ChatGPT scheduled monitoring automations.
+
+Canonical detailed delta:
+`docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md`.
