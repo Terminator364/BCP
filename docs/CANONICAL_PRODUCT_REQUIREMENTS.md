@@ -21,13 +21,15 @@ The Windows side MUST:
 - publish a sanitized heartbeat independently of the interactive ChatGPT-PC channel;
 - never require routine manual IP/token/project entry;
 - never require repeated reinstall cycles for normal upgrades or recovery;
+- clean its own known temporary/download artifacts automatically after a verified successful install/update, while preserving failure evidence and never deleting unrelated user files;
 - remain bounded under high memory pressure on the ~4 GB Windows target;
 - fail closed / HOLD on ambiguous state rather than claim ACTIVE.
 
 Current external heartbeat contract:
 - canonical filename: `BCP_RUNTIME_LATEST.json`;
 - rolling event log: `BCP_RUNTIME_EVENTS.jsonl`;
-- preferred synced location: `CHATGPT_PC_AGENT/03_TELEMETRY/BCP/`;
+- preferred synced location: `API_BCP/02_TELEMETRY/BCP/`;
+- compatibility fallback while field migration is incomplete: `CHATGPT_PC_AGENT/03_TELEMETRY/BCP/`;
 - heartbeat cadence target: <= 60 s while runtime is alive;
 - no bearer tokens, secrets or raw arbitrary payloads in the external heartbeat.
 
@@ -67,6 +69,7 @@ B-EDGE MUST:
 - send lightweight telemetry;
 - receive compact status/recovery state;
 - continue/recover across intermittent connectivity;
+- use app-owned cache for future in-app update payloads and delete those payloads after verified installation; do not request broad storage access merely to clean arbitrary Downloads;
 - support a later fallback path (QR/Bluetooth or equivalent) only if measured LAN discovery failure justifies it.
 
 ## P0 — Environment constraints
