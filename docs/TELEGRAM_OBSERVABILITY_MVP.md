@@ -105,3 +105,24 @@ MVP-3: provider-neutral AI work through Model Broker.
 MVP-4: supported ChatGPT connector lifecycle events where the product surface actually allows them.
 
 The MVP can be useful before any external AI provider is installed.
+
+## Implementation activation — 2026-09-19
+
+User priority now activates MVP-0 implementation immediately while preserving all previously active BCP continuity, field, writer-fence and zero-spend requirements.
+
+Current implementation contract:
+- runtime: windows/bcp_telegram_observability.py;
+- local secret/bootstrap: windows/CONFIGURE_BCP_TELEGRAM.ps1;
+- field guide: docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md;
+- transport: Telegram Bot API long polling with a server-held timeout, bounded retry/backoff and no aggressive short polling;
+- dependencies: Python standard library only for the worker;
+- authorization: one explicitly approved private chat ID;
+- token: local BCP state only, excluded from repository/Drive/status output;
+- first deployment: Windows companion reusing an available local Python runtime, isolated from the coordinated BCP/B-EDGE release candidate so the active product branch is not destabilized;
+- later migration to B-EDGE is allowed only after the same read-only evidence/security contract is field-qualified.
+
+Promotion states:
+- DOC_OK / ZERO_USD_OK / KINSHASA_FIELD_SMOKE_PENDING before live field proof;
+- KINSHASA_SMOKE_PASS / READ_ONLY_FIELD_ACTIVE only after getMe + private getUpdates + sendMessage + /status succeed on the user's normal Kinshasa network without VPN or false geography.
+
+Source-specific absence is represented as NOT_OBSERVED or the applicable UNKNOWN state. Absence of evidence is never converted into a fabricated percentage, RUNNING claim, CI pass, ChatGPT internal state, or field-verification claim.
