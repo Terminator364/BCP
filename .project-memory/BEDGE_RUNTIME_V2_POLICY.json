@@ -128,6 +128,9 @@
     "ADD_RESOURCE_GOVERNOR",
     "REMOVE_HARDCODED_SINGLE_PROJECT",
     "ADD_CONTEXT_PACK_AND_MEMORY_ADMISSION",
+    "ADD_GLOBAL_PROJECT_DELTA_CONTEXT_PROJECTIONS",
+    "ADD_DRIVE_BOOTSTRAP_MIRROR",
+    "ADD_BCPGO_BOOTSTRAP_PROTOCOL",
     "ADD_DETERMINISTIC_DAG_SCHEDULER",
     "NSD_PRIMARY_DISCOVERY",
     "AUTHENTICATED_TLS_LAN",
@@ -139,6 +142,47 @@
     "docs/BEDGE_RUNTIME_V2_HARDENING.md",
     "docs/BEDGE_V2_TEST_MATRIX.md",
     "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
-    "docs/BEDGE_PAIRING_ARCHITECTURE.md"
-  ]
+    "docs/BEDGE_PAIRING_ARCHITECTURE.md",
+    "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+  ],
+  "context_fabric": {
+    "universal_command": "BCPGO",
+    "logical_components": [
+      "B_EDGE",
+      "PC_WORKER",
+      "BCP_NEXUS"
+    ],
+    "context_layers": [
+      "GLOBAL_CORE",
+      "PROJECT_CORE",
+      "TASK_DELTA",
+      "EVIDENCE_ON_DEMAND"
+    ],
+    "per_turn_states": [
+      "UNCHANGED",
+      "DELTA",
+      "FULL_REFRESH",
+      "CONFLICT",
+      "DEGRADED",
+      "HOLD"
+    ],
+    "connected_store_baseline": "GOOGLE_DRIVE_SANITIZED_PROJECTION",
+    "remote_mcp_plugin": "FUTURE_FIELD_AND_PLAN_QUALIFIED",
+    "universal_command_is_authentication": false,
+    "full_memory_prompt_default": false,
+    "deterministic_context_compiler_first": true
+  },
+  "memory_categories": [
+    "NORMATIVE",
+    "DESCRIPTIVE",
+    "DERIVED",
+    "UNTRUSTED_CONTENT"
+  ],
+  "memory_security": {
+    "external_content_direct_policy_write": false,
+    "external_content_direct_user_memory_write": false,
+    "model_direct_canonical_fact_promotion": false,
+    "llm_exportable_label_required": true,
+    "memory_poisoning_tests_required": true
+  }
 }
