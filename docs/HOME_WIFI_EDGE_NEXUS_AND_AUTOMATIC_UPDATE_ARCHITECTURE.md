@@ -1,6 +1,6 @@
 # BCP — Home-WiFi Edge, Telegram Nexus and Automatic Update Architecture
 
-Status: PROPOSED CANONICAL REFINEMENT
+Status: CANONICAL REFINEMENT — NEXUS MVP IMPLEMENTED / FIELD UNVERIFIED
 Date: 2026-09-19
 Scope: API/BCP, B-EDGE, Telegram cockpit, release/update plane
 
@@ -232,3 +232,17 @@ Update plane is accepted only when:
 - B-EDGE receives the correct APK automatically over Wi-Fi and requires at most the unavoidable Android installation approval;
 - receipts prove the installed version;
 - old temporary artifacts are cleaned while bounded rollback remains available.
+
+
+## Implementation checkpoint — Nexus MVP
+
+Implemented candidate components:
+- Cloudflare-Workers-class Nexus worker with D1 durable command/reply/outbound tables;
+- Telegram webhook secret verification and private-chat allowlist;
+- authenticated device pull/reply/push endpoints;
+- idempotency reservations for reply/push effects;
+- PC observability worker transport abstraction: DIRECT_TELEGRAM remains default, NEXUS is opt-in;
+- local Nexus configurator that stores device secret only in BCP local state;
+- dedicated CI qualification workflow.
+
+This checkpoint is not FIELD_VERIFIED. Live promotion requires external cloud authorization, provider secret provisioning, webhook ownership migration and a real home-WiFi round-trip.
