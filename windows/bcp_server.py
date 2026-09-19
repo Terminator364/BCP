@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.3"
+SERVER_VERSION = "0.6.4"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -344,6 +344,8 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "update_target_version": str(update.get("target_version") or "")[:40],
         "nexus_bootstrap_state": str(nexus.get("state") or "NONE")[:80],
         "nexus_bootstrap_bundle_version": str(nexus.get("bundle_version") or "")[:40],
+        "nexus_bootstrap_exit_code": nexus.get("exit_code"),
+        "nexus_bootstrap_receipt_status": str(nexus.get("receipt_status") or "")[:80],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
@@ -829,7 +831,8 @@ def _monitor_nexus_bootstrap(proc: subprocess.Popen, bundle_version: str) -> Non
         except Exception:
             code = -1
         receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
-        success = str(receipt.get("status") or "") == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
+        receipt_status = str(receipt.get("status") or "")
+        success = receipt_status == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
         state = "COMMITTED" if success else ("WRANGLER_RUNTIME_REQUIRED" if code == 3 else "EXITED_NO_RECEIPT")
         atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
             "schema": "bcp.nexus_bootstrap_delivery/1",
@@ -838,7 +841,8 @@ def _monitor_nexus_bootstrap(proc: subprocess.Popen, bundle_version: str) -> Non
             "pid": int(proc.pid),
             "exit_code": code,
             "updated_at": utc_now(),
-            "receipt_present": bool(success),
+            "receipt_present": bool(receipt),
+            "receipt_status": receipt_status,
             "spend_usd": 0.0,
         })
         try:
