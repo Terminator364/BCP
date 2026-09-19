@@ -6,8 +6,8 @@
   "budget_usd": 0,
   "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
   "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
-  "status": "INTEGRATED_MAIN_FIELD_GATE_PENDING",
-  "field_status": "DOC_OK_ZERO_USD_OK_KINSHASA_FIELD_SMOKE_PENDING",
+  "status": "KINSHASA_SMOKE_PASS_READ_ONLY_FIELD_ACTIVE",
+  "field_status": "KINSHASA_SMOKE_PASS",
   "implementation": {
     "worker": "windows/bcp_telegram_observability.py",
     "configurator": "windows/CONFIGURE_BCP_TELEGRAM.ps1",
@@ -63,5 +63,27 @@
     "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk",
     "artifact_id": 10581144182,
     "artifact_digest": "sha256:8af53ce3af16d06dcd9d6f0394b28b9bff006aa11a4c1b12b19d8f4de5fb33fe"
-  }
+  },
+  "field_evidence": {
+    "observed_local_time": "2026-09-19T13:04:00+01:00",
+    "getMe": "PASS",
+    "getUpdates_private_status": "PASS",
+    "sendMessage_reply": "PASS",
+    "status_command_reply": "PASS",
+    "bot_username": "BlessingBCPCocpitbot",
+    "evidence_summary": "User received live /status replies in Telegram over normal Kinshasa mobile connectivity. Replies reported API/BCP state, GitHub CI, B-EDGE pairing, Drive receipt, BCP heartbeat and zero spend."
+  },
+  "runtime_snapshot_observed": {
+    "global_state_latest": "BOOTSTRAP_FALLBACK",
+    "prior_global_state": "HEALTHY",
+    "github_ci": "BCP PC Sanity=SUCCESS [main]",
+    "b_edge": "PAIRED",
+    "buildhub": "NOT_OBSERVED",
+    "drive_receipt": "OBSERVED",
+    "bcp_heartbeat_seconds": 20,
+    "chatgpt": "UNKNOWN_INTERNAL_CHAT_STATE",
+    "spend_usd": 0
+  },
+  "installer_receipt_status": "LATE_RECEIPT_HASH_BUG_FIXED_IN_MAIN_PR26",
+  "next_action": "Continue read-only cockpit validation with /ci and /holds, then harden automatic packaging/update path; do not replay already committed setup."
 }
