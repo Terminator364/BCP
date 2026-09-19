@@ -471,17 +471,30 @@ public final class BcpClient {
     }
 
     public JSONObject contextPack() throws Exception {
+        return contextPack("");
+    }
+
+    public JSONObject contextPack(String task) throws Exception {
+        JSONObject cached=orchestrator.cachedContext(getProject());
         try {
             ensureConnected();
-            JSONObject r = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(getProject()) + "/context",
-                    null, getToken(), null, 2200, 5000);
-            orchestrator.cacheContext(getProject(), r);
+            String known="";
+            JSONObject rv=cached.optJSONObject("revision_vector");
+            if(rv!=null) known=rv.optString("context_hash","");
+            String url=getServer()+"/v1/projects/"+enc(getProject())+"/context?byte_budget=24000";
+            if(task!=null && !task.trim().isEmpty()) url+="&task="+enc(task.trim());
+            if(!known.isEmpty()) url+="&known_hash="+enc(known);
+            JSONObject r=requestJson("GET",url,null,getToken(),null,2200,5000);
+            if("UNCHANGED".equals(r.optString("status","")) && cached.length()>0){
+                cached.put("offline",false);
+                cached.put("source","B_EDGE_ROOM_CACHE_NO_CHANGE");
+                return cached;
+            }
+            orchestrator.cacheContext(getProject(),r);
             return r;
-        } catch (Exception ex) {
+        } catch(Exception ex) {
             orchestrator.setMode("EDGE_ONLY");
-            JSONObject cached = orchestrator.cachedContext(getProject());
-            if (cached.length() > 0) return cached;
+            if(cached.length()>0) return cached;
             throw ex;
         }
     }
@@ -505,7 +518,14 @@ public final class BcpClient {
             body.put("kind", kind);
             body.put("payload", payload);
             body.put("requires_pc", requiresPc);
+            body.put("priority", local.optInt("priority",50));
             body.put("resource_class", local.optString("resource_class", ""));
+            body.put("action_id", local.optString("local_id",""));
+            JSONObject projectState=orchestrator.projectState(getProject());
+            if(projectState.length()>0){
+                body.put("expected_revision",projectState.optLong("head_revision",0));
+                body.put("coordinator_epoch",projectState.optLong("coordinator_epoch",0));
+            }
             String idem = local.optString("idempotency_key", "");
             JSONObject r = requestJson("POST",
                     getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
@@ -534,7 +554,14 @@ public final class BcpClient {
                     body.put("kind", job.optString("kind", "generic"));
                     body.put("payload", job.optJSONObject("payload") == null ? new JSONObject() : job.optJSONObject("payload"));
                     body.put("requires_pc", job.optBoolean("requires_pc", true));
+                    body.put("priority", job.optInt("priority",50));
                     body.put("resource_class", job.optString("resource_class", ""));
+                    body.put("action_id",job.optString("local_id",""));
+                    JSONObject projectState=orchestrator.projectState(getProject());
+                    if(projectState.length()>0){
+                        body.put("expected_revision",projectState.optLong("head_revision",0));
+                        body.put("coordinator_epoch",projectState.optLong("coordinator_epoch",0));
+                    }
                     JSONObject receipt = requestJson("POST",
                             getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
                             body.toString(), getToken(),
