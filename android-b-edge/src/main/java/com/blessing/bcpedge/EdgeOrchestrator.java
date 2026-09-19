@@ -47,7 +47,10 @@ public final class EdgeOrchestrator {
 
     public void ensureProject(String projectId, long headRevision, long epoch) {
         long now = System.currentTimeMillis();
-        dao.putProject(new EdgeProjectEntity(projectId, "ACTIVE", headRevision, epoch, now));
+        int updated = dao.updateProjectHeadPreservingEpoch(projectId, "ACTIVE", headRevision, now);
+        if (updated == 0) {
+            dao.insertProject(new EdgeProjectEntity(projectId, "ACTIVE", headRevision, epoch, now));
+        }
     }
 
     public JSONArray projectRegistry() {
