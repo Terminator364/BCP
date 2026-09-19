@@ -29,7 +29,7 @@ public final class EdgeWorkScheduler {
         WorkManager.getInstance(context.getApplicationContext())
                 .enqueueUniquePeriodicWork(
                         UNIQUE_PERIODIC,
-                        ExistingPeriodicWorkPolicy.UPDATE,
+                        ExistingPeriodicWorkPolicy.KEEP,
                         work);
     }
 
