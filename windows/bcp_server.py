@@ -15,6 +15,7 @@ import struct
 import subprocess
 import sys
 import threading
+from contextlib import contextmanager
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
@@ -1005,6 +1006,17 @@ def connect_db():
     return cx
 
 
+@contextmanager
+def db_connection():
+    """Transactional sqlite context that also closes the Windows file handle."""
+    cx = connect_db()
+    try:
+        with cx:
+            yield cx
+    finally:
+        cx.close()
+
+
 MEMORY_LAYERS = ("USER_MEMORY", "PROJECT_MEMORY", "TECHNICAL_KNOWLEDGE", "OPERATING_STATE", "HISTORY", "POLICY")
 
 
@@ -1102,7 +1114,7 @@ def memory_put(
         raise ValueError("memory_value_too_large")
     now = utc_now()
     with DB_LOCK:
-        with connect_db() as cx:
+        with db_connection() as cx:
             old = cx.execute(
                 """SELECT evidence_class,pinned FROM memory_records
                    WHERE project_id=? AND layer=? AND key=?""",
@@ -1147,7 +1159,7 @@ def memory_list(project_id: str, limit_per_layer: int = 24) -> dict:
     limit_per_layer = max(1, min(int(limit_per_layer), 50))
     out = {k: [] for k in MEMORY_LAYERS}
     now = utc_now()
-    with connect_db() as cx:
+    with db_connection() as cx:
         for layer in MEMORY_LAYERS:
             rows = cx.execute(
                 """SELECT key,value_json,source,updated_at,evidence_class,source_id,
@@ -1260,7 +1272,7 @@ def enqueue_job(
         state = "BLOCKED"
     now = utc_now()
     with DB_LOCK:
-        with connect_db() as cx:
+        with db_connection() as cx:
             cx.execute("BEGIN IMMEDIATE")
             old = cx.execute(
                 "SELECT * FROM jobs WHERE project_id=? AND idempotency_key=?",
@@ -1309,7 +1321,7 @@ def enqueue_job(
 
 def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
     limit = max(1, min(int(limit), 100))
-    with connect_db() as cx:
+    with db_connection() as cx:
         rows = cx.execute(
             "SELECT * FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT ?",
             (project_id, limit),
@@ -1333,7 +1345,7 @@ def get_head(project_id: str):
 
 def recent_events(project_id: str, limit: int = 10):
     limit = max(1, min(int(limit), 50))
-    with connect_db() as cx:
+    with db_connection() as cx:
         rows = cx.execute(
             "SELECT * FROM events WHERE project_id=? ORDER BY revision DESC LIMIT ?",
             (project_id, limit),
@@ -1899,7 +1911,7 @@ def selftest():
         assert 'parts[3] == "context"' in source
         assert 'parts[3] == "memory"' in source
         assert 'parts[3] == "jobs"' in source
-        with connect_db() as cx:
+        with db_connection() as cx:
             mem_cols = {r[1] for r in cx.execute("PRAGMA table_info(memory_records)").fetchall()}
             job_cols = {r[1] for r in cx.execute("PRAGMA table_info(jobs)").fetchall()}
             assert {"evidence_class","source_id","pinned","expires_at","supersedes_key"} <= mem_cols
