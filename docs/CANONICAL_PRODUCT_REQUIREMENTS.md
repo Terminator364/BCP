@@ -15,7 +15,7 @@ The immediate objective is not more architecture. It is to make the Windows + BC
 The Windows side MUST:
 - run as a lightweight managed application on the existing ChatGPT-PC substrate; no heavy local LLM and no unnecessary parallel daemon;
 - install/update idempotently with hash verification, readback and rollback;
-- survive restart/logon/power/network interruption without losing canonical state;
+- survive restart/logon/power/network interruption without losing canonical state; the minimal per-user lifecycle launcher may restart the same managed BCP process, but must not create a second control plane;
 - self-update only from allowlisted, hash-pinned release metadata;
 - expose health, version, PID, update state, recovery state and bounded diagnostics in machine-readable form;
 - publish a sanitized heartbeat independently of the interactive ChatGPT-PC channel;
@@ -103,16 +103,16 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.2.
+Current target: BCP 0.4.3.
 
-BCP 0.4.2 adds the external Drive runtime heartbeat bridge so runtime truth can be observed without the interactive ChatGPT-PC channel.
+BCP 0.4.3 includes the external Drive runtime heartbeat bridge and adds an idempotent per-user Windows lifecycle launcher for the same BCP managed process, so runtime truth can be observed without the interactive ChatGPT-PC channel and the managed app can return after user logon.
 
 Promotion gate:
 - CI qualification PASS;
 - Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.2;
+- existing managed-update path consumes 0.4.3;
 - `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.2 runtime;
+- its timestamp/version/hash prove a live 0.4.3 runtime;
 - B-EDGE telemetry/readback follows.
 
 No blind reinstall is allowed merely because telemetry is missing.
