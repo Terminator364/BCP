@@ -819,7 +819,9 @@ def mdns_announcement_packet(port: int = 8765) -> bytes:
     txt_parts = [
         f"ver={SERVER_VERSION}".encode("utf-8"),
         b"proto=1",
-        public_identity_fingerprint(ensure_state()).encode("utf-8"),
+        ("fp=" + public_identity_fingerprint(
+            TOKEN_PATH.read_text(encoding="utf-8").strip() if TOKEN_PATH.is_file() else ensure_state()
+        )).encode("utf-8"),
     ]
     txt = b"".join(bytes([min(len(x), 255)]) + x[:255] for x in txt_parts)
     records = [
