@@ -376,6 +376,40 @@ class LocalTruth:
     def mission_activity_age(self) -> int | None:
         return age_seconds(self.state / MISSION_EVENT_LOG_PATH.name)
 
+    def mission_snapshot(self, project: str) -> dict | None:
+        rows = self._query(
+            "SELECT mission_id,project_id,current_step,last_committed_step,next_step,"
+            "last_progress_at,worker_component,receipt_evidence,status,hold_reason,"
+            "plan_json,created_at,updated_at FROM missions "
+            "WHERE project_id=? ORDER BY updated_at DESC LIMIT 1",
+            (project,),
+        )
+        if not rows and project == "API/BCP":
+            rows = self._query(
+                "SELECT mission_id,project_id,current_step,last_committed_step,next_step,"
+                "last_progress_at,worker_component,receipt_evidence,status,hold_reason,"
+                "plan_json,created_at,updated_at FROM missions "
+                "WHERE project_id IN ('API','BCP') ORDER BY updated_at DESC LIMIT 1"
+            )
+        if not rows:
+            return None
+        out = dict(rows[0])
+        try:
+            plan = json.loads(out.pop("plan_json") or "[]")
+            out["plan"] = plan if isinstance(plan, list) else []
+        except Exception:
+            out["plan"] = []
+        return out
+
+    def mission_event_tail(self, mission_id: str, limit: int = 12) -> list[dict]:
+        rows = self._query(
+            "SELECT seq,event_type,step_id,worker_component,summary,evidence_ref,status,"
+            "failure_hold_reason,created_at FROM mission_events "
+            "WHERE mission_id=? ORDER BY seq DESC LIMIT ?",
+            (mission_id, max(1, min(limit, 30))),
+        )
+        return list(reversed(rows))
+
     def buildhub(self) -> dict:
         raw = os.environ.get("BCP_BUILDHUB_RECEIPT", "").strip()
         if raw:
@@ -498,6 +532,61 @@ class Service:
             return str(seconds // 60) + " min"
         return str(seconds // 3600) + " h " + str((seconds % 3600) // 60) + " min"
 
+    def _mission_context(self) -> dict | None:
+        mission = self.local.mission_snapshot(self.project_id)
+        if not mission:
+            return None
+        plan = mission.get("plan") or []
+        label_by_id: dict[str, str] = {}
+        verified = 0
+        for pos, step in enumerate(plan, 1):
+            if not isinstance(step, dict):
+                continue
+            sid = clean(step.get("id") or ("step-" + str(pos)), 80)
+            label = clean(step.get("label") or sid, 180)
+            if sid:
+                label_by_id[sid] = label
+            state = str(step.get("state") or "").upper()
+            if bool(step.get("verified")) or state in {"VERIFIED", "DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED"}:
+                verified += 1
+        current_id = clean(mission.get("current_step"), 80)
+        last_id = clean(mission.get("last_committed_step"), 80)
+        next_id = clean(mission.get("next_step"), 80)
+        total = len([x for x in plan if isinstance(x, dict)])
+        progress = ""
+        if total > 0:
+            pct = int(round(verified * 100 / total))
+            progress = self._bar(verified, total) + " " + str(pct) + "% — " + str(verified) + "/" + str(total) + " micro-actions vérifiées"
+        return {
+            "mission": mission,
+            "plan": plan,
+            "current": label_by_id.get(current_id, current_id) or "Aucune micro-action active observée.",
+            "last": label_by_id.get(last_id, last_id) or "Aucune micro-action terminée récente observée.",
+            "next": label_by_id.get(next_id, next_id) or "Relire l’état sauvegardé avant de reprendre.",
+            "progress": progress,
+            "verified": verified,
+            "total": total,
+            "label_by_id": label_by_id,
+        }
+
+    def plan_view(self) -> str:
+        ctx = self._mission_context()
+        if not ctx:
+            return "PLAN DE MICRO-ACTIONS\nAucun plan fini et durable observé."
+        plan = ctx.get("plan") or []
+        lines = ["🧭 Plan de micro-actions"]
+        if ctx.get("progress"):
+            lines.append("📊 " + str(ctx["progress"]))
+        for pos, step in enumerate(plan, 1):
+            if not isinstance(step, dict):
+                continue
+            state = str(step.get("state") or "PENDING").upper()
+            verified = bool(step.get("verified")) or state in {"VERIFIED", "DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED"}
+            icon = "✅" if verified else ("▶️" if clean(step.get("id"), 80) == clean((ctx["mission"] or {}).get("current_step"), 80) else "⬜")
+            label = clean(step.get("label") or step.get("id") or ("Étape " + str(pos)), 180)
+            lines.append(str(pos) + ". " + icon + " " + label)
+        return "\n".join(lines)
+
     @staticmethod
     def _last_completed_action(events: list[dict], current: dict) -> str:
         completed = {"COMMITTED", "CHECKPOINTED", "DONE"}
@@ -579,16 +668,48 @@ class Service:
             if not e.get("project_id") or str(e.get("project_id")) == self.project_id
         ]
         ev = events[-1] if events else {}
-        mission_state = str(ev.get("state") or "NOT_OBSERVED").upper()
-        action = clean(
-            ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
-            "Aucune micro-action durable récente.",
-            150,
-        )
-        next_action = self._human_action(
-            ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
-        )
-        age = self._event_age_seconds(ev)
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        mission_state = str(
+            mission.get("status") or ev.get("state") or "NOT_OBSERVED"
+        ).upper()
+
+        if ctx:
+            action = clean(ctx.get("current"), 180)
+            next_action = self._human_action(ctx.get("next"))
+            last_completed = clean(ctx.get("last"), 180)
+            progress = str(ctx.get("progress") or ("Étape: " + mission_state.replace("_", " ").lower()))
+            age = self._event_age_seconds({
+                "updated_at": mission.get("last_progress_at") or mission.get("updated_at")
+            })
+            evidence_time = clean(
+                mission.get("last_progress_at") or mission.get("updated_at") or "non observée", 64
+            )
+            step_key = [int(ctx.get("verified") or 0), int(ctx.get("total") or 0)] if int(ctx.get("total") or 0) > 0 else None
+        else:
+            action = clean(
+                ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
+                "Aucune micro-action durable récente.",
+                180,
+            )
+            next_action = self._human_action(
+                ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
+            )
+            age = self._event_age_seconds(ev)
+            evidence_time = self._event_timestamp(ev) or "non observée"
+            last_completed = self._last_completed_action(events, ev)
+            progress = "Étape: " + mission_state.replace("_", " ").lower()
+            step_key = None
+            try:
+                idx = int(ev.get("step_index"))
+                total = int(ev.get("step_total"))
+                if 0 <= idx <= total and total > 0:
+                    pct = int(round(idx * 100 / total))
+                    progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
+                    step_key = [idx, total]
+            except Exception:
+                pass
+
         if age is None:
             age = self.local.mission_activity_age()
         age_label = self._age_label(age)
@@ -600,20 +721,8 @@ class Service:
             activity_band = "STALE"
         else:
             activity_band = "UNKNOWN"
-        if mission_state in HOLD_STATES:
+        if mission_state in HOLD_STATES or clean(mission.get("hold_reason"), 120):
             activity_band = "HOLD"
-
-        progress = "Étape: " + mission_state.replace("_", " ").lower()
-        step_key = None
-        try:
-            idx = int(ev.get("step_index"))
-            total = int(ev.get("step_total"))
-            if 0 <= idx <= total and total > 0:
-                pct = int(round(idx * 100 / total))
-                progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
-                step_key = [idx, total]
-        except Exception:
-            pass
 
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
@@ -629,10 +738,9 @@ class Service:
             "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": "✅ relais Nexus actif",
             "EXITED_NO_RECEIPT": "🟡 relais Nexus à reprendre",
             "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation du relais Nexus",
+            "LAUNCHED": "🟡 démarrage du relais Nexus en cours",
         }.get(nexus, "⚪ relais Nexus non observé")
 
-        evidence_time = self._event_timestamp(ev) or "non observée"
-        last_completed = self._last_completed_action(events, ev)
         human_gate = self._human_gate(ev, next_action)
         rendered_at = utc_now()
         stable = {
@@ -658,133 +766,36 @@ class Service:
         elif activity_band == "RECENT":
             activity = "🟢 Une preuve récente confirme que ça avance."
         elif activity_band == "QUIET":
-            activity = "🟡 Pas de nouvelle preuve depuis " + age_label + ". Je surveille sans conclure à un blocage."
+            activity = "🟡 Pas de nouvelle preuve depuis " + age_label + "."
         elif activity_band == "STALE":
             activity = "🟠 Pas de nouvelle preuve depuis " + age_label + ". La liaison doit être revérifiée."
         else:
             activity = "⚪ Progression récente non observée."
 
         lines = [
-            "🤖 BCP — suivi de mission",
+            "🤖 BCP Cockpit — " + self.project_id,
             activity,
             "",
-            "🎯 Maintenant: " + action,
-            "📊 " + progress,
-            "✅ Dernière étape terminée: " + last_completed,
-            "➡️ Ensuite: " + next_action,
+            "🎯 Micro-action actuelle: " + action,
+            "📊 Progression: " + progress,
+            "✅ Dernière micro-action terminée: " + last_completed,
+            "➡️ Prochaine micro-action: " + next_action,
             "👤 Action pour vous: " + human_gate,
             "",
-            "🕒 Preuve observée: " + evidence_time,
-            "⏱️ Âge de la preuve à l’envoi: " + age_label,
-            "📨 Carte générée: " + rendered_at,
+            "🕒 Dernière preuve: " + evidence_time + " · âge " + age_label,
             "",
-            ("✅ PC/BCP actif" if heartbeat_ok else "⚠️ PC/BCP: preuve récente absente"),
-            ("✅ Ancien téléphone actif" if edge_ok else ("🟡 Ancien téléphone appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone non observé")),
-            ("✅ Sauvegarde Drive visible" if drive_ok else "⚠️ Sauvegarde Drive non observée"),
+            ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
+            ("✅ Ancien téléphone" if edge_ok else ("🟡 Ancien téléphone appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone non observé")),
+            ("✅ Drive" if drive_ok else "⚠️ Drive non observé"),
             "🌐 " + nexus_text,
             "🧪 " + self._human_ci(gh),
             "",
-            "🔧 Détails techniques: /details",
+            "📋 Micro-actions: bouton ci-dessous · 🔧 technique: Détails",
         ]
         return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
 
     def status(self) -> str:
-        runtime = self.local.runtime()
-        edge = self.local.edge()
-        gh = self.github.snapshot()
-        drive = self.local.drive()
-        chat = self.local.chat(self.project_id)
-        events = [
-            e for e in self.local.mission_events(160)
-            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
-        ]
-        ev = events[-1] if events else {}
-        mission_state = str(ev.get("state") or "NOT_OBSERVED").upper()
-        action = clean(
-            ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
-            "Aucune micro-action durable récente.",
-            150,
-        )
-        next_action = self._human_action(
-            ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
-        )
-        age = self._event_age_seconds(ev)
-        if age is None:
-            age = self.local.mission_activity_age()
-        age_label = self._age_label(age)
-
-        progress = "Étape: " + mission_state.replace("_", " ").lower()
-        try:
-            idx = int(ev.get("step_index"))
-            total = int(ev.get("step_total"))
-            if 0 <= idx <= total and total > 0:
-                pct = int(round(idx * 100 / total))
-                progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
-        except Exception:
-            pass
-
-        if mission_state in HOLD_STATES:
-            activity = "🟠 En attente d’un élément externe ou d’une reprise."
-        elif isinstance(age, int) and age <= 120:
-            activity = "🟢 Activité récente."
-        elif isinstance(age, int) and age <= 600:
-            activity = "🟡 Aucune nouvelle preuve depuis " + age_label + ". Réseau, CI ou service externe peuvent être en attente."
-        elif isinstance(age, int):
-            activity = "🟠 Aucune nouvelle preuve depuis " + age_label + ". La liaison doit être revérifiée avant de conclure à un blocage."
-        else:
-            activity = "⚪ Âge de la dernière preuve non observé."
-
-        hb = runtime.get("_age_seconds")
-        heartbeat_ok = isinstance(hb, int) and hb <= 180
-        edge_age = edge.get("_age_seconds")
-        edge_ok = bool(edge.get("paired")) and isinstance(edge_age, int) and edge_age <= 300
-        github_ok = bool(gh.get("ok"))
-        drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
-        nexus = str(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED").upper()
-        nexus_text = {
-            "COMMITTED": "✅ actif",
-            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": "✅ actif",
-            "EXITED_NO_RECEIPT": "🟡 reprise automatique à réparer",
-            "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation en cours",
-        }.get(nexus, "⚪ " + clean(nexus, 45).replace("_", " ").lower())
-
-        chat_state = str(chat.get("state") or "UNKNOWN_INTERNAL_CHAT_STATE")
-        chat_text = {
-            "OBSERVED_CHAT_ACTION": "✅ action externe observée",
-            "CHAT_WAITING": "⏳ réponse en attente",
-            "CHAT_PLATFORM_HOLD_REPORTED": "🟠 vérification ChatGPT signalée",
-            "UNKNOWN_INTERNAL_CHAT_STATE": "⚪ activité interne non visible",
-        }.get(chat_state, "⚪ " + clean(chat_state, 60))
-
-        evidence_time = self._event_timestamp(ev) or "non observée"
-        last_completed = self._last_completed_action(events, ev)
-        human_gate = self._human_gate(ev, next_action)
-        rendered_at = utc_now()
-        return "\n".join([
-            "🤖 BCP Cockpit — " + self.project_id,
-            activity,
-            "",
-            "🎯 Maintenant: " + action,
-            "📊 " + progress,
-            "✅ Dernière étape terminée: " + last_completed,
-            "➡️ Ensuite: " + next_action,
-            "👤 Action pour vous: " + human_gate,
-            "",
-            "🕒 Preuve observée: " + evidence_time,
-            "⏱️ Âge de la preuve à l’envoi: " + age_label,
-            "📨 Réponse générée: " + rendered_at,
-            "",
-            ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
-            ("✅ Ancien téléphone — actif" if edge_ok else ("🟡 Ancien téléphone — appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone — non observé")),
-            ("✅ GitHub" if github_ok else "⚠️ GitHub — non observé"),
-            ("✅ Sauvegarde Drive" if drive_ok else "⚠️ Sauvegarde Drive — non observée"),
-            "🌐 Relais Nexus: " + nexus_text,
-            "ChatGPT: " + chat_text,
-            "🧪 " + self._human_ci(gh),
-            "",
-            "ℹ️ Le cockpit montre les micro-actions et preuves externes; il ne prétend pas lire la réflexion privée de ChatGPT.",
-            "🔧 Détails techniques: /details",
-        ])
+        return self.presence_snapshot()["text"]
 
     def details(self) -> str:
         head = self._head()
@@ -827,29 +838,59 @@ class Service:
 
     def report_summary(self) -> str:
         return "\n".join([
-            "BCP — Rapport de suivi",
+            "BCP — Rapport de suivi humain",
             "Généré: " + utc_now(),
             "",
             self.status(),
+            "",
+            self.plan_view(),
+            "",
+            self.tail(),
+            "",
+            "LECTURE",
+            "- La barre vient uniquement d’un plan fini enregistré.",
+            "- Une micro-action = une action concrète et vérifiable (ouvrir/lire un fichier, modifier un fichier, lancer un test, vérifier un commit, publier un reçu).",
+            "- L’absence de nouvelle preuve n’est pas présentée comme une réflexion ChatGPT.",
         ])
 
     def report_technical(self) -> str:
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        mission_meta = [
+            "MISSION COURANTE",
+            "mission_id: " + clean(mission.get("mission_id") or "NOT_OBSERVED", 120),
+            "status: " + clean(mission.get("status") or "NOT_OBSERVED", 80),
+            "worker_component: " + clean(mission.get("worker_component") or "NOT_OBSERVED", 120),
+            "last_progress_at: " + clean(mission.get("last_progress_at") or "NOT_OBSERVED", 80),
+            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "NOT_OBSERVED", 220),
+            "hold_reason: " + clean(mission.get("hold_reason") or "NONE", 180),
+        ]
         return "\n".join([
-            "BCP — Rapport technique",
+            "BCP — Rapport technique détaillé",
             "Généré: " + utc_now(),
             "",
             self.details(),
             "",
-            "MICRO-ACTIONS",
+            *mission_meta,
+            "",
+            self.plan_view(),
+            "",
+            "JOURNAL DES MICRO-ACTIONS",
             self.tail(),
             "",
             "MISSIONS",
             self.missions(),
+            "",
+            "CONTRAT DE VÉRITÉ",
+            "- progression: seulement plan fini persisté et étapes vérifiées;",
+            "- preuves: SQLite/BCP, GitHub, Drive, B-EDGE, Nexus ou autre reçu externe;",
+            "- aucun accès à la chaîne de pensée privée de ChatGPT;",
+            "- un silence UI n’est jamais converti en progrès inventé.",
         ])
 
     def report_pdf(self, technical: bool = False) -> bytes:
         body = self.report_technical() if technical else self.report_summary()
-        title = "BCP Rapport technique" if technical else "BCP Rapport de suivi"
+        title = "BCP Rapport technique detaille" if technical else "BCP Rapport de suivi humain"
         return text_pdf_bytes(title, body)
 
     def missions(self) -> str:
@@ -996,16 +1037,33 @@ class Service:
         return self.progress_event(events[-1])
 
     def tail(self, code: str = "") -> str:
+        ctx = self._mission_context()
+        if ctx:
+            mission = ctx.get("mission") or {}
+            mission_id = str(mission.get("mission_id") or "")
+            rows = self.local.mission_event_tail(mission_id, 10) if mission_id else []
+            if rows:
+                lines = ["📋 Journal des micro-actions vérifiables"]
+                label_by_id = ctx.get("label_by_id") or {}
+                for pos, row in enumerate(rows, 1):
+                    step_id = clean(row.get("step_id"), 80)
+                    label = clean(label_by_id.get(step_id) or row.get("summary") or step_id or "Micro-action", 170)
+                    state = str(row.get("status") or row.get("event_type") or "EVENT").upper()
+                    icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED", "VERIFIED"} else ("🔴" if state in HOLD_STATES or "FAIL" in state else "•")
+                    when = clean(row.get("created_at"), 40)
+                    lines.append(str(pos) + ". " + icon + " " + label + ((" · " + when) if when else ""))
+                return "\n".join(lines)
+
         events = self.local.mission_events(160)
         if code:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
         if not events:
-            return "Aucun événement durable observé."
-        lines = ["Dernières micro-actions vérifiables"]
-        for ev in events[-8:]:
+            return "📋 Journal des micro-actions\nAucun événement durable observé."
+        lines = ["📋 Journal des micro-actions vérifiables"]
+        for pos, ev in enumerate(events[-10:], 1):
             state = clean(ev.get("state") or "EVENT", 30)
-            step = clean(ev.get("action_summary") or ev.get("step_id") or "", 95)
-            lines.append("• " + state + ((" — " + step) if step else ""))
+            step = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "Micro-action", 140)
+            lines.append(str(pos) + ". " + state + " — " + step)
         return "\n".join(lines)
 
     def holds(self) -> str:
@@ -1093,14 +1151,17 @@ class Telegram:
             "inline_keyboard": [
                 [
                     {"text": "🔄 Actualiser", "callback_data": "bcp:status"},
-                    {"text": "📍 Où ?", "callback_data": "bcp:where"},
+                    {"text": "📍 Étape", "callback_data": "bcp:where"},
                 ],
                 [
+                    {"text": "📋 Micro-actions", "callback_data": "bcp:tail"},
                     {"text": "🗂 Missions", "callback_data": "bcp:missions"},
-                    {"text": "🧾 Détails", "callback_data": "bcp:details"},
                 ],
                 [
+                    {"text": "🧾 Détails", "callback_data": "bcp:details"},
                     {"text": "📄 PDF suivi", "callback_data": "bcp:pdf:summary"},
+                ],
+                [
                     {"text": "📚 PDF technique", "callback_data": "bcp:pdf:technical"},
                 ],
             ]
@@ -1196,6 +1257,7 @@ class Telegram:
         mapping = {
             "bcp:status": ("/status", "Actualisation"),
             "bcp:where": ("/where", "Position"),
+            "bcp:tail": ("/tail", "Micro-actions"),
             "bcp:missions": ("/missions", "Missions"),
             "bcp:details": ("/details", "Détails"),
         }
@@ -1226,7 +1288,7 @@ class Telegram:
         self.answer_callback(callback_id, label)
         response = self.service.dispatch(command)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/where", "/missions", "/details"}:
+        if message_id and command in {"/status", "/where", "/tail", "/missions", "/details"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -1710,7 +1772,7 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:where", "bcp:missions", "bcp:details",
+            "bcp:status", "bcp:where", "bcp:tail", "bcp:missions", "bcp:details",
             "bcp:pdf:summary", "bcp:pdf:technical",
         } <= callback_values
         assert "chaîne de pensée" in svc.help()
