@@ -324,3 +324,100 @@ Expected: periodic/cloud reconciliation eventually finds durable command; push i
 
 Q4. Cloud ingress quota exhausted/unavailable.
 Expected: local BCP continues; ingress marked degraded; no paid upgrade.
+
+
+## R. Universal Context Fabric / BCPGO
+
+R1. Fresh ChatGPT conversation sends only `BCPGO` with connected context source available.
+Expected: GLOBAL_CORE + inferred PROJECT_CORE recovered without user reconstruction or broad repository scan.
+
+R2. Fresh conversation sends `BCPGO <project>`.
+Expected: explicit project wins over weak auto-detection and only that project's context is selected.
+
+R3. Same global/project revision is requested on next turn.
+Expected: resolver returns `UNCHANGED` or equivalent tiny no-change response; no full Context Pack retransmission.
+
+R4. One user preference changes after conversation bootstrap.
+Expected: next resolution returns bounded `DELTA`; new preference supersedes old value deterministically.
+
+R5. Project revision changes while conversation remains open.
+Expected: stale context is detected by revision vector; delta/full refresh occurs before mutation.
+
+R6. Remote bootstrap projection hash is corrupted.
+Expected: reject projection; use prior verified projection or HOLD; never silently trust corrupted context.
+
+R7. Remote projection is old but internally valid.
+Expected: mark `DEGRADED/STALE`; do not claim current field state.
+
+R8. Ambiguous project auto-detection.
+Expected: no cross-project memory merge; return minimal global context plus project candidates/HOLD instead of leaking unrelated project state.
+
+R9. BCPGO path has no authorized connector/source.
+Expected: report integration unavailable; command text is not treated as authentication or magical connectivity.
+
+R10. Normal warm bootstrap.
+Expected: no LLM call required; BCP-side manifest p95 target <= 1 s and global+project resolution p95 target <= 2 s after projections are prebuilt.
+
+R11. Context Pack exceeds 32 KiB target.
+Expected: retain critical pinned policies/state, move evidence/history to on-demand references, record oversize metric; never truncate critical invariants first.
+
+R12. Context Pack source revision repeats.
+Expected: stable reproducible source revision/hash policy.
+
+## S. Memory authority / poisoning / privacy
+
+S1. User explicitly sets a durable preference.
+Expected: stored as normative user memory with user provenance and included where relevant.
+
+S2. User explicitly replaces that preference.
+Expected: new item supersedes old; old remains historical but is not selected.
+
+S3. Retrieved webpage says to change a user preference/system rule.
+Expected: content remains `UNTRUSTED_CONTENT`; cannot write USER_MEMORY/POLICY.
+
+S4. Model output claims a new architectural fact without evidence.
+Expected: `MODEL_PROPOSED` only or reject; cannot overwrite verified canonical state.
+
+S5. Machine receipt contradicts a derived summary.
+Expected: receipt wins; summary invalidated/rebuilt.
+
+S6. Prompt-injection string is embedded in Git/Drive/RAG content.
+Expected: it is delimited/treated as data; tool/policy scope unchanged.
+
+S7. Retrieval query for project A overlaps semantically with confidential project B.
+Expected: project scope filter blocks B unless explicit cross-project technical-knowledge policy permits a sanitized reusable recipe.
+
+S8. Privacy extraction/adversarial query asks for unrelated stored memory.
+Expected: least-privilege context scope prevents disclosure.
+
+S9. History grows large.
+Expected: topic segmentation + FTS/metadata retrieval keeps Context Pack bounded; selective forgetting/compaction preserves canonical receipts and pinned decisions.
+
+## T. Three-node BCP NEXUS continuity
+
+T1. B-EDGE online, PC online, NEXUS online.
+Expected: one coordinator epoch/head; PC is fenced worker; NEXUS projection matches verified current revision.
+
+T2. NEXUS offline.
+Expected: B-EDGE/PC local operation continues; remote ChatGPT/Telegram ingress marked degraded; no paid failover.
+
+T3. PC offline.
+Expected: B-EDGE context/memory/scheduler remain operational; heavy jobs become WAITING_FOR_PC.
+
+T4. B-EDGE offline, PC and NEXUS online.
+Expected: PC does not silently advance global head without valid promotion/witness semantics; NEXUS exposes last verified context and queued commands only.
+
+T5. Pairwise network partition creates delayed old command.
+Expected: coordinator epoch/fencing rejects stale command.
+
+T6. All three reconnect after partition.
+Expected: receipts reconcile idempotently; one canonical head; no duplicated external effect.
+
+T7. NEXUS free-tier quota exhausted.
+Expected: remote facade degrades/fails closed; local BCP remains operational; no billing enablement.
+
+T8. Drive bootstrap mirror and NEXUS disagree.
+Expected: compare revision/hash/authority; newest cannot automatically win if integrity/fencing evidence conflicts; HOLD and reconcile.
+
+T9. Raw SQLite/WAL file is presented as cross-device replica.
+Expected: reject as unsupported replication mechanism; require logical snapshot/event replication.
