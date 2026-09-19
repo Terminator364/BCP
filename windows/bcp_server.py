@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.5"
+SERVER_VERSION = "0.6.6"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -43,8 +43,10 @@ EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS = 5 * 60
 NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS = 30 * 60
 NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS = 4
+NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS = 45 * 60
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
+NEXUS_BOOTSTRAP_LOCK = threading.RLock()
 
 
 def utc_now() -> str:
@@ -913,6 +915,27 @@ def _nexus_retry_policy(bundle_version: str, prior: dict, now=None) -> dict:
     }
 
 
+def _terminate_nexus_process_tree(pid: int) -> bool:
+    pid = int(pid or 0)
+    if pid <= 0:
+        return False
+    try:
+        if os.name == "nt":
+            flags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            result = subprocess.run(
+                ["taskkill.exe", "/PID", str(pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=20,
+                creationflags=flags,
+            )
+            return result.returncode == 0 or not _process_alive(pid)
+        os.kill(pid, 15)
+        return True
+    except Exception:
+        return not _process_alive(pid)
+
+
 def _schedule_nexus_bootstrap_retry(delay_seconds: int, bundle_version: str) -> None:
     delay = max(1, int(delay_seconds))
 
@@ -949,13 +972,27 @@ def _monitor_nexus_bootstrap(
     files_staged: int = 0,
 ) -> None:
     def worker():
+        timed_out = False
         try:
-            code = int(proc.wait())
+            code = int(proc.wait(timeout=NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS))
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            _terminate_nexus_process_tree(int(proc.pid))
+            try:
+                code = int(proc.wait(timeout=10))
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                code = 124
         except Exception:
             code = -1
         receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
         receipt_status = str(receipt.get("status") or "")
         error_class = str(receipt.get("error_class") or "")[:240]
+        if timed_out and not error_class:
+            error_class = "BOOTSTRAP_PROCESS_TIMEOUT"
         success = receipt_status == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
         human_gate = receipt_status == "HUMAN_AUTH_REQUIRED"
         if success:
@@ -982,6 +1019,8 @@ def _monitor_nexus_bootstrap(
             "bundle_version": bundle_version,
             "pid": int(proc.pid),
             "exit_code": code,
+            "timed_out": bool(timed_out),
+            "process_timeout_seconds": NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS,
             "attempt_count": int(attempt_count),
             "max_auto_attempts": NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS,
             "retryable": bool(retryable),
@@ -1045,7 +1084,30 @@ def _launch_nexus_bootstrap_once(
     prior_version = str(prior.get("bundle_version") or "")
     prior_state = str(prior.get("state") or "")
     if prior_version == bundle_version and prior_state == "LAUNCHED" and _process_alive(prior_pid):
-        return {"ok": True, "result": "ALREADY_RUNNING", "bundle_version": bundle_version, "pid": prior_pid}
+        launched_at = _parse_utc_timestamp(prior.get("launched_at"))
+        now = dt.datetime.now(dt.timezone.utc)
+        age_seconds = int((now - launched_at).total_seconds()) if launched_at is not None else None
+        if age_seconds is None or age_seconds < NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS:
+            return {
+                "ok": True,
+                "result": "ALREADY_RUNNING",
+                "bundle_version": bundle_version,
+                "pid": prior_pid,
+                "age_seconds": age_seconds,
+                "watchdog_timeout_seconds": NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS,
+            }
+        _terminate_nexus_process_tree(prior_pid)
+        prior = dict(prior)
+        prior.update({
+            "state": "EXITED_NO_RECEIPT",
+            "exit_code": 124,
+            "timed_out": True,
+            "retryable": True,
+            "error_class": "ORPHAN_LAUNCHED_PROCESS_TIMEOUT",
+            "updated_at": utc_now(),
+            "next_retry_at": "",
+        })
+        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, prior)
 
     decision = _nexus_retry_policy(bundle_version, prior)
     action = str(decision.get("action") or "")
@@ -1082,12 +1144,14 @@ def _launch_nexus_bootstrap_once(
             "spend_usd": 0.0,
         })
         atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, preserved)
+        retry_after = max(1, int(decision.get("retry_after_seconds") or 1))
+        _schedule_nexus_bootstrap_retry(retry_after, bundle_version)
         return {
             "ok": True,
             "result": "RETRY_COOLDOWN",
             "bundle_version": bundle_version,
             "next_retry_at": decision.get("next_retry_at"),
-            "retry_after_seconds": decision.get("retry_after_seconds"),
+            "retry_after_seconds": retry_after,
         }
     if action == "ALREADY_CONFIGURED":
         return {"ok": True, "result": "ALREADY_CONFIGURED", "bundle_version": bundle_version}
@@ -1126,7 +1190,7 @@ def _launch_nexus_bootstrap_once(
     }
 
 
-def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
+def _apply_nexus_bootstrap_delivery_locked(auto_launch: bool = True) -> dict:
     # Read the previous delivery state BEFORE staging. This is important:
     # overwriting it with STAGED used to erase retry history and could cause
     # repeated launch attempts after transient failures.
@@ -1178,6 +1242,11 @@ def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
         "spend_usd": 0.0,
     })
     return {"ok": True, "result": "STAGED", "bundle_version": version, "files_staged": staged}
+
+
+def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
+    with NEXUS_BOOTSTRAP_LOCK:
+        return _apply_nexus_bootstrap_delivery_locked(auto_launch=auto_launch)
 
 
 def server_update_status(check_remote: bool = True) -> dict:
@@ -3297,6 +3366,10 @@ def selftest():
         assert "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS" in source
+        assert "NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS" in source
+        assert "NEXUS_BOOTSTRAP_LOCK" in source
+        assert "_terminate_nexus_process_tree" in source
+        assert "proc.wait(timeout=NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS)" in source
         fixed_now = dt.datetime(2026, 9, 20, 0, 0, tzinfo=dt.timezone.utc)
         fresh_retry = _nexus_retry_policy("0.1.5", {}, now=fixed_now)
         assert fresh_retry["action"] == "LAUNCH" and fresh_retry["next_attempt_count"] == 1
