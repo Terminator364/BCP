@@ -403,6 +403,76 @@ A future remote MCP/plugin/app adapter is optional and must be field/product qua
 Canonical detailed architecture:
 `docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md`.
 
+
+
+## P1 — Three-node context fabric and universal recall
+
+BCP MUST evolve into a three-node personal context fabric:
+
+1. **B-EDGE** — dedicated always-on local continuity/memory/orchestration node.
+2. **PC-COMPUTE** — burst/heavy execution node for builds, tests and resource-intensive work.
+3. **BCP CORE / CONTEXT GATEWAY** — logical central API/context authority with no single physical free-cloud dependency.
+
+The canonical universal context command is `BCPGO`. It is a bootstrap intent, not an authentication secret.
+
+Target behavior:
+`BCPGO -> scope resolution -> fast Context Capsule -> current preferences/policies/project state -> execution -> controlled writeback`.
+
+A fresh supported conversation should not require the user to restate stable preferences, project architecture, current HEAD, known errors or the last committed action.
+
+### Context performance
+
+BCP MUST use precomputed HOT project capsules, revision hashes and delta retrieval. Expensive embedding/reindex work must stay off the synchronous bootstrap path.
+
+Targets:
+- B-EDGE cached resolver processing p95 <= 100 ms;
+- cached BCP Context Gateway processing p95 <= 200 ms excluding network;
+- healthy-network supported-client bootstrap target p95 <= 1.5 s;
+- unchanged contexts return `NO_CHANGE` plus revision/hash rather than full reload.
+
+These are engineering targets and require field measurement before any guarantee.
+
+### Structured memory
+
+Memory is mixed/hierarchical rather than one monolithic summary.
+
+Required classes:
+`USER_POLICY`, `PROJECT_FACT`, `PROJECT_DECISION`, `RUN_STATE`, `ERROR_KNOWLEDGE`, `EPISODE`, `SUMMARY`, `RELATION`.
+
+Retrieval must first filter by scope, authority and freshness; use semantic retrieval only where helpful; rerank and detect conflicts/staleness before producing the capsule.
+
+### Automatic READ, controlled WRITE
+
+Authorized context READ may be automatic.
+
+Memory WRITE is gated. Model output does not become canonical merely because a model produced it.
+
+Lifecycle:
+`OBSERVED -> PROPOSED -> VERIFIED -> CANONICAL -> SUPERSEDED/REVOKED`.
+
+Every durable memory item carries provenance, scope, timestamps, authority, sensitivity, freshness policy and supersession links.
+
+External/retrieved content is untrusted and cannot directly modify policy or promote itself into canonical memory.
+
+### Consistency
+
+Critical state uses single-writer revisions, leases, fencing and idempotency. Blind CRDT/merge semantics are forbidden for writer ownership, project HEAD, policy, permissions, mission and committed-action state.
+
+Append-only/noncritical telemetry may use merge-friendly event-log semantics.
+
+### Supported access paths
+
+BCPGO must have capability-gated transports:
+- sovereign Telegram/BCP terminal: preferred guaranteed path once built;
+- ChatGPT plugin/app/MCP path only after the actual account/surface passes field qualification;
+- ChatGPT-PC bridge where supported;
+- one compact manual capsule as last-resort fallback.
+
+A typed phrase alone cannot grant a client network access. BCP must not claim native ChatGPT connectivity unless the connector/tool path is actually installed and field-tested.
+
+Canonical detailed design: `docs/THREE_NODE_CONTEXT_FABRIC_ARCHITECTURE.md`.
+Machine-readable policy: `.project-memory/CONTEXT_FABRIC_POLICY.json`.
+
 ## Acceptance sequence
 
 The project is not considered operationally complete until this sequence passes:
