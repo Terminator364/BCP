@@ -1,0 +1,39 @@
+{
+  "schema": "bcp.field_evidence/1",
+  "writer_or_session_id": "chat-bcp-recovery-classify-20260919-1932",
+  "project_or_mission": "API/BCP recovery classification and progress presence",
+  "base_main_sha": "71d3066043c6f2a1c203f536aa3a1bec7610df3f",
+  "created_at": "2026-09-19T18:32:00Z",
+  "sources": [
+    "CHATGPT_PC_AGENT/RECOVERY/RECOVERY_BOOTSTRAP_RESULT.json",
+    "CHATGPT_PC_AGENT/03_TELEMETRY/pc-0693f493de9341e9/device.json",
+    "CHATGPT_PC_AGENT/03_TELEMETRY/pc-0693f493de9341e9/command_plane_health.json",
+    "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json"
+  ],
+  "recovery": {
+    "target_version": "6.0.32",
+    "target_sequence": 6032,
+    "status": "ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
+    "reason": "COMPOSITE_READBACK_TIMEOUT",
+    "stop_status": "NOT_NEEDED",
+    "launch_rc": 0,
+    "composite_heartbeat_version": "6.0.32",
+    "composite_command_plane": "ALIVE",
+    "composite_cycle_lease": "CYCLE_LEASE_NOT_VALID",
+    "fresh_device_agent_version": "6.0.32",
+    "fresh_device_last_seen_utc": "2026-09-19T18:24:17Z"
+  },
+  "bcp": {
+    "server_version": "0.6.1",
+    "server_sha256": "c97b8c66d9ba0d27428af6f59d7d53987cc6efaa306229688ae388f89f53c82e",
+    "update_state": "UP_TO_DATE",
+    "paired": true,
+    "lifecycle_registered": true
+  },
+  "interpretation": {
+    "bcp_update_failure": false,
+    "recovery_observability_convergence_hold": true,
+    "chatgpt_pc_fully_healthy": false,
+    "reinstall_required": false
+  }
+}
