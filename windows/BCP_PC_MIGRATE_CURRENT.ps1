@@ -177,7 +177,69 @@ function Verify-AuthenticatedDiagnostics {
     $headers = @{ Authorization = "Bearer $token" }
     $d = Invoke-RestMethod -UseBasicParsing -Uri "http://127.0.0.1:$Port/v1/diagnostics" -Headers $headers -TimeoutSec 4
     if ($d.ok -ne $true) { throw "AUTH_DIAGNOSTICS_NOT_OK" }
-    if ([string]$d.server_version -ne $TargetVersion) { throw "AUTH_DIAGNOSTICS_VERSION_MISMATCH" }
+    $reportedVersion = if ($d.PSObject.Properties.Name -contains "version") { [string]$d.version } elseif ($d.PSObject.Properties.Name -contains "server_version") { [string]$d.server_version } else { "" }
+    if ($reportedVersion -ne $TargetVersion) { throw "AUTH_DIAGNOSTICS_VERSION_MISMATCH reported=$reportedVersion expected=$TargetVersion" }
+    return [ordered]@{ ok=$true; version=$reportedVersion }
+}
+
+
+function Start-PostSuccessCleanup {
+    # Clean only known BCP migration artifacts from the user's Downloads folder.
+    # Never touch Drive folders, arbitrary ZIPs, or unknown files.
+    $downloads = Join-Path $HOME "Downloads"
+    if (-not (Test-Path -LiteralPath $downloads -PathType Container)) { return $false }
+
+    $currentPid = $PID
+    $currentScriptDir = Split-Path -Parent $PSCommandPath
+    $cleanupScript = Join-Path $env:TEMP ("BCP_POST_SUCCESS_CLEANUP_" + [Guid]::NewGuid().ToString("N") + ".ps1")
+
+    $body = @'
+param([int]$ParentPid,[string]$Downloads,[string]$CurrentScriptDir)
+$ErrorActionPreference = "SilentlyContinue"
+
+$deadline = [DateTime]::UtcNow.AddSeconds(30)
+do {
+    $p = Get-Process -Id $ParentPid -ErrorAction SilentlyContinue
+    if (-not $p) { break }
+    Start-Sleep -Milliseconds 500
+} while ([DateTime]::UtcNow -lt $deadline)
+
+# Exact BCP migration artifacts only.
+$patterns = @(
+    "BCP_PC_MIGRATE_CURRENT*.zip",
+    "BCP_PC_MIGRATE_CURRENT*.cmd",
+    "BCP_PC_MIGRATE_CURRENT*.ps1"
+)
+foreach ($pattern in $patterns) {
+    Get-ChildItem -LiteralPath $Downloads -File -Filter $pattern -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
+Get-ChildItem -LiteralPath $Downloads -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like "BCP_PC_MIGRATE_CURRENT*" } |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+# If the running extracted directory is inside Downloads and matches the known
+# migration folder name, remove it too after the process exits.
+try {
+    $dl = [IO.Path]::GetFullPath($Downloads).TrimEnd("\")
+    $cur = [IO.Path]::GetFullPath($CurrentScriptDir).TrimEnd("\")
+    if ($cur.StartsWith($dl + "\",[StringComparison]::OrdinalIgnoreCase) -and
+        (Split-Path -Leaf $cur) -like "BCP_PC_MIGRATE_CURRENT*") {
+        Remove-Item -Recurse -Force -LiteralPath $cur -ErrorAction SilentlyContinue
+    }
+} catch {}
+
+Remove-Item -Force -LiteralPath $PSCommandPath -ErrorAction SilentlyContinue
+'@
+
+    [IO.File]::WriteAllText($cleanupScript,$body,[Text.UTF8Encoding]::new($false))
+    Start-Process -FilePath "powershell.exe" -ArgumentList @(
+        "-NoProfile","-ExecutionPolicy","Bypass","-File",$cleanupScript,
+        "-ParentPid",[string]$currentPid,
+        "-Downloads",$downloads,
+        "-CurrentScriptDir",$currentScriptDir
+    ) -WindowStyle Hidden | Out-Null
     return $true
 }
 
@@ -189,6 +251,8 @@ if ($SelfTest) {
         "paired_edge.json",
         "PORT_8765_NOT_MANAGED_BCP",
         "BCP_PC_MIGRATION_LATEST.json",
+        "BCP_PC_MIGRATE_CURRENT*.zip",
+        "AUTH_DIAGNOSTICS_VERSION_MISMATCH",
         $PinnedCommit,
         $InstallerSha256,
         $ServerSha256
@@ -246,7 +310,8 @@ try {
         runtime_version=[string]$health.version
         listener_pid=$listener.pid
         listener_managed=$listener.managed
-        authenticated_diagnostics=$auth
+        authenticated_diagnostics=$auth.ok
+        authenticated_diagnostics_version=$auth.version
         legacy_supervisor_stopped=$legacy.stopped_processes
         legacy_tasks_disabled=$legacy.disabled_tasks
         migrated_identity_files=$identity.copied
@@ -254,8 +319,10 @@ try {
     }
 
     Remove-Item -Recurse -Force -LiteralPath $TempRoot -ErrorAction SilentlyContinue
+    $cleanupScheduled = Start-PostSuccessCleanup
     Write-Host ""
     Write-Host "BCP 0.4.4 = ACTIF / MANAGED / AUTH OK" -ForegroundColor Green
+    if ($cleanupScheduled) { Write-Host "Nettoyage automatique des artefacts BCP dans Telechargements: PLANIFIE" -ForegroundColor Green }
     Write-Host "Tu peux rouvrir BCP Edge." -ForegroundColor Green
     Start-Sleep -Seconds 6
     exit 0
