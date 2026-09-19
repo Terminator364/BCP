@@ -1,0 +1,28 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "BCPGO_TELEGRAM_CONTROL_PLANE_OBSERVABILITY_MVP_20260919",
+  "project_or_mission": "API/BCP Telegram Control Plane / Observability MVP",
+  "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
+  "created_at": "2026-09-19T10:30:00+01:00",
+  "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
+  "intended_file_scope": [
+    "windows/bcp_telegram_observability.py",
+    "windows/CONFIGURE_BCP_TELEGRAM.ps1",
+    ".github/workflows/telegram-observability.yml",
+    "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
+    "docs/TELEGRAM_OBSERVABILITY_MVP.md",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "project_state.json",
+    ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json"
+  ],
+  "expected_ci_gates": [
+    "python selftest ubuntu",
+    "python selftest windows",
+    "PowerShell setup selftest",
+    "secret static guard",
+    "read-only command contract"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_head_reread": true,
+  "zero_usd": true
+}
