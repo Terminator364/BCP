@@ -1,0 +1,41 @@
+{
+  "schema": "api.field-checkpoint/1",
+  "continuation_code": "APIAX07",
+  "checkpoint": "CHATGPT_PC_6032_COMMITTED_BCP041_PUBLISHED_ACTIVE_READBACK_PENDING",
+  "status": "FIELD_HOLD",
+  "chatgpt_pc": {
+    "target_version": "6.0.32",
+    "target_sequence": 6032,
+    "package_sha256": "e6e087fddf4a006e7559df2a073dbaaf5d881f1a3481baa1342aaf78da6d19c4",
+    "prefield_qa": {
+      "targeted": "PASS",
+      "fast": "80/80 PASS",
+      "full": "250/250 PASS",
+      "package_audit": "72/72 PASS",
+      "deterministic_build": "PASS"
+    },
+    "field_updater": "COMMITTED_SLOT",
+    "field_updater_rc": 0,
+    "field_active_runtime": "UNPROVEN",
+    "last_normal_telemetry_runtime": "6.0.31",
+    "blocker": "Need fresh native 6.0.32 heartbeat/active-release plus two fresh command-plane cycles before ACTIVE claim",
+    "historical_defects": [
+      "watchdog false stale during valid bounded cycle lease",
+      "Windows subprocess cp1252 UnicodeDecodeError"
+    ]
+  },
+  "bcp": {
+    "server_release": "0.4.1",
+    "managed_update_drive_file": "bcp-managed-update-0.4.1.zip",
+    "managed_update_sha256": "85627b61e11961c66a9ac93a25c08f48a2e8e371d837cd6b8293504408ace330",
+    "server_source_sha256": "bde412891477d5809b727205e7464ac08528fc9f939088c73204633c4e8ab967",
+    "local_selftest": "BCP_SERVER_SELFTEST=PASS",
+    "release_manifest_published": true,
+    "field_install": "UNPROVEN",
+    "recovery_bridge": true,
+    "next_after_6032_active": "Allow/observe BCP 0.4.1 promotion, then verify BCP_LATEST telemetry and Edge readback"
+  },
+  "next_atomic_action": "Obtain fresh native ChatGPT-PC 6.0.32 readback; do not reinstall or regress. Then verify BCP 0.4.1 field promotion.",
+  "user_action_required": false,
+  "truth_rule": "COMMITTED_SLOT is not ACTIVE; published/qualified BCP 0.4.1 is not FIELD_INSTALLED without fresh readback."
+}
