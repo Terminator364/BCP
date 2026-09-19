@@ -254,3 +254,159 @@ BCP must never recommend or automate:
 - using unofficial piracy-oriented relay services.
 
 If a provider fails geographic/account eligibility, BCP marks it unavailable and routes to another compliant provider.
+
+
+## RDC zero-cost provider plan — evidence ladder
+
+This section is deliberately stricter than ordinary vendor-comparison notes.
+
+### Core rule
+
+A provider is NOT considered usable merely because:
+- its website is reachable;
+- a consumer subscription exists somewhere;
+- a blog says it has a free tier;
+- the provider is available in some African countries;
+- an account can be created.
+
+For this project, "usable in Kinshasa" means the exact developer API path succeeds from the user's real RDC account/network without VPN, false country information, shared/borrowed keys, billing activation, or quota-circumvention.
+
+Provider lifecycle:
+- `DOCUMENTED_CANDIDATE`: official docs support a free developer/API path and no reviewed rule excludes RDC.
+- `ACCOUNT_PASS`: real account signup/login succeeds.
+- `KEY_PASS`: API credential can be created with no card/billing requirement.
+- `KINSHASA_SMOKE_PASS`: one minimal API request succeeds from the user's real Kinshasa network.
+- `QUOTA_PASS`: free quota/limits are machine-readable or can be safely learned from responses/dashboard.
+- `BCP_ADAPTER_PASS`: BCP adapter handles success, auth failure, 429, timeout and quota exhaustion.
+- `ACTIVE_FREE_PROVIDER`: all prior gates pass.
+
+Until `KINSHASA_SMOKE_PASS`, never describe a provider as field-verified in RDC.
+
+### Important Google distinction
+
+Google consumer products and Google developer APIs have separate availability rules.
+
+- Google currently lists the Democratic Republic of the Congo as an available region for Google AI Studio and the Gemini API.
+- This does NOT imply that every Google AI / Gemini consumer paid subscription (for example Google AI Pro) is available in RDC.
+- Therefore the user's prior inability to subscribe to a consumer Gemini plan must not be used as proof that the Gemini developer API is unavailable, nor may documentation alone be used as proof that it works for this account.
+
+Gemini remains a candidate only until an actual Kinshasa API-key + smoke call succeeds.
+
+### Ordered zero-cost plans
+
+#### PLAN A — Mistral API Free mode
+
+Why first:
+- official developer docs state Free mode is enabled by default;
+- API keys can be created in Free mode;
+- no credit card is required;
+- usage/rate limits apply;
+- OpenAI-style chat completion semantics are straightforward for a broker adapter.
+
+Current status: `DOCUMENTED_CANDIDATE`.
+Field requirement: real Kinshasa signup -> API key -> one minimal completion -> record headers/limits.
+
+Failure outcome: do not troubleshoot with VPN or alternate-country registration; mark `REGION_OR_ACCOUNT_BLOCKED` and move to Plan B.
+
+#### PLAN B — GroqCloud Free tier
+
+Why second:
+- official billing docs distinguish a Free tier from Developer paid tier;
+- payment method is required to upgrade, not to remain Free;
+- official free-tier rate limits are documented and exposed via response headers;
+- current Groq terms contain a contracting path for customers domiciled in Europe, Middle East or Africa;
+- OpenAI-compatible API surface and very fast inference are suitable for low-RAM/offline-first orchestration.
+
+Current status: `DOCUMENTED_CANDIDATE`.
+Field requirement: real Kinshasa signup -> API key -> minimal inference -> capture rate-limit headers.
+
+Hard rule: never create multiple accounts/organizations to multiply quota; Groq explicitly prohibits usage orchestration intended to bypass published limits.
+
+#### PLAN C — OpenRouter Free
+
+Why third:
+- official current Free plan exposes API access;
+- 25+ free models;
+- no payment option is required on the Free plan;
+- current Free-plan ceiling is 50 requests/day;
+- one API key can expose multiple upstream free models, making it a useful fallback broker behind BCP.
+
+Current status: `DOCUMENTED_CANDIDATE`.
+Field requirement: real Kinshasa signup -> free API key -> call `openrouter/free` or one current `:free` model.
+
+Caveat:
+- individual upstream models may have their own geographic restrictions;
+- OpenRouter terms explicitly prohibit using VPN/proxies to reach restricted models.
+- Therefore BCP must treat provider-level and model-level region eligibility separately.
+
+#### PLAN D — Cloudflare Workers AI Free
+
+Why fourth:
+- Cloudflare documents a Workers Free account path with no credit card in its onboarding material;
+- Workers AI currently includes 10,000 Neurons/day free;
+- multiple useful LLMs remain available on Workers Free;
+- Cloudflare already has network presence/traffic infrastructure in Kinshasa, which is favorable for latency/resilience but is NOT itself proof of Workers AI account eligibility.
+
+Current status: `DOCUMENTED_CANDIDATE`.
+Field requirement: real Kinshasa Cloudflare signup -> Workers AI API token -> minimal REST inference -> daily quota readback.
+
+This is especially useful as an independent infrastructure/provider failure domain.
+
+#### PLAN E — Gemini API Free tier
+
+Why retained but not relied on:
+- Google officially lists Democratic Republic of the Congo for Google AI Studio/Gemini API;
+- developer-API availability is separate from consumer Google AI Pro subscription availability.
+
+Current status: `DOCUMENTED_REGION_OK / FIELD_UNVERIFIED`.
+Field requirement: real existing/new Google account -> AI Studio/API key path -> minimal Gemini API call from Kinshasa without VPN or false geography.
+
+If the account UI blocks the user, simply mark it unavailable and continue with A-D.
+
+#### PLAN F — Hugging Face Inference Providers
+
+Why last-resort:
+- one Hugging Face account can route to multiple inference providers;
+- free users currently receive only a small monthly inference credit allowance ($0.10 at the time of this review);
+- useful for compatibility tests and emergency small jobs, not a primary autonomous-work budget.
+
+Current status: `FALLBACK_CANDIDATE`.
+
+### Broker policy
+
+BCP provider priority is not permanently hard-coded. Initial bootstrap order is:
+
+`MISTRAL_FREE -> GROQ_FREE -> OPENROUTER_FREE -> CLOUDFLARE_WORKERS_AI_FREE -> GEMINI_FREE_IF_FIELD_PASS -> HUGGINGFACE_FALLBACK`
+
+After field tests, BCP must rank only ACTIVE providers by:
+1. actual free capacity remaining;
+2. job capability fit;
+3. observed reliability from Kinshasa;
+4. latency;
+5. context requirements;
+6. privacy/data policy;
+7. recent 429 / capacity failures.
+
+A provider that requires a card, billing activation, false geography, VPN, borrowed credentials, paid credits, or quota farming is automatically excluded from the ZERO_USD pool.
+
+### Zero-cost exhaustion behavior
+
+If every ACTIVE_FREE_PROVIDER is exhausted or unavailable:
+- persist the job;
+- return `FREE_MODEL_CAPACITY_HOLD`;
+- wait for documented quota reset or provider recovery;
+- continue deterministic/local work that does not require an LLM;
+- never auto-enable billing.
+
+### First field-validation sprint
+
+The first real provider test must be deliberately tiny and performed one provider at a time:
+1. open provider signup from normal Kinshasa connection;
+2. create account using real country/account data;
+3. create API key without entering a payment method;
+4. send one harmless minimal prompt;
+5. store only provider name, model, timestamp, HTTP status, latency, quota headers/remaining capacity and a fingerprint of the key — never the key itself;
+6. mark PASS/FAIL with exact failure class;
+7. immediately move to the next plan if region/account/payment blocks occur.
+
+The user must not manually shuttle API responses between providers in normal operation. These manual field checks are bootstrap-only; BCP should own the adapters afterward.
