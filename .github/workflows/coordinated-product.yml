@@ -29,9 +29,9 @@ jobs:
         run: |
           $release=Get-Content -Raw '.\release\server.json' -Encoding UTF8|ConvertFrom-Json
           $server=Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
-          if($release.version -ne '0.5.0'){throw 'server release version drift'}
-          if($release.coordinated_edge_version -ne '1.1.0-evergreen'){throw 'server/edge coordination drift'}
-          if($server -notmatch 'SERVER_VERSION = "0.5.0"'){throw 'server source version drift'}
+          if($release.version -ne '0.6.0'){throw 'server release version drift'}
+          if($release.coordinated_edge_version -ne '1.2.0-evergreen'){throw 'server/edge coordination drift'}
+          if($server -notmatch 'SERVER_VERSION = "0.6.0"'){throw 'server source version drift'}
           if($server -notmatch '/v1/orchestrator/status'){throw 'orchestrator status missing'}
           if($server -notmatch 'memory_records'){throw 'memory schema missing'}
           if($server -notmatch 'WAITING_FOR_PC'){throw 'resource-aware job queue missing'}
@@ -53,14 +53,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'versionCode 110' android-b-edge/build.gradle
-          grep -F 'versionName "1.1.0-evergreen"' android-b-edge/build.gradle
+          grep -F 'versionCode 120' android-b-edge/build.gradle
+          grep -F 'versionName "1.2.0-evergreen"' android-b-edge/build.gradle
           grep -F 'private static final String EDGE_VERSION = "1.1.0";' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
           grep -F 'EdgeOrchestrator' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
           grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
           grep -F 'PC_MEMORY_PRESSURE' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
           grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F '"minimum_server_version": "0.5.0"' release/android.json
+          grep -F 'ResourceGovernor' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
+          grep -F 'EdgeDatabase' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java
+          grep -F 'EdgeReconcileWorker' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java
+          grep -F 'active_project' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
+          grep -F '"minimum_server_version": "0.6.0"' release/android.json
       - name: Unit tests
         run: gradle :android-b-edge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
       - name: Lint
@@ -79,7 +83,7 @@ jobs:
           sha256sum "$RELEASE" > android-b-edge-release-unsigned.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: bcp-edge-1.1.0-coordinated
+          name: bcp-edge-1.2.0-coordinated
           path: |
             android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk
             android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
@@ -99,8 +103,8 @@ jobs:
           ar=json.loads(pathlib.Path("release/android.json").read_text())
           server=pathlib.Path("windows/bcp_server.py").read_bytes()
           client=pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text()
-          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"] == "0.5.0"
-          assert sr["coordinated_edge_version"] == ar["version_name"] == "1.1.0-evergreen"
+          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"] == "0.6.0"
+          assert sr["coordinated_edge_version"] == ar["version_name"] == "1.2.0-evergreen"
           assert hashlib.sha256(server).hexdigest() == sr["sha256"]
           for endpoint in ["/v1/orchestrator/status", "/context", "/jobs"]:
               assert endpoint in client or endpoint in server.decode()
