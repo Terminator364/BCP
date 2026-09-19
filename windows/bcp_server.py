@@ -35,6 +35,10 @@ AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
+JOB_WAKE_EVENT = threading.Event()
+PC_EXECUTOR_STARTED = False
+PC_EXECUTOR_LAST_HEARTBEAT = ""
+PC_JOB_HANDLER_KINDS = ("NOOP", "HEALTH_PROBE")
 
 
 def utc_now() -> str:
@@ -972,6 +976,24 @@ def ensure_state() -> str:
                 PRIMARY KEY(job_id, depends_on_job_id)
             )"""
         )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS job_receipts(
+                receipt_id TEXT PRIMARY KEY,
+                job_id INTEGER NOT NULL,
+                project_id TEXT NOT NULL,
+                action_id TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL,
+                result TEXT NOT NULL,
+                worker_id TEXT NOT NULL,
+                lease_id TEXT NOT NULL,
+                attempt_count INTEGER NOT NULL,
+                input_hash TEXT NOT NULL,
+                output_hash TEXT NOT NULL,
+                evidence_json TEXT NOT NULL,
+                started_at TEXT,
+                finished_at TEXT NOT NULL
+            )"""
+        )
         for col, ddl in (
             ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'UNCLASSIFIED'"),
             ("source_id", "source_id TEXT NOT NULL DEFAULT ''"),
@@ -989,11 +1011,17 @@ def ensure_state() -> str:
             ("coordinator_epoch", "coordinator_epoch INTEGER NOT NULL DEFAULT 0"),
             ("evidence_contract", "evidence_contract TEXT NOT NULL DEFAULT ''"),
             ("attempt_count", "attempt_count INTEGER NOT NULL DEFAULT 0"),
-            ("lease_until", "lease_until TEXT")
+            ("lease_until", "lease_until TEXT"),
+            ("worker_id", "worker_id TEXT NOT NULL DEFAULT ''"),
+            ("lease_id", "lease_id TEXT NOT NULL DEFAULT ''"),
+            ("started_at", "started_at TEXT"),
+            ("finished_at", "finished_at TEXT"),
+            ("last_error", "last_error TEXT NOT NULL DEFAULT ''")
         ):
             _ensure_sqlite_column(cx, "jobs", col, ddl)
         cx.execute("CREATE INDEX IF NOT EXISTS idx_memory_project_layer_pin ON memory_records(project_id,layer,pinned,updated_at)")
         cx.execute("CREATE INDEX IF NOT EXISTS idx_jobs_project_state_priority ON jobs(project_id,state,priority,created_at)")
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_job_receipts_job_finished ON job_receipts(job_id,finished_at)")
         cx.commit()
     finally:
         cx.close()
