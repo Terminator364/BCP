@@ -25,6 +25,7 @@ TOKEN_PATH = STATE_DIR / "telegram_bot_token.txt"
 CONFIG_PATH = STATE_DIR / "telegram_observability.json"
 OFFSET_PATH = STATE_DIR / "telegram_update_offset.json"
 PRESENCE_PATH = STATE_DIR / "telegram_presence_state.json"
+SYSTEM_PRESENCE_PATH = STATE_DIR / "telegram_system_presence_state.json"
 NEXUS_TOKEN_PATH = STATE_DIR / "nexus_device_token.txt"
 NEXUS_CURSOR_PATH = STATE_DIR / "nexus_command_cursor.json"
 MISSION_EVENT_LOG_PATH = STATE_DIR / "MISSION_EVENT_LOG.jsonl"
@@ -365,6 +366,114 @@ class Service:
         filled = max(0, min(width, round(width * done / total)))
         return ("█" * filled) + ("░" * (width - filled))
 
+    @staticmethod
+    def _human_action(value: Any) -> str:
+        raw = clean(value, 220)
+        if not raw or raw == "NOT_OBSERVED":
+            return "Relire l’état sauvegardé puis reprendre à la prochaine étape prouvée."
+        low = raw.lower()
+        if "read durable evidence" in low or "do not replay committed work" in low:
+            return "Relire les preuves sauvegardées puis continuer sans refaire ce qui est déjà terminé."
+        if "telegram" in low and ("progress" in low or "presence" in low):
+            return "Vérifier que Telegram reçoit automatiquement les changements d’étape."
+        if "nexus" in low:
+            return "Finaliser le relais Nexus pour que le PC ne dépende plus d’un accès direct à Telegram."
+        if "chatgpt-pc" in low or "heartbeat" in low or "cycle_lease" in low:
+            return "Réparer la preuve de présence de ChatGPT-PC sans réinstaller BCP."
+        if "apk" in low or "signing" in low:
+            return "Vérifier l’identité de l’application B-EDGE déjà installée sur l’ancien téléphone."
+        if "field" in low and ("edge" in low or "bcp" in low):
+            return "Terminer la vérification réelle entre le PC et l’ancien téléphone."
+        return raw.replace("_", " ").replace("->", "→")
+
+    def _human_ci(self, gh: dict) -> str:
+        runs = gh.get("runs") or []
+        if not runs:
+            return "⚪ tests non observés"
+        r = runs[0]
+        state = str(r.get("conclusion") or r.get("status") or "unknown").lower()
+        labels = {
+            "success": "✅ tests réussis",
+            "completed": "✅ tests terminés",
+            "in_progress": "🔄 tests en cours",
+            "queued": "⏳ tests en attente",
+            "requested": "⏳ tests demandés",
+            "failure": "🔴 tests à corriger",
+            "cancelled": "🟠 tests interrompus",
+        }
+        name = clean(r.get("name") or "qualification", 60)
+        return labels.get(state, "⚪ tests: " + clean(state, 30)) + " — " + name
+
+    def presence_snapshot(self) -> dict:
+        head = self._head()
+        runtime = self.local.runtime()
+        edge = self.local.edge()
+        gh = self.github.snapshot()
+        drive = self.local.drive()
+        chat = self.local.chat(self.project_id)
+
+        hb = runtime.get("_age_seconds")
+        heartbeat_ok = isinstance(hb, int) and hb <= 180
+        edge_ok = bool(edge.get("paired"))
+        drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
+        runs = gh.get("runs") or []
+        commits = gh.get("commits") or []
+        run = runs[0] if runs else {}
+        commit = commits[0] if commits else {}
+        commit_payload = commit.get("commit") if isinstance(commit, dict) else None
+        if isinstance(commit_payload, dict):
+            commit_message_raw = str(commit_payload.get("message") or "")
+        else:
+            commit_message_raw = str(commit.get("message") or "") if isinstance(commit, dict) else ""
+        commit_message = clean(commit_message_raw.splitlines()[0] if commit_message_raw.splitlines() else "", 120)
+
+        stable = {
+            "project": self.project_id,
+            "head_revision": (head or {}).get("revision"),
+            "head_status": clean((head or {}).get("status"), 90),
+            "head_last_completed": clean((head or {}).get("last_completed_action"), 180),
+            "head_next": clean((head or {}).get("next_action"), 180),
+            "pc_active": heartbeat_ok,
+            "server_version": clean(runtime.get("server_version"), 40),
+            "edge_paired": edge_ok,
+            "edge_version": clean(edge.get("edge_version"), 40),
+            "edge_last_event": clean(edge.get("last_event"), 60),
+            "drive_visible": drive_ok,
+            "github_visible": bool(gh.get("ok")),
+            "commit_sha": clean(commit.get("sha"), 48),
+            "commit_message": commit_message,
+            "ci_name": clean(run.get("name"), 60),
+            "ci_state": clean(run.get("conclusion") or run.get("status"), 30),
+            "chat_state": clean(chat.get("state"), 60),
+        }
+        digest = hashlib.sha256(
+            json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+
+        if heartbeat_ok and edge_ok:
+            state_label = "🟢 Le système est actif."
+        elif heartbeat_ok or edge_ok:
+            state_label = "🟡 Le système avance, mais une liaison manque de preuve récente."
+        else:
+            state_label = "🟠 Je n’ai pas de preuve récente du PC ou de l’ancien téléphone."
+
+        last_proof = stable["commit_message"] or self._human_action((head or {}).get("last_completed_action"))
+        next_action = self._human_action((head or {}).get("next_action"))
+        lines = [
+            "🤖 BCP — suivi automatique",
+            state_label,
+            "",
+            ("✅" if heartbeat_ok else "⚠️") + " PC/BCP: " + ("actif" if heartbeat_ok else "preuve récente absente"),
+            ("✅" if edge_ok else "⚠️") + " Ancien téléphone: " + ("connecté" if edge_ok else "non observé"),
+            ("✅" if drive_ok else "⚠️") + " Sauvegarde Drive: " + ("visible" if drive_ok else "non observée"),
+            "🧪 " + self._human_ci(gh),
+            "",
+            "📌 Dernière preuve: " + last_proof,
+            "➡️ Suite: " + next_action,
+            "💰 Coût: $0.00",
+        ]
+        return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
+
     def status(self) -> str:
         head = self._head()
         runtime = self.local.runtime()
@@ -400,11 +509,10 @@ class Service:
             "CHAT_PLATFORM_HOLD_REPORTED": "🟠 vérification ChatGPT signalée",
             "UNKNOWN_INTERNAL_CHAT_STATE": "⚪ état interne non visible",
         }
-        next_action = clean(
-            (head or {}).get("next_action") or "continuer depuis le dernier checkpoint durable",
-            170,
+        next_action = self._human_action(
+            (head or {}).get("next_action") or "continuer depuis le dernier checkpoint durable"
         )
-        latest_ci = self._ci(gh)
+        latest_ci = self._human_ci(gh)
         return "\n".join([
             "🤖 BCP Cockpit",
             state_label,
@@ -722,6 +830,22 @@ class Telegram:
             "updated_at": utc_now(),
         })
 
+    def _push_system_presence(self) -> None:
+        if not self.auto_push:
+            return
+        snap = self.service.presence_snapshot()
+        path = self.service.local.state / SYSTEM_PRESENCE_PATH.name
+        prior = read_json(path, {}) or {}
+        if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
+            return
+        self.send(str(snap["text"]))
+        atomic_json(path, {
+            "schema": "bcp.telegram_system_presence/1",
+            "fingerprint": snap["fingerprint"],
+            "updated_at": utc_now(),
+            "transport": "DIRECT_TELEGRAM",
+        })
+
     def run(self) -> int:
         offset = int((read_json(OFFSET_PATH, {}) or {}).get("next_offset") or 0)
         backoff = [2, 5, 15, 30, 60]
@@ -751,6 +875,7 @@ class Telegram:
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
                 self._push_presence()
+                self._push_system_presence()
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
                 return 0
@@ -873,6 +998,22 @@ class Nexus:
             "transport": "NEXUS",
         })
 
+    def _push_system_presence(self) -> None:
+        if not self.auto_push:
+            return
+        snap = self.service.presence_snapshot()
+        path = self.service.local.state / SYSTEM_PRESENCE_PATH.name
+        prior = read_json(path, {}) or {}
+        if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
+            return
+        self.push(str(snap["text"]), "system:" + str(snap["fingerprint"]))
+        atomic_json(path, {
+            "schema": "bcp.telegram_system_presence/1",
+            "fingerprint": snap["fingerprint"],
+            "updated_at": utc_now(),
+            "transport": "NEXUS",
+        })
+
     def run(self) -> int:
         cursor = int((read_json(NEXUS_CURSOR_PATH, {}) or {}).get("last_command_id") or 0)
         backoff = [2, 5, 15, 30, 60]
@@ -900,6 +1041,7 @@ class Nexus:
                     })
                     append_log("NEXUS_COMMAND_REPLIED", command_id=command_id)
                 self._push_presence()
+                self._push_system_presence()
                 if not commands:
                     time.sleep(self.poll_seconds)
             except KeyboardInterrupt:
@@ -1029,6 +1171,11 @@ def selftest() -> int:
         assert "Téléphone B-EDGE" in status
         assert "ChatGPT: ⏳ réponse en attente" in status
         assert "💰 Coût: $0.00" in status
+        assert "Tests: ✅ tests réussis" in status
+        presence = svc.presence_snapshot()
+        assert len(presence["fingerprint"]) == 64
+        assert "🤖 BCP — suivi automatique" in presence["text"]
+        assert "Ancien téléphone" in presence["text"]
         details = svc.details()
         assert "État global: EN_COURS" in details
         assert "GitHub CI: Windows=SUCCESS [work/test]" in details
