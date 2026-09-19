@@ -23,6 +23,14 @@ function Write-AtomicUtf8([string]$Path, [string]$Text) {
   Move-Item -LiteralPath $tmp -Destination $Path -Force
 }
 
+function Protect-LocalFile([string]$Path) {
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
+  $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+  $aclGrant = $user + ":(R,W)"
+  & icacls.exe $Path /inheritance:r /grant:r $aclGrant /c | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "LOCAL_SECRET_ACL_HARDENING_FAILED" }
+}
+
 function Set-JsonProperty($Object, [string]$Name, $Value) {
   if ($Object.PSObject.Properties.Name -contains $Name) {
     $Object.$Name = $Value
@@ -55,6 +63,7 @@ $config = Get-Content -Raw -LiteralPath $configPath | ConvertFrom-Json
 if ($Direct) {
   Set-JsonProperty $config "transport" ([pscustomobject]@{ mode = "DIRECT_TELEGRAM" })
   Write-AtomicUtf8 $configPath (($config | ConvertTo-Json -Depth 12) + [Environment]::NewLine)
+  Protect-LocalFile $configPath
   Write-Output "BCP_TRANSPORT=DIRECT_TELEGRAM"
   exit 0
 }
@@ -78,6 +87,7 @@ if ($plain.Length -lt 24) {
 }
 
 Write-AtomicUtf8 $tokenPath ($plain + [Environment]::NewLine)
+Protect-LocalFile $tokenPath
 Set-JsonProperty $config "transport" ([pscustomobject]@{
   mode = "NEXUS"
   nexus_url = $NexusUrl.TrimEnd("/")
@@ -85,6 +95,7 @@ Set-JsonProperty $config "transport" ([pscustomobject]@{
   poll_seconds = 15
 })
 Write-AtomicUtf8 $configPath (($config | ConvertTo-Json -Depth 12) + [Environment]::NewLine)
+Protect-LocalFile $configPath
 
 Write-Output "BCP_TRANSPORT=NEXUS"
 Write-Output ("BCP_NEXUS_URL=" + $NexusUrl.TrimEnd("/"))
