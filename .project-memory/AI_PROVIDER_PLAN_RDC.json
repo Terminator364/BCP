@@ -67,5 +67,100 @@
     }
   ],
   "activation_rule": "Provider becomes ACTIVE_FREE_PROVIDER only after real Kinshasa account/key/API smoke test and BCP adapter qualification.",
-  "exhaustion_state": "FREE_MODEL_CAPACITY_HOLD"
+  "exhaustion_state": "FREE_MODEL_CAPACITY_HOLD",
+  "endurance_24h_policy": {
+    "objective": "maximize useful 24h progress under ZERO_USD, not instantaneous LLM throughput",
+    "escalation_ladder": [
+      "L0_EVENT_ENGINE",
+      "L1_RULE_ENGINE",
+      "L2_KNOWLEDGE_CACHE_ERROR_LEDGER",
+      "L3_LOW_COST_MODEL",
+      "L4_REASONING_MODEL",
+      "L5_HUMAN_CHATGPT"
+    ],
+    "local_first_default": true,
+    "one_event_one_llm_call": false,
+    "batch_dedup_causal_group_before_llm": true,
+    "offline_backlog_compaction_required": true,
+    "bootstrap_capacity_allocation": {
+      "planned_background_max_fraction": 0.5,
+      "fallback_user_incident_fraction": 0.25,
+      "strategic_reserve_fraction": 0.25,
+      "note": "Scheduling policy after field measurement; not vendor quota facts."
+    },
+    "provider_guards": [
+      "SOFT_LIMIT",
+      "RESERVE_FLOOR",
+      "HARD_LIMIT"
+    ],
+    "global_states": {
+      "constrained": "AI_CONSERVATION_MODE",
+      "no_free_llm_capacity": "FREE_MODEL_CAPACITY_HOLD"
+    },
+    "single_provider_default": true,
+    "multi_model_fanout_default": false,
+    "cross_check_allowed_reasons": [
+      "low_confidence",
+      "contradictory_diagnosis",
+      "high_impact_architecture",
+      "failed_first_provider",
+      "explicit_audit_critic_step"
+    ],
+    "call_admission_gate": "provider_call_allowed",
+    "global_multi_project_budget": true,
+    "background_may_not_monopolize_capacity": true,
+    "telegram_ai_capacity_abstraction": true,
+    "silence_means_normal_operation": true,
+    "zero_usd_spend_invariant": true,
+    "key_kpi": "AI_CALLS_AVOIDED_WITHOUT_RELIABILITY_LOSS"
+  },
+  "call_admission_reject_conditions": [
+    "deterministic_result_exists",
+    "equivalent_cached_result_exists",
+    "recently_resolved_same_incident",
+    "provider_unhealthy_or_rate_limited",
+    "reserve_policy_violation",
+    "insufficient_job_priority_for_remaining_capacity",
+    "provider_not_ACTIVE_FREE_PROVIDER",
+    "projected_paid_cost_nonzero",
+    "duplicate_or_retry_loop_detected",
+    "context_or_token_budget_exceeded"
+  ],
+  "deterministic_default_tasks": [
+    "heartbeat",
+    "telemetry",
+    "network_state",
+    "battery_ram_cpu_disk_observation",
+    "file_sync_transfer",
+    "hash_signature_readback",
+    "build_invocation",
+    "test_execution",
+    "retry_backoff",
+    "known_error_recovery",
+    "queue_outbox_replay",
+    "checkpointing",
+    "routine_templated_notifications"
+  ],
+  "provider_runtime_metrics": [
+    "remaining_capacity",
+    "reset_window",
+    "p50_latency",
+    "p95_latency",
+    "recent_success_rate",
+    "recent_error_429_rate",
+    "task_type_success_history",
+    "last_kinshasa_smoke_pass",
+    "estimated_pending_call_consumption"
+  ],
+  "optimization_kpis": [
+    "deterministic_operations_count",
+    "llm_calls_by_provider_model_project_task",
+    "calls_avoided_by_cache_rules_dedup",
+    "quota_units_consumed_when_observable",
+    "provider_429_timeout_error_rate",
+    "percent_incidents_resolved_without_llm",
+    "time_to_recovery",
+    "reserve_state",
+    "spend_usd_equals_0"
+  ]
 }
