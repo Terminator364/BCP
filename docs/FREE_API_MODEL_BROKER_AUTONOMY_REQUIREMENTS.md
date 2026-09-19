@@ -193,3 +193,64 @@ Order:
 6. then broaden autonomous multi-agent loops.
 
 Each adapter must pass failure-injection, quota, offline, idempotency, and recovery tests before becoming a trusted production path.
+
+
+## Geographic and field-availability gate
+
+BCP must never treat a provider as usable merely because a marketing page or documentation says a free tier exists.
+
+A provider is ACTIVE only after all of the following are true:
+1. `DOC_REGION_OK` — current official documentation does not exclude the user's country/region.
+2. `ACCOUNT_ACCESS_OK` — the user's real account can create/authenticate the required credential without false country information.
+3. `NETWORK_PATH_OK` — the user's actual Kinshasa/RDC network can reach the API without VPN/proxy/location spoofing.
+4. `FREE_TIER_OK` — a real zero-cost allowance exists for the intended API path.
+5. `LIVE_CALL_PASS` — a minimal real API request succeeds from the intended runtime.
+6. `QUOTA_READBACK_OK` — quota/rate-limit state can be observed or inferred safely.
+7. `TERMS_OK` — usage does not require quota evasion, multi-account farming, fake geography, or other prohibited workarounds.
+
+Until all gates pass, provider status is `CANDIDATE_UNVERIFIED`, even if its docs claim regional support.
+
+### Current candidate matrix (2026-09-19)
+
+- Google Gemini API / AI Studio:
+  - Official Google availability documentation currently lists the Democratic Republic of the Congo as supported.
+  - User-reported field access is currently problematic/unavailable.
+  - Therefore status: `DOC_REGION_OK / FIELD_ACCESS_UNVERIFIED_OR_BLOCKED`.
+  - Do not make Gemini a required dependency until a real Kinshasa API-key creation + minimal API call passes without VPN or false-country settings.
+
+- GroqCloud:
+  - Official docs expose a Free tier and account-level/project rate limits.
+  - Groq's current service agreement explicitly defines an EMEA/Africa contracting path; no DRC-specific exclusion was found in the reviewed docs.
+  - Status: `HIGH_PRIORITY_CANDIDATE / FIELD_TEST_REQUIRED`.
+
+- OpenRouter:
+  - Current official pricing advertises API access on a Free plan, 25+ free models and 50 requests/day.
+  - No DRC-specific exclusion was found in the reviewed public pricing/docs.
+  - Status: `HIGH_PRIORITY_CANDIDATE / FIELD_TEST_REQUIRED`.
+
+- Mistral API / Studio:
+  - Official docs state Free mode is enabled by default with no credit card required, subject to usage/rate limits.
+  - No DRC-specific exclusion was found in the reviewed public docs.
+  - Status: `HIGH_PRIORITY_CANDIDATE / FIELD_TEST_REQUIRED`.
+
+- Cloudflare Workers AI:
+  - Official docs provide a free allocation of 10,000 Neurons/day on the Workers Free plan.
+  - No DRC-specific exclusion was found in the reviewed Workers AI docs.
+  - Status: `CANDIDATE / FIELD_TEST_REQUIRED`.
+
+- Hugging Face Inference Providers:
+  - Free accounts currently receive a small monthly inference credit allowance; routed requests do not require separate provider accounts.
+  - Capacity is small, so this is a fallback/experimental adapter, not the primary zero-cost reasoning engine.
+  - Status: `FALLBACK_CANDIDATE / FIELD_TEST_REQUIRED`.
+
+### No-circumvention rule
+
+BCP must never recommend or automate:
+- VPN/location spoofing to unlock a provider;
+- false country/account information;
+- multi-account or multi-organization quota farming;
+- key sharing from third parties;
+- scraping/leaking credentials;
+- using unofficial piracy-oriented relay services.
+
+If a provider fails geographic/account eligibility, BCP marks it unavailable and routes to another compliant provider.
