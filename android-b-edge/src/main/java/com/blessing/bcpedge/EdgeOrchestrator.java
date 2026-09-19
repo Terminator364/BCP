@@ -16,6 +16,8 @@ import org.json.JSONObject;
 
 import java.util.List;
 import java.util.UUID;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 
 public final class EdgeOrchestrator {
     private static final String PREFS = "bcp_edge_orchestrator_settings";
@@ -101,10 +103,21 @@ public final class EdgeOrchestrator {
     public void putMemory(String projectId, String layer, String key, Object value,
                           String evidenceClass, boolean pinned, Long expiresAt) {
         long now = System.currentTimeMillis();
+        String evidence = evidenceClass == null ? "UNVERIFIED" : evidenceClass.trim().toUpperCase();
+        EdgeMemoryEntity old = dao.memoryItem(projectId, layer, key);
+        if (old != null && old.expiresAt != null && old.expiresAt <= now) old = null;
+        if (!EdgePolicy.canReplaceMemory(
+                layer,
+                old == null ? null : old.evidenceClass,
+                old != null && old.pinned,
+                evidence)) {
+            throw new IllegalArgumentException("memory_admission_rejected_precedence");
+        }
+        boolean effectivePinned = pinned || (old != null && old.pinned);
+        long createdAt = old == null ? now : old.createdAt;
         dao.putMemory(new EdgeMemoryEntity(
                 projectId, layer, key, jsonValueString(value),
-                evidenceClass == null ? "UNVERIFIED" : evidenceClass,
-                "B_EDGE", pinned, now, now, expiresAt
+                evidence, "B_EDGE", effectivePinned, createdAt, now, expiresAt
         ));
     }
 
@@ -219,17 +232,25 @@ public final class EdgeOrchestrator {
         try {
             String localId = job.optString("local_id", "");
             String idem = job.optString("idempotency_key", "");
-            String result = receipt.optString("result", "ACCEPTED");
+            String result = receipt.optString("result", "ACCEPTED").trim().toUpperCase();
             long revision = receipt.optLong("revision", 0);
-            String actionId = receipt.optString("event_hash", "");
-            if (actionId.isEmpty()) actionId = UUID.randomUUID().toString();
+            String rawReceipt = receipt.toString();
+            String outputHash = sha256(rawReceipt);
+            String actionId = receipt.optString("action_id", receipt.optString("event_hash", ""));
+            if (actionId.isEmpty()) actionId = "receipt-" + sha256(idem + "\n" + rawReceipt);
             dao.insertReceipt(new EdgeReceiptEntity(
                     actionId, localId, projectId, idem, result,
-                    receipt.toString(), revision, System.currentTimeMillis()
+                    outputHash, revision, System.currentTimeMillis()
             ));
-            if (!localId.isEmpty()) {
+            if (localId.isEmpty()) return;
+            if (EdgePolicy.isCompletionResult(result)) {
                 dao.setJobState(localId, "COMMITTED", System.currentTimeMillis());
                 dao.deleteJob(localId);
+            } else if (EdgePolicy.isRemoteQueueAccepted(result)) {
+                // Dispatch acknowledgement is not completion proof.
+                dao.setJobState(localId, "REMOTE_QUEUED", System.currentTimeMillis());
+            } else {
+                dao.setJobState(localId, "HOLD", System.currentTimeMillis());
             }
         } catch (Exception ignored) {}
     }
@@ -240,6 +261,18 @@ public final class EdgeOrchestrator {
 
     public int compactExpiredMemory() {
         return dao.deleteExpiredMemory(System.currentTimeMillis());
+    }
+
+    private static String sha256(String value) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder out = new StringBuilder(digest.length * 2);
+            for (byte b : digest) out.append(String.format("%02x", b & 0xff));
+            return out.toString();
+        } catch (Exception e) {
+            throw new IllegalStateException("sha256_unavailable", e);
+        }
     }
 
     private static String jsonValueString(Object value) {
