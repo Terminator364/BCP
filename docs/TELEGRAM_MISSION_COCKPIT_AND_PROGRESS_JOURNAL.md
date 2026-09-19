@@ -338,3 +338,18 @@ After 3 minutes without new external evidence, the watchdog SHOULD:
 5. permit another conversation/provider to take over only when fencing, idempotency and replay-safety allow it.
 
 A ChatGPT/browser interruption therefore becomes a presentation/worker-availability problem, not loss of project state. The user must not have to send screenshots simply to prove whether a GitHub/Drive/BCP action completed.
+
+
+## P0 mission autonomy binding
+
+The cockpit MUST project durable mission state, not model internals.
+
+Human-first command contract:
+- `/status`: compact project/mission state and only a finite verified-step progress bar when a finite plan exists;
+- `/details`: technical evidence, receipts, worker/component and hold classification;
+- `/where`: current_step, last_committed_step, next_step, last_progress_at, worker/component, receipt/evidence and failure/hold reason;
+- `/tail`: recent append-only observable mission events.
+
+Spontaneous messages are transition-driven and sparse: meaningful checkpoint, blocking condition, required human decision, or completion. Routine unchanged heartbeats do not generate chat spam.
+
+No output may expose or claim to expose private chain-of-thought. If no new durable proof exists, report an evidence-based WAITING/STALLED/PROVIDER_WAIT/PLATFORM_HOLD/NETWORK_WAIT or NO_NEW_EXTERNAL_EVIDENCE state rather than inferred hidden progress.
