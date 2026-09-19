@@ -324,3 +324,19 @@ BCPGO recovery MUST first read the durable mission/checkpoint state and continue
 Before significant work, persist the mission envelope. Each bounded step produces observable event/evidence state. Model or agent workers are replaceable and cannot directly promote unvalidated output to canonical project state.
 
 The current implementation line is BCP 0.5.1 candidate on a writer-fenced work branch. FIELD_VERIFIED remains false until exact-head CI, serialized integration, managed update/readback, interruption recovery, and human-first cockpit evidence pass.
+
+
+## Telegram Human Cockpit V4 recovery binding — 2026-09-19
+
+On every BCP recovery, load:
+- `docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md`;
+- `.project-memory/TELEGRAM_COCKPIT_V4_STATE.json`;
+- `release/telegram_observability.json`;
+- `release/nexus_bootstrap.json`;
+- `release/current.json`.
+
+The cockpit target is one human-first editable Telegram card with read-only inline controls for refresh, exact position, missions, details, human PDF and technical PDF. It must remain truthful under ChatGPT verification/UI ambiguity, low bandwidth and direct PC->Telegram degradation. Nexus may serve cached sanitized reports, but BCP durable state remains authoritative.
+
+No ChatGPT scheduled automation is part of this presence/update path. Do not require token re-entry, repeated manual ZIP replacement or user-mediated log transfer for normal updates.
+
+The 2026-09-19 V4 implementation lives on its fenced candidate branch until exact-head CI, main-head reconciliation and serialized merge succeed. FIELD_VERIFIED remains false until a real Kinshasa button/PDF round-trip and resident update readback succeed.
