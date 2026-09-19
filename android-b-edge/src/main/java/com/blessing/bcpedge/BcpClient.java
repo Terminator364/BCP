@@ -578,8 +578,8 @@ public final class BcpClient {
                     try {
                         JSONObject observation = new JSONObject(observedRemote.toString());
                         String remoteState = observedRemote.optString("state", "QUEUED").trim().toUpperCase();
-                        observation.put("result",
-                                EdgePolicy.isCompletionResult(remoteState) ? remoteState : "ALREADY_QUEUED");
+                        boolean preserveState = EdgePolicy.isTerminalResult(remoteState) || "HOLD".equals(remoteState);
+                        observation.put("result", preserveState ? remoteState : "ALREADY_QUEUED");
                         orchestrator.acknowledgeRemoteJob(getProject(), job, observation);
                     } catch (Exception ignored) {}
                 }
