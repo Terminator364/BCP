@@ -73,3 +73,25 @@ Every consequential operation produces a durable receipt containing:
 Remote telemetry must be opt-in/private and sanitized.
 Public GitHub must never receive machine secrets or raw local diagnostic data.
 Until a private BCP relay exists, telemetry stays local and is exposed to the local control plane only.
+
+
+## Context-fabric telemetry
+
+Context retrieval telemetry is metadata-only and MUST NOT record raw user prompts or private Context Capsule contents by default.
+
+Track:
+- context_resolve_timestamp;
+- scope/project id;
+- global/project revision numbers;
+- cache tier hit: HOT/WARM/COLD/GATEWAY;
+- resolver processing latency;
+- end-to-end latency where observable;
+- capsule byte/token estimate;
+- FULL/DELTA/NO_CHANGE result;
+- stale/conflict detection flag;
+- memory promotion/rejection counts;
+- context authentication failure class;
+- BCPGO transport path;
+- Android/PC operating mode.
+
+Security telemetry SHOULD count suspected prompt/memory-injection rejections without persisting the malicious raw payload unless an explicit diagnostic capture is authorized.
