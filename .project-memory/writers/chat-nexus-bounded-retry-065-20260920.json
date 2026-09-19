@@ -11,7 +11,8 @@
     "release/current.json",
     "release/android.json",
     ".github/workflows/current-release-contract.yml",
-    ".project-memory/writers/chat-nexus-bounded-retry-065-20260920.json"
+    ".project-memory/writers/chat-nexus-bounded-retry-065-20260920.json",
+    ".github/workflows/coordinated-product.yml"
   ],
   "expected_ci_gates": [
     "BCP PC Sanity",
@@ -22,5 +23,5 @@
   "direct_main_write": false,
   "merge_requires_main_reread": true,
   "moved_main_behavior": "REBASE_OR_RECONCILE_REQUIRED",
-  "status": "WORK_BRANCH_ACTIVE"
+  "status": "WORK_BRANCH_ACTIVE_CI_REQUALIFY"
 }
