@@ -1,0 +1,21 @@
+{
+  "schema": "bcp.work_branch_metadata/1",
+  "writer_or_session_id": "chatgpt-current-session-audit-hardening",
+  "project_or_mission": "BCP/B-EDGE deep audit, counter-audit, research, hardening and verification",
+  "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
+  "based_on_integration_sha": "8b3896a71b5b04e714de05b41c6c7bd24d574ba6",
+  "created_at": "2026-09-19",
+  "intended_file_scope": [
+    "docs/*audit*",
+    "docs/BEDGE_*",
+    ".project-memory/*audit*",
+    "android-b-edge/*",
+    "tests/*"
+  ],
+  "expected_ci_gates": [
+    "BCP Android Build",
+    "BCP Coordinated Product Qualification",
+    "BCP Coordinated PC Package"
+  ],
+  "direct_main_write": false
+}
