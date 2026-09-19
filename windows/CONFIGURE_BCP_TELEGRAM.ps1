@@ -203,8 +203,21 @@ Write-Host "The BotFather token will stay on this PC only."
 Write-Host "Do NOT paste it into ChatGPT, GitHub, Drive, source files, issues, or PRs."
 Write-Host ""
 
-$secure = Read-Host "Paste the BotFather token here locally" -AsSecureString
-$token = Convert-SecureToPlain $secure
+$secure = $null
+$token = $null
+if (Test-Path -LiteralPath $TokenPath -PathType Leaf) {
+    try {
+        $existingToken = ([System.IO.File]::ReadAllText($TokenPath)).Trim()
+        if ($existingToken -match '^\d{6,12}:[A-Za-z0-9_-]{20,}$') {
+            $token = $existingToken
+            Write-Host "Reusing previously verified local BotFather token. No copy/paste needed."
+        }
+    } catch {}
+}
+if (-not $token) {
+    $secure = Read-Host "Paste the BotFather token here locally" -AsSecureString
+    $token = Convert-SecureToPlain $secure
+}
 try {
     if ($token -notmatch '^\d{6,12}:[A-Za-z0-9_-]{20,}$') {
         throw "TELEGRAM_TOKEN_FORMAT_INVALID"
@@ -234,7 +247,7 @@ try {
 
     $nextOffset = 0
     $candidate = $null
-    $deadline = [DateTime]::UtcNow.AddMinutes(3)
+    $deadline = [DateTime]::UtcNow.AddMinutes(10)
     while ([DateTime]::UtcNow -lt $deadline -and -not $candidate) {
         $updates = Invoke-Telegram $token "getUpdates" @{
             offset = $nextOffset
@@ -250,7 +263,7 @@ try {
         }
     }
     if (-not $candidate) {
-        throw "HUMAN_GATE_NO_PRIVATE_TELEGRAM_MESSAGE_OBSERVED"
+        throw "HUMAN_GATE_NO_PRIVATE_TELEGRAM_MESSAGE_OBSERVED_RESUMABLE"
     }
 
     $chatId = [int64]$candidate.chat.id
