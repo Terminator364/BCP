@@ -267,9 +267,25 @@ try {
     }
 
     $chatId = [int64]$candidate.chat.id
-    $display = ([string]$candidate.from.first_name + " " + [string]$candidate.from.last_name).Trim()
-    $tgUser = [string]$candidate.from.username
-    Write-Host ("Detected private Telegram identity: " + $display + " @" + $tgUser)
+    $firstName = ""
+    $lastName = ""
+    $tgUser = ""
+    if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "first_name")) {
+        $firstName = [string]$candidate.from.first_name
+    }
+    if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "last_name")) {
+        $lastName = [string]$candidate.from.last_name
+    }
+    if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "username")) {
+        $tgUser = [string]$candidate.from.username
+    }
+    $display = ($firstName + " " + $lastName).Trim()
+    if (-not $display) { $display = "(no display name)" }
+    if ($tgUser) {
+        Write-Host ("Detected private Telegram identity: " + $display + " @" + $tgUser)
+    } else {
+        Write-Host ("Detected private Telegram identity: " + $display + " (no username)")
+    }
     $confirm = Read-Host "Authorize this PRIVATE chat for READ-ONLY BCP observability? Type YES"
     if ($confirm -ne "YES") {
         throw "HUMAN_GATE_CHAT_ID_NOT_AUTHORIZED"
