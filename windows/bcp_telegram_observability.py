@@ -112,6 +112,63 @@ def append_log(event: str, **fields: Any) -> None:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+def telegram_public_record(status: str, chat_id: int = 0, update_id: int | None = None,
+                           command: str = "", detail: str = "") -> dict:
+    chat_hash = ""
+    if chat_id:
+        chat_hash = hashlib.sha256(str(int(chat_id)).encode("utf-8")).hexdigest()[:16]
+    return {
+        "schema": "bcp.telegram_runtime/1",
+        "status": clean(status, 60),
+        "updated_at": utc_now(),
+        "process_id": os.getpid(),
+        "chat_id_sha256_prefix": chat_hash,
+        "last_update_id": int(update_id) if isinstance(update_id, int) else None,
+        "last_command": clean((command or "").split(maxsplit=1)[0], 40),
+        "detail": clean(detail, 120),
+        "mode": "READ_ONLY",
+        "spend_usd": 0.0,
+        "token_present": False,
+    }
+
+
+def telegram_telemetry_roots() -> list[Path]:
+    roots: list[Path] = []
+    override = os.environ.get("BCP_EXTERNAL_TELEMETRY_DIR", "").strip()
+    if override:
+        p = Path(override)
+        roots.append(p.parent / "TELEGRAM")
+    home = Path.home()
+    roots += [
+        Path(r"G:\Mon Drive\API_BCP\02_TELEMETRY\TELEGRAM"),
+        Path(r"G:\My Drive\API_BCP\02_TELEMETRY\TELEGRAM"),
+        home / "Mon Drive" / "API_BCP" / "02_TELEMETRY" / "TELEGRAM",
+        home / "My Drive" / "API_BCP" / "02_TELEMETRY" / "TELEGRAM",
+    ]
+    out: list[Path] = []
+    seen = set()
+    for root in roots:
+        key = str(root).lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(root)
+    return out
+
+
+def mirror_telegram_status(status: str, chat_id: int = 0, update_id: int | None = None,
+                           command: str = "", detail: str = "") -> list[str]:
+    rec = telegram_public_record(status, chat_id, update_id, command, detail)
+    written: list[str] = []
+    for root in telegram_telemetry_roots():
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            atomic_json(root / "TELEGRAM_RUNTIME_LATEST.json", rec)
+            written.append(str(root))
+        except Exception:
+            continue
+    return written
+
+
 class Http:
     def json(self, url: str, method: str = "GET", payload: dict | None = None,
              headers: dict | None = None, timeout: int = 20) -> tuple[int, Any]:
@@ -525,40 +582,58 @@ class Telegram:
         offset = int((read_json(OFFSET_PATH, {}) or {}).get("next_offset") or 0)
         backoff = [2, 5, 15, 30, 60]
         failures = 0
+        last_mirror = 0.0
+        last_command = ""
         append_log("WORKER_STARTED")
+        mirror_telegram_status("STARTED", self.chat_id, offset)
+        last_mirror = time.time()
         while True:
             try:
                 obj = self.api("getUpdates", {
                     "offset": offset, "timeout": 50, "allowed_updates": ["message"]
                 }, 65)
                 failures = 0
-                for upd in obj.get("result") or []:
+                updates = obj.get("result") or []
+                for upd in updates:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
                     msg = upd.get("message") or {}
                     chat = msg.get("chat") or {}
                     incoming = int(chat.get("id") or 0)
                     authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
-                    append_log("UPDATE", update_id=uid, authorized=authorized)
+                    incoming_text = str(msg.get("text") or "")
+                    command = incoming_text.split(maxsplit=1)[0] if incoming_text else ""
+                    append_log("UPDATE", update_id=uid, authorized=authorized, command=command)
                     if authorized:
-                        self.send(self.service.dispatch(str(msg.get("text") or "")))
+                        last_command = command
+                        self.send(self.service.dispatch(incoming_text))
                     atomic_json(OFFSET_PATH, {
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
-                if not (obj.get("result") or []):
+                if not updates:
                     atomic_json(OFFSET_PATH, {
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
+                now = time.time()
+                if updates or now - last_mirror >= 300:
+                    mirror_telegram_status("ACTIVE", self.chat_id, offset, last_command)
+                    last_mirror = now
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
+                mirror_telegram_status("STOPPED", self.chat_id, offset, last_command)
                 return 0
             except (URLError, TimeoutError, OSError, RuntimeError) as e:
                 delay = backoff[min(failures, len(backoff) - 1)]
                 failures += 1
                 append_log("RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                now = time.time()
+                if failures == 1 or now - last_mirror >= 300:
+                    mirror_telegram_status("NETWORK_RETRY", self.chat_id, offset, last_command, type(e).__name__)
+                    last_mirror = now
                 time.sleep(delay)
             except Exception as e:
                 append_log("HOLD", error_class=type(e).__name__, detail=clean(e, 140))
+                mirror_telegram_status("HOLD", self.chat_id, offset, last_command, type(e).__name__)
                 time.sleep(60)
 
 
@@ -662,6 +737,14 @@ def selftest() -> int:
         assert "WAITING_FOR_PC" in svc.holds()
         assert "MVP read-only" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
+        public = telegram_public_record("ACTIVE", 123456789, 7, "/status", "ok")
+        public_raw = json.dumps(public, sort_keys=True)
+        assert public["chat_id_sha256_prefix"] != "123456789"
+        assert "123456789" not in public_raw
+        assert "allowed_chat_id" not in public_raw
+        assert "telegram_bot_token" not in public_raw
+        assert public["token_present"] is False
+        assert public["spend_usd"] == 0.0
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
