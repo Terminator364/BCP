@@ -28,9 +28,12 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.1"
+SERVER_VERSION = "0.6.2"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
+TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
+TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
+TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 DB_LOCK = threading.RLock()
@@ -537,6 +540,215 @@ def _write_update_state(obj: dict) -> None:
     atomic_json(STATE_DIR / "server_update.json", obj)
 
 
+def _telegram_companion_configured() -> bool:
+    return (STATE_DIR / "telegram_observability.json").is_file()
+
+
+def telegram_companion_update_status(check_remote: bool = True) -> dict:
+    installed_sha = ""
+    if TELEGRAM_COMPANION_PATH.is_file():
+        try:
+            installed_sha = hashlib.sha256(TELEGRAM_COMPANION_PATH.read_bytes()).hexdigest()
+        except Exception:
+            installed_sha = ""
+    local = read_json(TELEGRAM_COMPANION_STATE_PATH, {}) or {}
+    out = {
+        "ok": True,
+        "configured": _telegram_companion_configured(),
+        "installed": TELEGRAM_COMPANION_PATH.is_file(),
+        "installed_sha256": installed_sha,
+        "last_state": str(local.get("state") or "NONE"),
+        "last_checked_at": local.get("checked_at"),
+        "last_update_at": local.get("updated_at"),
+    }
+    if not check_remote:
+        return out
+    manifest = _fetch_json(TELEGRAM_COMPANION_MANIFEST_URL)
+    if manifest.get("schema") != "bcp.telegram_companion_release/1":
+        raise ValueError("telegram_companion_manifest_schema")
+    target = str(manifest.get("version") or "")
+    url = str(manifest.get("url") or "")
+    sha = str(manifest.get("sha256") or "").lower()
+    minimum_server = str(manifest.get("minimum_server_version") or "")
+    if not target or not url or len(sha) != 64:
+        raise ValueError("telegram_companion_manifest_incomplete")
+    if minimum_server and _version_tuple(SERVER_VERSION) < _version_tuple(minimum_server):
+        raise ValueError("telegram_companion_server_too_old")
+    available = bool(out["configured"] and installed_sha.lower() != sha)
+    out.update({
+        "target_version": target,
+        "target_sha256": sha,
+        "url": url,
+        "available": available,
+        "checked_at": utc_now(),
+    })
+    atomic_json(TELEGRAM_COMPANION_STATE_PATH, {
+        "schema": "bcp.telegram_companion_update/1",
+        "state": "UPDATE_AVAILABLE" if available else ("UP_TO_DATE" if out["configured"] else "NOT_CONFIGURED"),
+        "target_version": target,
+        "installed_sha256": installed_sha,
+        "target_sha256": sha,
+        "checked_at": out["checked_at"],
+        "updated_at": local.get("updated_at"),
+    })
+    return out
+
+
+def _telegram_companion_selftest(path: Path) -> dict:
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    p = subprocess.run(
+        [sys.executable, str(path), "--selftest"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        errors="replace",
+        timeout=45,
+        creationflags=flags,
+    )
+    tail = (p.stdout or "")[-4000:]
+    if p.returncode != 0 or "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS" not in tail:
+        raise RuntimeError("telegram_companion_selftest_failed:" + tail[-1200:])
+    return {"returncode": int(p.returncode), "pass": True}
+
+
+def _ensure_telegram_companion_startup() -> dict:
+    if os.name != "nt":
+        return {"supported": False, "registered": False, "reason": "non_windows"}
+    try:
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        value_name = "BlessingControlPlaneTelegram"
+        pythonw = Path(sys.executable).with_name("pythonw.exe")
+        launcher = pythonw if pythonw.is_file() else Path(sys.executable)
+        command = f'"{launcher}" "{TELEGRAM_COMPANION_PATH}"'
+        with winreg.CreateKeyEx(
+            winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ | winreg.KEY_WRITE
+        ) as key:
+            current = ""
+            try:
+                current, _ = winreg.QueryValueEx(key, value_name)
+            except FileNotFoundError:
+                pass
+            if str(current) != command:
+                winreg.SetValueEx(key, value_name, 0, winreg.REG_SZ, command)
+        return {"supported": True, "registered": True, "value_name": value_name}
+    except Exception as e:
+        return {"supported": True, "registered": False, "error": str(e)[:240]}
+
+
+def _stop_telegram_companion_windows() -> None:
+    if os.name != "nt":
+        return
+    script = (
+        "$ErrorActionPreference='SilentlyContinue'; "
+        "Get-CimInstance Win32_Process | "
+        "Where-Object { $_.Name -match '(?i)python' -and "
+        "$_.CommandLine -match 'telegram_observability\\.py' } | "
+        "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
+    )
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        timeout=20,
+        creationflags=flags,
+        check=False,
+    )
+    time.sleep(0.8)
+
+
+def _launch_telegram_companion() -> subprocess.Popen:
+    pythonw = Path(sys.executable).with_name("pythonw.exe")
+    launcher = pythonw if os.name == "nt" and pythonw.is_file() else Path(sys.executable)
+    flags = 0
+    if os.name == "nt":
+        for name in ("CREATE_NO_WINDOW", "DETACHED_PROCESS", "CREATE_NEW_PROCESS_GROUP"):
+            flags |= int(getattr(subprocess, name, 0))
+    return subprocess.Popen(
+        [str(launcher), str(TELEGRAM_COMPANION_PATH)],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=flags,
+        close_fds=True,
+    )
+
+
+def apply_telegram_companion_update() -> dict:
+    st = telegram_companion_update_status(check_remote=True)
+    if not st.get("configured"):
+        return {"ok": True, "result": "NOT_CONFIGURED", "restart_required": False}
+    if not st.get("available"):
+        return {
+            "ok": True, "result": "NO_UPDATE", "target_version": st.get("target_version"),
+            "restart_required": False,
+        }
+
+    payload = _fetch_bytes(str(st["url"]), 2_000_000)
+    actual = hashlib.sha256(payload).hexdigest()
+    expected = str(st["target_sha256"]).lower()
+    if not hmac.compare_digest(actual.lower(), expected):
+        raise ValueError("telegram_companion_sha256_mismatch")
+
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    candidate = STATE_DIR / "telegram_observability.candidate.py"
+    candidate.write_bytes(payload)
+    proof = _telegram_companion_selftest(candidate)
+
+    backup = STATE_DIR / "telegram_observability.backup.py"
+    had_previous = TELEGRAM_COMPANION_PATH.is_file()
+    if had_previous:
+        shutil.copy2(TELEGRAM_COMPANION_PATH, backup)
+    TELEGRAM_COMPANION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    os.replace(candidate, TELEGRAM_COMPANION_PATH)
+
+    registration = _ensure_telegram_companion_startup()
+    if os.name == "nt":
+        _stop_telegram_companion_windows()
+        proc = _launch_telegram_companion()
+        time.sleep(2.0)
+        if proc.poll() is not None:
+            if had_previous and backup.is_file():
+                shutil.copy2(backup, TELEGRAM_COMPANION_PATH)
+                _ensure_telegram_companion_startup()
+                rollback = _launch_telegram_companion()
+                atomic_json(TELEGRAM_COMPANION_STATE_PATH, {
+                    "schema": "bcp.telegram_companion_update/1",
+                    "state": "ROLLED_BACK",
+                    "target_version": st.get("target_version"),
+                    "target_sha256": expected,
+                    "rollback_pid": int(rollback.pid),
+                    "updated_at": utc_now(),
+                })
+            raise RuntimeError("telegram_companion_restart_failed")
+        pid = int(proc.pid)
+    else:
+        pid = 0
+
+    rec = {
+        "schema": "bcp.telegram_companion_update/1",
+        "state": "COMMITTED",
+        "target_version": st.get("target_version"),
+        "installed_sha256": actual,
+        "target_sha256": expected,
+        "selftest": proof,
+        "startup": registration,
+        "pid": pid,
+        "checked_at": st.get("checked_at"),
+        "updated_at": utc_now(),
+    }
+    atomic_json(TELEGRAM_COMPANION_STATE_PATH, rec)
+    return {
+        "ok": True,
+        "result": "COMMITTED",
+        "target_version": st.get("target_version"),
+        "sha256": actual,
+        "pid": pid,
+        "restart_required": False,
+    }
+
+
 def server_update_status(check_remote: bool = True) -> dict:
     local = read_json(STATE_DIR / "server_update.json", {}) or {}
     out = {
@@ -756,6 +968,10 @@ def start_auto_update_worker(http_server, bind: str, port: int) -> None:
                     if result.get("restart_required"):
                         schedule_server_restart(http_server, bind, port, result)
                         return
+                else:
+                    # Companion delivery is owned by the already-resident BCP server.
+                    # This removes routine manual ZIP/PowerShell replacement after bootstrap.
+                    apply_telegram_companion_update()
             except Exception as e:
                 _write_update_state({
                     "schema": "bcp.server_update/1",
@@ -2611,6 +2827,12 @@ def selftest():
         assert 'parts[3] == "where"' in source
         assert 'parts[3] == "tail"' in source
         assert "NO_NEW_EXTERNAL_EVIDENCE" in source
+        assert "TELEGRAM_COMPANION_MANIFEST_URL" in source
+        assert "telegram_companion_update_status" in source
+        assert "apply_telegram_companion_update" in source
+        assert "telegram_companion_sha256_mismatch" in source
+        assert "telegram_companion_selftest_failed" in source
+        assert "BlessingControlPlaneTelegram" in source
 
         edge_dist = Path(td) / "edge-dist"
         edge_dist.mkdir(parents=True, exist_ok=True)
