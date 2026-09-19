@@ -272,3 +272,55 @@ Record:
 B-EDGE V2 remains DESIGN_HARDENED / RUNTIME_UNVERIFIED until the automated suite and real-device campaign cover the applicable sections above.
 
 No individual PASS may substitute for an untested process-death, reboot, partition, memory-pressure, transport-security or zero-dollar invariant.
+
+
+## O. Replica / backup / phone-loss recovery
+
+O1. B-EDGE writes canonical revision; PC online.
+Expected: PC replica reaches same revision/hash and emits readback receipt.
+
+O2. B-EDGE writes while PC offline, then PC reconnects.
+Expected: ordered/idempotent catch-up; no duplicate effects.
+
+O3. Generate cold backup while DB is live.
+Expected: consistent snapshot/export with schema/revision/hash; never an unsafe partial raw copy.
+
+O4. Inspect cold backup payload.
+Expected: provider keys, bearer tokens and device secrets absent; private memory encrypted when configured.
+
+O5. Destroy/uninstall/reset B-EDGE in test environment after verified backup.
+Expected: PC/backup recovery procedure can reconstruct latest qualified state.
+
+O6. Promote replacement coordinator after old phone loss.
+Expected: new epoch fences old phone; stale old phone cannot commit when it reappears.
+
+O7. Corrupt newest backup.
+Expected: validation rejects it and uses prior verified snapshot; no silent restore from corrupt data.
+
+O8. Rotate recovery/data encryption key.
+Expected: new snapshots use new key version; retained recovery procedure for allowed older snapshots remains deterministic.
+
+## P. Event retention / compaction
+
+P1. Generate repetitive healthy heartbeat flood.
+Expected: compaction removes/reduces noise without affecting project state.
+
+P2. Generate security/fencing/canonical mutation events.
+Expected: retention policy never discards required audit evidence.
+
+P3. Delete/rebuild Context Pack cache.
+Expected: regenerated packs from same source revision preserve deterministic critical content/hash policy.
+
+## Q. Remote command latency tiers
+
+Q1. Push/cloud ingress says RECEIVED while B-EDGE is offline.
+Expected: user sees QUEUED/RECEIVED, never false DONE.
+
+Q2. Delayed Telegram update delivered after local state changed.
+Expected: update ID dedup + mission preconditions prevent stale duplicated action.
+
+Q3. FCM wake hint lost.
+Expected: periodic/cloud reconciliation eventually finds durable command; push is never authoritative.
+
+Q4. Cloud ingress quota exhausted/unavailable.
+Expected: local BCP continues; ingress marked degraded; no paid upgrade.
