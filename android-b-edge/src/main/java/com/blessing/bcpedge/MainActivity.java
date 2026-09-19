@@ -4,8 +4,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.graphics.Typeface;
+import android.text.InputType;
 import android.view.View;
 import android.widget.*;
+
+import com.blessing.bcpedge.work.EdgeWorkScheduler;
 import org.json.JSONObject;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,10 +22,12 @@ public class MainActivity extends Activity {
     private TextView status, detail, output;
     private Button connect, checkpoint, resume, settings;
     private UpdateManager updates;
+    private TelegramConfigStore telegram;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         client = new BcpClient(this);
+        telegram = new TelegramConfigStore(this);
         updates = new UpdateManager(this, client, s -> { if (detail != null) detail.setText(s); });
 
         ScrollView scroll = new ScrollView(this);
@@ -74,6 +79,10 @@ public class MainActivity extends Activity {
 
         setContentView(scroll);
         updates.reconcileAfterLaunch();
+        if (telegram.isEnabled() && telegram.hasBotToken()) {
+            EdgeWorkScheduler.scheduleTelegramFallback(this);
+            TelegramObservabilityService.start(this);
+        }
         autoConnect();
         heartbeat.scheduleAtFixedRate(() -> {
             try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
@@ -180,7 +189,8 @@ public class MainActivity extends Activity {
                 "Mettre à jour le serveur PC maintenant",
                 "Vérifier / mettre à jour BCP Edge",
                 "État orchestrateur / mémoire",
-                "Test rapide B-EDGE"
+                "Test rapide B-EDGE",
+                "Telegram observabilité · lecture seule"
         };
         new AlertDialog.Builder(this)
                 .setTitle("Paramètres BCP")
@@ -219,9 +229,134 @@ public class MainActivity extends Activity {
                         });
                     } else if (which == 6) {
                         runAction("TEST RAPIDE B-EDGE", () -> client.runQuickAcceptance());
+                    } else if (which == 7) {
+                        showTelegramSettings();
                     }
                 })
                 .setNegativeButton("FERMER", null)
+                .show();
+    }
+
+    private void showTelegramSettings() {
+        final String[] choices = new String[] {
+                "État Telegram",
+                "Configurer / remplacer le bot",
+                "Confirmer l'identité Telegram détectée",
+                "Activer l'observabilité",
+                "Arrêter l'observabilité",
+                "Effacer la configuration Telegram"
+        };
+        new AlertDialog.Builder(this)
+                .setTitle("Telegram · observabilité")
+                .setItems(choices, (dialog, which) -> {
+                    if (which == 0) {
+                        output.setText(telegram.status().toString());
+                    } else if (which == 1) {
+                        promptTelegramToken();
+                    } else if (which == 2) {
+                        confirmPendingTelegramIdentity();
+                    } else if (which == 3) {
+                        if (!telegram.hasBotToken()) {
+                            promptTelegramToken();
+                            return;
+                        }
+                        telegram.setEnabled(true);
+                        EdgeWorkScheduler.scheduleTelegramFallback(this);
+                        EdgeWorkScheduler.requestTelegramImmediate(this);
+                        TelegramObservabilityService.start(this);
+                        output.setText(telegram.status().toString());
+                    } else if (which == 4) {
+                        telegram.setEnabled(false);
+                        TelegramObservabilityService.stop(this);
+                        output.setText(telegram.status().toString());
+                    } else if (which == 5) {
+                        new AlertDialog.Builder(this)
+                                .setTitle("Effacer Telegram")
+                                .setMessage("Supprimer le token chiffré et l'identité autorisée de cet appareil ?")
+                                .setPositiveButton("EFFACER", (d, w) -> {
+                                    TelegramObservabilityService.stop(this);
+                                    telegram.clearAll();
+                                    output.setText(telegram.status().toString());
+                                })
+                                .setNegativeButton("ANNULER", null)
+                                .show();
+                    }
+                })
+                .setNegativeButton("FERMER", null)
+                .show();
+    }
+
+    private void promptTelegramToken() {
+        EditText input = new EditText(this);
+        input.setHint("Token fourni par BotFather");
+        input.setSingleLine(true);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        new AlertDialog.Builder(this)
+                .setTitle("Configurer le bot Telegram")
+                .setMessage("Le token sera vérifié puis stocké chiffré dans Android Keystore. Il ne sera jamais affiché dans les statuts.")
+                .setView(input)
+                .setPositiveButton("VÉRIFIER", (d, w) ->
+                        verifyAndStoreTelegramToken(input.getText().toString()))
+                .setNegativeButton("ANNULER", null)
+                .show();
+    }
+
+    private void verifyAndStoreTelegramToken(String token) {
+        setBusy(true);
+        io.submit(() -> {
+            try {
+                TelegramBotClient bot = new TelegramBotClient(token);
+                JSONObject me = bot.getMe().optJSONObject("result");
+                if (me == null || !me.optBoolean("is_bot", false)) {
+                    throw new IllegalStateException("TELEGRAM_BOT_IDENTITY_INVALID");
+                }
+                String username = me.optString("username", "");
+                telegram.putBotToken(token);
+                telegram.setBotIdentity(username);
+                telegram.setEnabled(true);
+                EdgeWorkScheduler.scheduleTelegramFallback(MainActivity.this);
+                EdgeWorkScheduler.requestTelegramImmediate(MainActivity.this);
+                runOnUiThread(() -> {
+                    TelegramObservabilityService.start(MainActivity.this);
+                    status.setText("TELEGRAM PRÊT");
+                    detail.setText("Envoie /start au bot puis confirme l'identité ici.");
+                    output.setText(telegram.status().toString());
+                    setBusy(false);
+                });
+            } catch (Exception ex) {
+                runOnUiThread(() -> {
+                    status.setText("TELEGRAM ÉCHEC");
+                    detail.setText("Le bot n'a pas pu être vérifié.");
+                    output.setText(ex.getClass().getSimpleName());
+                    setBusy(false);
+                });
+            }
+        });
+    }
+
+    private void confirmPendingTelegramIdentity() {
+        if (!telegram.hasPendingIdentity()) {
+            output.setText("Aucune identité Telegram en attente. Envoie /start au bot depuis ton compte Telegram.");
+            return;
+        }
+        String label = telegram.pendingLabel();
+        new AlertDialog.Builder(this)
+                .setTitle("Confirmer Telegram")
+                .setMessage("Autoriser uniquement cette identité pour les statuts BCP ?\n\n" +
+                        (label.isEmpty() ? "Identité Telegram détectée" : label))
+                .setPositiveButton("AUTORISER", (d, w) -> {
+                    boolean ok = telegram.authorizePending();
+                    if (ok) {
+                        telegram.setEnabled(true);
+                        EdgeWorkScheduler.requestTelegramImmediate(this);
+                        TelegramObservabilityService.start(this);
+                    }
+                    output.setText(telegram.status().toString());
+                })
+                .setNegativeButton("REFUSER", (d, w) -> {
+                    telegram.clearPending();
+                    output.setText(telegram.status().toString());
+                })
                 .show();
     }
 
