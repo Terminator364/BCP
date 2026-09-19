@@ -47,4 +47,24 @@ public class EdgePolicyTest {
         assertTrue(EdgePolicy.canRunNow("EDGE_R1",false,false,false,false));
         assertEquals(5L * 60L * 1000L, EdgePolicy.defaultReconcileIntervalMs());
     }
+    @Test public void memoryEvidenceCannotDowngradePinnedFacts() {
+        assertTrue(EdgePolicy.canReplaceMemory("PROJECT_MEMORY", null, false, "MODEL_PROPOSED"));
+        assertFalse(EdgePolicy.canReplaceMemory("PROJECT_MEMORY", "VALIDATED", true, "MODEL_PROPOSED"));
+        assertFalse(EdgePolicy.canReplaceMemory("PROJECT_MEMORY", "MACHINE_READBACK", false, "MODEL_PROPOSED"));
+        assertTrue(EdgePolicy.canReplaceMemory("PROJECT_MEMORY", "MACHINE_READBACK", true, "VALIDATED"));
+        assertFalse(EdgePolicy.canReplaceMemory("POLICY", null, false, "MODEL_PROPOSED"));
+        assertTrue(EdgePolicy.canReplaceMemory("POLICY", null, false, "SYSTEM_POLICY"));
+        assertTrue(EdgePolicy.canReplaceMemory("USER_MEMORY", "USER_DECLARED", true, "USER_DECLARED"));
+    }
+
+    @Test public void queueAcceptanceIsNotCompletionProof() {
+        assertTrue(EdgePolicy.isRemoteQueueAccepted("QUEUED"));
+        assertTrue(EdgePolicy.isRemoteQueueAccepted("ALREADY_QUEUED"));
+        assertFalse(EdgePolicy.isCompletionResult("QUEUED"));
+        assertFalse(EdgePolicy.isCompletionResult("ACCEPTED"));
+        assertTrue(EdgePolicy.isCompletionResult("COMMITTED"));
+        assertTrue(EdgePolicy.isCompletionResult("ALREADY_COMMITTED"));
+        assertTrue(EdgePolicy.isCompletionResult("SUCCESS"));
+    }
+
 }

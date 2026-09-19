@@ -27,10 +27,15 @@ public final class EdgeResourceGovernor {
             if(am!=null) am.getMemoryInfo(mi);
             boolean lowMemory=am!=null && mi.lowMemory;
             boolean metered=cm!=null && cm.isActiveNetworkMetered();
-            boolean connected=false;
+            boolean networkPresent=false;
+            boolean internetCapable=false;
+            boolean internetValidated=false;
             if(cm!=null){
                 NetworkCapabilities nc=cm.getNetworkCapabilities(cm.getActiveNetwork());
-                connected=nc!=null && nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+                networkPresent=nc!=null;
+                internetCapable=nc!=null && nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+                internetValidated=internetCapable
+                        && nc.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
             }
             out.put("battery_pct",battery);
             out.put("charging",charging);
@@ -39,7 +44,10 @@ public final class EdgeResourceGovernor {
             out.put("low_memory",lowMemory);
             out.put("avail_mem_bytes",mi.availMem);
             out.put("network_metered",metered);
-            out.put("network_connected",connected);
+            out.put("network_present",networkPresent);
+            out.put("network_connected",networkPresent);
+            out.put("internet_capable",internetCapable);
+            out.put("internet_validated",internetValidated);
         }catch(Exception ignored){}
         return out;
     }
@@ -51,10 +59,15 @@ public final class EdgeResourceGovernor {
         int battery=s.optInt("battery_pct",-1);
         int thermal=s.optInt("thermal_status",-1);
         boolean hot=thermal>=0 && thermal>=PowerManager.THERMAL_STATUS_SEVERE;
+        if("PC_R3".equals(resourceClass))
+            // Heavy execution happens on the PC. Do not block the lightweight dispatch
+            // because the phone itself is under RAM/thermal pressure.
+            return false;
         if("EDGE_R2".equals(resourceClass))
             return low || power || hot || (battery>=0 && battery<25 && !s.optBoolean("charging",false));
         if("REMOTE_AI".equals(resourceClass))
-            return !s.optBoolean("network_connected",false) || power || (battery>=0 && battery<15 && !s.optBoolean("charging",false));
+            return !s.optBoolean("internet_validated",false) || power || hot
+                    || (battery>=0 && battery<15 && !s.optBoolean("charging",false));
         return low || hot;
     }
 }
