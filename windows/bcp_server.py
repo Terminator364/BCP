@@ -1519,6 +1519,18 @@ def selftest():
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
         assert "shell=False" in source
+        assert "/v1/orchestrator/status" in source
+        assert 'parts[3] == "context"' in source
+        assert 'parts[3] == "memory"' in source
+        assert 'parts[3] == "jobs"' in source
+        memory_put("buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest")
+        pack = build_context_pack("buildhub")
+        assert pack["memory"]["PROJECT_MEMORY"][0]["key"] == "goal"
+        q1 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False)
+        q2 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False)
+        assert q1["result"] == "QUEUED"
+        assert q2["result"] == "ALREADY_QUEUED"
+        assert pc_operating_mode() in ("PC_AVAILABLE", "PC_MEMORY_PRESSURE")
 
         edge_dist = Path(td) / "edge-dist"
         edge_dist.mkdir(parents=True, exist_ok=True)
