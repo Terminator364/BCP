@@ -17,6 +17,14 @@ public class EdgePolicyTest {
         assertEquals("READY", EdgePolicy.nextState(false, "EDGE_ONLY"));
     }
 
+    @Test public void reconciliationCadenceIsBounded() {
+        assertTrue(EdgePolicy.shouldRunSync(1_000_000L, 0L, 300_000L));
+        assertFalse(EdgePolicy.shouldRunSync(1_100_000L, 1_000_000L, 300_000L));
+        assertTrue(EdgePolicy.shouldRunSync(1_300_000L, 1_000_000L, 300_000L));
+        assertTrue(EdgePolicy.shouldRunSync(900_000L, 1_000_000L, 300_000L));
+        assertFalse(EdgePolicy.shouldRunSync(1_010_000L, 1_000_000L, 1_000L));
+    }
+
     @Test public void memoryTemperatureIsBounded() {
         assertEquals("HOT", EdgePolicy.temperature(Long.MAX_VALUE, true));
         assertEquals("WARM", EdgePolicy.temperature(1000, false));
