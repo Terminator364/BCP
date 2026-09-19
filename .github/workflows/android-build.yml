@@ -81,7 +81,7 @@ jobs:
           grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
           grep -F 'ResourceGovernor' "$CLIENT" >/dev/null
           grep -F 'EdgeDatabase' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java >/dev/null
-          grep -F 'EdgeReconcileWorker' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java >/dev/null
+          grep -F 'class EdgeReconcileWorker' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeReconcileWorker.java >/dev/null
           grep -F 'active_project' "$CLIENT" >/dev/null
 
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
