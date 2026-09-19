@@ -1,4 +1,5 @@
 name: BCP Qualified CURRENT Release Contract
+# Companion release is qualified against the exact branch head.
 
 on:
   workflow_dispatch:
