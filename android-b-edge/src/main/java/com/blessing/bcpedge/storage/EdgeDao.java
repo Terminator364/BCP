@@ -31,6 +31,9 @@ public interface EdgeDao {
     @Query("SELECT * FROM edge_projects ORDER BY updatedAt DESC")
     List<EdgeProjectEntity> projects();
 
+    @Query("SELECT * FROM edge_projects WHERE projectId = :projectId LIMIT 1")
+    EdgeProjectEntity project(String projectId);
+
     @Query("SELECT * FROM edge_receipts WHERE projectId = :projectId ORDER BY createdAt DESC LIMIT :limit")
     List<EdgeReceiptEntity> receipts(String projectId, int limit);
 
