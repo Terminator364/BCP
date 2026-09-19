@@ -800,3 +800,8 @@ Active requirements:
 
 Canonical detailed requirement:
 - `docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md`
+
+Implementation candidate on 2026-09-19:
+- Telegram companion `2026.09.19-human-cockpit-v3` implements `/missions`, fresh B-EDGE presence, explicit human-action/timing fields, low-noise transition alerts, and one editable direct-Telegram live card;
+- Nexus `0.1.4` adds persistent D1 live-card state plus `/v1/device/live-card`, using Telegram `editMessageText` with send fallback;
+- this is CI-qualified candidate work until merged and then proven by field readback; it is not yet claimed FIELD_VERIFIED.
