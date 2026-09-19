@@ -2,153 +2,239 @@ package com.blessing.bcpedge;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import com.blessing.bcpedge.storage.EdgeDao;
+import com.blessing.bcpedge.storage.EdgeDatabase;
+import com.blessing.bcpedge.storage.EdgeJobEntity;
+import com.blessing.bcpedge.storage.EdgeMemoryEntity;
+import com.blessing.bcpedge.storage.EdgeProjectEntity;
+import com.blessing.bcpedge.storage.EdgeReceiptEntity;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.UUID;
 
 public final class EdgeOrchestrator {
-    private static final String PREFS = "bcp_edge_orchestrator";
-    private final SharedPreferences prefs;
+    private static final String PREFS = "bcp_edge_orchestrator_settings";
+    private final SharedPreferences settings;
+    private final EdgeDao dao;
 
     public EdgeOrchestrator(Context context) {
-        prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        Context app = context.getApplicationContext();
+        settings = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        dao = EdgeDatabase.get(app).edgeDao();
+        EdgeReconcileWorker.schedule(app);
     }
 
     public synchronized void setMode(String mode) {
-        prefs.edit()
-                .putString("mode", mode)
-                .putLong("mode_at", System.currentTimeMillis())
-                .apply();
+        // Mode is reconstructable operating state, not canonical project memory.
+        settings.edit().putString("mode", mode).putLong("mode_at", System.currentTimeMillis()).commit();
     }
 
     public synchronized String getMode() {
-        return prefs.getString("mode", "EDGE_ONLY");
+        return settings.getString("mode", "EDGE_ONLY");
     }
 
     public synchronized boolean shouldRunPeriodicSync(long minIntervalMs) {
         long now = System.currentTimeMillis();
-        long last = prefs.getLong("orchestration_sync_attempt_at", 0L);
-        if (!EdgePolicy.shouldRunSync(now, last, minIntervalMs)) {
-            return false;
+        long last = settings.getLong("orchestration_sync_attempt_at", 0L);
+        if (last > 0L && now >= last && (now - last) < Math.max(30_000L, minIntervalMs)) return false;
+        return settings.edit().putLong("orchestration_sync_attempt_at", now).commit();
+    }
+
+    public void ensureProject(String projectId, long headRevision, long epoch) {
+        long now = System.currentTimeMillis();
+        dao.putProject(new EdgeProjectEntity(projectId, "ACTIVE", headRevision, epoch, now));
+    }
+
+    public JSONArray projectRegistry() {
+        JSONArray out = new JSONArray();
+        for (EdgeProjectEntity p : dao.projects()) {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("project_id", p.projectId);
+                o.put("status", p.status);
+                o.put("head_revision", p.headRevision);
+                o.put("coordinator_epoch", p.coordinatorEpoch);
+                o.put("updated_at", p.updatedAt);
+                out.put(o);
+            } catch (Exception ignored) {}
         }
-        prefs.edit().putLong("orchestration_sync_attempt_at", now).apply();
-        return true;
+        return out;
     }
 
-    public synchronized void cacheContext(JSONObject context) {
+    public void cacheContext(String projectId, JSONObject context) {
+        long now = System.currentTimeMillis();
+        long revision = 0;
+        JSONObject head = context.optJSONObject("head");
+        if (head != null) revision = head.optLong("revision", 0);
+        ensureProject(projectId, revision, 0);
+        dao.putMemory(new EdgeMemoryEntity(
+                projectId, "OPERATING_STATE", "context_pack",
+                context.toString(), "CACHE", "PC_CONTEXT_PACK",
+                false, now, now, null
+        ));
+    }
+
+    public JSONObject cachedContext(String projectId) {
         try {
-            prefs.edit()
-                    .putString("context_pack", context.toString())
-                    .putLong("context_at", System.currentTimeMillis())
-                    .apply();
-        } catch (Exception ignored) {}
-    }
-
-    public synchronized JSONObject cachedContext() {
-        try {
-            String raw = prefs.getString("context_pack", "");
-            JSONObject out = raw.isEmpty() ? new JSONObject() : new JSONObject(raw);
-            out.put("source", "B_EDGE_CACHE");
-            out.put("offline", true);
-            out.put("mode", getMode());
-            out.put("cached_at", prefs.getLong("context_at", 0));
-            return out;
-        } catch (Exception e) {
-            return new JSONObject();
-        }
-    }
-
-    public synchronized void putMemory(String layer, String key, Object value) {
-        try {
-            JSONObject all = new JSONObject(prefs.getString("memory", "{}"));
-            JSONObject bucket = all.optJSONObject(layer);
-            if (bucket == null) bucket = new JSONObject();
-            JSONObject entry = new JSONObject();
-            entry.put("value", value);
-            entry.put("updated_at", System.currentTimeMillis());
-            bucket.put(key, entry);
-            all.put(layer, bucket);
-            compactMemory(all);
-            prefs.edit().putString("memory", all.toString()).apply();
-        } catch (Exception ignored) {}
-    }
-
-    public synchronized JSONObject memorySnapshot() {
-        try { return new JSONObject(prefs.getString("memory", "{}")); }
-        catch (Exception e) { return new JSONObject(); }
-    }
-
-    public synchronized JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) {
-        try {
-            JSONArray q = new JSONArray(prefs.getString("job_queue", "[]"));
-            if (!EdgePolicy.canAdmitJob(q.length())) {
-                JSONObject hold = new JSONObject();
-                hold.put("result", "LOCAL_QUEUE_FULL_HOLD");
-                hold.put("state", "HOLD");
-                hold.put("accepted_local", false);
-                hold.put("queue_depth", q.length());
-                hold.put("queue_limit", EdgePolicy.boundedQueueLimit());
-                return hold;
+            List<EdgeMemoryEntity> rows = dao.memoryForScope(projectId, "OPERATING_STATE", System.currentTimeMillis(), 32);
+            for (EdgeMemoryEntity row : rows) {
+                if (!"context_pack".equals(row.memoryKey)) continue;
+                JSONObject out = new JSONObject(row.valueJson);
+                out.put("source", "B_EDGE_ROOM_CACHE");
+                out.put("offline", true);
+                out.put("mode", getMode());
+                out.put("cached_at", row.updatedAt);
+                return out;
             }
-            JSONObject job = new JSONObject();
-            job.put("local_id", UUID.randomUUID().toString());
-            job.put("kind", kind);
-            job.put("payload", payload);
-            job.put("requires_pc", requiresPc);
-            job.put("state", EdgePolicy.nextState(requiresPc, getMode()));
-            job.put("created_at", System.currentTimeMillis());
-            job.put("accepted_local", true);
-            q.put(job);
-            prefs.edit().putString("job_queue", q.toString()).apply();
-            return job;
-        } catch (Exception e) {
-            return new JSONObject();
-        }
+        } catch (Exception ignored) {}
+        return new JSONObject();
     }
 
-    public synchronized JSONArray pendingJobs() {
-        try { return new JSONArray(prefs.getString("job_queue", "[]")); }
-        catch (Exception e) { return new JSONArray(); }
+    public void putMemory(String projectId, String layer, String key, Object value,
+                          String evidenceClass, boolean pinned, Long expiresAt) {
+        long now = System.currentTimeMillis();
+        dao.putMemory(new EdgeMemoryEntity(
+                projectId, layer, key, JSONObject.valueToString(value),
+                evidenceClass == null ? "UNVERIFIED" : evidenceClass,
+                "B_EDGE", pinned, now, now, expiresAt
+        ));
     }
 
-    public synchronized void replaceJobs(JSONArray q) {
-        prefs.edit().putString("job_queue", q.toString()).apply();
-    }
-
-    public synchronized void acknowledgeJob(String localId) {
-        if (localId == null || localId.isEmpty()) return;
+    public JSONObject memorySnapshot(String projectId) {
+        JSONObject out = new JSONObject();
+        String[] scopes = new String[]{"USER_MEMORY","PROJECT_MEMORY","TECHNICAL_KNOWLEDGE","OPERATING_STATE","HISTORY","POLICY"};
+        long now = System.currentTimeMillis();
         try {
-            JSONArray q = new JSONArray(prefs.getString("job_queue", "[]"));
-            JSONArray keep = new JSONArray();
-            for (int i = 0; i < q.length(); i++) {
-                JSONObject job = q.optJSONObject(i);
-                if (job == null || !localId.equals(job.optString("local_id", ""))) {
-                    if (job != null) keep.put(job);
+            for (String scope : scopes) {
+                JSONArray rows = new JSONArray();
+                for (EdgeMemoryEntity m : dao.memoryForScope(projectId, scope, now, 24)) {
+                    JSONObject r = new JSONObject();
+                    r.put("key", m.memoryKey);
+                    r.put("value", new JSONObject("{\"v\":" + m.valueJson + "}").opt("v"));
+                    r.put("evidence_class", m.evidenceClass);
+                    r.put("pinned", m.pinned);
+                    r.put("updated_at", m.updatedAt);
+                    rows.put(r);
+                }
+                out.put(scope, rows);
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    public JSONObject queueJob(String projectId, String kind, JSONObject payload,
+                               boolean requiresPc, int priority, String resourceClass,
+                               JSONArray dependencies) {
+        JSONObject out = new JSONObject();
+        try {
+            if (dao.countPendingJobs() >= EdgePolicy.boundedQueueLimit()) {
+                out.put("result", "HOLD_BACKPRESSURE");
+                out.put("state", "HOLD");
+                out.put("reason", "DURABLE_QUEUE_CAPACITY_REACHED");
+                out.put("queued", false);
+                return out;
+            }
+            String id = UUID.randomUUID().toString();
+            String idem = "edge-job-" + id;
+            long now = System.currentTimeMillis();
+            String state = dependencies != null && dependencies.length() > 0
+                    ? "BLOCKED" : EdgePolicy.nextState(requiresPc, getMode());
+            EdgeJobEntity job = new EdgeJobEntity(
+                    id, projectId, kind, payload.toString(), state, requiresPc,
+                    priority, resourceClass == null ? (requiresPc ? "PC_R3" : "EDGE_R1") : resourceClass,
+                    idem, now, now
+            );
+            long inserted = dao.insertJob(job);
+            if (inserted == -1L) {
+                out.put("result", "ALREADY_QUEUED");
+                out.put("local_id", id);
+                return out;
+            }
+            if (dependencies != null) {
+                for (int i = 0; i < dependencies.length(); i++) {
+                    String dep = dependencies.optString(i, "");
+                    if (!dep.isEmpty()) dao.insertDependency(
+                            new com.blessing.bcpedge.storage.EdgeDependencyEntity(id, dep));
                 }
             }
-            prefs.edit().putString("job_queue", keep.toString()).apply();
+            out.put("result", "QUEUED");
+            out.put("local_id", id);
+            out.put("idempotency_key", idem);
+            out.put("project_id", projectId);
+            out.put("kind", kind);
+            out.put("payload", payload);
+            out.put("requires_pc", requiresPc);
+            out.put("priority", priority);
+            out.put("resource_class", job.resourceClass);
+            out.put("state", state);
+            out.put("created_at", now);
+            out.put("queued", true);
+            return out;
+        } catch (Exception e) {
+            try {
+                out.put("result", "HOLD_PERSISTENCE_ERROR");
+                out.put("state", "HOLD");
+                out.put("queued", false);
+                out.put("error", e.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+            return out;
+        }
+    }
+
+    public JSONArray pendingJobs(String projectId) {
+        JSONArray out = new JSONArray();
+        for (EdgeJobEntity j : dao.pendingJobs(projectId, 128)) {
+            JSONObject o = new JSONObject();
+            try {
+                if ("BLOCKED".equals(j.state) && dao.unresolvedDependencies(j.localId) == 0) {
+                    String next = EdgePolicy.nextState(j.requiresPc, getMode());
+                    dao.setJobState(j.localId, next, System.currentTimeMillis());
+                    j.state = next;
+                }
+                o.put("local_id", j.localId);
+                o.put("project_id", j.projectId);
+                o.put("kind", j.kind);
+                o.put("payload", new JSONObject(j.payloadJson));
+                o.put("state", j.state);
+                o.put("requires_pc", j.requiresPc);
+                o.put("priority", j.priority);
+                o.put("resource_class", j.resourceClass);
+                o.put("idempotency_key", j.idempotencyKey);
+                o.put("created_at", j.createdAt);
+                out.put(o);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    public void acknowledgeRemoteJob(String projectId, JSONObject job, JSONObject receipt) {
+        try {
+            String localId = job.optString("local_id", "");
+            String idem = job.optString("idempotency_key", "");
+            String result = receipt.optString("result", "ACCEPTED");
+            long revision = receipt.optLong("revision", 0);
+            String actionId = receipt.optString("event_hash", "");
+            if (actionId.isEmpty()) actionId = UUID.randomUUID().toString();
+            dao.insertReceipt(new EdgeReceiptEntity(
+                    actionId, localId, projectId, idem, result,
+                    receipt.toString(), revision, System.currentTimeMillis()
+            ));
+            if (!localId.isEmpty()) {
+                dao.setJobState(localId, "COMMITTED", System.currentTimeMillis());
+                dao.deleteJob(localId);
+            }
         } catch (Exception ignored) {}
     }
 
-    private void compactMemory(JSONObject all) throws Exception {
-        int count = 0;
-        JSONArray keys = all.names();
-        if (keys == null) return;
-        for (int i = 0; i < keys.length(); i++) {
-            JSONObject b = all.optJSONObject(keys.getString(i));
-            if (b != null && b.names() != null) count += b.names().length();
-        }
-        if (count <= EdgePolicy.boundedMemoryEntries()) return;
-        // Conservative pressure response: retain project/policy/operating state;
-        // trim history first. Durable PC copy remains authoritative after sync.
-        JSONObject history = all.optJSONObject("HISTORY");
-        if (history != null) {
-            JSONArray hk = history.names();
-            if (hk != null) {
-                int remove = Math.min(hk.length(), count - EdgePolicy.boundedMemoryEntries());
-                for (int i = 0; i < remove; i++) history.remove(hk.getString(i));
-            }
-        }
+    public int pendingCount() {
+        return dao.countPendingJobs();
+    }
+
+    public int compactExpiredMemory() {
+        return dao.deleteExpiredMemory(System.currentTimeMillis());
     }
 }
