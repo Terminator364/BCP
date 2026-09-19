@@ -26,6 +26,16 @@ public final class EdgeOrchestrator {
         return prefs.getString("mode", "EDGE_ONLY");
     }
 
+    public synchronized boolean shouldRunPeriodicSync(long minIntervalMs) {
+        long now = System.currentTimeMillis();
+        long last = prefs.getLong("orchestration_sync_attempt_at", 0L);
+        if (last > 0L && now >= last && (now - last) < Math.max(30_000L, minIntervalMs)) {
+            return false;
+        }
+        prefs.edit().putLong("orchestration_sync_attempt_at", now).apply();
+        return true;
+    }
+
     public synchronized void cacheContext(JSONObject context) {
         try {
             prefs.edit()
