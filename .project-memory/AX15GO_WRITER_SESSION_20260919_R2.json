@@ -1,0 +1,23 @@
+{
+  "schema": "bcp.writer_branch_metadata/1",
+  "writer_or_session_id": "chatgpt-ax15go-20260919-r2",
+  "project_or_mission": "BCP / AX15GO cross-project causal learning",
+  "base_main_sha": "557a05c28fb26b5ab05dede8370c9b11778dd8b4",
+  "created_at": "2026-09-19",
+  "intended_file_scope": [
+    ".project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json",
+    ".project-memory/AX15GO_WRITER_SESSION_20260919_R2.json",
+    "docs/BEDGE_V2_TEST_MATRIX.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Coordinated Product Qualification exact-head",
+    "static JSON validity",
+    "no runtime/release mutation"
+  ],
+  "direct_main_write": false,
+  "reconciles_stale_branch": {
+    "prior_pr": 56,
+    "prior_base": "47a0d5b67b3e2c4c974fd566dd787eaba8b5686e",
+    "moved_main": "557a05c28fb26b5ab05dede8370c9b11778dd8b4"
+  }
+}
