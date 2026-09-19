@@ -30,6 +30,18 @@ def is_sha(value: str) -> bool:
     return bool(re.fullmatch(r"[0-9a-f]{64}", value or ""))
 
 
+def version_tuple(value: str) -> tuple[int, ...]:
+    parts = []
+    for item in str(value or "").split("-", 1)[0].split("."):
+        try:
+            parts.append(int(item))
+        except ValueError:
+            parts.append(0)
+    while len(parts) < 3:
+        parts.append(0)
+    return tuple(parts)
+
+
 def main() -> int:
     cur = load(CURRENT)
     srv = load(SERVER)
@@ -79,7 +91,7 @@ def main() -> int:
 
     if android.get("version") != str(edge.get("version_name")):
         fail("android_version_drift")
-    if str(edge.get("minimum_server_version")) != str(srv.get("version")):
+    if version_tuple(str(srv.get("version"))) < version_tuple(str(edge.get("minimum_server_version"))):
         fail("component_compatibility_drift")
 
     edge_url = str(edge.get("apk_url") or "")
@@ -98,7 +110,7 @@ def main() -> int:
             fail("nexus_version_drift")
         if nexus_artifact.get("sha256") != actual_nexus_sha:
             fail("nexus_manifest_sha_drift")
-        if str(nexus_manifest.get("minimum_server_version")) != str(srv.get("version")):
+        if version_tuple(str(srv.get("version"))) < version_tuple(str(nexus_manifest.get("minimum_server_version"))):
             fail("nexus_server_compatibility_drift")
         files = nexus_manifest.get("files") or []
         if not files:
