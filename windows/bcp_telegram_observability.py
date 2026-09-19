@@ -408,71 +408,112 @@ class Service:
         return labels.get(state, "⚪ tests: " + clean(state, 30)) + " — " + name
 
     def presence_snapshot(self) -> dict:
-        head = self._head()
         runtime = self.local.runtime()
         edge = self.local.edge()
         gh = self.github.snapshot()
         drive = self.local.drive()
-        chat = self.local.chat(self.project_id)
+        events = [
+            e for e in self.local.mission_events(160)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        ev = events[-1] if events else {}
+        mission_state = str(ev.get("state") or "NOT_OBSERVED").upper()
+        action = clean(
+            ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
+            "Aucune micro-action durable récente.",
+            150,
+        )
+        next_action = self._human_action(
+            ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
+        )
+        age = self.local.mission_activity_age()
+        if isinstance(age, int) and age < 60:
+            age_label = str(age) + " s"
+            activity_band = "RECENT"
+        elif isinstance(age, int) and age < 120:
+            age_label = str(age // 60) + " min"
+            activity_band = "RECENT"
+        elif isinstance(age, int) and age < 600:
+            age_label = str(age // 60) + " min"
+            activity_band = "QUIET"
+        elif isinstance(age, int):
+            age_label = (str(age // 3600) + " h " + str((age % 3600) // 60) + " min") if age >= 3600 else str(age // 60) + " min"
+            activity_band = "STALE"
+        else:
+            age_label = "inconnue"
+            activity_band = "UNKNOWN"
+        if mission_state in HOLD_STATES:
+            activity_band = "HOLD"
+
+        progress = "Étape: " + mission_state.replace("_", " ").lower()
+        step_key = None
+        try:
+            idx = int(ev.get("step_index"))
+            total = int(ev.get("step_total"))
+            if 0 <= idx <= total and total > 0:
+                pct = int(round(idx * 100 / total))
+                progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
+                step_key = [idx, total]
+        except Exception:
+            pass
 
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
         edge_ok = bool(edge.get("paired"))
         drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
         runs = gh.get("runs") or []
-        commits = gh.get("commits") or []
         run = runs[0] if runs else {}
-        commit = commits[0] if commits else {}
-        commit_payload = commit.get("commit") if isinstance(commit, dict) else None
-        if isinstance(commit_payload, dict):
-            commit_message_raw = str(commit_payload.get("message") or "")
-        else:
-            commit_message_raw = str(commit.get("message") or "") if isinstance(commit, dict) else ""
-        commit_message = clean(commit_message_raw.splitlines()[0] if commit_message_raw.splitlines() else "", 120)
+        ci_state = clean(run.get("conclusion") or run.get("status"), 30).lower()
+        nexus = str(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED").upper()
+        nexus_text = {
+            "COMMITTED": "✅ relais Nexus actif",
+            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": "✅ relais Nexus actif",
+            "EXITED_NO_RECEIPT": "🟡 relais Nexus à reprendre",
+            "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation du relais Nexus",
+        }.get(nexus, "⚪ relais Nexus non observé")
 
         stable = {
-            "project": self.project_id,
-            "head_revision": (head or {}).get("revision"),
-            "head_status": clean((head or {}).get("status"), 90),
-            "head_last_completed": clean((head or {}).get("last_completed_action"), 180),
-            "head_next": clean((head or {}).get("next_action"), 180),
             "pc_active": heartbeat_ok,
-            "server_version": clean(runtime.get("server_version"), 40),
             "edge_paired": edge_ok,
-            "edge_version": clean(edge.get("edge_version"), 40),
-            "edge_last_event": clean(edge.get("last_event"), 60),
             "drive_visible": drive_ok,
-            "github_visible": bool(gh.get("ok")),
-            "commit_sha": clean(commit.get("sha"), 48),
-            "commit_message": commit_message,
-            "ci_name": clean(run.get("name"), 60),
-            "ci_state": clean(run.get("conclusion") or run.get("status"), 30),
-            "chat_state": clean(chat.get("state"), 60),
+            "nexus_state": nexus,
+            "ci_state": ci_state,
+            "mission_state": mission_state,
+            "mission_action": action,
+            "mission_next": next_action,
+            "mission_step": step_key,
+            "activity_band": activity_band,
         }
         digest = hashlib.sha256(
             json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
 
-        if heartbeat_ok and edge_ok:
-            state_label = "🟢 Le système est actif."
-        elif heartbeat_ok or edge_ok:
-            state_label = "🟡 Le système avance, mais une liaison manque de preuve récente."
+        if activity_band == "HOLD":
+            activity = "🟠 La mission attend un élément identifié."
+        elif activity_band == "RECENT":
+            activity = "🟢 Une preuve récente confirme que ça avance."
+        elif activity_band == "QUIET":
+            activity = "🟡 Pas de nouvelle preuve depuis " + age_label + ". Je surveille sans conclure à un blocage."
+        elif activity_band == "STALE":
+            activity = "🟠 Pas de nouvelle preuve depuis " + age_label + ". La liaison doit être revérifiée."
         else:
-            state_label = "🟠 Je n’ai pas de preuve récente du PC ou de l’ancien téléphone."
+            activity = "⚪ Progression récente non observée."
 
-        last_proof = stable["commit_message"] or self._human_action((head or {}).get("last_completed_action"))
-        next_action = self._human_action((head or {}).get("next_action"))
         lines = [
-            "🤖 BCP — suivi automatique",
-            state_label,
+            "🤖 BCP — suivi",
+            activity,
             "",
-            ("✅" if heartbeat_ok else "⚠️") + " PC/BCP: " + ("actif" if heartbeat_ok else "preuve récente absente"),
-            ("✅" if edge_ok else "⚠️") + " Ancien téléphone: " + ("connecté" if edge_ok else "non observé"),
-            ("✅" if drive_ok else "⚠️") + " Sauvegarde Drive: " + ("visible" if drive_ok else "non observée"),
+            "🎯 Maintenant: " + action,
+            "📊 " + progress,
+            "⏱️ Dernière preuve: il y a " + age_label,
+            "",
+            ("✅ PC/BCP actif" if heartbeat_ok else "⚠️ PC/BCP: preuve récente absente"),
+            ("✅ Ancien téléphone connecté" if edge_ok else "⚠️ Ancien téléphone non observé"),
+            ("✅ Sauvegarde Drive visible" if drive_ok else "⚠️ Sauvegarde Drive non observée"),
+            "🌐 " + nexus_text,
             "🧪 " + self._human_ci(gh),
             "",
-            "📌 Dernière preuve: " + last_proof,
-            "➡️ Suite: " + next_action,
+            "➡️ Ensuite: " + next_action,
             "💰 Coût: $0.00",
         ]
         return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
