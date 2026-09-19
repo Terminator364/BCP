@@ -18,6 +18,12 @@ $ReceiptPath = Join-Path $StateDir "nexus_bootstrap_receipt.json"
 $InstalledBot = Join-Path $AppRoot "telegram_observability.py"
 $RunKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $RunName = "BlessingControlPlaneTelegram"
+$ManagedToolsRoot = Join-Path $AppRoot "toolchains"
+$NodeVersion = "24.21.0"
+$NodeArchiveName = "node-v24.21.0-win-x64.zip"
+$NodeArchiveUrl = "https://nodejs.org/download/release/v24.21.0/node-v24.21.0-win-x64.zip"
+$NodeArchiveSha256 = "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541"
+$WranglerVersion = "4.135.0"
 
 function UtcNow { [DateTime]::UtcNow.ToString("o") }
 
@@ -61,16 +67,103 @@ function Find-SourceFile([string]$Name) {
     return $null
 }
 
-function Find-WranglerLauncher {
-    foreach ($name in @("wrangler.cmd","wrangler.exe","wrangler")) {
-        $cmd = Get-Command $name -ErrorAction SilentlyContinue
-        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @() } }
+function Get-FileSha256([string]$Path) {
+    return ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([IO.File]::ReadAllBytes($Path)))).Replace("-","").ToLowerInvariant()
+}
+
+function Invoke-ResilientDownload([string]$Uri, [string]$Destination) {
+    $partial = $Destination + ".partial"
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Destination) | Out-Null
+    for ($attempt = 1; $attempt -le 4; $attempt++) {
+        Remove-Item -Force -LiteralPath $partial -ErrorAction SilentlyContinue
+        try {
+            $bits = Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue
+            if ($bits) {
+                Start-BitsTransfer -Source $Uri -Destination $partial -DisplayName "BCP managed runtime" -Description "BCP Nexus portable runtime" -ErrorAction Stop
+            } else {
+                Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $partial -TimeoutSec 120
+            }
+            if (-not (Test-Path -LiteralPath $partial -PathType Leaf)) { throw "DOWNLOAD_FILE_MISSING" }
+            Move-Item -Force -LiteralPath $partial -Destination $Destination
+            return
+        } catch {
+            Remove-Item -Force -LiteralPath $partial -ErrorAction SilentlyContinue
+            if ($attempt -ge 4) { throw }
+            Start-Sleep -Seconds ([Math]::Min(30, [Math]::Pow(2, $attempt + 1)))
+        }
     }
+}
+
+function Ensure-ManagedWranglerLauncher {
+    $toolRoot = Join-Path $ManagedToolsRoot ("wrangler-" + $WranglerVersion)
+    $nodeHome = Join-Path $toolRoot ("node-v" + $NodeVersion + "-win-x64")
+    $npx = Join-Path $nodeHome "npx.cmd"
+    if (-not (Test-Path -LiteralPath $npx -PathType Leaf)) {
+        New-Item -ItemType Directory -Force -Path $toolRoot | Out-Null
+        $archive = Join-Path $toolRoot $NodeArchiveName
+        if (Test-Path -LiteralPath $archive -PathType Leaf) {
+            if ((Get-FileSha256 $archive) -ne $NodeArchiveSha256) {
+                Remove-Item -Force -LiteralPath $archive
+            }
+        }
+        if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) {
+            Write-Host ("BCP Nexus: downloading portable Node.js " + $NodeVersion + " once...")
+            Invoke-ResilientDownload $NodeArchiveUrl $archive
+        }
+        if ((Get-FileSha256 $archive) -ne $NodeArchiveSha256) {
+            Remove-Item -Force -LiteralPath $archive -ErrorAction SilentlyContinue
+            throw "MANAGED_NODE_SHA256_MISMATCH"
+        }
+
+        $extractRoot = Join-Path $toolRoot ("extract-" + [Guid]::NewGuid().ToString("N"))
+        try {
+            Expand-Archive -LiteralPath $archive -DestinationPath $extractRoot -Force
+            $candidate = Join-Path $extractRoot ("node-v" + $NodeVersion + "-win-x64")
+            if (-not (Test-Path -LiteralPath (Join-Path $candidate "npx.cmd") -PathType Leaf)) {
+                throw "MANAGED_NODE_ARCHIVE_LAYOUT_INVALID"
+            }
+            Remove-Item -Recurse -Force -LiteralPath $nodeHome -ErrorAction SilentlyContinue
+            Move-Item -LiteralPath $candidate -Destination $nodeHome
+        } finally {
+            Remove-Item -Recurse -Force -LiteralPath $extractRoot -ErrorAction SilentlyContinue
+        }
+    }
+
+    $npmCache = Join-Path $AppRoot "cache\npm"
+    New-Item -ItemType Directory -Force -Path $npmCache | Out-Null
+    $env:NPM_CONFIG_CACHE = $npmCache
+    $env:NPM_CONFIG_AUDIT = "false"
+    $env:NPM_CONFIG_FUND = "false"
+    $env:NPM_CONFIG_UPDATE_NOTIFIER = "false"
+    $env:NPM_CONFIG_FETCH_RETRIES = "5"
+    $env:NPM_CONFIG_FETCH_RETRY_MINTIMEOUT = "2000"
+    $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
+    return [pscustomobject]@{ File = $npx; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $true }
+}
+
+function Find-WranglerLauncher {
     foreach ($name in @("npx.cmd","npx.exe","npx")) {
         $cmd = Get-Command $name -ErrorAction SilentlyContinue
-        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @("--yes","wrangler") } }
+        if ($cmd) {
+            $env:NPM_CONFIG_AUDIT = "false"
+            $env:NPM_CONFIG_FUND = "false"
+            $env:NPM_CONFIG_UPDATE_NOTIFIER = "false"
+            $env:NPM_CONFIG_FETCH_RETRIES = "5"
+            $env:NPM_CONFIG_FETCH_RETRY_MINTIMEOUT = "2000"
+            $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
+            return [pscustomobject]@{ File = $cmd.Source; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $false }
+        }
     }
-    return $null
+    foreach ($name in @("wrangler.cmd","wrangler.exe","wrangler")) {
+        $cmd = Get-Command $name -ErrorAction SilentlyContinue
+        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @(); Managed = $false } }
+    }
+    try {
+        return Ensure-ManagedWranglerLauncher
+    } catch {
+        Write-Host ("BCP_NEXUS_MANAGED_RUNTIME_DEFERRED=" + $_.Exception.Message)
+        return $null
+    }
 }
 
 function Invoke-Wrangler($Launcher, [string[]]$Arguments, [switch]$AllowFailure) {
@@ -144,7 +237,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
@@ -166,7 +259,22 @@ if ($chatId -eq 0) { throw "LOCAL_TELEGRAM_CHAT_NOT_AUTHORIZED" }
 $launcher = Find-WranglerLauncher
 if (-not $launcher) {
     Write-Host "BCP_NEXUS_HUMAN_GATE=WRANGLER_RUNTIME_REQUIRED"
-    Write-Host "Install Node.js/Wrangler once, then rerun this same script. No Telegram token re-entry will be needed."
+    Write-Host "Managed portable Node/Wrangler could not finish yet. BCP will re-stage on the next qualified bundle revision; no manual Node/Wrangler install or Telegram token copy is required."
+    exit 3
+}
+
+$runtimeReady = $false
+for ($attempt = 1; $attempt -le 3; $attempt++) {
+    $probe = Invoke-Wrangler $launcher @("--version") -AllowFailure
+    if ($probe.ExitCode -eq 0) {
+        $runtimeReady = $true
+        break
+    }
+    if ($attempt -lt 3) { Start-Sleep -Seconds ([Math]::Min(20, [Math]::Pow(2, $attempt + 1))) }
+}
+if (-not $runtimeReady) {
+    Write-Host "BCP_NEXUS_HUMAN_GATE=WRANGLER_RUNTIME_REQUIRED"
+    Write-Host "Pinned Wrangler download/cache is not ready yet. No manual install is required; preserve the durable state and retry only through the managed BCP update path."
     exit 3
 }
 
