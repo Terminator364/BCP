@@ -1402,6 +1402,21 @@ def _job_dependencies_satisfied(cx, job_id: int) -> bool:
     return int(unresolved["n"] if unresolved else 0) == 0
 
 
+def _job_dependency_failed(cx, job_id: int) -> bool:
+    failed = cx.execute(
+        """SELECT COUNT(*) AS n
+           FROM job_dependencies d
+           WHERE d.job_id=?
+             AND EXISTS (
+                 SELECT 1 FROM job_receipts r
+                 WHERE r.job_id=d.depends_on_job_id
+                   AND r.result IN ('FAILED','CANCELLED')
+             )""",
+        (int(job_id),),
+    ).fetchone()
+    return int(failed["n"] if failed else 0) > 0
+
+
 def _recover_and_promote_jobs_locked(cx, force_pc_available: bool = False) -> None:
     now = utc_now()
     # Only allowlisted handlers can be replayed automatically after an expired
@@ -1438,12 +1453,20 @@ def _recover_and_promote_jobs_locked(cx, force_pc_available: bool = False) -> No
         "SELECT id,requires_pc FROM jobs WHERE state='BLOCKED' ORDER BY priority DESC,created_at ASC LIMIT 256"
     ).fetchall()
     for row in blocked:
-        if not _job_dependencies_satisfied(cx, int(row["id"])):
+        job_id = int(row["id"])
+        if _job_dependency_failed(cx, job_id):
+            cx.execute(
+                """UPDATE jobs SET state='HOLD',last_error='DEPENDENCY_FAILED',
+                   updated_at=? WHERE id=? AND state='BLOCKED'""",
+                (now, job_id),
+            )
+            continue
+        if not _job_dependencies_satisfied(cx, job_id):
             continue
         next_state = "WAITING_FOR_PC" if int(row["requires_pc"]) == 1 and mode != "PC_AVAILABLE" else "READY"
         cx.execute(
             "UPDATE jobs SET state=?,updated_at=? WHERE id=? AND state='BLOCKED'",
-            (next_state, now, int(row["id"])),
+            (next_state, now, job_id),
         )
 
     # Unknown PC job kinds are never interpreted as shell/code.
