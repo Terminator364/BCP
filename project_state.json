@@ -61,7 +61,8 @@
     "telegram_mission_cockpit": "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md",
     "git_writer_lease_protocol": "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
     "git_writer_lease_policy": ".project-memory/GIT_WRITER_LEASE_POLICY.json",
-    "telegram_observability_mvp": "docs/TELEGRAM_OBSERVABILITY_MVP.md"
+    "telegram_observability_mvp": "docs/TELEGRAM_OBSERVABILITY_MVP.md",
+    "telegram_observability_setup": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -614,5 +615,20 @@
     "ci_bound_to_exact_sha": true,
     "force_update_main_normal_automation": false,
     "recovery_branch_for_divergent_work": true
+  },
+  "telegram_observability_mvp": {
+    "mode": "READ_ONLY",
+    "status": "IMPLEMENTED_BRANCH_CI_PENDING",
+    "field_status": "DOC_OK_ZERO_USD_OK_KINSHASA_FIELD_SMOKE_PENDING",
+    "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
+    "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
+    "state_file": ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json",
+    "worker": "windows/bcp_telegram_observability.py",
+    "configurator": "windows/CONFIGURE_BCP_TELEGRAM.ps1",
+    "ci": ".github/workflows/telegram-observability.yml",
+    "zero_usd": true,
+    "token_local_only": true,
+    "chat_internal_state_access": false,
+    "next_action": "CI -> PR review -> main HEAD recheck -> serialized integration -> BotFather/local field gate"
   }
 }
