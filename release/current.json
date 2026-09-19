@@ -1,0 +1,58 @@
+{
+  "schema": "bcp.current_release/1",
+  "channel": "CURRENT",
+  "requirements_revision": "2026-09-19-R6",
+  "zero_usd": true,
+  "overall_state": "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
+  "update_policy": {
+    "unchanged_version_zero_download": true,
+    "metered_large_download_default": false,
+    "hash_verification_required": true,
+    "rollback_required": true,
+    "scheduled_chatgpt_automation": false
+  },
+  "components": {
+    "windows_bcp": {
+      "version": "0.5.0",
+      "source_manifest": "release/server.json",
+      "qualification": "CI_QUALIFIED",
+      "distribution_ready": true,
+      "field_verified": false,
+      "auto_update_eligible": true,
+      "artifact": {
+        "transport": "HTTPS_HASH_PINNED",
+        "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
+        "sha256": "419968cbf57c44d2a2dac35e030ac5a3b15ba9dfe4c52ec1bf072a4728ee8fee"
+      },
+      "notes": "Existing staged self-update path verifies SHA-256, self-tests, restarts, health-checks and rolls back on failure. Fresh 0.5.0 field readback is still required."
+    },
+    "android_b_edge": {
+      "version": "1.1.0-evergreen",
+      "source_manifest": "release/android.json",
+      "qualification": "CI_QUALIFIED",
+      "distribution_ready": false,
+      "field_verified": false,
+      "auto_update_eligible": false,
+      "artifact": {
+        "transport": "DRIVE_LOCAL_AUTHENTICATED_RELAY",
+        "url": "",
+        "sha256": ""
+      },
+      "notes": "Source, tests and unsigned APK are CI-qualified. Stable signing and populated BCP_EDGE_CURRENT APK/hash remain required before automatic distribution."
+    },
+    "nexus": {
+      "version": "0.1.0",
+      "source_manifest": "docs/BCP_NEXUS_FIELD_GATE.md",
+      "qualification": "CI_QUALIFIED_FIELD_UNVERIFIED",
+      "distribution_ready": false,
+      "field_verified": false,
+      "auto_update_eligible": false,
+      "artifact": {
+        "transport": "EXTERNAL_ZERO_USD_DEPLOYMENT",
+        "url": "",
+        "sha256": ""
+      },
+      "notes": "Webhook/D1/device client implementation passed CI. External cloud authorization, secret provisioning and home-WiFi field round-trip remain required."
+    }
+  }
+}

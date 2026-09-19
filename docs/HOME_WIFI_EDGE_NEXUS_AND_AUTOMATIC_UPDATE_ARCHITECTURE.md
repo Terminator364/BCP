@@ -246,3 +246,19 @@ Implemented candidate components:
 - dedicated CI qualification workflow.
 
 This checkpoint is not FIELD_VERIFIED. Live promotion requires external cloud authorization, provider secret provisioning, webhook ownership migration and a real home-WiFi round-trip.
+
+
+## Implementation checkpoint — unified CURRENT manifest
+
+The automatic-update control plane now has a materialized, machine-validated product manifest:
+- `release/current.json`;
+- schema: `schemas/bcp_current_release.schema.json`;
+- validator: `tools/validate_current_release.py`;
+- CI: `.github/workflows/current-release-contract.yml`.
+
+The manifest is deliberately truthful:
+- Windows BCP 0.5.0: CI-qualified and distribution-ready through its existing hash-pinned self-update path, but fresh 0.5.0 field readback is still pending.
+- B-EDGE 1.1.0-evergreen: source/tests are CI-qualified, but automatic distribution remains disabled until a stable-signed APK and its SHA-256 are populated.
+- Nexus 0.1.0: CI-qualified implementation, but no live deployment URL exists until external zero-cost provider authorization and home-WiFi field qualification.
+
+No component can become auto-update eligible merely because a version string changed. Distribution metadata, hash/signing evidence and the relevant field gate must agree.

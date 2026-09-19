@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Terminator364/BCP/schemas/bcp_current_release.schema.json",
+  "title": "BCP Qualified CURRENT Release Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "channel",
+    "requirements_revision",
+    "zero_usd",
+    "overall_state",
+    "update_policy",
+    "components"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.current_release/1"},
+    "channel": {"const": "CURRENT"},
+    "requirements_revision": {"type": "string", "minLength": 1},
+    "zero_usd": {"const": true},
+    "overall_state": {
+      "enum": [
+        "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
+        "DISTRIBUTION_READY_FIELD_PENDING",
+        "FIELD_VERIFIED"
+      ]
+    },
+    "update_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unchanged_version_zero_download",
+        "metered_large_download_default",
+        "hash_verification_required",
+        "rollback_required",
+        "scheduled_chatgpt_automation"
+      ],
+      "properties": {
+        "unchanged_version_zero_download": {"const": true},
+        "metered_large_download_default": {"const": false},
+        "hash_verification_required": {"const": true},
+        "rollback_required": {"const": true},
+        "scheduled_chatgpt_automation": {"const": false}
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["windows_bcp", "android_b_edge", "nexus"],
+      "properties": {
+        "windows_bcp": {"$ref": "#/$defs/component"},
+        "android_b_edge": {"$ref": "#/$defs/component"},
+        "nexus": {"$ref": "#/$defs/component"}
+      }
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "source_manifest",
+        "qualification",
+        "distribution_ready",
+        "field_verified",
+        "auto_update_eligible",
+        "artifact"
+      ],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "source_manifest": {"type": "string", "minLength": 1},
+        "qualification": {
+          "enum": [
+            "CI_QUALIFIED",
+            "CI_QUALIFIED_FIELD_UNVERIFIED",
+            "FIELD_VERIFIED",
+            "PENDING"
+          ]
+        },
+        "distribution_ready": {"type": "boolean"},
+        "field_verified": {"type": "boolean"},
+        "auto_update_eligible": {"type": "boolean"},
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["transport", "url", "sha256"],
+          "properties": {
+            "transport": {"type": "string"},
+            "url": {"type": "string"},
+            "sha256": {
+              "type": "string",
+              "pattern": "^$|^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

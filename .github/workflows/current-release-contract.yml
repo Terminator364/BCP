@@ -1,0 +1,101 @@
+name: BCP Qualified CURRENT Release Contract
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "release/current.json"
+      - "release/server.json"
+      - "release/android.json"
+      - "schemas/bcp_current_release.schema.json"
+      - "tools/validate_current_release.py"
+      - "windows/bcp_server.py"
+      - "android-b-edge/**"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".github/workflows/current-release-contract.yml"
+  push:
+    paths:
+      - "release/current.json"
+      - "release/server.json"
+      - "release/android.json"
+      - "schemas/bcp_current_release.schema.json"
+      - "tools/validate_current_release.py"
+      - "windows/bcp_server.py"
+      - "android-b-edge/**"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".github/workflows/current-release-contract.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-current-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Parse JSON artifacts
+        run: |
+          python -m json.tool release/current.json > /dev/null
+          python -m json.tool release/server.json > /dev/null
+          python -m json.tool release/android.json > /dev/null
+          python -m json.tool schemas/bcp_current_release.schema.json > /dev/null
+
+      - name: Validate CURRENT truth contract
+        run: python tools/validate_current_release.py
+
+      - name: Server update self-test
+        run: python windows/bcp_server.py --selftest
+
+      - name: Automatic-update implementation guards
+        shell: python
+        run: |
+          import pathlib
+          server = pathlib.Path("windows/bcp_server.py").read_text(encoding="utf-8")
+          edge = pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/UpdateManager.java").read_text(encoding="utf-8")
+          client = pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text(encoding="utf-8")
+          required_server = [
+              "AUTO_UPDATE_INTERVAL_SECONDS",
+              "start_auto_update_worker",
+              "update_sha256_mismatch",
+              "candidate_selftest_failed",
+              "ROLLED_BACK",
+              "/v1/edge/update",
+              "/v1/edge/update/apk",
+              "edge_apk_sha256_mismatch",
+          ]
+          required_edge = [
+              "updates",
+              "APK_SHA256_MISMATCH",
+              "APK_SIGNING_CERT_MISMATCH",
+              "pending_version_code",
+              "cleanupUpdateCache",
+          ]
+          for item in required_server:
+              assert item in server, item
+          for item in required_edge:
+              assert item in edge, item
+          assert "autoPromoteServerIfNeeded" in client
+          assert "updates.check()" in pathlib.Path(
+              "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
+          ).read_text(encoding="utf-8")
+          print("BCP_AUTOMATIC_UPDATE_GUARDS=PASS")
+
+      - name: Zero manual/scheduled automation contract
+        shell: python
+        run: |
+          import json, pathlib
+          m = json.loads(pathlib.Path("release/current.json").read_text())
+          p = m["update_policy"]
+          assert p["scheduled_chatgpt_automation"] is False
+          assert p["unchanged_version_zero_download"] is True
+          assert p["metered_large_download_default"] is False
+          assert m["zero_usd"] is True
+          print("BCP_ZERO_MANUAL_UPDATE_POLICY=PASS")
