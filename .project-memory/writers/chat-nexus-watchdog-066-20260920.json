@@ -1,0 +1,24 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-nexus-watchdog-066-20260920",
+  "project_or_mission": "API/BCP Nexus bootstrap watchdog and orphan recovery",
+  "base_main_sha": "99e6343b2561b9d5335a5da4cb73d0a4edb318d1",
+  "created_at": "2026-09-20T00:20:00+01:00",
+  "intended_file_scope": [
+    "windows/bcp_server.py",
+    "release/server.json",
+    "release/current.json",
+    "release/android.json",
+    ".github/workflows/current-release-contract.yml",
+    ".project-memory/writers/chat-nexus-watchdog-066-20260920.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Coordinated Product Qualification",
+    "server self-test",
+    "exact PR head CI binding"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_reread": true,
+  "status": "WORK_BRANCH_ACTIVE"
+}
