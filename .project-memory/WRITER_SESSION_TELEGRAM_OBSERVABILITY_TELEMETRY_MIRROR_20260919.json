@@ -9,7 +9,8 @@
     "windows/bcp_telegram_observability.py",
     "windows/CONFIGURE_BCP_TELEGRAM.ps1",
     ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json",
-    "project_state.json"
+    "project_state.json",
+    "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md"
   ],
   "expected_ci_gates": [
     "BCP Telegram Observability Qualification",
