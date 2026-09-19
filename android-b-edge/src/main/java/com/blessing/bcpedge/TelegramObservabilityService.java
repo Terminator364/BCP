@@ -59,7 +59,9 @@ public final class TelegramObservabilityService extends Service {
             TelegramConfigStore cfg = new TelegramConfigStore(this);
             if (!cfg.isEnabled() || !cfg.hasBotToken()) break;
             try {
+                cfg.markServicePoll();
                 new TelegramObservabilityPoller(this).pollOnce(25);
+                cfg.markServicePoll();
                 backoffMs = 1500L;
             } catch (Throwable t) {
                 bcp.recordEvent("TELEGRAM_POLL_DEFERRED", t.getClass().getSimpleName());
