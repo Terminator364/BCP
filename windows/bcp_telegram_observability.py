@@ -25,6 +25,8 @@ TOKEN_PATH = STATE_DIR / "telegram_bot_token.txt"
 CONFIG_PATH = STATE_DIR / "telegram_observability.json"
 OFFSET_PATH = STATE_DIR / "telegram_update_offset.json"
 PRESENCE_PATH = STATE_DIR / "telegram_presence_state.json"
+NEXUS_TOKEN_PATH = STATE_DIR / "nexus_device_token.txt"
+NEXUS_CURSOR_PATH = STATE_DIR / "nexus_command_cursor.json"
 MISSION_EVENT_LOG_PATH = STATE_DIR / "MISSION_EVENT_LOG.jsonl"
 LOG_PATH = APP_ROOT / "logs" / "telegram-observability.jsonl"
 
@@ -762,6 +764,157 @@ class Telegram:
                 time.sleep(60)
 
 
+class Nexus:
+    def __init__(self, base_url: str, device_id: str, token: str,
+                 service: Service, http: Http | None = None):
+        self.base_url = base_url.rstrip("/")
+        self.device_id = device_id
+        self.token = token
+        self.service = service
+        self.http = http or Http()
+        transport = service.cfg.get("transport") or {}
+        try:
+            self.poll_seconds = max(5, min(120, int(transport.get("poll_seconds", 15))))
+        except Exception:
+            self.poll_seconds = 15
+        presence = service.cfg.get("presence") or {}
+        self.auto_push = bool(presence.get("auto_push", True))
+        try:
+            self.max_events_per_push = max(1, min(12, int(presence.get("max_events_per_push", 6))))
+        except Exception:
+            self.max_events_per_push = 6
+
+    def _headers(self) -> dict:
+        return {
+            "Authorization": "Bearer " + self.token,
+            "X-BCP-Device-ID": self.device_id,
+        }
+
+    def api(self, path: str, method: str = "GET", payload: dict | None = None,
+            timeout: int = 20) -> dict:
+        status, obj = self.http.json(
+            self.base_url + path, method=method, payload=payload,
+            headers=self._headers(), timeout=timeout,
+        )
+        if status != 200 or not isinstance(obj, dict) or obj.get("ok") is False:
+            detail = clean(obj.get("error") if isinstance(obj, dict) else "http_" + str(status), 140)
+            raise RuntimeError("nexus_api_error:" + detail)
+        return obj
+
+    def reply(self, command_id: int, text: str) -> None:
+        safe_text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900]
+        idem = hashlib.sha256(
+            ("reply:" + str(command_id) + ":" + safe_text).encode("utf-8")
+        ).hexdigest()
+        self.api("/v1/device/reply", method="POST", payload={
+            "command_id": int(command_id),
+            "text": safe_text,
+            "idempotency_key": idem,
+        }, timeout=25)
+
+    def push(self, text: str, idem_seed: str) -> None:
+        safe_text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900]
+        idem = hashlib.sha256(("push:" + idem_seed).encode("utf-8")).hexdigest()
+        self.api("/v1/device/push", method="POST", payload={
+            "kind": "MISSION_PROGRESS",
+            "text": safe_text,
+            "idempotency_key": idem,
+        }, timeout=25)
+
+    def _push_presence(self) -> None:
+        if not self.auto_push:
+            return
+        events = [
+            e for e in self.service.local.mission_events(200)
+            if not e.get("project_id") or str(e.get("project_id")) == self.service.project_id
+        ]
+        if not events:
+            return
+        state = read_json(PRESENCE_PATH, {}) or {}
+        last_key = str(state.get("mission_event_key") or "")
+        keys = [event_key(e) for e in events]
+        newest_key = keys[-1]
+
+        if not last_key:
+            atomic_json(PRESENCE_PATH, {
+                "schema": "bcp.telegram_presence/1",
+                "mission_event_key": newest_key,
+                "updated_at": utc_now(),
+                "transport": "NEXUS",
+            })
+            return
+
+        if last_key not in keys:
+            atomic_json(PRESENCE_PATH, {
+                "schema": "bcp.telegram_presence/1",
+                "mission_event_key": newest_key,
+                "updated_at": utc_now(),
+                "transport": "NEXUS",
+                "resync": "CURSOR_PRIMED_NO_REPLAY",
+            })
+            return
+
+        idx = keys.index(last_key)
+        pending = events[idx + 1:]
+        relevant = [e for e in pending if str(e.get("state") or "").upper() in PUSH_STATES]
+        if relevant:
+            skipped = max(0, len(relevant) - self.max_events_per_push)
+            selected = relevant[-self.max_events_per_push:]
+            blocks = []
+            if skipped:
+                blocks.append("ℹ️ " + str(skipped) + " micro-actions précédentes regroupées.")
+            blocks.extend(self.service.progress_event(e) for e in selected)
+            self.push("\n\n".join(blocks), newest_key)
+
+        atomic_json(PRESENCE_PATH, {
+            "schema": "bcp.telegram_presence/1",
+            "mission_event_key": newest_key,
+            "updated_at": utc_now(),
+            "transport": "NEXUS",
+        })
+
+    def run(self) -> int:
+        cursor = int((read_json(NEXUS_CURSOR_PATH, {}) or {}).get("last_command_id") or 0)
+        backoff = [2, 5, 15, 30, 60]
+        failures = 0
+        append_log("NEXUS_WORKER_STARTED", device_id=self.device_id)
+        while True:
+            try:
+                obj = self.api(
+                    "/v1/device/commands?after=" + str(cursor) + "&limit=8",
+                    timeout=20,
+                )
+                commands = obj.get("commands") or []
+                failures = 0
+                for command in commands:
+                    command_id = int(command.get("id") or 0)
+                    if command_id <= cursor:
+                        continue
+                    response = self.service.dispatch(str(command.get("text") or ""))
+                    self.reply(command_id, response)
+                    cursor = command_id
+                    atomic_json(NEXUS_CURSOR_PATH, {
+                        "schema": "bcp.nexus_cursor/1",
+                        "last_command_id": cursor,
+                        "updated_at": utc_now(),
+                    })
+                    append_log("NEXUS_COMMAND_REPLIED", command_id=command_id)
+                self._push_presence()
+                if not commands:
+                    time.sleep(self.poll_seconds)
+            except KeyboardInterrupt:
+                append_log("NEXUS_WORKER_STOPPED")
+                return 0
+            except (URLError, TimeoutError, OSError, RuntimeError) as e:
+                delay = backoff[min(failures, len(backoff) - 1)]
+                failures += 1
+                append_log("NEXUS_RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                time.sleep(delay)
+            except Exception as e:
+                append_log("NEXUS_HOLD", error_class=type(e).__name__, detail=clean(e, 140))
+                time.sleep(60)
+
+
 class SingleInstance:
     def __init__(self):
         self.handle = None
@@ -787,8 +940,26 @@ class SingleInstance:
 
 
 def load_config() -> tuple[str, dict]:
-    token = TOKEN_PATH.read_text(encoding="utf-8").strip() if TOKEN_PATH.is_file() else ""
     cfg = read_json(CONFIG_PATH, {}) or {}
+    transport = cfg.get("transport") or {}
+    mode = str(transport.get("mode") or "DIRECT_TELEGRAM").upper()
+
+    if mode == "NEXUS":
+        base_url = str(transport.get("nexus_url") or "").strip()
+        device_id = str(transport.get("device_id") or "").strip()
+        device_token = NEXUS_TOKEN_PATH.read_text(encoding="utf-8").strip() if NEXUS_TOKEN_PATH.is_file() else ""
+        if not base_url.startswith("https://"):
+            raise RuntimeError("NEXUS_HTTPS_URL_NOT_CONFIGURED")
+        if not device_id:
+            raise RuntimeError("NEXUS_DEVICE_ID_NOT_CONFIGURED")
+        if len(device_token) < 24:
+            raise RuntimeError("NEXUS_DEVICE_TOKEN_NOT_CONFIGURED")
+        return "", cfg
+
+    if mode != "DIRECT_TELEGRAM":
+        raise RuntimeError("TRANSPORT_MODE_UNSUPPORTED:" + mode)
+
+    token = TOKEN_PATH.read_text(encoding="utf-8").strip() if TOKEN_PATH.is_file() else ""
     if not token:
         raise RuntimeError("TELEGRAM_TOKEN_NOT_CONFIGURED")
     if not TOKEN_RE.fullmatch(token):
@@ -877,6 +1048,9 @@ def selftest() -> int:
             "WAITING_PROVIDER", "RESULT_RECEIVED", "VALIDATING", "COMMITTED",
             "CHECKPOINTED", "RETRY_SCHEDULED", "BLOCKED", "HOLD", "DONE", "CANCELLED",
         }
+        # Nexus transport is opt-in; direct Telegram remains the default.
+        assert str((svc.cfg.get("transport") or {}).get("mode") or "DIRECT_TELEGRAM") == "DIRECT_TELEGRAM"
+        assert Nexus.__name__ == "Nexus"
     print("BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS")
     return 0
 
@@ -897,6 +1071,17 @@ def main() -> int:
     if not lock.acquire():
         print("BCP_TELEGRAM_OBSERVABILITY_ALREADY_RUNNING", file=sys.stderr)
         return 0
+
+    transport = cfg.get("transport") or {}
+    mode = str(transport.get("mode") or "DIRECT_TELEGRAM").upper()
+    if mode == "NEXUS":
+        device_token = NEXUS_TOKEN_PATH.read_text(encoding="utf-8").strip()
+        return Nexus(
+            str(transport["nexus_url"]),
+            str(transport["device_id"]),
+            device_token,
+            svc,
+        ).run()
     return Telegram(token, int(cfg["allowed_chat_id"]), svc).run()
 
 
