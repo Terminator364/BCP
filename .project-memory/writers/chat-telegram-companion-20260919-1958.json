@@ -1,0 +1,10 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-telegram-companion-20260919-1958",
+  "project_or_mission": "API/BCP Telegram companion delivery",
+  "base_main_sha": "28119888142ba5ca8753d2fa9182a0838ddd6469",
+  "created_at": "2026-09-19T19:58:00+01:00",
+  "intended_file_scope": ["windows/bcp_server.py", "release/server.json", "release/current.json", "release/android.json", "release/telegram_observability.json"],
+  "expected_ci_gates": ["CURRENT Release Contract", "BCP Coordinated Product Qualification", "BCP PC Sanity", "BCP Telegram Observability Qualification"],
+  "status": "ACTIVE_WRITER_BRANCH"
+}
