@@ -2,7 +2,7 @@
   "schema": "api.product-motivation/1",
   "adopted_at": "2026-09-19",
   "project": "API / BCP",
-  "primary_problem": "ChatGPT conversations and tool-heavy turns can be interrupted or delayed; project execution state must therefore live outside any single conversation.",
+  "primary_problem": "ChatGPT conversations are not a durable, universally synchronized project-memory/runtime authority; BCP must provide fast external context, state and execution continuity across conversations, devices and providers.",
   "user_pain": [
     "Additional-verification holds add wall-clock delay and may interrupt an in-progress technical turn",
     "Repeated recovery loops waste time",
@@ -19,7 +19,11 @@
     "ACTIVE/STANDBY conversation failover",
     "running-job observability independent of a conversation",
     "stored legitimate technical scope",
-    "nonterminal handling of verification holds and 429s"
+    "nonterminal handling of verification holds and 429s",
+    "Universal BCPGO bootstrap that loads global + project + task-delta context without user reconstruction",
+    "Revision-aware per-turn context refresh using UNCHANGED/DELTA instead of full memory replay",
+    "Three-node B-EDGE + PC-WORKER + BCP NEXUS logical control plane",
+    "Memory authority/provenance and anti-poisoning admission"
   ],
   "non_goal": "Do not bypass or weaken platform safety checks; make interruptions operationally survivable."
 }
