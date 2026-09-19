@@ -90,6 +90,16 @@ public final class EdgePolicy {
         return "QUEUED".equals(r) || "ALREADY_QUEUED".equals(r) || "ACCEPTED".equals(r);
     }
 
+    public static boolean shouldPostJob(String localState, boolean remoteAlreadyPresent) {
+        String s = localState == null ? "" : localState.trim().toUpperCase();
+        if ("BLOCKED".equals(s)) return false;
+        // A server-side durable row is proof of queue acceptance. Reposting it on
+        // every reconciliation wastes network/battery and can obscure progress.
+        if (remoteAlreadyPresent) return false;
+        return "READY".equals(s) || "WAITING_FOR_PC".equals(s)
+                || "HOLD".equals(s) || "REMOTE_QUEUED".equals(s);
+    }
+
     public static int boundedQueueLimit() { return 256; }
     public static int boundedMemoryEntries() { return 256; }
 }
