@@ -446,3 +446,84 @@ B-EDGE V2 is not ACTIVE until device tests prove:
 - AI reserve cannot be exhausted by a runaway background agent;
 - Telegram duplicate updates cannot create duplicate missions;
 - ZERO_USD policy fails closed.
+
+
+## 19. Replication, backup and device-loss recovery
+
+B-EDGE may become the default V2 writer/coordinator, but it MUST NOT become the only durable copy of project memory.
+
+Target copy model:
+- primary live V2 orchestration state: B-EDGE Room/SQLite;
+- verified near-line replica: PC when available;
+- cold encrypted/sanitized recovery snapshots: Drive or equivalent existing user storage;
+- source/artifact truth remains in the appropriate GitHub/Drive project stores.
+
+Replication rules:
+- secrets are excluded from normal project-memory snapshots;
+- provider keys/bearer tokens remain in device credential stores;
+- logical snapshots carry schema version, coordinator epoch, project revision vector, record counts, content hash and creation timestamp;
+- PC acknowledges replica application with readback/hash;
+- cloud/cold backup promotion occurs only after snapshot verification;
+- backups are bounded and version-retained; they do not become an unbounded event dump.
+
+Do not raw-copy a live SQLite/WAL file as an arbitrary filesystem operation. Produce a consistent database/logical snapshot using a supported transaction/backup/export path.
+
+### Recovery-key model
+
+If cold backups contain private project memory, they SHOULD be encrypted before cloud storage.
+
+A recovery design must avoid a key that exists only in the phone Keystore, otherwise phone loss makes the backup unreadable.
+
+Preferred target:
+- generate a dedicated BCP recovery/data-encryption key;
+- wrap/protect a usable copy for B-EDGE using Android Keystore;
+- wrap/protect a second usable copy for the paired PC using Windows user-scoped DPAPI or an equivalent OS credential facility;
+- Drive receives only ciphertext + non-secret manifest;
+- key rotation is versioned;
+- loss of one device must not automatically expose plaintext or make verified backups unrecoverable.
+
+The exact cryptographic envelope is an implementation gate and must be reviewed/tested before production use.
+
+### Physical B-EDGE loss
+
+If the phone is destroyed/offline for an extended period:
+1. PC freezes global-head advancement by default unless an explicit recovery promotion is performed.
+2. PC loads the latest verified replica/snapshot.
+3. User or a qualified independent witness authorizes a new coordinator epoch.
+4. Replacement B-EDGE is paired and seeded from the verified state.
+5. Old coordinator epoch is permanently fenced.
+6. Any later receipts from the old device are reconciled as historical/stale evidence, never allowed to overwrite the promoted head.
+
+## 20. History retention and compaction
+
+Not all historical data has equal retention value.
+
+Keep durable:
+- canonical mutations;
+- action receipts/effect hashes;
+- pinned user/project decisions;
+- ERROR_LEDGER causal entries and validated recipes;
+- authority/fencing transitions;
+- security/audit-relevant events.
+
+Compact/expire aggressively:
+- repetitive healthy heartbeats;
+- redundant transient network events;
+- rebuildable Context Pack caches;
+- temporary model outputs that produced no accepted effect;
+- duplicate telemetry.
+
+Compaction MUST preserve enough provenance to explain every current canonical state transition.
+
+## 21. Telegram wake/ingress tiers
+
+Remote command latency has explicit tiers:
+
+- `T0_LOCAL_ACTIVE`: app/PC active; immediate local command execution.
+- `T1_PUSH_WAKE`: optional FCM or equivalent no-cost push wake hint after field qualification.
+- `T2_CLOUD_QUEUE`: optional zero-cost webhook ingress stores durable command until a node consumes it.
+- `T3_PERIODIC_RECONCILIATION`: no push/cloud; WorkManager reconciliation may be delayed and is not advertised as instant.
+
+Telegram update IDs are deduplicated into one BCP mission ID.
+
+A webhook/push acknowledgment means only `RECEIVED/QUEUED` unless execution evidence exists. It MUST NOT claim `DONE` before canonical receipt/readback.
