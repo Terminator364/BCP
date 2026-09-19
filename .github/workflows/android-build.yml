@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "android-b-edge/**"
+      - "release/android.json"
       - "settings.gradle"
       - "build.gradle"
       - "gradle.properties"
@@ -52,47 +53,76 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Edge privacy and observability regression guards
+      - name: Evergreen security / continuity static guards
         shell: bash
         run: |
           set -euo pipefail
           MAIN="android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
           CLIENT="android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java"
+          UPDATE="android-b-edge/src/main/java/com/blessing/bcpedge/UpdateManager.java"
+          POLICY="android-b-edge/src/main/java/com/blessing/bcpedge/UpdatePolicy.java"
           TELE="android-b-edge/src/main/java/com/blessing/bcpedge/TelemetryStore.java"
+          MANIFEST="android-b-edge/src/main/AndroidManifest.xml"
+          GRADLE="android-b-edge/build.gradle"
+          PATHS="android-b-edge/src/main/res/xml/file_paths.xml"
+
+          grep -F 'applicationId "com.blessing.bcpedge.evergreen"' "$GRADLE" >/dev/null
+          grep -F 'versionCode 100' "$GRADLE" >/dev/null
+          grep -F 'versionName "1.0.0-evergreen"' "$GRADLE" >/dev/null
+          grep -F 'BCP Edge Evergreen' "$MANIFEST" >/dev/null
+          grep -F '0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617' "$UPDATE" >/dev/null
+          grep -F '/v1/edge/update' "$UPDATE" >/dev/null
+          grep -F '/v1/edge/update/apk' "$UPDATE" >/dev/null
+          grep -F 'EDGE_MANIFEST_TRUST_POLICY_FAILED' "$UPDATE" >/dev/null
+          grep -F 'APK_SIGNING_CERT_MISMATCH' "$UPDATE" >/dev/null
+          grep -F 'getCacheDir()' "$UPDATE" >/dev/null
+          grep -F '<cache-path name="updates" path="updates/" />' "$PATHS" >/dev/null
+          grep -F 'expected_revision' "$CLIENT" >/dev/null
+          grep -F 'pending_checkpoint_idem' "$CLIENT" >/dev/null
+          grep -F 'runQuickAcceptance' "$CLIENT" >/dev/null
           grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
-          grep -F 'stored_securely_not_displayed' "$CLIENT" >/dev/null
-          grep -F 'return publicPairStatus(pair);' "$CLIENT" >/dev/null
-          if grep -F 'return pair;' "$CLIENT"; then
-            echo "Raw pairing response must never escape connectAutomatically"
-            exit 1
-          fi
-          grep -F 'PHONE_HEARTBEAT' "$CLIENT" >/dev/null
-          grep -F 'serverUpdateStatus' "$CLIENT" >/dev/null
-          grep -F 'applyServerUpdate' "$CLIENT" >/dev/null
-          grep -F 'SERVER_UPDATE_AUTO_START' "$CLIENT" >/dev/null
-          grep -F 'autoPromoteServerIfNeeded' "$CLIENT" >/dev/null
-          grep -F 'chatgptPcStatus' "$CLIENT" >/dev/null
-          grep -F 'recoverChatgptPc' "$CLIENT" >/dev/null
-          grep -F 'Réparer ChatGPT-PC' "$MAIN" >/dev/null
-          grep -F 'PARAMÈTRES / MISES À JOUR' "$MAIN" >/dev/null
-          grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
-          grep -F '0.2.5' "$TELE" >/dev/null
+          grep -F 'TEST RAPIDE B-EDGE' "$MAIN" >/dev/null
+          grep -F '1.0.0' "$TELE" >/dev/null
+          grep -F 'trustedManifest' "$POLICY" >/dev/null
+
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
             echo "Credential rendering regression detected"
             exit 1
           fi
-          echo "EDGE_PRIVACY_OBSERVABILITY_GUARDS=PASS"
+          if grep -R -E 'BCP_EDGE_EVERGREEN_SIGNING|storepass|keypass' android-b-edge release/android.json; then
+            echo "Private signing material must never enter public source"
+            exit 1
+          fi
+          echo "EDGE_EVERGREEN_STATIC_GUARDS=PASS"
 
-      - name: Build debug APK
-        run: gradle :android-b-edge:assembleDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
+      - name: Unit tests
+        run: gradle :android-b-edge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
 
-      - name: SHA-256
-        run: sha256sum android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk | tee android-b-edge-debug.apk.sha256
+      - name: Android lint
+        run: gradle :android-b-edge:lintDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
+
+      - name: Build debug and unsigned release APKs
+        run: gradle :android-b-edge:assembleDebug :android-b-edge:assembleRelease --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
+
+      - name: Artifact contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEBUG="android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk"
+          RELEASE="android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk"
+          test -s "$DEBUG"
+          test -s "$RELEASE"
+          sha256sum "$DEBUG" | tee android-b-edge-debug.apk.sha256
+          sha256sum "$RELEASE" | tee android-b-edge-release-unsigned.apk.sha256
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$RELEASE" | tee android-b-edge-release.badging.txt
+          grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='100'" android-b-edge-release.badging.txt >/dev/null
+          echo "EDGE_UNSIGNED_RELEASE_CONTRACT=PASS"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: android-b-edge-debug-apk
+          name: android-b-edge-evergreen-unsigned
           path: |
-            android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk
-            android-b-edge-debug.apk.sha256
+            android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
+            android-b-edge-release-unsigned.apk.sha256
+            android-b-edge-release.badging.txt
           if-no-files-found: error
