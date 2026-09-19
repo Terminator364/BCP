@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_4_CI_QUALIFIED_LEGACY_PC_MIGRATION_BRIDGE_READY",
-  "last_completed_atomic_action": "Confirmed B-EDGE 0.2.5 field install and automatic pairing; proved field PC still runs legacy BCP 0.3.0 which predates server-update API; built CI-guarded one-click 0.3.x to 0.4.4 Windows migration bridge and uploaded it to canonical Drive",
-  "next_action": "Run API_BCP/00_A_INSTALLER/BCP_PC_MIGRATE_CURRENT.zip on the PC once, then read external BCP 0.4.4 heartbeat from API_BCP/02_TELEMETRY/BCP and resume B-EDGE field verification",
+  "status": "BCP_0_4_4_CI_QUALIFIED_LEGACY_MIGRATION_V2_READY",
+  "last_completed_atomic_action": "Diagnosed legacy supervisor/runtime race and identity migration gap; built CI-qualified migration v2 that disables legacy supervisor, migrates pairing/token, proves managed listener and authenticated diagnostics, writes durable Drive receipt, and replaced Drive CURRENT in place",
+  "next_action": "Run the refreshed API_BCP/00_A_INSTALLER/BCP_PC_MIGRATE_CURRENT.zip once on the PC; then read BCP_PC_MIGRATION_LATEST.json and live BCP heartbeat from Drive",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-LEGACY-PC-MIGRATION-BRIDGE-READY",
-    "status": "WAITING_ONE_UNAVOIDABLE_PC_LOCAL_ACTION",
-    "next_atomic_action": "After one-time PC migration bridge run, verify BCP 0.4.4 machine-readable Drive heartbeat",
+    "checkpoint_id": "APIAX07-LEGACY-MIGRATION-V2-READY",
+    "status": "WAITING_ONE_LOCAL_RERUN_WITH_CORRECTED_CURRENT",
+    "next_atomic_action": "Read machine-readable migration receipt after refreshed CURRENT bridge run",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -312,5 +312,26 @@
     "windows_validation_result": "PASS",
     "managed_update_run_id": 35414270426,
     "managed_update_result": "PASS"
+  },
+  "legacy_migration_v2": {
+    "cmd_commit": "729c927a69c4961baca5ac7e777aac13527fa259",
+    "ps1_commit": "e5f8257f69405feb39862728b410a60e8301ec5f",
+    "ci_commit": "fe36c6924793de00a65515ced2f008b56911a410",
+    "ci_run_id": 35415080461,
+    "ci_result": "PASS",
+    "artifact_id": 10574783993,
+    "artifact_digest": "sha256:978b19437e9ebac8ca3abb122e816cb28e7f05e559dc86736da34993c2b1e2c6",
+    "drive_current_file_id": "1ZI4of7cFTG7ajMxrKevHIpXlixWewa5a",
+    "drive_replaced_in_place_at": "2026-09-19T02:15:32Z",
+    "guarantees": [
+      "disable legacy bcp_supervisor.ps1 process/tasks",
+      "migrate bcp_token.txt and paired_edge.json",
+      "backup prior managed identity",
+      "pin installer/server to qualified commit and SHA256",
+      "verify health version 0.4.4",
+      "prove port 8765 listener is ChatGPT_ManagedApps/bcp/server.py",
+      "verify authenticated /v1/diagnostics",
+      "write BCP_PC_MIGRATION_LATEST.json receipt to synced CHATGPT_PC_AGENT receipt path"
+    ]
   }
 }
