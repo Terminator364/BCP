@@ -1,0 +1,19 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-human-progress-push-20260919-1944",
+  "project_or_mission": "API/BCP Telegram human-first automatic progress presence",
+  "base_main_sha": "0d6ac9a0845ea96f860ac4abe74e6e11d42706af",
+  "created_at": "2026-09-19T19:44:00+01:00",
+  "intended_file_scope": [
+    "windows/bcp_telegram_observability.py",
+    ".github/workflows/telegram-observability.yml",
+    ".project-memory/writers/chat-human-progress-push-20260919-1944.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Telegram Observability Qualification / python-selftest",
+    "BCP Telegram Observability Qualification / powershell-selftest",
+    "BCP Telegram Observability Qualification / contract-and-secret-guards",
+    "BCP Telegram Observability Qualification / package"
+  ],
+  "status": "ACTIVE_WRITER_BRANCH"
+}
