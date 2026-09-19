@@ -52,7 +52,11 @@
     "continuation_handoff": "API_PROJECT_CONTINUITY.md",
     "free_api_model_broker_autonomy": "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md",
     "canonical_current": "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
-    "rdc_zero_cost_ai_provider_plan": ".project-memory/AI_PROVIDER_PLAN_RDC.json"
+    "rdc_zero_cost_ai_provider_plan": ".project-memory/AI_PROVIDER_PLAN_RDC.json",
+    "context_fabric_three_node": "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+    "context_fabric_policy": ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json",
+    "bedge_runtime_v2_hardening": "docs/BEDGE_RUNTIME_V2_HARDENING.md",
+    "bedge_v2_test_matrix": "docs/BEDGE_V2_TEST_MATRIX.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -93,7 +97,11 @@
     "docs/TECHNICAL_REQUEST_CONTEXT_ENVELOPE.md",
     "docs/DUAL_CONVERSATION_CONTINUITY.md",
     "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md",
-    ".project-memory/AI_PROVIDER_PLAN_RDC.json"
+    ".project-memory/AI_PROVIDER_PLAN_RDC.json",
+    "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+    ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json",
+    "docs/BEDGE_RUNTIME_V2_HARDENING.md",
+    "docs/BEDGE_V2_TEST_MATRIX.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -104,13 +112,19 @@
     "P1_free_api_model_broker_after_field_continuity": true,
     "P1_lightweight_cockpit_after_field_continuity": true,
     "P1_bounded_autonomous_loops_after_field_continuity": true,
-    "P1_rdc_zero_cost_provider_field_validation_after_p0": true
+    "P1_rdc_zero_cost_provider_field_validation_after_p0": true,
+    "P1_universal_context_fabric": true,
+    "P1_three_node_nexus_after_p0": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
     "fresh_conversation_must_recover_without_user_reexplanation": true,
     "screenshots_are_fallback_only": true,
-    "legitimate_scope_must_be_durable": true
+    "legitimate_scope_must_be_durable": true,
+    "universal_bootstrap_command": "BCPGO",
+    "preferred_context_refresh": "UNCHANGED_OR_DELTA",
+    "full_memory_replay_default": false,
+    "universal_command_is_authentication": false
   },
   "diagnostic_mode": {
     "name": "CHATGPT_PC_ISOLATION",
@@ -537,5 +551,36 @@
     "identity_file_match": true,
     "identity_hash_match": true,
     "conclusion": "REBOOT_RECOVERY_PROVEN_ORACLE_FALSE_NEGATIVE_REMAINS_TO_REQUALIFY"
+  },
+  "context_fabric": {
+    "status": "DESIGN_HARDENED_RUNTIME_UNVERIFIED",
+    "universal_command": "BCPGO",
+    "components": [
+      "B_EDGE",
+      "PC_WORKER",
+      "BCP_NEXUS"
+    ],
+    "current_chatgpt_baseline": "CONNECTED_DRIVE_CONTEXT_PROJECTION",
+    "future_direct_adapter": "MCP_OR_PLUGIN_WHEN_PLAN_AND_FIELD_QUALIFIED",
+    "context_layers": [
+      "GLOBAL_CORE",
+      "PROJECT_CORE",
+      "TASK_DELTA",
+      "EVIDENCE_ON_DEMAND"
+    ],
+    "per_turn_states": [
+      "UNCHANGED",
+      "DELTA",
+      "FULL_REFRESH",
+      "CONFLICT",
+      "DEGRADED",
+      "HOLD"
+    ],
+    "canonical_doc": "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+    "machine_policy": ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json",
+    "schema_files": [
+      "schemas/bcp_context_pack.schema.json",
+      "schemas/bcp_context_resolution.schema.json"
+    ]
   }
 }
