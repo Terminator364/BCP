@@ -37,10 +37,25 @@ At minimum preserve outside chat:
 
 A fresh conversation must load durable state first. It must not ask the user to re-explain already-persisted context unless evidence is missing or contradictory.
 
-Cold recovery command: `APIAX07`.
+Universal cold bootstrap: `BCPGO`.
+API/BCP scoped recovery alias: `APIAX07`.
 Same-conversation post-interruption continuation: `CONTINUE ATOMIC`.
 Future dual-conversation takeover command: `TAKEOVER SAFE`.
 
 ## Conversation-loss acceptance test
 
 This invariant is not FIELD_VERIFIED until a fresh conversation can recover the exact project state and next action using durable project artifacts only, with no screenshot or manual reconstruction by the user.
+
+
+## Context Fabric survival rule
+
+A fresh conversation should not reconstruct state by reading all project history.
+
+Preferred recovery path:
+`BCPGO -> bootstrap manifest -> GLOBAL_CORE -> PROJECT_CORE -> TASK_DELTA`.
+
+Subsequent turns use revision-aware `UNCHANGED/DELTA` refresh rather than full memory replay.
+
+The bootstrap code is not an authentication token. An authorized connected BCP/Drive/app path must exist.
+
+Canonical design: `docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md`.
