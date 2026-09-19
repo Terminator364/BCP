@@ -1,0 +1,24 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chatgpt-api-bcp-telegram-observability-mvp0-20260919-1038",
+  "project_or_mission": "API/BCP Telegram Observability MVP-0",
+  "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
+  "created_at": "2026-09-19T10:38:00+01:00",
+  "branch": "work/bcp/telegram-observability-mvp0-20260919-1038",
+  "intended_file_scope": [
+    "android-b-edge Telegram read-only observability components",
+    "Android manifest/build wiring only if required",
+    "offline unit tests",
+    "CI gate for Telegram observability",
+    "docs/TELEGRAM_OBSERVABILITY_MVP.md implementation refinement",
+    "project_state.json checkpoint"
+  ],
+  "expected_ci_gates": [
+    "Android unit tests",
+    "Android debug/release compile where existing workflow supports it",
+    "Telegram observability offline contract tests",
+    "no secrets committed"
+  ],
+  "integration_state": "WORK_BRANCH_ACTIVE",
+  "direct_main_write": false
+}
