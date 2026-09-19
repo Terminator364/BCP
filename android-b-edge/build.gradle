@@ -10,8 +10,8 @@ android {
         applicationId "com.blessing.bcpedge"
         minSdk 26
         targetSdk 35
-        versionCode 6
-        versionName "0.2.4-recovery-control"
+        versionCode 7
+        versionName "0.2.5-auto-server-promotion"
     }
 
     buildTypes {
