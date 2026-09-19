@@ -1,0 +1,71 @@
+{
+  "schema": "bcp.ai_provider_plan_rdc/1",
+  "updated_at": "2026-09-19",
+  "budget_usd": 0,
+  "target_location": "Kinshasa, Democratic Republic of the Congo",
+  "policy": {
+    "no_vpn_or_geo_spoofing": true,
+    "no_false_country": true,
+    "no_shared_or_borrowed_keys": true,
+    "no_multi_account_quota_farming": true,
+    "no_auto_billing": true,
+    "field_smoke_required_before_active": true
+  },
+  "lifecycle": [
+    "DOCUMENTED_CANDIDATE",
+    "ACCOUNT_PASS",
+    "KEY_PASS",
+    "KINSHASA_SMOKE_PASS",
+    "QUOTA_PASS",
+    "BCP_ADAPTER_PASS",
+    "ACTIVE_FREE_PROVIDER"
+  ],
+  "bootstrap_order": [
+    {
+      "plan": "A",
+      "provider": "Mistral API",
+      "tier": "Free mode",
+      "status": "DOCUMENTED_CANDIDATE",
+      "card_required_by_docs": false
+    },
+    {
+      "plan": "B",
+      "provider": "GroqCloud",
+      "tier": "Free",
+      "status": "DOCUMENTED_CANDIDATE",
+      "card_required_to_remain_free": false
+    },
+    {
+      "plan": "C",
+      "provider": "OpenRouter",
+      "tier": "Free",
+      "status": "DOCUMENTED_CANDIDATE",
+      "card_required_by_plan": false,
+      "current_rpd": 50
+    },
+    {
+      "plan": "D",
+      "provider": "Cloudflare Workers AI",
+      "tier": "Workers Free",
+      "status": "DOCUMENTED_CANDIDATE",
+      "card_required_by_onboarding": false,
+      "current_free_allocation": "10000 neurons/day"
+    },
+    {
+      "plan": "E",
+      "provider": "Gemini API / Google AI Studio",
+      "tier": "Free developer path",
+      "status": "DOCUMENTED_REGION_OK_FIELD_UNVERIFIED",
+      "official_region_rdc": true
+    },
+    {
+      "plan": "F",
+      "provider": "Hugging Face Inference Providers",
+      "tier": "Free",
+      "status": "FALLBACK_CANDIDATE",
+      "current_monthly_credit_usd": 0.1
+    }
+  ],
+  "activation_rule": "Provider becomes ACTIVE_FREE_PROVIDER only after real Kinshasa account/key/API smoke test and BCP adapter qualification.",
+  "exhaustion_state": "FREE_MODEL_CAPACITY_HOLD"
+}
