@@ -675,3 +675,12 @@ This does not claim access to hidden model chain-of-thought or internal platform
 
 Detailed contract:
 `docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md`.
+
+
+### Human-first cockpit UX
+
+The user-facing Telegram surface MUST default to a simple dashboard, not engineering telemetry.
+- `/status` = simple state, checkmarks, next action and a progress bar/percentage only over explicitly finite verifiable items;
+- `/details` = technical evidence for agents/debugging;
+- raw SHAs, branches, hashes and diagnostic jargon stay in the technical view unless they are needed for a real human decision;
+- hidden reasoning progress is never converted into a fake percentage.
