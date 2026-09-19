@@ -1,0 +1,23 @@
+{
+  "schema": "bcp.telegram_cockpit_v4_state/1",
+  "updated_at": "2026-09-19",
+  "status": "IMPLEMENTED_BRANCH_CI_PENDING",
+  "branch": "work/bcp/telegram-cockpit-v4-20260919-2307",
+  "base_main_sha": "947229b9685df7fcf94ad4fb95c7e2b2ab3d8708",
+  "requirements_revision": "2026-09-19-R10",
+  "telegram_companion": "2026.09.19-human-cockpit-v4",
+  "nexus": "0.1.5",
+  "user_install_required_now": false,
+  "token_reentry_required": false,
+  "scheduled_chatgpt_automation": false,
+  "field_verified": false,
+  "features": [
+    "stable inline read-only controls",
+    "immediate callback acknowledgement",
+    "human status PDF",
+    "technical diagnostics PDF",
+    "Nexus cached report export",
+    "editable live mission card"
+  ],
+  "next_gate": "EXACT_HEAD_CI_THEN_SERIALIZED_MERGE_THEN_RESIDENT_CONVERGENCE_THEN_KINSHASA_FIELD_BUTTON_AND_PDF_ROUNDTRIP"
+}
