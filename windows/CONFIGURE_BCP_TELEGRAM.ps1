@@ -144,8 +144,7 @@ if ($SelfTest) {
         '"/ci"',
         '"/holds"',
         "getUpdates",
-        "TELEGRAM_RUNTIME_LATEST.json",
-        "TELEGRAM_SETUP_LATEST.json"
+        "TELEGRAM_RUNTIME_LATEST.json"
     )) {
         if ($raw -notmatch [regex]::Escape($required)) {
             throw ("SELFTEST_REQUIRED_CONTRACT_MISSING " + $required)
@@ -156,6 +155,10 @@ if ($SelfTest) {
     }
     if ($raw -match '(?i)import\s+(requests|telegram|telebot|aiohttp)') {
         throw "SELFTEST_UNEXPECTED_HEAVY_DEPENDENCY"
+    }
+    $scriptRaw = Get-Content -Raw -LiteralPath $PSCommandPath -Encoding UTF8
+    if ($scriptRaw -notmatch [regex]::Escape("TELEGRAM_SETUP_LATEST.json")) {
+        throw "SELFTEST_SETUP_TELEMETRY_MIRROR_MISSING"
     }
     Write-Host "BCP_TELEGRAM_CONFIGURATOR_SELFTEST=PASS"
     exit 0
