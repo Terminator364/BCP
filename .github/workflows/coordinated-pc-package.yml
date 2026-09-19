@@ -11,6 +11,7 @@ on:
       - "windows/bcp_server.py"
       - "release/server.json"
       - ".github/workflows/coordinated-pc-package.yml"
+      - ".github/workflows/coordinated-product.yml"
 
 permissions:
   contents: read
