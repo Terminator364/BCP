@@ -421,3 +421,46 @@ Expected: compare revision/hash/authority; newest cannot automatically win if in
 
 T9. Raw SQLite/WAL file is presented as cross-device replica.
 Expected: reject as unsupported replication mechanism; require logical snapshot/event replication.
+
+
+## U. AX15GO cross-project causal regression
+
+Canonical mechanism source:
+`.project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json`.
+
+These tests are causal obligations, not a scenario-counting certification. Candidate-source fixes remain candidate until their own project gates pass.
+
+U1. A bounded operation contains one worker/wait that never completes.
+Expected: every blocking primitive derives a timeout from the remaining monotonic deadline; the operation exits within declared deadline plus bounded scheduler tolerance.
+
+U2. A permanent invariant is repaired, then a later reconstruction/version transform reintroduces the old value.
+Expected: final-transform/final-artifact validation repairs or rejects the regression. Intermediate-source PASS cannot certify the published artifact.
+
+U3. Critical publication reaches copy/replace/hash readback and power loss occurs before the platform-qualified durability boundary.
+Expected: no `COMMITTED/DURABLE_LOCAL` claim before the required flush boundary. Linux and Windows durability semantics are qualified separately; noncritical telemetry is not burdened with blanket fsync.
+
+U4. A sealed runtime has a known defect but only a future/vNext engineering primitive is improved.
+Expected: deployed runtime status remains unchanged. Documentation/adapter/test changes cannot be reported as a deployed fix.
+
+U5. A dedicated repository exists while its fence still says PLACEHOLDER/NOT_CANONICAL and another repository owns current source.
+Expected: bootstrap/recovery resolves the declared canonical source and refuses to infer authority from repository existence.
+
+U6. Discovery has a six-second outer deadline but is given hundreds or thousands of candidate endpoints.
+Expected: both elapsed time and queued/in-flight work remain bounded; cancellation does not leave a large task/socket tail.
+
+U7. The temporary CI cache containing the pinned Android signing identity expires after a long quiet period.
+Expected: release fails closed with a recovery-required state; no replacement/new signing key is generated. In-place update continuity remains pending until a separately verified recovery copy is proven.
+
+U8. The new artifact is durable; COMMITTED receipt crosses its atomic replace boundary; a later receipt durability/readback step errors.
+Expected: the artifact is not blindly rolled back. System either completes bounded durability reconciliation or reports `COMMIT_OUTCOME_UNKNOWN`.
+
+U9. Process/reboot interruption leaves source, published artifact and receipt in differing survival combinations.
+Expected: side-effect-free reconciliation classifies exact identity before replay as `COMMITTED`, `NOT_COMMITTED`, `ARTIFACT_PRESENT_RECEIPT_MISSING`, `RECEIPT_PRESENT_ARTIFACT_MISMATCH`, `RECEIPT_UNREADABLE` or `CONFLICT`.
+
+U10. A new dedicated repository is created before product-source migration.
+Expected: mandatory repository-level agent/security/CI-budget bootstrap policy is already inherited; placeholder verifier rejects undeclared product files until explicit authority migration.
+
+Promotion note:
+- a PASS in U proves only the tested causal invariant;
+- candidate PR evidence remains candidate until its source repository qualifies/merges it;
+- none of U upgrades B-EDGE/BCP runtime or field certification by itself.
