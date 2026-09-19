@@ -579,7 +579,7 @@ class Service:
         lines = ["Dernières micro-actions vérifiables"]
         for ev in events[-8:]:
             state = clean(ev.get("state") or "EVENT", 30)
-            step = clean(ev.get("step_id") or ev.get("action_summary") or "", 95)
+            step = clean(ev.get("action_summary") or ev.get("step_id") or "", 95)
             lines.append("• " + state + ((" — " + step) if step else ""))
         return "\n".join(lines)
 
