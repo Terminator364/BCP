@@ -1678,6 +1678,24 @@ def selftest() -> int:
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Missions récentes" in svc.missions()
         assert "Lecture seule" in svc.dispatch("/run")
+        assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
+        assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
+        summary_pdf = svc.report_pdf(False)
+        technical_pdf = svc.report_pdf(True)
+        assert summary_pdf.startswith(b"%PDF-1.4")
+        assert technical_pdf.startswith(b"%PDF-1.4")
+        assert summary_pdf.rstrip().endswith(b"%%EOF")
+        assert technical_pdf.rstrip().endswith(b"%%EOF")
+        keyboard = Telegram.keyboard()
+        callback_values = {
+            button.get("callback_data")
+            for row in keyboard.get("inline_keyboard", [])
+            for button in row
+        }
+        assert {
+            "bcp:status", "bcp:where", "bcp:missions", "bcp:details",
+            "bcp:pdf:summary", "bcp:pdf:technical",
+        } <= callback_values
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
