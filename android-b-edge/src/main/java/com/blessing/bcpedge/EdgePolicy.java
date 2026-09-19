@@ -25,10 +25,28 @@ public final class EdgePolicy {
         return (nowMs - lastAttemptMs) >= bounded;
     }
 
+    public static long defaultReconcileIntervalMs() { return 5L * 60L * 1000L; }
+
+    public static String resourceClass(boolean requiresPc, boolean semantic, boolean bulk) {
+        if (semantic) return "REMOTE_AI";
+        if (requiresPc) return "PC_R3";
+        if (bulk) return "EDGE_R2";
+        return "EDGE_R1";
+    }
+
+    public static boolean canRunNow(String resourceClass, boolean lowMemory,
+                                    boolean powerSave, boolean severeThermal,
+                                    boolean networkConnected) {
+        if ("PC_R3".equals(resourceClass)) return true;
+        if ("REMOTE_AI".equals(resourceClass)) return networkConnected && !powerSave && !severeThermal;
+        if ("EDGE_R2".equals(resourceClass)) return !lowMemory && !powerSave && !severeThermal;
+        return !lowMemory && !severeThermal;
+    }
+
     public static boolean canAdmitJob(int currentDepth) {
         return currentDepth >= 0 && currentDepth < boundedQueueLimit();
     }
 
-    public static int boundedQueueLimit() { return 128; }
-    public static int boundedMemoryEntries() { return 96; }
+    public static int boundedQueueLimit() { return 256; }
+    public static int boundedMemoryEntries() { return 256; }
 }
