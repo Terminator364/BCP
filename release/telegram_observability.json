@@ -3,7 +3,7 @@
   "channel": "stable",
   "version": "2026.09.20-human-cockpit-v5",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "6b63e7a31cd61e535a567b559d0800cc72552d4ebd19ac3cddb60f096db429b0",
+  "sha256": "1f9152945ed5d3e2f648cc5cc16842ed6af93da5415e1841b0bd3170f3a8040f",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
