@@ -1896,14 +1896,53 @@ def selftest():
         assert 'parts[3] == "context"' in source
         assert 'parts[3] == "memory"' in source
         assert 'parts[3] == "jobs"' in source
-        memory_put("buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest")
-        pack = build_context_pack("buildhub")
+        with connect_db() as cx:
+            mem_cols = {r[1] for r in cx.execute("PRAGMA table_info(memory_records)").fetchall()}
+            job_cols = {r[1] for r in cx.execute("PRAGMA table_info(jobs)").fetchall()}
+            assert {"evidence_class","source_id","pinned","expires_at","supersedes_key"} <= mem_cols
+            assert {"action_id","priority","resource_class","expected_revision","input_hash","coordinator_epoch","evidence_contract"} <= job_cols
+
+        memory_put(
+            "buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest",
+            evidence_class="VALIDATED", source_id="selftest:goal", pinned=True
+        )
+        protected_rejected = False
+        try:
+            memory_put("__global__", "POLICY", "unsafe", {"x": 1}, "web",
+                       evidence_class="UNTRUSTED_EXTERNAL")
+        except ValueError as e:
+            protected_rejected = "memory_admission_rejected" in str(e)
+        assert protected_rejected
+
+        pack = build_context_pack("buildhub", task="final product orchestration", byte_budget=12000)
+        assert pack["schema"] == "bcp.context_pack/2"
         assert pack["memory"]["PROJECT_MEMORY"][0]["key"] == "goal"
-        q1 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False)
+        assert pack["budget"]["used_bytes"] <= pack["budget"]["bytes"]
+        assert len(pack["revision_vector"]["context_hash"]) == 64
+
+        q1 = enqueue_job(
+            "buildhub", "test", {"x": 1}, "job-idem", requires_pc=False,
+            priority=80, resource_class="EDGE_R1", action_id="selftest-action",
+            expected_revision=1, coordinator_epoch=1, evidence_contract="SELFTEST_RECEIPT"
+        )
         q2 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False)
         assert q1["result"] == "QUEUED"
+        assert q1["priority"] == 80 and q1["resource_class"] == "EDGE_R1"
         assert q2["result"] == "ALREADY_QUEUED"
+        blocked = enqueue_job(
+            "buildhub", "dependent", {"x": 2}, "job-dep", requires_pc=False,
+            dependencies=[q1["job_id"]]
+        )
+        assert blocked["state"] == "BLOCKED"
+        stale_job_rejected = False
+        try:
+            enqueue_job("buildhub", "stale", {}, "job-stale", expected_revision=0)
+        except ValueError as e:
+            stale_job_rejected = str(e).startswith("stale_job_revision:")
+        assert stale_job_rejected
         assert pc_operating_mode() in ("PC_AVAILABLE", "PC_MEMORY_PRESSURE")
+        assert "_bcp._tcp.local" in source
+        assert "start_mdns_advertiser" in source
 
         edge_dist = Path(td) / "edge-dist"
         edge_dist.mkdir(parents=True, exist_ok=True)
