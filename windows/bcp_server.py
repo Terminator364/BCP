@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.5.0"
+SERVER_VERSION = "0.5.1"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -836,6 +836,56 @@ def ensure_state() -> str:
                 UNIQUE(project_id,idempotency_key)
             )"""
         )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS missions(
+                mission_id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                request_text TEXT NOT NULL,
+                request_digest TEXT NOT NULL,
+                spec_revision TEXT NOT NULL,
+                context_revision TEXT NOT NULL,
+                execution_profile TEXT NOT NULL,
+                allowed_capabilities_json TEXT NOT NULL,
+                provider_policy_json TEXT NOT NULL,
+                approval_gates_json TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL,
+                current_step TEXT NOT NULL,
+                last_committed_step TEXT NOT NULL,
+                next_step TEXT NOT NULL,
+                last_progress_at TEXT NOT NULL,
+                worker_component TEXT NOT NULL,
+                receipt_evidence TEXT NOT NULL,
+                status TEXT NOT NULL,
+                hold_reason TEXT NOT NULL,
+                plan_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(project_id,idempotency_key)
+            )"""
+        )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS mission_events(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mission_id TEXT NOT NULL,
+                seq INTEGER NOT NULL,
+                event_type TEXT NOT NULL,
+                step_id TEXT NOT NULL,
+                worker_component TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                evidence_ref TEXT NOT NULL,
+                status TEXT NOT NULL,
+                failure_hold_reason TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                idempotency_key TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                event_hash TEXT NOT NULL,
+                UNIQUE(mission_id,seq),
+                UNIQUE(mission_id,idempotency_key)
+            )"""
+        )
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_mission_events_mid_seq ON mission_events(mission_id,seq)")
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_missions_project_updated ON missions(project_id,updated_at)")
         cx.commit()
     finally:
         cx.close()
@@ -982,6 +1032,451 @@ def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
         d["payload"] = json.loads(d.pop("payload_json"))
         out.append(d)
     return out
+
+
+MISSION_EVENT_TYPES = {
+    "ACCEPTED", "NORMALIZED", "CONTEXT_RESOLVED", "PLANNED", "QUEUED",
+    "STARTED", "DISPATCHED", "WAITING", "PROVIDER_WAIT", "RESULT_RECEIVED",
+    "VALIDATING", "COMMITTED", "CHECKPOINTED", "RETRY_SCHEDULED", "BLOCKED",
+    "HOLD", "PLATFORM_HOLD", "NETWORK_WAIT", "STALLED", "DONE", "CANCELLED",
+}
+MISSION_TERMINAL_STATES = {"DONE", "CANCELLED"}
+MISSION_STEP_DONE_STATES = {"COMMITTED", "CHECKPOINTED", "DONE"}
+WORKER_PRIORITY = {"LOCAL": 0, "B-EDGE": 1, "BEDGE": 1, "PC": 2, "REMOTE_AI": 3}
+
+
+def _json_list(value, name: str) -> list:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ValueError(name + "_must_be_list")
+    return value
+
+
+def _json_dict(value, name: str) -> dict:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(name + "_must_be_object")
+    return value
+
+
+def _mission_public(row) -> dict | None:
+    if not row:
+        return None
+    d = dict(row)
+    d["allowed_capabilities"] = json.loads(d.pop("allowed_capabilities_json"))
+    d["provider_policy"] = json.loads(d.pop("provider_policy_json"))
+    d["approval_gates"] = json.loads(d.pop("approval_gates_json"))
+    d["plan"] = json.loads(d.pop("plan_json"))
+    d.pop("request_text", None)
+    return d
+
+
+def _mission_event_public(row) -> dict:
+    d = dict(row)
+    d["payload"] = json.loads(d.pop("payload_json"))
+    return d
+
+
+def _mission_progress(plan: list[dict]) -> dict | None:
+    if not plan:
+        return None
+    total = len(plan)
+    verified = sum(1 for step in plan if bool(step.get("verified")))
+    return {
+        "verified_steps": verified,
+        "total_steps": total,
+        "percent": int((verified * 100) / total),
+        "basis": "finite_externally_verifiable_plan_steps_only",
+    }
+
+
+def _normalize_plan(steps) -> list[dict]:
+    raw = _json_list(steps, "steps")
+    if not raw or len(raw) > 128:
+        raise ValueError("steps_count_out_of_range")
+    normalized = []
+    seen = set()
+    for pos, item in enumerate(raw, 1):
+        if not isinstance(item, dict):
+            raise ValueError("step_must_be_object")
+        step_id = str(item.get("id") or ("step-%02d" % pos))[:80]
+        if not step_id or step_id in seen:
+            raise ValueError("duplicate_or_empty_step_id")
+        seen.add(step_id)
+        deps = [str(x)[:80] for x in _json_list(item.get("dependencies", []), "dependencies")]
+        worker = str(item.get("worker_class", "LOCAL")).upper()
+        if worker not in WORKER_PRIORITY:
+            raise ValueError("invalid_worker_class")
+        normalized.append({
+            "id": step_id,
+            "label": str(item.get("label", step_id))[:240],
+            "dependencies": deps,
+            "worker_class": worker,
+            "state": str(item.get("state", "PENDING")).upper(),
+            "verified": bool(item.get("verified", False)),
+        })
+    known = {s["id"] for s in normalized}
+    for step in normalized:
+        if any(dep not in known for dep in step["dependencies"]):
+            raise ValueError("unknown_step_dependency")
+        if step["id"] in step["dependencies"]:
+            raise ValueError("self_dependency")
+    return normalized
+
+
+def _next_runnable_from_plan(plan: list[dict]) -> dict | None:
+    done = {
+        step["id"] for step in plan
+        if bool(step.get("verified")) or str(step.get("state", "")).upper() in MISSION_STEP_DONE_STATES
+    }
+    candidates = []
+    for pos, step in enumerate(plan):
+        if bool(step.get("verified")) or str(step.get("state", "")).upper() in MISSION_STEP_DONE_STATES:
+            continue
+        if all(dep in done for dep in step.get("dependencies", [])):
+            candidates.append((WORKER_PRIORITY.get(str(step.get("worker_class", "REMOTE_AI")).upper(), 99), pos, step))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: (x[0], x[1]))
+    return dict(candidates[0][2])
+
+
+def mission_get(mission_id: str, include_request: bool = False) -> dict | None:
+    with connect_db() as cx:
+        row = cx.execute("SELECT * FROM missions WHERE mission_id=?", (mission_id,)).fetchone()
+    if not row:
+        return None
+    out = _mission_public(row)
+    if include_request:
+        out["request_text"] = row["request_text"]
+    out["progress"] = _mission_progress(out["plan"])
+    return out
+
+
+def mission_tail(mission_id: str, limit: int = 12) -> list[dict]:
+    limit = max(1, min(int(limit), 50))
+    with connect_db() as cx:
+        rows = cx.execute(
+            "SELECT * FROM mission_events WHERE mission_id=? ORDER BY seq DESC LIMIT ?",
+            (mission_id, limit),
+        ).fetchall()
+    return [_mission_event_public(x) for x in reversed(rows)]
+
+
+def accept_mission(
+    project_id: str,
+    request_text: str,
+    idempotency_key: str,
+    spec_revision: str = "",
+    context_revision: str = "",
+    execution_profile: str = "NORMAL",
+    allowed_capabilities=None,
+    provider_policy=None,
+    approval_gates=None,
+) -> dict:
+    project_id = str(project_id or "").strip()[:128]
+    request_text = str(request_text or "").strip()
+    idempotency_key = str(idempotency_key or "").strip()[:200]
+    if not project_id:
+        raise ValueError("project_id_required")
+    if not request_text or len(request_text) > 50000:
+        raise ValueError("request_text_invalid")
+    if not idempotency_key:
+        raise ValueError("idempotency_key_required")
+    profile = str(execution_profile or "NORMAL").upper()
+    if profile not in ("FAST", "NORMAL", "DEEP", "AUDIT"):
+        raise ValueError("invalid_execution_profile")
+    capabilities = [str(x)[:100] for x in _json_list(allowed_capabilities or [], "allowed_capabilities")]
+    policy = _json_dict(provider_policy or {}, "provider_policy")
+    if float(policy.get("default_paid_spend_usd", 0.0) or 0.0) != 0.0:
+        raise ValueError("paid_spend_policy_must_be_zero")
+    policy = {
+        "default_paid_spend_usd": 0.0,
+        "local_first": True,
+        "field_qualified_free_only": True,
+        **policy,
+    }
+    if float(policy.get("default_paid_spend_usd", 0.0) or 0.0) != 0.0:
+        raise ValueError("paid_spend_policy_must_be_zero")
+    gates = [str(x)[:160] for x in _json_list(approval_gates or [], "approval_gates")]
+    created = utc_now()
+    digest = sha256_text(request_text)
+    with DB_LOCK:
+        cx = connect_db()
+        try:
+            cx.execute("BEGIN IMMEDIATE")
+            old = cx.execute(
+                "SELECT * FROM missions WHERE project_id=? AND idempotency_key=?",
+                (project_id, idempotency_key),
+            ).fetchone()
+            if old:
+                cx.execute("COMMIT")
+                return {"result": "ALREADY_ACCEPTED", "mission": _mission_public(old)}
+            mission_id = "M-" + secrets.token_hex(8)
+            cx.execute(
+                """INSERT INTO missions(
+                    mission_id,project_id,request_text,request_digest,spec_revision,context_revision,
+                    execution_profile,allowed_capabilities_json,provider_policy_json,approval_gates_json,
+                    idempotency_key,current_step,last_committed_step,next_step,last_progress_at,
+                    worker_component,receipt_evidence,status,hold_reason,plan_json,created_at,updated_at
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    mission_id, project_id, request_text, digest, str(spec_revision)[:120],
+                    str(context_revision)[:120], profile, canonical_json(capabilities),
+                    canonical_json(policy), canonical_json(gates), idempotency_key,
+                    "MISSION_ACCEPTED", "", "RESOLVE_CONTEXT", created, "BCP",
+                    "", "ACCEPTED", "", "[]", created, created,
+                ),
+            )
+            envelope = {
+                "mission_id": mission_id,
+                "seq": 1,
+                "event_type": "ACCEPTED",
+                "step_id": "MISSION_ACCEPTED",
+                "worker_component": "BCP",
+                "summary": "Mission persisted before significant work.",
+                "evidence_ref": "",
+                "status": "ACCEPTED",
+                "failure_hold_reason": "",
+                "payload": {
+                    "request_digest": digest,
+                    "next_step": "RESOLVE_CONTEXT",
+                    "zero_paid_spend_usd": 0.0,
+                },
+                "idempotency_key": "accept:" + idempotency_key,
+                "created_at": created,
+                "prev_hash": "GENESIS",
+            }
+            event_hash = sha256_text(canonical_json(envelope))
+            cx.execute(
+                """INSERT INTO mission_events(
+                    mission_id,seq,event_type,step_id,worker_component,summary,evidence_ref,status,
+                    failure_hold_reason,payload_json,idempotency_key,created_at,prev_hash,event_hash
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    mission_id, 1, "ACCEPTED", "MISSION_ACCEPTED", "BCP",
+                    "Mission persisted before significant work.", "", "ACCEPTED", "",
+                    canonical_json(envelope["payload"]), "accept:" + idempotency_key,
+                    created, "GENESIS", event_hash,
+                ),
+            )
+            cx.execute("COMMIT")
+        except Exception:
+            try:
+                cx.execute("ROLLBACK")
+            except Exception:
+                pass
+            raise
+        finally:
+            cx.close()
+    return {"result": "MISSION_ACCEPTED", "mission": mission_get(mission_id)}
+
+
+def append_mission_event(
+    mission_id: str,
+    event_type: str,
+    idempotency_key: str,
+    *,
+    step_id: str = "",
+    worker_component: str = "",
+    summary: str = "",
+    evidence_ref: str = "",
+    status: str = "",
+    failure_hold_reason: str = "",
+    payload=None,
+) -> dict:
+    event_type = str(event_type or "").upper()
+    if event_type not in MISSION_EVENT_TYPES:
+        raise ValueError("invalid_mission_event_type")
+    idempotency_key = str(idempotency_key or "").strip()[:200]
+    if not idempotency_key:
+        raise ValueError("idempotency_key_required")
+    extra = _json_dict(payload or {}, "payload")
+    now = utc_now()
+    with DB_LOCK:
+        cx = connect_db()
+        try:
+            cx.execute("BEGIN IMMEDIATE")
+            mission = cx.execute("SELECT * FROM missions WHERE mission_id=?", (mission_id,)).fetchone()
+            if not mission:
+                cx.execute("ROLLBACK")
+                raise ValueError("mission_not_found")
+            old = cx.execute(
+                "SELECT * FROM mission_events WHERE mission_id=? AND idempotency_key=?",
+                (mission_id, idempotency_key),
+            ).fetchone()
+            if old:
+                cx.execute("COMMIT")
+                return {"result": "ALREADY_RECORDED", "event": _mission_event_public(old), "mission": mission_get(mission_id)}
+            last = cx.execute(
+                "SELECT * FROM mission_events WHERE mission_id=? ORDER BY seq DESC LIMIT 1",
+                (mission_id,),
+            ).fetchone()
+            seq = int(last["seq"]) + 1 if last else 1
+            prev_hash = last["event_hash"] if last else "GENESIS"
+            plan = json.loads(mission["plan_json"])
+            sid = str(step_id or extra.get("step_id") or mission["current_step"])[:100]
+            step_state = str(extra.get("step_state", "")).upper()
+            if sid and step_state:
+                for item in plan:
+                    if item.get("id") == sid:
+                        item["state"] = step_state
+                        if "verified" in extra:
+                            item["verified"] = bool(extra.get("verified"))
+                        break
+            if "plan" in extra:
+                plan = _normalize_plan(extra["plan"])
+            current_step = str(extra.get("current_step") or sid or mission["current_step"])[:160]
+            last_committed = str(mission["last_committed_step"])
+            if event_type == "COMMITTED":
+                last_committed = sid or current_step
+            next_step = str(extra.get("next_step", mission["next_step"]))[:160]
+            if plan and not next_step:
+                nxt = _next_runnable_from_plan(plan)
+                next_step = nxt["id"] if nxt else ""
+            worker = str(worker_component or extra.get("worker_component") or mission["worker_component"])[:120]
+            evidence = str(evidence_ref or extra.get("evidence_ref") or "")[:500]
+            new_status = str(status or extra.get("status") or event_type)[:80]
+            hold = str(failure_hold_reason or extra.get("failure_hold_reason") or "")[:500]
+            event_payload = dict(extra)
+            event_payload.pop("plan", None)
+            envelope = {
+                "mission_id": mission_id,
+                "seq": seq,
+                "event_type": event_type,
+                "step_id": sid,
+                "worker_component": worker,
+                "summary": str(summary)[:500],
+                "evidence_ref": evidence,
+                "status": new_status,
+                "failure_hold_reason": hold,
+                "payload": event_payload,
+                "idempotency_key": idempotency_key,
+                "created_at": now,
+                "prev_hash": prev_hash,
+            }
+            event_hash = sha256_text(canonical_json(envelope))
+            cur = cx.execute(
+                """INSERT INTO mission_events(
+                    mission_id,seq,event_type,step_id,worker_component,summary,evidence_ref,status,
+                    failure_hold_reason,payload_json,idempotency_key,created_at,prev_hash,event_hash
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    mission_id, seq, event_type, sid, worker, str(summary)[:500], evidence,
+                    new_status, hold, canonical_json(event_payload), idempotency_key,
+                    now, prev_hash, event_hash,
+                ),
+            )
+            cx.execute(
+                """UPDATE missions SET current_step=?,last_committed_step=?,next_step=?,
+                   last_progress_at=?,worker_component=?,receipt_evidence=?,status=?,hold_reason=?,
+                   plan_json=?,updated_at=? WHERE mission_id=?""",
+                (
+                    current_step, last_committed, next_step, now, worker, evidence, new_status,
+                    hold, canonical_json(plan), now, mission_id,
+                ),
+            )
+            cx.execute("COMMIT")
+            return {
+                "result": "RECORDED",
+                "event_id": int(cur.lastrowid),
+                "seq": seq,
+                "event_hash": event_hash,
+                "mission": mission_get(mission_id),
+            }
+        except Exception:
+            try:
+                cx.execute("ROLLBACK")
+            except Exception:
+                pass
+            raise
+        finally:
+            cx.close()
+
+
+def set_mission_plan(mission_id: str, steps, idempotency_key: str) -> dict:
+    plan = _normalize_plan(steps)
+    first = _next_runnable_from_plan(plan)
+    return append_mission_event(
+        mission_id,
+        "PLANNED",
+        idempotency_key,
+        step_id="PLAN",
+        worker_component="BCP",
+        summary="Bounded dependency plan persisted.",
+        status="PLANNED",
+        payload={
+            "plan": plan,
+            "current_step": "PLAN",
+            "next_step": first["id"] if first else "",
+        },
+    )
+
+
+def mission_next_action(mission_id: str) -> dict:
+    mission = mission_get(mission_id)
+    if not mission:
+        raise ValueError("mission_not_found")
+    if mission["status"] in MISSION_TERMINAL_STATES:
+        return {"mission_id": mission_id, "terminal": True, "next_action": None}
+    step = _next_runnable_from_plan(mission["plan"])
+    if step:
+        return {
+            "mission_id": mission_id,
+            "terminal": False,
+            "next_action": step,
+            "selection_policy": "dependencies_then_local_first",
+        }
+    return {
+        "mission_id": mission_id,
+        "terminal": False,
+        "next_action": {"id": mission.get("next_step") or "", "worker_class": "UNSPECIFIED"},
+        "selection_policy": "durable_next_step_fallback",
+    }
+
+
+def mission_where(mission_id: str) -> dict:
+    mission = mission_get(mission_id)
+    if not mission:
+        raise ValueError("mission_not_found")
+    events = mission_tail(mission_id, 1)
+    state = mission["status"]
+    try:
+        last = dt.datetime.fromisoformat(mission["last_progress_at"].replace("Z", "+00:00"))
+        elapsed = max(0, int((dt.datetime.now(dt.timezone.utc) - last).total_seconds()))
+    except Exception:
+        elapsed = None
+    observable = state
+    if state not in MISSION_TERMINAL_STATES and state not in (
+        "WAITING", "PROVIDER_WAIT", "PLATFORM_HOLD", "NETWORK_WAIT", "STALLED", "HOLD", "BLOCKED"
+    ) and elapsed is not None and elapsed >= 60:
+        observable = "NO_NEW_EXTERNAL_EVIDENCE"
+    return {
+        "mission_id": mission_id,
+        "project_id": mission["project_id"],
+        "status": state,
+        "observable_state": observable,
+        "current_step": mission["current_step"],
+        "last_committed_step": mission["last_committed_step"],
+        "next_step": mission["next_step"],
+        "last_progress_at": mission["last_progress_at"],
+        "worker_component": mission["worker_component"],
+        "receipt_evidence": mission["receipt_evidence"],
+        "hold_reason": mission["hold_reason"],
+        "progress": mission["progress"],
+        "last_event": events[-1] if events else None,
+        "elapsed_since_proof_seconds": elapsed,
+    }
+
+
+def provider_call_allowed(expected_cost_usd: float, provider_state: str) -> tuple[bool, str]:
+    if float(expected_cost_usd or 0.0) > 0.0:
+        return False, "COST_HOLD"
+    if str(provider_state or "").upper() != "ACTIVE_FREE_PROVIDER":
+        return False, "FREE_MODEL_CAPACITY_HOLD"
+    return True, "ALLOW"
 
 
 def get_head(project_id: str):
@@ -1270,6 +1765,29 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, {"project_id": project, "jobs": jobs_snapshot(project)})
                 return
 
+        if len(parts) == 4 and parts[:2] == ["v1", "missions"]:
+            mission_id = parts[2]
+            try:
+                if parts[3] == "status":
+                    mission = mission_get(mission_id)
+                    if not mission:
+                        self.send_json(404, {"error": "mission_not_found"})
+                    else:
+                        self.send_json(200, {"ok": True, "mission": mission})
+                    return
+                if parts[3] == "tail":
+                    self.send_json(200, {"ok": True, "mission_id": mission_id, "events": mission_tail(mission_id)})
+                    return
+                if parts[3] == "where":
+                    self.send_json(200, {"ok": True, **mission_where(mission_id)})
+                    return
+                if parts[3] == "next":
+                    self.send_json(200, {"ok": True, **mission_next_action(mission_id)})
+                    return
+            except ValueError as e:
+                self.send_json(404, {"error": str(e)})
+                return
+
         self.send_json(404, {"error": "not_found"})
 
     def do_POST(self):
@@ -1379,6 +1897,58 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
+
+        if parts == ["v1", "missions"]:
+            try:
+                body = self.read_json()
+                idem = self.headers.get("Idempotency-Key") or body.get("idempotency_key")
+                receipt = accept_mission(
+                    body.get("project_id"),
+                    body.get("request_text"),
+                    str(idem or ""),
+                    spec_revision=body.get("spec_revision", ""),
+                    context_revision=body.get("context_revision", ""),
+                    execution_profile=body.get("execution_profile", "NORMAL"),
+                    allowed_capabilities=body.get("allowed_capabilities", []),
+                    provider_policy=body.get("provider_policy", {}),
+                    approval_gates=body.get("approval_gates", []),
+                )
+                self.send_json(200, receipt)
+            except Exception as e:
+                self.send_json(400, {"error": "mission_accept_failed", "detail": str(e)[:500]})
+            return
+
+        if len(parts) == 4 and parts[:2] == ["v1", "missions"]:
+            mission_id = parts[2]
+            try:
+                body = self.read_json()
+                idem = self.headers.get("Idempotency-Key") or body.get("idempotency_key")
+                if parts[3] == "plan":
+                    self.send_json(200, set_mission_plan(mission_id, body.get("steps"), str(idem or "")))
+                    return
+                if parts[3] == "events":
+                    self.send_json(200, append_mission_event(
+                        mission_id,
+                        body.get("event_type"),
+                        str(idem or ""),
+                        step_id=body.get("step_id", ""),
+                        worker_component=body.get("worker_component", ""),
+                        summary=body.get("summary", ""),
+                        evidence_ref=body.get("evidence_ref", ""),
+                        status=body.get("status", ""),
+                        failure_hold_reason=body.get("failure_hold_reason", ""),
+                        payload=body.get("payload", {}),
+                    ))
+                    return
+            except ValueError as e:
+                detail = str(e)
+                code = 404 if detail == "mission_not_found" else 400
+                self.send_json(code, {"error": detail})
+                return
+            except Exception as e:
+                self.send_json(400, {"error": "mission_update_failed", "detail": str(e)[:500]})
+                return
+
         if len(parts) == 4 and parts[:2] == ["v1", "projects"] and parts[3] == "memory":
             try:
                 body = self.read_json()
@@ -1531,6 +2101,86 @@ def selftest():
         assert q1["result"] == "QUEUED"
         assert q2["result"] == "ALREADY_QUEUED"
         assert pc_operating_mode() in ("PC_AVAILABLE", "PC_MEMORY_PRESSURE")
+
+        m1 = accept_mission(
+            "api-bcp",
+            "Qualify durable mission recovery",
+            "mission-selftest-accept",
+            spec_revision="SELFTEST-R1",
+            context_revision="CTX-1",
+            execution_profile="DEEP",
+            allowed_capabilities=["LOCAL", "PC", "REMOTE_AI"],
+            provider_policy={"default_paid_spend_usd": 0.0},
+        )
+        m2 = accept_mission(
+            "api-bcp",
+            "Qualify durable mission recovery",
+            "mission-selftest-accept",
+            spec_revision="SELFTEST-R1",
+        )
+        assert m1["result"] == "MISSION_ACCEPTED"
+        assert m2["result"] == "ALREADY_ACCEPTED"
+        mission_id = m1["mission"]["mission_id"]
+        assert m2["mission"]["mission_id"] == mission_id
+        planned = set_mission_plan(
+            mission_id,
+            [
+                {"id": "context", "label": "Resolve canonical context", "worker_class": "LOCAL"},
+                {"id": "validate", "label": "Deterministic validation", "dependencies": ["context"], "worker_class": "LOCAL"},
+                {"id": "semantic", "label": "Semantic worker only if needed", "dependencies": ["validate"], "worker_class": "REMOTE_AI"},
+            ],
+            "mission-selftest-plan",
+        )
+        assert planned["result"] == "RECORDED"
+        assert mission_next_action(mission_id)["next_action"]["id"] == "context"
+        c1 = append_mission_event(
+            mission_id,
+            "COMMITTED",
+            "mission-selftest-context-commit",
+            step_id="context",
+            worker_component="LOCAL",
+            summary="Context resolved deterministically.",
+            evidence_ref="selftest:context",
+            payload={"step_state": "COMMITTED", "verified": True, "next_step": "validate"},
+        )
+        c2 = append_mission_event(
+            mission_id,
+            "COMMITTED",
+            "mission-selftest-context-commit",
+            step_id="context",
+            worker_component="LOCAL",
+            summary="Duplicate must deduplicate.",
+            evidence_ref="selftest:context",
+            payload={"step_state": "COMMITTED", "verified": True, "next_step": "validate"},
+        )
+        assert c1["result"] == "RECORDED"
+        assert c2["result"] == "ALREADY_RECORDED"
+        assert mission_next_action(mission_id)["next_action"]["id"] == "validate"
+        where = mission_where(mission_id)
+        assert where["progress"]["verified_steps"] == 1
+        assert where["progress"]["total_steps"] == 3
+        hold = append_mission_event(
+            mission_id,
+            "PLATFORM_HOLD",
+            "mission-selftest-platform-hold",
+            step_id="validate",
+            worker_component="CHATGPT",
+            summary="External platform interruption; checkpoint remains resumable.",
+            status="PLATFORM_HOLD",
+            failure_hold_reason="PLATFORM_VERIFICATION_HOLD",
+            payload={"next_step": "validate"},
+        )
+        assert hold["mission"]["next_step"] == "validate"
+        assert mission_next_action(mission_id)["next_action"]["id"] == "validate"
+        assert len(mission_tail(mission_id, 50)) >= 4
+        assert provider_call_allowed(0.0, "ACTIVE_FREE_PROVIDER") == (True, "ALLOW")
+        assert provider_call_allowed(0.01, "ACTIVE_FREE_PROVIDER") == (False, "COST_HOLD")
+        assert provider_call_allowed(0.0, "FIELD_UNVERIFIED") == (False, "FREE_MODEL_CAPACITY_HOLD")
+        source = SERVER_FILE.read_text(encoding="utf-8")
+        assert "/v1/missions" in source
+        assert 'parts[3] == "where"' in source
+        assert 'parts[3] == "tail"' in source
+        assert "NO_NEW_EXTERNAL_EVIDENCE" in source
 
         edge_dist = Path(td) / "edge-dist"
         edge_dist.mkdir(parents=True, exist_ok=True)
