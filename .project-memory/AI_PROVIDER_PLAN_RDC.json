@@ -162,5 +162,44 @@
     "time_to_recovery",
     "reserve_state",
     "spend_usd_equals_0"
-  ]
+  ],
+  "quota_vector_policy": {
+    "dimensions": [
+      "requests_per_second_or_minute",
+      "requests_per_day",
+      "input_output_or_combined_tokens_per_minute_day_month",
+      "provider_compute_units",
+      "included_monthly_usage_or_credit",
+      "reset_timestamp_or_window",
+      "model_specific_free_paid_eligibility"
+    ],
+    "safe_burn_rate_formula": "max(0, remaining - protected_reserve) / max(time_to_reset, epsilon)",
+    "expected_call_cost_required": true,
+    "tightest_dimension_is_admission_bottleneck": true,
+    "ui_scalar_is_derived_only": true,
+    "provider_states": [
+      "HEALTHY",
+      "CONSERVE",
+      "RESERVE_ONLY",
+      "RATE_LIMITED",
+      "CAPACITY_UNAVAILABLE",
+      "FREE_EXHAUSTED",
+      "PAID_ONLY_FOR_MODEL",
+      "FIELD_UNVERIFIED"
+    ],
+    "paid_only_model_excluded_under_zero_usd": true,
+    "adaptive_routing_metrics": [
+      "verified_task_success",
+      "retry_rate",
+      "latency",
+      "tokens_or_compute_used",
+      "context_fit",
+      "failure_class"
+    ],
+    "shadow_benchmarking": {
+      "default": false,
+      "allowed_with_tiny_dedicated_budget": true,
+      "may_consume_strategic_reserve": false
+    }
+  }
 }
