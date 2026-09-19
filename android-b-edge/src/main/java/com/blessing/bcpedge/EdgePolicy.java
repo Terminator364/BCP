@@ -81,7 +81,7 @@ public final class EdgePolicy {
 
     public static boolean isCompletionResult(String result) {
         String r = result == null ? "" : result.trim().toUpperCase();
-        return "COMMITTED".equals(r) || "ALREADY_COMMITTED".equals(r)
+        return "SUCCEEDED".equals(r) || "COMMITTED".equals(r) || "ALREADY_COMMITTED".equals(r)
                 || "DONE".equals(r) || "PASS".equals(r) || "SUCCESS".equals(r);
     }
 
