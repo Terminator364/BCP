@@ -22,7 +22,9 @@ public interface EdgeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void putMemory(EdgeMemoryEntity memory);
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    // One logical action keeps its latest authoritative receipt state. A later
+    // terminal receipt must replace an earlier QUEUED/ACCEPTED observation.
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insertReceipt(EdgeReceiptEntity receipt);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -42,7 +44,7 @@ public interface EdgeDao {
             "AND r.result IN ('COMMITTED','ALREADY_COMMITTED','DONE','PASS','SUCCESS'))")
     int unresolvedDependencies(String jobId);
 
-    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
+    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED','REMOTE_QUEUED') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
     List<EdgeJobEntity> pendingJobs(String projectId, int limit);
 
     @Query("SELECT COUNT(*) FROM edge_jobs WHERE state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED','REMOTE_QUEUED')")
