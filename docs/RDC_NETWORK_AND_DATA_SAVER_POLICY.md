@@ -27,8 +27,9 @@ Field evidence on 2026-09-19 showed:
 
 3. SELECTIVE_TRANSPORT_FAILOVER
    - Telegram/API control traffic may fail over independently from bulk project traffic.
-   - Preferred target: B-EDGE performs Telegram transport and returns compact local/LAN events to BCP.
-   - If Android network binding is used, bind only Telegram transport to cellular while preserving local B-EDGE<->PC communication over LAN where supported.
+   - B-EDGE is a dedicated old phone on the same home Wi-Fi as the PC; no cellular capability is assumed for B-EDGE.
+   - The user's current phone may use Wi-Fi or mobile data, but is a human client only and MUST NOT be required as an infrastructure relay.
+   - Preferred target: PC and B-EDGE exchange control state over the local LAN, while a small zero-cost HTTPS BCP Nexus/webhook relay handles Telegram when direct home-WiFi Telegram egress is degraded.
    - Alternative zero-cost relays may be evaluated only after field validation and must not introduce paid spend or false geography.
 
 4. OFFLINE_FIRST_QUEUEING
@@ -52,13 +53,13 @@ Field evidence on 2026-09-19 showed:
 
 Preferred steady-state path:
 
-Telegram cloud <-> B-EDGE lightweight Telegram transport
+Telegram cloud <-> BCP Nexus HTTPS webhook/relay
+                     ^
+                     | compact authenticated HTTPS
                      |
-                     | local authenticated LAN channel
-                     v
-                    BCP PC
+B-EDGE <------ authenticated home-LAN ------> BCP PC
 
-The PC therefore remains on home Wi-Fi. Cellular usage, when required, is limited to the Telegram control-plane bytes on B-EDGE rather than the entire PC network stack.
+Both PC and B-EDGE remain on the home Wi-Fi. The current phone can independently use Wi-Fi or mobile data to access Telegram, but it is never required to relay BCP traffic.
 
 ## Acceptance gates
 
@@ -66,22 +67,23 @@ The transport is FIELD_VERIFIED only when:
 - PC remains on home Wi-Fi;
 - Telegram /status, /ci and /holds succeed through the selected fallback path;
 - no full-PC hotspot is required;
-- BCP survives temporary cellular loss and later resumes without duplicate actions;
+- BCP survives temporary home-Internet/Nexus loss and later resumes without duplicate actions;
 - measured Telegram control traffic remains compact;
 - spend remains $0.00;
 - no VPN, geo-spoofing or unofficial bypass is used.
 
 
-## Selective B-EDGE relay refinement
+## Home-WiFi B-EDGE + Nexus refinement
 
-The dedicated old Android phone is the preferred Telegram relay/witness, not the PC replacement.
+The dedicated old Android phone is the preferred local coordinator/witness, not a cellular relay.
 
 The steady-state routing target is:
-`PC-WORKER --authenticated LAN--> B-EDGE --Telegram transport--> Telegram`.
+`PC-WORKER <-> authenticated home-LAN <-> B-EDGE`
+with remote cockpit ingress/egress through a field-qualified zero-cost `BCP_NEXUS` HTTPS relay when direct Telegram egress is degraded.
 
-B-EDGE keeps local PC communication on the home LAN. If the home-Wi-Fi route to the official Telegram Bot API is unavailable, a qualified Android implementation may bind only the small Telegram control-plane connection to cellular while leaving bulk traffic on Wi-Fi. If no route exists, compact events are queued and later resumed idempotently.
+If no remote route exists, compact events remain in durable local outboxes and resume idempotently after reconnect.
 
-The PC therefore remains on home Wi-Fi. Full-PC mobile hotspot is a diagnostic fallback only, not a product dependency.
+Full-PC mobile hotspot and the user's current phone as a relay are diagnostic/emergency fallbacks only, not product dependencies.
 
-Detailed transport/progress/update architecture:
-`docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md`.
+Detailed topology, progress and update architecture:
+`docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
