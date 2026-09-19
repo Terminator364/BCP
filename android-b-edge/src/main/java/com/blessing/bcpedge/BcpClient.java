@@ -34,7 +34,7 @@ public final class BcpClient {
 
     public String getServer() { return prefs.getString("server", ""); }
     public String getToken() { return credentials.getToken(); }
-    public String getProject() { return prefs.getString("active_project", DEFAULT_getProject()); }
+    public String getProject() { return prefs.getString("active_project", DEFAULT_PROJECT); }
     public void setProject(String projectId) {
         String p = projectId == null ? "" : projectId.trim();
         if (p.isEmpty() || p.length() > 128) throw new IllegalArgumentException("invalid_project_id");
