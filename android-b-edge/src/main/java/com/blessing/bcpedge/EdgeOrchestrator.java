@@ -132,6 +132,13 @@ public final class EdgeOrchestrator {
 
     public JSONObject queueJob(String projectId, String kind, JSONObject payload,
                                boolean requiresPc, int priority, String resourceClass,
+                               JSONArray dependencies) {
+        return queueJob(projectId, kind, payload, requiresPc, priority, resourceClass,
+                true, dependencies);
+    }
+
+    public JSONObject queueJob(String projectId, String kind, JSONObject payload,
+                               boolean requiresPc, int priority, String resourceClass,
                                boolean localResourceAllowed, JSONArray dependencies) {
         JSONObject out = new JSONObject();
         try {
