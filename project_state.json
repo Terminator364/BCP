@@ -49,7 +49,8 @@
     "platform_cut_policy": ".project-memory/PLATFORM_CUT_RESILIENCE.md",
     "technical_scope_profile": ".project-memory/API_SCOPE_PROFILE.json",
     "dual_conversation_design": "docs/DUAL_CONVERSATION_CONTINUITY.md",
-    "continuation_handoff": "API_PROJECT_CONTINUITY.md"
+    "continuation_handoff": "API_PROJECT_CONTINUITY.md",
+    "free_api_model_broker_autonomy": "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -87,14 +88,18 @@
     ".project-memory/API_SCOPE_PROFILE.json",
     ".project-memory/PLATFORM_CUT_RESILIENCE.md",
     "docs/TECHNICAL_REQUEST_CONTEXT_ENVELOPE.md",
-    "docs/DUAL_CONVERSATION_CONTINUITY.md"
+    "docs/DUAL_CONVERSATION_CONTINUITY.md",
+    "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
     "P0_platform_friction_resilience": true,
     "P0_dual_conversation_continuity": true,
     "P0_truthful_technical_context_envelope": true,
-    "expansion_after_continuity_field_verified": true
+    "expansion_after_continuity_field_verified": true,
+    "P1_free_api_model_broker_after_field_continuity": true,
+    "P1_lightweight_cockpit_after_field_continuity": true,
+    "P1_bounded_autonomous_loops_after_field_continuity": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
