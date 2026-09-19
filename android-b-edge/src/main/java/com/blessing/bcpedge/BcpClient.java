@@ -505,7 +505,7 @@ public final class BcpClient {
             body.put("kind", kind);
             body.put("payload", payload);
             body.put("requires_pc", requiresPc);
-            body.put("resource_class", local.optString("resource_class", ""));
+            addJobEnvelope(body, local);
             String idem = local.optString("idempotency_key", "");
             JSONObject r = requestJson("POST",
                     getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
@@ -514,6 +514,11 @@ public final class BcpClient {
             flushQueuedJobs();
             return r;
         } catch (Exception ex) {
+            if (handleStaleJob(local, ex)) {
+                local.put("stale_revision", true);
+                local.put("state", "STALE_REVISION");
+                return local;
+            }
             orchestrator.setMode("EDGE_ONLY");
             local.put("offline", true);
             local.put("queued_locally", true);
@@ -534,7 +539,7 @@ public final class BcpClient {
                     body.put("kind", job.optString("kind", "generic"));
                     body.put("payload", job.optJSONObject("payload") == null ? new JSONObject() : job.optJSONObject("payload"));
                     body.put("requires_pc", job.optBoolean("requires_pc", true));
-                    body.put("resource_class", job.optString("resource_class", ""));
+                    addJobEnvelope(body, job);
                     JSONObject receipt = requestJson("POST",
                             getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
                             body.toString(), getToken(),
@@ -542,7 +547,9 @@ public final class BcpClient {
                             1800, 4000);
                     orchestrator.acknowledgeRemoteJob(getProject(), job, receipt);
                 } catch (Exception ex) {
-                    // At-least-once: keep durable row until a positive receipt exists.
+                    if (!handleStaleJob(job, ex)) {
+                        // At-least-once: keep durable row until a positive receipt exists.
+                    }
                 }
             }
         } catch (Exception ignored) {}
@@ -660,6 +667,25 @@ public final class BcpClient {
                 if (accepted < events.length()) return;
             }
         } catch (Exception ignored) {}
+    }
+
+    private static void addJobEnvelope(JSONObject body, JSONObject job) throws Exception {
+        body.put("resource_class", job.optString("resource_class", ""));
+        body.put("action_id", job.optString("action_id", ""));
+        body.put("expected_revision", job.optLong("expected_revision", 0));
+        body.put("input_hash", job.optString("input_hash", ""));
+        body.put("coordinator_epoch", job.optLong("coordinator_epoch", 0));
+        body.put("evidence_contract", job.optString("evidence_contract", "EFFECT_RECEIPT_REQUIRED"));
+    }
+
+    private boolean handleStaleJob(JSONObject job, Exception ex) {
+        String msg = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+        if (!msg.contains("HTTP_409") || !msg.contains("stale_job_revision")) return false;
+        String localId = job.optString("local_id", "");
+        orchestrator.markJobState(localId, "STALE_REVISION");
+        telemetry.add("JOB_STALE_REVISION", localId);
+        try { contextPack(); } catch (Exception ignored) {}
+        return true;
     }
 
     private static JSONObject requestJson(String method, String url, String body,
