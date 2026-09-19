@@ -153,11 +153,11 @@ public class MainActivity extends Activity {
                         }));
                 runOnUiThread(() -> {
                     status.setText("CONNECTÉ");
-                    detail.setText("PC confirmé et appairé · projet buildhub");
+                    detail.setText("PC confirmé et appairé · projet "+ client.getProject() +"");
                     output.setText("État: OK\nB-EDGE: " + client.getEdgeVersion() +
                             "\nPC: " + r.optString("pc_name", "BCP PC") +
                             "\nServeur: " + r.optString("version", "") +
-                            "\nProjet: buildhub\nIdentifiants: masqués");
+                            "\nProjet: "+ client.getProject() +"\nIdentifiants: masqués");
                     setBusy(false);
                     updates.check();
                 });
