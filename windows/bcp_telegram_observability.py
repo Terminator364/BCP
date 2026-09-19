@@ -67,7 +67,7 @@ SECRET_PATTERNS = (
 
 def redact_text(value: Any) -> str:
     text = str("" if value is None else value)
-    text = redact_text(text)
+    text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)
     for pattern in SECRET_PATTERNS:
         text = pattern.sub("[REDACTED_SECRET]", text)
     return text
