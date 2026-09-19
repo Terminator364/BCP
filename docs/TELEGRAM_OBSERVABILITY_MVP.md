@@ -176,3 +176,18 @@ Automatic product updates are event-driven from qualified release metadata; they
 
 Canonical transport/update design:
 `docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
+
+## Human-first V3 refinement — 2026-09-19
+
+The read-only observability MVP is refined by `docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md`.
+
+The default status surface MUST:
+- be understandable without software-engineering knowledge;
+- show a truthful finite-plan bar and n/N only when externally verifiable;
+- show current work, last success, next step, explicit user action, proof-of-life timestamp/age and message lag;
+- edit one live mission card instead of producing duplicate status spam;
+- keep raw technical IDs under `/details`;
+- omit repeated `Spend: $0.00` from the normal view;
+- remain independent of whether a ChatGPT response is currently generating.
+
+One bot is the normal multi-project/multi-mission cockpit. Multiple bots are not the default solution to multiple ChatGPT conversations.
