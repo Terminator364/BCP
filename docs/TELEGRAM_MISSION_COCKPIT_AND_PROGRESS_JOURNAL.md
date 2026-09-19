@@ -313,3 +313,28 @@ This still does not make ordinary ChatGPT UI internals observable. A visible-cli
 
 The transport target and automatic-update contract are defined in:
 `docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md`.
+
+
+## Silent-execution watchdog
+
+A user-visible spinner or a long tool/model call is not proof of progress.
+
+For every BCP-managed long operation, the coordinator MUST commit a durable pre-dispatch event before starting the potentially slow action. That event records:
+- mission/job/step identifier;
+- external component or provider;
+- dispatch timestamp;
+- last committed checkpoint;
+- replay/idempotency key where applicable;
+- expected observation channel;
+- next safe action if no result arrives.
+
+If no new durable evidence is observed for 60 seconds, the cockpit MUST classify the interval as `NO_NEW_EXTERNAL_EVIDENCE` or `WAITING_EXTERNAL_ACTION`; it MUST NOT claim that the hidden model/tool is still reasoning.
+
+After 3 minutes without new external evidence, the watchdog SHOULD:
+1. re-read supported external evidence sources (GitHub job state, BCP/B-EDGE heartbeat, Drive receipt, BuildHub receipt);
+2. keep already-dispatched work alive when independently running;
+3. avoid replaying a mutation whose commit status is unknown;
+4. surface the last durable checkpoint and exact resumable next action;
+5. permit another conversation/provider to take over only when fencing, idempotency and replay-safety allow it.
+
+A ChatGPT/browser interruption therefore becomes a presentation/worker-availability problem, not loss of project state. The user must not have to send screenshots simply to prove whether a GitHub/Drive/BCP action completed.
