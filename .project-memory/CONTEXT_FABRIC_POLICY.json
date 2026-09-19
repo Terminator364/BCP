@@ -1,0 +1,156 @@
+{
+  "schema": "bcp.context_fabric/1",
+  "updated_at": "2026-09-19",
+  "status": "DESIGN_HARDENED_FIELD_UNVERIFIED",
+  "universal_code": {
+    "command": "BCPGO",
+    "is_authentication": false,
+    "scoped_examples": [
+      "BCPGO PhoneMouse",
+      "BCPGO BCP",
+      "BCPGO Browser4G"
+    ]
+  },
+  "components": {
+    "b_edge": {
+      "role": "always_on_local_continuity_node",
+      "responsibilities": [
+        "project_memory_replica",
+        "hot_warm_cold_cache",
+        "scheduler",
+        "dependency_graph",
+        "error_ledger_index",
+        "outbox",
+        "provider_quota_cache",
+        "pc_supervisor",
+        "context_pack_precompute"
+      ]
+    },
+    "pc_compute": {
+      "role": "heavy_execution_node",
+      "responsibilities": [
+        "builds",
+        "tests",
+        "fuzzing",
+        "source_transformations",
+        "heavy_file_processing",
+        "git_heavy_ops",
+        "diagnostics"
+      ]
+    },
+    "bcp_core_gateway": {
+      "role": "logical_canonical_api_and_context_gateway",
+      "physical_single_point_of_failure_forbidden": true,
+      "free_cloud_vendor_as_sole_canonical_store": false
+    }
+  },
+  "memory_classes": [
+    "USER_POLICY",
+    "PROJECT_FACT",
+    "PROJECT_DECISION",
+    "RUN_STATE",
+    "ERROR_KNOWLEDGE",
+    "EPISODE",
+    "SUMMARY",
+    "RELATION"
+  ],
+  "memory_lifecycle": [
+    "OBSERVED",
+    "PROPOSED",
+    "VERIFIED",
+    "CANONICAL",
+    "SUPERSEDED",
+    "REVOKED"
+  ],
+  "read_auto_write_controlled": true,
+  "model_output_can_self_promote": false,
+  "retrieval_pipeline": [
+    "scope_filter",
+    "authority_freshness_filter",
+    "metadata_lexical",
+    "semantic_if_needed",
+    "rerank",
+    "conflict_staleness_check",
+    "minimal_capsule",
+    "iterative_enrichment_if_needed"
+  ],
+  "context_capsule_fields": [
+    "global_context_revision",
+    "project_context_revision",
+    "capsule_sha256",
+    "scope",
+    "stable_user_preferences",
+    "project_constraints",
+    "canonical_decisions",
+    "current_project_head",
+    "last_committed_action",
+    "next_valid_actions",
+    "active_jobs",
+    "known_error_matches",
+    "resource_provider_constraints",
+    "evidence_refs",
+    "sensitivity_labels",
+    "expires_at"
+  ],
+  "fast_path": {
+    "precompute_hot_project_capsules": true,
+    "deltas_by_revision": true,
+    "no_embedding_on_sync_request_path": true,
+    "local_processing_p95_ms_target": 100,
+    "gateway_processing_p95_ms_target": 200,
+    "healthy_network_bootstrap_p95_ms_target": 1500,
+    "targets_are_not_guarantees": true
+  },
+  "transport_paths": [
+    "SOVEREIGN_TERMINAL_PATH",
+    "CHATGPT_PLUGIN_PATH_CAPABILITY_GATED",
+    "CHATGPT_PC_BRIDGE_PATH",
+    "MANUAL_CAPSULE_FALLBACK"
+  ],
+  "consistency": {
+    "critical_state": "single_writer_revision_lease_fencing_idempotency",
+    "append_only_noncritical": "merge_friendly_event_log",
+    "blind_crdt_for_critical_state": false
+  },
+  "android_storage": {
+    "critical_control_store": "SQLite local + WAL + strong durability; field-tune",
+    "noncritical_store": "SQLite WAL + performance-oriented bounded retention",
+    "active_wal_on_network_filesystem": false
+  },
+  "modes": [
+    "EDGE_ONLY",
+    "PC_AVAILABLE",
+    "PC_MEMORY_PRESSURE",
+    "PC_UNAVAILABLE_RECOVERY",
+    "EDGE_THERMAL_OR_MEMORY_PRESSURE"
+  ],
+  "pre_agent_contract": [
+    "resolve_state",
+    "schedule_dependencies",
+    "cache_lookup",
+    "error_ledger_match",
+    "validated_recipe",
+    "deduplicate",
+    "batch_and_causal_group",
+    "minimize_context",
+    "provider_health_quota_check"
+  ],
+  "security": {
+    "external_content_untrusted": true,
+    "secrets_in_context_capsule": false,
+    "scoped_short_lived_tokens": true,
+    "replay_protection": true,
+    "read_write_capabilities_separate": true,
+    "high_impact_actions_require_approval": true
+  },
+  "field_gates": [
+    "LOCAL_MEMORY_SCHEMA_PASS",
+    "CONTEXT_RESOLVER_PASS",
+    "BCPGO_SOVEREIGN_PATH_PASS",
+    "DELTA_PROTOCOL_PASS",
+    "REMOTE_GATEWAY_PASS",
+    "CHATGPT_CONNECTOR_PASS_IF_SUPPORTED",
+    "MEMORY_POISONING_TEST_PASS",
+    "SOAK_RECOVERY_PASS"
+  ]
+}
