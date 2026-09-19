@@ -8,5 +8,5 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "1.1.0-evergreen",
-  "requirements_revision": "2026-09-19-R3"
+  "requirements_revision": "2026-09-19-R4"
 }
