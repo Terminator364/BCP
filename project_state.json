@@ -133,7 +133,8 @@
     "P1A_observable_micro_action_journal": true,
     "P0_git_single_writer_integration_fence": true,
     "P1A_telegram_read_only_observability_mvp": true,
-    "P0_rdc_data_saver_network_resilience": true
+    "P0_rdc_data_saver_network_resilience": true,
+    "P0_progress_presence_during_chat_uncertainty": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -632,7 +633,7 @@
     "zero_usd": true,
     "token_local_only": true,
     "chat_internal_state_access": false,
-    "next_action": "Implement and qualify selective Telegram transport/failover on B-EDGE; keep PC on home Wi-Fi; then proceed to Mission Event Journal and field-qualified zero-cost Model Broker adapters.",
+    "next_action": "Implement B-EDGE selective Telegram transport and Progress Presence/Mission Event Journal, then field-qualify /watch,/tail,/where under home-WiFi PC + low-data mobile fallback.",
     "integrated_pr": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
     "integrated_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
@@ -674,6 +675,24 @@
       "mobile_data_policy": "SELECTIVE_CONTROL_PLANE_FALLBACK_ONLY",
       "preferred_next_transport": "B_EDGE_TELEGRAM_RELAY_WITH_LOCAL_AUTHENTICATED_PC_CHANNEL",
       "full_pc_hotspot_default": false
+    },
+    "progress_presence_target": {
+      "status": "SPECIFIED_NOT_IMPLEMENTED",
+      "required_commands": [
+        "/watch <job>",
+        "/unwatch <job>",
+        "/tail <job>",
+        "/where <job>"
+      ],
+      "required_states": [
+        "NO_NEW_EXTERNAL_EVIDENCE",
+        "WAITING_EXTERNAL_CHAT_RESULT",
+        "PROVIDER_PENDING_UNKNOWN",
+        "NETWORK_OFFLINE_QUEUEING"
+      ],
+      "proactive_transition_push": true,
+      "adaptive_low_data_heartbeat": true,
+      "hidden_chain_of_thought_access": false
     }
   }
 }
