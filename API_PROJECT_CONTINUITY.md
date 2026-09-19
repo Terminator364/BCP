@@ -150,3 +150,25 @@ This scope profile is canonical context for API/BCP. It records that the normal 
 When a technical task could be ambiguous in isolation, retain only the minimum disambiguating context: owned/authorized target, local/controlled environment, concrete engineering objective, minimum necessary operation, and success/rollback evidence.
 
 Do not weaken, disguise or bypass platform safeguards. If an additional-verification hold occurs, classify it as nonterminal, checkpoint and resume. If a request clearly targets a third party without established authorization, ask the minimum clarification needed.
+
+## Product motivation and dual-conversation continuity
+
+On every API recovery, also load and preserve:
+- `.project-memory/USER_FRICTION_CHARTER.md`
+- `.project-memory/WHY_API_EXISTS.json`
+- `docs/DUAL_CONVERSATION_CONTINUITY.md`
+
+These are canonical product requirements, not optional notes.
+
+API/BCP exists partly because a ChatGPT conversation must not be a single point of failure for project execution. The system must be designed so platform verification holds, interrupted turns, rate limits and conversation loss do not erase state or force the user to reconstruct context manually.
+
+Dual-conversation design is therefore part of API CORE:
+- one ACTIVE writer conversation;
+- one STANDBY read-capable conversation;
+- canonical state in BCP, never in either chat alone;
+- writer lease + monotonic fencing token + revision precondition + idempotency key for every mutation;
+- STANDBY may take over only after lease expiry/clean release;
+- stale ACTIVE writes are rejected;
+- already-dispatched bounded jobs may continue independently and are observed through BCP receipts/job state.
+
+User-experience acceptance target: interruption -> durable checkpoint -> safe takeover -> next uncommitted atomic action -> receipt, with no screenshot/manual state reconstruction.
