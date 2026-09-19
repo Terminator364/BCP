@@ -811,6 +811,31 @@ def ensure_state() -> str:
             )
             """
         )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS memory_records(
+                project_id TEXT NOT NULL,
+                layer TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value_json TEXT NOT NULL,
+                source TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY(project_id,layer,key)
+            )"""
+        )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS jobs(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                state TEXT NOT NULL,
+                requires_pc INTEGER NOT NULL,
+                idempotency_key TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(project_id,idempotency_key)
+            )"""
+        )
         cx.commit()
     finally:
         cx.close()
@@ -1192,6 +1217,18 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(404, {"ok": False, "error": "edge_update_unavailable", "detail": str(e)[:240]})
             return
 
+        if path == "/v1/orchestrator/status":
+            self.send_json(200, {
+                "ok": True,
+                "schema": "bcp.orchestrator_status/1",
+                "server_version": SERVER_VERSION,
+                "operating_mode": pc_operating_mode(),
+                "resources": system_resources(),
+                "memory_layers": list(MEMORY_LAYERS),
+                "default_paid_spend_usd": 0.0,
+            })
+            return
+
         if path == "/v1/diagnostics":
             self.send_json(
                 200,
@@ -1225,6 +1262,12 @@ class Handler(BaseHTTPRequestHandler):
                         "recent_events": recent_events(project),
                     },
                 )
+                return
+            if parts[3] == "context":
+                self.send_json(200, build_context_pack(project))
+                return
+            if parts[3] == "jobs":
+                self.send_json(200, {"project_id": project, "jobs": jobs_snapshot(project)})
                 return
 
         self.send_json(404, {"error": "not_found"})
@@ -1336,6 +1379,31 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
+        if len(parts) == 4 and parts[:2] == ["v1", "projects"] and parts[3] == "memory":
+            try:
+                body = self.read_json()
+                receipt = memory_put(
+                    parts[2], body.get("layer"), body.get("key"),
+                    body.get("value"), body.get("source", "B-EDGE")
+                )
+                self.send_json(200, {"ok": True, **receipt})
+            except Exception as e:
+                self.send_json(400, {"error": "memory_write_failed", "detail": str(e)[:500]})
+            return
+
+        if len(parts) == 4 and parts[:2] == ["v1", "projects"] and parts[3] == "jobs":
+            try:
+                body = self.read_json()
+                idem = self.headers.get("Idempotency-Key") or body.get("idempotency_key")
+                receipt = enqueue_job(
+                    parts[2], body.get("kind", "generic"), body.get("payload", {}),
+                    str(idem or ""), bool(body.get("requires_pc", True))
+                )
+                self.send_json(200, receipt)
+            except Exception as e:
+                self.send_json(400, {"error": "job_queue_failed", "detail": str(e)[:500]})
+            return
+
         if len(parts) == 4 and parts[:2] == ["v1", "projects"] and parts[3] == "events":
             try:
                 body = self.read_json()
