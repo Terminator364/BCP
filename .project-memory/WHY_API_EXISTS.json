@@ -1,0 +1,25 @@
+{
+  "schema": "api.product-motivation/1",
+  "adopted_at": "2026-09-19",
+  "project": "API / BCP",
+  "primary_problem": "ChatGPT conversations and tool-heavy turns can be interrupted or delayed; project execution state must therefore live outside any single conversation.",
+  "user_pain": [
+    "Additional-verification holds add wall-clock delay and may interrupt an in-progress technical turn",
+    "Repeated recovery loops waste time",
+    "Manual screenshots/copy-paste turn the user into a telemetry bus",
+    "Conversation interruption must not force project restart",
+    "Legitimate personal software projects should not need to be reduced in ambition merely to survive conversational interruptions"
+  ],
+  "product_requirements": [
+    "durable external project state",
+    "atomic checkpoints",
+    "idempotent job dispatch",
+    "receipts and readback",
+    "single-writer leases with fencing",
+    "ACTIVE/STANDBY conversation failover",
+    "running-job observability independent of a conversation",
+    "stored legitimate technical scope",
+    "nonterminal handling of verification holds and 429s"
+  ],
+  "non_goal": "Do not bypass or weaken platform safety checks; make interruptions operationally survivable."
+}
