@@ -634,3 +634,24 @@ MVP-0 MUST:
 Field promotion requires a normal-network Kinshasa smoke test without VPN, false country data or unofficial relay: official Bot API getMe succeeds, the user's private message is observed, sendMessage succeeds, and /status returns a truthful evidence-based response. Documentation alone is not FIELD proof.
 
 MVP-1 through MVP-4 remain future gated increments: durable Mission Event Journal integration; mission normalization/explicit action selection; short mission locator and BCPGO <code>; then Model Broker routing only through RDC field-qualified zero-cost providers.
+
+
+## P0 — RDC network/data-saver resilience
+
+This is additive under SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE.
+
+Field evidence shows the Telegram cockpit is functional over mobile data while the PC's home-Wi-Fi path resolves api.telegram.org but times out on TCP/443. Therefore the product MUST NOT require the whole PC to remain on mobile hotspot.
+
+Requirements:
+- home Wi-Fi is the PC default transport;
+- mobile data is scarce/metered fallback only;
+- Telegram/control-plane traffic may fail over selectively without moving bulk project traffic to cellular;
+- preferred steady-state is a lightweight Telegram transport on B-EDGE with authenticated local B-EDGE<->PC communication;
+- offline queueing, bounded retry/backoff, idempotency and reconnect recovery are mandatory;
+- large downloads/artifacts MUST NOT silently use cellular fallback;
+- compact deltas/receipts and cache-first behavior are required;
+- no VPN, false geography, quota circumvention or paid fallback;
+- the user is not the network/secret/log relay.
+
+Canonical detailed policy:
+`docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md`.
