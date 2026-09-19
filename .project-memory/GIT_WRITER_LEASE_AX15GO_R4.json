@@ -1,0 +1,22 @@
+{
+  "schema": "bcp.git_writer_lease_instance/1",
+  "writer_or_session_id": "chat-ax15go-multiproject-20260919-r4",
+  "project_or_mission": "BCP / AX15GO R4 gray-health cross-project hardening",
+  "base_main_sha": "947229b9685df7fcf94ad4fb95c7e2b2ab3d8708",
+  "created_at": "2026-09-19T23:00:00+01:00",
+  "intended_file_scope": [
+    ".project-memory/AX15GO_GRAY_HEALTH_R4.json",
+    ".project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json",
+    "docs/BEDGE_V2_TEST_MATRIX.md",
+    ".project-memory/GIT_WRITER_LEASE_AX15GO_R4.json"
+  ],
+  "expected_ci_gates": [
+    "repository contract/static validation",
+    "no runtime/release payload mutation",
+    "exact PR head binding if CI is dispatched"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_reread": true,
+  "moved_main_behavior": "REBASE_OR_RECONCILE_REQUIRED",
+  "status": "WORK_BRANCH_ACTIVE"
+}

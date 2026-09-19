@@ -101,6 +101,15 @@
       "mechanism": "new dedicated repository can inherit source code later but omit global agent/CI-budget constraints during placeholder/bootstrap stage",
       "permanent_rule": "dedicated repository inherits mandatory agent and CI-budget policy before any product authority migration",
       "regression_obligation": "placeholder verifier allows only declared bootstrap files and requires inherited AGENTS/CI budget policy"
+    },
+    {
+      "id": "AXC-GRAY-HEALTH-SINGLE-SIGNAL-001",
+      "source_project": "CROSS_PROJECT",
+      "evidence_status": "ENGINEERING_R4_CANDIDATE_RUNTIME_GAPS_EXPLICIT",
+      "evidence": "PhoneMouse/P2PCR95/ChatGPT-PC/BuildHub/BROWSER4G/BCP R4 gray-health audit",
+      "mechanism": "one apparently green signal (process, heartbeat, discovery, repository existence, artifact existence, HTTP /health, provider mirror) can coexist with a failed useful command path, unwritable durable state, stale authority, wrong identity or degraded dependency",
+      "permanent_rule": "health is a typed vector; no single supporting signal can promote end-to-end healthy, UNKNOWN/STALE are non-green, and independent dependencies are degraded separately rather than collapsing local core health",
+      "regression_obligation": "inject green liveness with broken command/storage/authority/freshness dimensions in every project adapter and prove no false healthy promotion"
     }
   ]
 }
