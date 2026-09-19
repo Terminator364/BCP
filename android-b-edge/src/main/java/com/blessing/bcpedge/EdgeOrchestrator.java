@@ -235,7 +235,8 @@ public final class EdgeOrchestrator {
             String result = receipt.optString("result", "ACCEPTED").trim().toUpperCase();
             long revision = receipt.optLong("revision", 0);
             String rawReceipt = receipt.toString();
-            String outputHash = sha256(rawReceipt);
+            String outputHash = receipt.optString("output_hash", "").trim().toLowerCase();
+            if (!outputHash.matches("[0-9a-f]{64}")) outputHash = sha256(rawReceipt);
             String actionId = receipt.optString("action_id", receipt.optString("event_hash", ""));
             if (actionId.isEmpty()) actionId = "receipt-" + sha256(idem + "\n" + rawReceipt);
             dao.insertReceipt(new EdgeReceiptEntity(
