@@ -179,5 +179,16 @@
     "protocol_ref": "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
     "parallel_reasoning_allowed": true,
     "parallel_direct_main_writes": false
+  },
+  "evidence_lease": {
+    "contract_ref": ".project-memory/AX15GO_EVIDENCE_LEASE_R5.json",
+    "status": "ENGINEERING_GATE_RUNTIME_UNCHANGED",
+    "purpose": "bound stale health/context evidence without full per-turn probing",
+    "lease_is_not_authentication": true,
+    "lease_is_not_authority": true,
+    "per_turn_full_health_probe": false,
+    "mutation_preconditions_checked_at_effect_boundary": true,
+    "generation_invalidation_primary": true,
+    "wall_clock_secondary_only": true
   }
 }
