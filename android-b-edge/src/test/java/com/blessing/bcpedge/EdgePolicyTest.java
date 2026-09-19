@@ -30,6 +30,10 @@ public class EdgePolicyTest {
         assertEquals("WARM", EdgePolicy.temperature(1000, false));
         assertEquals("COLD", EdgePolicy.temperature(7L * 60L * 60L * 1000L, false));
         assertTrue(EdgePolicy.boundedQueueLimit() <= 256);
+        assertTrue(EdgePolicy.canAdmitJob(0));
+        assertTrue(EdgePolicy.canAdmitJob(EdgePolicy.boundedQueueLimit() - 1));
+        assertFalse(EdgePolicy.canAdmitJob(EdgePolicy.boundedQueueLimit()));
+        assertFalse(EdgePolicy.canAdmitJob(-1));
         assertTrue(EdgePolicy.boundedMemoryEntries() <= 128);
     }
 }
