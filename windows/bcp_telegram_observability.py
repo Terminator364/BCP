@@ -49,13 +49,11 @@ HOLD_STATES = {
     "SPEC_CONFLICT_HOLD", "HUMAN_APPROVAL_REQUIRED", "WAITING_FOR_PC",
 }
 PUSH_STATES = {
-    "ACCEPTED", "PLANNED", "STARTED", "DISPATCHED", "WAITING_PROVIDER",
-    "RESULT_RECEIVED", "VALIDATING", "COMMITTED", "CHECKPOINTED",
-    "RETRY_SCHEDULED", "BLOCKED", "HOLD", "DONE", "CANCELLED",
+    "BLOCKED", "HOLD", "DONE", "CANCELLED",
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where",
+    "/tail", "/where", "/missions",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 
@@ -370,6 +368,70 @@ class Service:
         return ("█" * filled) + ("░" * (width - filled))
 
     @staticmethod
+    def _event_timestamp(ev: dict) -> str:
+        return clean(
+            ev.get("observed_at") or ev.get("timestamp") or ev.get("updated_at") or
+            ev.get("created_at") or ev.get("ts") or "",
+            64,
+        )
+
+    @staticmethod
+    def _event_age_seconds(ev: dict) -> int | None:
+        raw = Service._event_timestamp(ev)
+        if not raw:
+            return None
+        try:
+            parsed = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=dt.timezone.utc)
+            return max(0, int((dt.datetime.now(dt.timezone.utc) - parsed.astimezone(dt.timezone.utc)).total_seconds()))
+        except Exception:
+            return None
+
+    @staticmethod
+    def _age_label(seconds: int | None) -> str:
+        if not isinstance(seconds, int):
+            return "inconnue"
+        if seconds < 60:
+            return str(seconds) + " s"
+        if seconds < 3600:
+            return str(seconds // 60) + " min"
+        return str(seconds // 3600) + " h " + str((seconds % 3600) // 60) + " min"
+
+    @staticmethod
+    def _last_completed_action(events: list[dict], current: dict) -> str:
+        completed = {"COMMITTED", "CHECKPOINTED", "DONE"}
+        for item in reversed(events):
+            if item is current:
+                continue
+            if str(item.get("state") or "").upper() in completed:
+                return clean(
+                    item.get("action_summary") or item.get("step_summary") or item.get("step_id") or
+                    "Étape terminée.",
+                    150,
+                )
+        return "Aucune étape terminée récente observée."
+
+    @staticmethod
+    def _human_gate(ev: dict, next_action: str) -> str:
+        raw = ev.get("human_action_required")
+        required = raw is True or str(raw or "").strip().lower() in {"1", "true", "yes", "required", "requise"}
+        state = str(ev.get("state") or "").upper()
+        if state == "HUMAN_APPROVAL_REQUIRED":
+            required = True
+        instruction = clean(
+            ev.get("human_instruction") or ev.get("human_action") or
+            (next_action if required else ""),
+            180,
+        )
+        if required:
+            return "REQUISE" + ((" — " + instruction) if instruction else "")
+        optional = str(raw or "").strip().lower() in {"optional", "optionnelle"}
+        if optional:
+            return "OPTIONNELLE" + ((" — " + instruction) if instruction else "")
+        return "AUCUNE"
+
+    @staticmethod
     def _human_action(value: Any) -> str:
         raw = clean(value, 220)
         if not raw or raw == "NOT_OBSERVED":
@@ -426,21 +488,17 @@ class Service:
         next_action = self._human_action(
             ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
         )
-        age = self.local.mission_activity_age()
-        if isinstance(age, int) and age < 60:
-            age_label = str(age) + " s"
-            activity_band = "RECENT"
-        elif isinstance(age, int) and age < 120:
-            age_label = str(age // 60) + " min"
+        age = self._event_age_seconds(ev)
+        if age is None:
+            age = self.local.mission_activity_age()
+        age_label = self._age_label(age)
+        if isinstance(age, int) and age < 120:
             activity_band = "RECENT"
         elif isinstance(age, int) and age < 600:
-            age_label = str(age // 60) + " min"
             activity_band = "QUIET"
         elif isinstance(age, int):
-            age_label = (str(age // 3600) + " h " + str((age % 3600) // 60) + " min") if age >= 3600 else str(age // 60) + " min"
             activity_band = "STALE"
         else:
-            age_label = "inconnue"
             activity_band = "UNKNOWN"
         if mission_state in HOLD_STATES:
             activity_band = "HOLD"
@@ -472,6 +530,10 @@ class Service:
             "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation du relais Nexus",
         }.get(nexus, "⚪ relais Nexus non observé")
 
+        evidence_time = self._event_timestamp(ev) or "non observée"
+        last_completed = self._last_completed_action(events, ev)
+        human_gate = self._human_gate(ev, next_action)
+        rendered_at = utc_now()
         stable = {
             "pc_active": heartbeat_ok,
             "edge_paired": edge_ok,
@@ -483,6 +545,8 @@ class Service:
             "mission_next": next_action,
             "mission_step": step_key,
             "activity_band": activity_band,
+            "human_gate": human_gate,
+            "evidence_time": evidence_time,
         }
         digest = hashlib.sha256(
             json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -500,12 +564,18 @@ class Service:
             activity = "⚪ Progression récente non observée."
 
         lines = [
-            "🤖 BCP — suivi",
+            "🤖 BCP — suivi de mission",
             activity,
             "",
             "🎯 Maintenant: " + action,
             "📊 " + progress,
-            "⏱️ Dernière preuve: il y a " + age_label,
+            "✅ Dernière étape terminée: " + last_completed,
+            "➡️ Ensuite: " + next_action,
+            "👤 Action pour vous: " + human_gate,
+            "",
+            "🕒 Preuve observée: " + evidence_time,
+            "⏱️ Âge de la preuve à l’envoi: " + age_label,
+            "📨 Carte générée: " + rendered_at,
             "",
             ("✅ PC/BCP actif" if heartbeat_ok else "⚠️ PC/BCP: preuve récente absente"),
             ("✅ Ancien téléphone connecté" if edge_ok else "⚠️ Ancien téléphone non observé"),
@@ -513,8 +583,7 @@ class Service:
             "🌐 " + nexus_text,
             "🧪 " + self._human_ci(gh),
             "",
-            "➡️ Ensuite: " + next_action,
-            "💰 Coût: $0.00",
+            "🔧 Détails techniques: /details",
         ]
         return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
 
@@ -538,15 +607,10 @@ class Service:
         next_action = self._human_action(
             ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
         )
-        age = self.local.mission_activity_age()
-        if isinstance(age, int) and age < 60:
-            age_label = str(age) + " s"
-        elif isinstance(age, int) and age < 3600:
-            age_label = str(age // 60) + " min"
-        elif isinstance(age, int):
-            age_label = str(age // 3600) + " h " + str((age % 3600) // 60) + " min"
-        else:
-            age_label = "inconnue"
+        age = self._event_age_seconds(ev)
+        if age is None:
+            age = self.local.mission_activity_age()
+        age_label = self._age_label(age)
 
         progress = "Étape: " + mission_state.replace("_", " ").lower()
         try:
@@ -590,13 +654,23 @@ class Service:
             "UNKNOWN_INTERNAL_CHAT_STATE": "⚪ activité interne non visible",
         }.get(chat_state, "⚪ " + clean(chat_state, 60))
 
+        evidence_time = self._event_timestamp(ev) or "non observée"
+        last_completed = self._last_completed_action(events, ev)
+        human_gate = self._human_gate(ev, next_action)
+        rendered_at = utc_now()
         return "\n".join([
-            "🤖 BCP Cockpit",
+            "🤖 BCP Cockpit — " + self.project_id,
+            activity,
             "",
             "🎯 Maintenant: " + action,
             "📊 " + progress,
-            "⏱️ Dernière preuve: il y a " + age_label,
-            activity,
+            "✅ Dernière étape terminée: " + last_completed,
+            "➡️ Ensuite: " + next_action,
+            "👤 Action pour vous: " + human_gate,
+            "",
+            "🕒 Preuve observée: " + evidence_time,
+            "⏱️ Âge de la preuve à l’envoi: " + age_label,
+            "📨 Réponse générée: " + rendered_at,
             "",
             ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
             ("✅ Ancien téléphone" if edge_ok else "⚠️ Ancien téléphone — non observé"),
@@ -606,10 +680,7 @@ class Service:
             "ChatGPT: " + chat_text,
             "🧪 " + self._human_ci(gh),
             "",
-            "➡️ Ensuite: " + next_action,
-            "💰 Coût: $0.00",
-            "",
-            "ℹ️ Seules les micro-actions et preuves observables sont affichées; la réflexion privée de ChatGPT n’est pas lue.",
+            "ℹ️ Le cockpit montre les micro-actions et preuves externes; il ne prétend pas lire la réflexion privée de ChatGPT.",
             "🔧 Détails techniques: /details",
         ])
 
@@ -651,6 +722,33 @@ class Service:
             "Prochaine action sûre: " + next_action,
             "Spend: $" + format(spend, ".2f"),
         ])
+
+    def missions(self) -> str:
+        events = self.local.mission_events(200)
+        if not events:
+            return "MISSIONS ACTIVES\nAucune mission durable récente observée."
+        latest: dict[str, dict] = {}
+        for ev in events:
+            project = clean(ev.get("project_id") or ev.get("project") or self.project_id, 80)
+            key = clean(ev.get("mission_id") or ev.get("job_code") or ev.get("job_id") or project, 80)
+            latest[project + "::" + key] = ev
+        rows = list(latest.values())[-8:]
+        lines = ["🗂️ Missions récentes"]
+        for ev in reversed(rows):
+            project = clean(ev.get("project_id") or ev.get("project") or self.project_id, 55)
+            state = str(ev.get("state") or "NOT_OBSERVED").upper().replace("_", " ")
+            action = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "état observé", 95)
+            progress = state.lower()
+            try:
+                idx = int(ev.get("step_index"))
+                total = int(ev.get("step_total"))
+                if 0 <= idx <= total and total > 0:
+                    progress = self._bar(idx, total) + " " + str(int(round(idx * 100 / total))) + "% " + str(idx) + "/" + str(total)
+            except Exception:
+                pass
+            age = self._age_label(self._event_age_seconds(ev))
+            lines.append("• " + project + " — " + progress + "\n  " + action + " · preuve " + age)
+        return "\n".join(lines)
 
     def project(self, project: str) -> str:
         project = clean(project, 128)
@@ -802,9 +900,9 @@ class Service:
     def help(self) -> str:
         return (
             "BCP Cockpit — lecture simple\n"
-            "/status — vue simple\n/details — vue technique\n"
+            "/status — mission actuelle\n/missions — missions récentes\n/details — vue technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
-            "Les pourcentages portent seulement sur des étapes ou liaisons vérifiables. "
+            "Les pourcentages portent seulement sur des plans finis et vérifiables. "
             "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
         )
 
@@ -816,11 +914,13 @@ class Service:
         cmd = first.split("@", 1)[0].lower()
         arg = rest[0].strip() if rest else ""
         if cmd not in READ_ONLY_COMMANDS:
-            return "Lecture seule: /status /details /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Lecture seule: /status /missions /details /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
             return self.status()
+        if cmd == "/missions":
+            return self.missions()
         if cmd == "/details":
             return self.details()
         if cmd == "/project":
@@ -861,12 +961,30 @@ class Telegram:
             raise RuntimeError("telegram_api_error:" + desc)
         return obj
 
-    def send(self, text: str) -> None:
-        self.api("sendMessage", {
+    def send(self, text: str) -> int | None:
+        obj = self.api("sendMessage", {
             "chat_id": self.chat_id,
             "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
             "disable_web_page_preview": True,
         }, 20)
+        result = obj.get("result") or {}
+        try:
+            return int(result.get("message_id"))
+        except Exception:
+            return None
+
+    def edit(self, message_id: int, text: str) -> bool:
+        try:
+            self.api("editMessageText", {
+                "chat_id": self.chat_id,
+                "message_id": int(message_id),
+                "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
+                "disable_web_page_preview": True,
+            }, 20)
+            return True
+        except Exception as e:
+            append_log("LIVE_CARD_EDIT_FAILED", error_class=type(e).__name__, detail=clean(e, 140))
+            return False
 
     def _push_presence(self) -> None:
         if not self.auto_push:
@@ -903,7 +1021,11 @@ class Telegram:
 
         idx = keys.index(last_key)
         pending = events[idx + 1:]
-        relevant = [e for e in pending if str(e.get("state") or "").upper() in PUSH_STATES]
+        relevant = [
+            e for e in pending
+            if str(e.get("state") or "").upper() in PUSH_STATES
+            or e.get("human_action_required") is True
+        ]
         if relevant:
             skipped = max(0, len(relevant) - self.max_events_per_push)
             selected = relevant[-self.max_events_per_push:]
@@ -926,12 +1048,21 @@ class Telegram:
         prior = read_json(path, {}) or {}
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
-        self.send(str(snap["text"]))
+        message_id = prior.get("message_id")
+        updated = False
+        if message_id:
+            try:
+                updated = self.edit(int(message_id), str(snap["text"]))
+            except Exception:
+                updated = False
+        if not updated:
+            message_id = self.send(str(snap["text"]))
         atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/1",
+            "schema": "bcp.telegram_system_presence/2",
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "DIRECT_TELEGRAM",
+            "message_id": message_id,
         })
 
     def run(self) -> int:
@@ -1069,7 +1200,11 @@ class Nexus:
 
         idx = keys.index(last_key)
         pending = events[idx + 1:]
-        relevant = [e for e in pending if str(e.get("state") or "").upper() in PUSH_STATES]
+        relevant = [
+            e for e in pending
+            if str(e.get("state") or "").upper() in PUSH_STATES
+            or e.get("human_action_required") is True
+        ]
         if relevant:
             skipped = max(0, len(relevant) - self.max_events_per_push)
             selected = relevant[-self.max_events_per_push:]
@@ -1258,7 +1393,9 @@ def selftest() -> int:
         assert "🎯 Maintenant:" in status
         assert "Ancien téléphone" in status
         assert "ChatGPT: ⏳ réponse en attente" in status
-        assert "💰 Coût: $0.00" in status
+        assert "💰 Coût: $0.00" not in status
+        assert "👤 Action pour vous: AUCUNE" in status
+        assert "🕒 Preuve observée:" in status
         assert "🧪 ✅ tests réussis" in status
         presence = svc.presence_snapshot()
         assert len(presence["fingerprint"]) == 64
@@ -1272,6 +1409,7 @@ def selftest() -> int:
         assert "CI patch persisted" in svc.tail("48273195")
         assert "étape enregistrée" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
+        assert "Missions récentes" in svc.missions()
         assert "Lecture seule" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
