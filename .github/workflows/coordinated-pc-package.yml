@@ -1,0 +1,99 @@
+name: BCP Coordinated PC Package
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "windows/INSTALL_BCP_FINAL.cmd"
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
+      - "windows/bcp_server.py"
+      - "release/server.json"
+      - ".github/workflows/coordinated-pc-package.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-coordinated-pc-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: powershell
+        run: |
+          foreach($p in @('.\\windows\\INSTALL_BCP_FINAL.ps1','.\\windows\\BCP_FINAL_ACCEPTANCE_CURRENT.ps1')){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List *;throw "POWERSHELL_PARSE_FAILED $p"}
+          }
+
+      - name: Server self-test
+        shell: powershell
+        run: python '.\\windows\\bcp_server.py' --selftest
+
+      - name: Installer self-test
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\\windows\\INSTALL_BCP_FINAL.ps1' -SelfTest
+
+      - name: Acceptance self-test
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\\windows\\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -SelfTest
+
+      - name: Cross-check coordinated release
+        shell: powershell
+        run: |
+          $release=Get-Content -Raw '.\\release\\server.json' -Encoding UTF8|ConvertFrom-Json
+          $server=Get-Content -Raw '.\\windows\\bcp_server.py' -Encoding UTF8
+          $installer=Get-Content -Raw '.\\windows\\INSTALL_BCP_FINAL.ps1' -Encoding UTF8
+          $acceptance=Get-Content -Raw '.\\windows\\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -Encoding UTF8
+          if($release.version -ne '0.6.0'){throw 'SERVER_VERSION_NOT_0_6_0'}
+          if($release.coordinated_edge_version -ne '1.2.0-evergreen'){throw 'EDGE_VERSION_CONTRACT_DRIFT'}
+          if($release.requirements_revision -ne '2026-09-19-R5'){throw 'REQUIREMENTS_REVISION_DRIFT'}
+          if($server -notmatch 'SERVER_VERSION = "0.6.0"'){throw 'SOURCE_VERSION_DRIFT'}
+          if($installer -notmatch '\\$InstallerVersion = "0.6.0"'){throw 'INSTALLER_VERSION_DRIFT'}
+          if($acceptance -notmatch '\\$TargetVersion = "0.6.0"'){throw 'ACCEPTANCE_VERSION_DRIFT'}
+
+          # Manifest hashes canonical repository bytes (LF); normalize Windows checkout text before hashing.
+          $canonical=$server -replace "\r\n","\n"
+          if(-not $canonical.EndsWith("\n")){$canonical += "\n"}
+          $bytes=[Text.UTF8Encoding]::new($false).GetBytes($canonical)
+          $sha=[BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
+          if($sha -ne ([string]$release.sha256).ToLowerInvariant()){throw "SERVER_SHA_MISMATCH manifest=$($release.sha256) canonical=$sha"}
+
+      - name: Build coordinated PC package
+        shell: powershell
+        run: |
+          $root='BCP_PC_0_6_0'
+          New-Item -ItemType Directory -Force $root | Out-Null
+          Copy-Item windows\\INSTALL_BCP_FINAL.cmd $root\\
+          Copy-Item windows\\INSTALL_BCP_FINAL.ps1 $root\\
+          Copy-Item windows\\bcp_server.py $root\\
+          Copy-Item windows\\BCP_FINAL_ACCEPTANCE_CURRENT.cmd $root\\
+          Copy-Item windows\\BCP_FINAL_ACCEPTANCE_CURRENT.ps1 $root\\
+          Copy-Item release\\server.json $root\\
+          $hashes=@{}
+          Get-ChildItem $root -File | ForEach-Object {
+            $hashes[$_.Name]=(Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant()
+          }
+          [ordered]@{
+            schema='bcp.pc.package/2'
+            version='0.6.0'
+            coordinated_edge_version='1.2.0-evergreen'
+            requirements_revision='2026-09-19-R5'
+            source_commit='${{ github.sha }}'
+            files=$hashes
+          } | ConvertTo-Json -Depth 8 | Set-Content -Encoding UTF8 $root\\PC_PACKAGE_MANIFEST.json
+          Compress-Archive -Path $root\\* -DestinationPath BCP_PC_0_6_0.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-pc-0.6.0-coordinated
+          path: BCP_PC_0_6_0.zip
+          if-no-files-found: error
