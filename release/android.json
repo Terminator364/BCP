@@ -1,8 +1,13 @@
 {
   "channel": "stable",
-  "version_code": 7,
-  "version_name": "0.2.5-auto-server-promotion",
+  "version_code": 100,
+  "version_name": "1.0.0-evergreen",
+  "package_id": "com.blessing.bcpedge.evergreen",
+  "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "minimum_server_version": "0.4.7",
+  "transport": "BCP_LOCAL_AUTHENTICATED_DRIVE_RELAY",
   "apk_url": "",
-  "distribution_status": "CI_BUILD_PENDING_SIGNED_DISTRIBUTION",
-  "note": "B-EDGE 0.2.5 automatically promotes BCP server after reconnect/pairing. Stable self-update distribution still requires a fixed Android signing identity."
+  "apk_sha256": "",
+  "distribution_status": "CI_UNSIGNED_RELEASE_PENDING_PRIVATE_STABLE_SIGNING",
+  "note": "Public GitHub qualifies source/unsigned APK only. Stable signing authority is private in API_BCP/99_PRIVATE_SIGNING. Signed CURRENT is promoted only after all CI gates pass."
 }
