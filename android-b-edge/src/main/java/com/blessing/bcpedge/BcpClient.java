@@ -48,6 +48,10 @@ public final class BcpClient {
         telemetry.add(type, detail);
     }
 
+    public JSONArray recentTelemetry(int max) {
+        return telemetry.readLatest(Math.max(1, Math.min(max, 50)));
+    }
+
     public JSONObject serverUpdateStatus() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/v1/system/update", null,
