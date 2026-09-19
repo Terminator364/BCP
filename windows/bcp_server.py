@@ -1336,6 +1336,7 @@ def enqueue_job(
                     (job_id, dep),
                 )
             cx.execute("COMMIT")
+    JOB_WAKE_EVENT.set()
     return {
         "result": "QUEUED",
         "job_id": job_id,
@@ -1350,6 +1351,24 @@ def enqueue_job(
     }
 
 
+def _terminal_receipt_for_job(cx, job_id: int):
+    row = cx.execute(
+        """SELECT * FROM job_receipts
+           WHERE job_id=? AND result IN ('SUCCEEDED','FAILED','CANCELLED')
+           ORDER BY finished_at DESC LIMIT 1""",
+        (int(job_id),),
+    ).fetchone()
+    if not row:
+        return None
+    out = dict(row)
+    try:
+        out["evidence"] = json.loads(out.pop("evidence_json"))
+    except Exception:
+        out["evidence"] = {}
+        out.pop("evidence_json", None)
+    return out
+
+
 def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
     limit = max(1, min(int(limit), 100))
     with db_connection() as cx:
@@ -1357,12 +1376,297 @@ def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
             "SELECT * FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT ?",
             (project_id, limit),
         ).fetchall()
-    out = []
-    for row in rows:
-        d = dict(row)
-        d["payload"] = json.loads(d.pop("payload_json"))
-        out.append(d)
+        out = []
+        for row in rows:
+            d = dict(row)
+            d["payload"] = json.loads(d.pop("payload_json"))
+            receipt = _terminal_receipt_for_job(cx, int(d["id"]))
+            if receipt:
+                d["terminal_receipt"] = receipt
+                d["output_hash"] = receipt.get("output_hash", "")
+            out.append(d)
     return out
+
+
+def _job_dependencies_satisfied(cx, job_id: int) -> bool:
+    unresolved = cx.execute(
+        """SELECT COUNT(*) AS n
+           FROM job_dependencies d
+           WHERE d.job_id=?
+             AND NOT EXISTS (
+                 SELECT 1 FROM job_receipts r
+                 WHERE r.job_id=d.depends_on_job_id AND r.result='SUCCEEDED'
+             )""",
+        (int(job_id),),
+    ).fetchone()
+    return int(unresolved["n"] if unresolved else 0) == 0
+
+
+def _recover_and_promote_jobs_locked(cx) -> None:
+    now = utc_now()
+    # Only allowlisted handlers can be replayed automatically after an expired
+    # lease. Unknown future handlers fail closed in HOLD.
+    expired = cx.execute(
+        """SELECT id,kind FROM jobs
+           WHERE state IN ('LEASED','RUNNING')
+             AND lease_until IS NOT NULL AND lease_until<>'' AND lease_until<?""",
+        (now,),
+    ).fetchall()
+    for row in expired:
+        if str(row["kind"]).upper() in PC_JOB_HANDLER_KINDS:
+            cx.execute(
+                """UPDATE jobs SET state='READY',worker_id='',lease_id='',lease_until=NULL,
+                   last_error='LEASE_EXPIRED_RECLAIMED',updated_at=? WHERE id=?""",
+                (now, int(row["id"])),
+            )
+        else:
+            cx.execute(
+                """UPDATE jobs SET state='HOLD',worker_id='',lease_id='',lease_until=NULL,
+                   last_error='LEASE_EXPIRED_EFFECT_UNKNOWN',updated_at=? WHERE id=?""",
+                (now, int(row["id"])),
+            )
+
+    mode = pc_operating_mode()
+    if mode == "PC_AVAILABLE":
+        cx.execute(
+            """UPDATE jobs SET state='READY',updated_at=?
+               WHERE state='WAITING_FOR_PC' AND requires_pc=1""",
+            (now,),
+        )
+
+    blocked = cx.execute(
+        "SELECT id,requires_pc FROM jobs WHERE state='BLOCKED' ORDER BY priority DESC,created_at ASC LIMIT 256"
+    ).fetchall()
+    for row in blocked:
+        if not _job_dependencies_satisfied(cx, int(row["id"])):
+            continue
+        next_state = "WAITING_FOR_PC" if int(row["requires_pc"]) == 1 and mode != "PC_AVAILABLE" else "READY"
+        cx.execute(
+            "UPDATE jobs SET state=?,updated_at=? WHERE id=? AND state='BLOCKED'",
+            (next_state, now, int(row["id"])),
+        )
+
+    # Unknown PC job kinds are never interpreted as shell/code.
+    ready = cx.execute(
+        """SELECT id,kind FROM jobs
+           WHERE state='READY' AND requires_pc=1 AND resource_class='PC_R3' LIMIT 256"""
+    ).fetchall()
+    for row in ready:
+        if str(row["kind"]).upper() not in PC_JOB_HANDLER_KINDS:
+            cx.execute(
+                """UPDATE jobs SET state='HOLD',last_error='UNSUPPORTED_JOB_KIND',
+                   updated_at=? WHERE id=? AND state='READY'""",
+                (now, int(row["id"])),
+            )
+
+
+def claim_next_pc_job(worker_id: str, lease_seconds: int = 90):
+    if pc_operating_mode() != "PC_AVAILABLE":
+        return None
+    worker_id = str(worker_id or "")[:120]
+    if not worker_id:
+        raise ValueError("worker_id_required")
+    lease_seconds = max(15, min(int(lease_seconds), 600))
+    with DB_LOCK:
+        with db_connection() as cx:
+            cx.execute("BEGIN IMMEDIATE")
+            _recover_and_promote_jobs_locked(cx)
+            row = cx.execute(
+                """SELECT * FROM jobs
+                   WHERE state='READY' AND requires_pc=1 AND resource_class='PC_R3'
+                     AND UPPER(kind) IN ('NOOP','HEALTH_PROBE')
+                   ORDER BY priority DESC,created_at ASC,id ASC LIMIT 1"""
+            ).fetchone()
+            if not row:
+                cx.execute("COMMIT")
+                return None
+            lease_id = "lease-" + secrets.token_hex(12)
+            lease_until = (
+                dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=lease_seconds)
+            ).replace(microsecond=0).isoformat()
+            now = utc_now()
+            updated = cx.execute(
+                """UPDATE jobs
+                   SET state='LEASED',worker_id=?,lease_id=?,lease_until=?,
+                       attempt_count=attempt_count+1,updated_at=?,last_error=''
+                   WHERE id=? AND state='READY'""",
+                (worker_id, lease_id, lease_until, now, int(row["id"])),
+            ).rowcount
+            if updated != 1:
+                cx.execute("ROLLBACK")
+                return None
+            claimed = cx.execute("SELECT * FROM jobs WHERE id=?", (int(row["id"]),)).fetchone()
+            cx.execute("COMMIT")
+    d = dict(claimed)
+    d["payload"] = json.loads(d.pop("payload_json"))
+    return d
+
+
+def _mark_pc_job_running(job_id: int, worker_id: str, lease_id: str) -> None:
+    now = utc_now()
+    with DB_LOCK:
+        with db_connection() as cx:
+            changed = cx.execute(
+                """UPDATE jobs SET state='RUNNING',started_at=COALESCE(started_at,?),
+                   updated_at=?
+                   WHERE id=? AND state='LEASED' AND worker_id=? AND lease_id=?""",
+                (now, now, int(job_id), str(worker_id), str(lease_id)),
+            ).rowcount
+            if changed != 1:
+                raise RuntimeError("job_lease_not_owned")
+
+
+def _complete_pc_job(job: dict, worker_id: str, result: str, evidence: dict) -> dict:
+    result = str(result or "").upper()
+    if result not in ("SUCCEEDED", "FAILED", "CANCELLED"):
+        raise ValueError("invalid_terminal_job_result")
+    job_id = int(job["id"])
+    lease_id = str(job.get("lease_id") or "")
+    finished = utc_now()
+    evidence = dict(evidence or {})
+    output_hash = sha256_text(canonical_json(evidence))
+    basis = {
+        "job_id": job_id,
+        "action_id": str(job.get("action_id") or ""),
+        "attempt_count": int(job.get("attempt_count") or 0),
+        "result": result,
+        "output_hash": output_hash,
+        "finished_at": finished,
+    }
+    receipt_id = "receipt-" + sha256_text(canonical_json(basis))
+    with DB_LOCK:
+        with db_connection() as cx:
+            cx.execute("BEGIN IMMEDIATE")
+            current = cx.execute(
+                "SELECT * FROM jobs WHERE id=? AND worker_id=? AND lease_id=?",
+                (job_id, str(worker_id), lease_id),
+            ).fetchone()
+            if not current or str(current["state"]) not in ("LEASED", "RUNNING"):
+                cx.execute("ROLLBACK")
+                raise RuntimeError("job_lease_lost_before_completion")
+            cx.execute(
+                """INSERT OR IGNORE INTO job_receipts(
+                       receipt_id,job_id,project_id,action_id,idempotency_key,result,
+                       worker_id,lease_id,attempt_count,input_hash,output_hash,
+                       evidence_json,started_at,finished_at
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    receipt_id, job_id, str(current["project_id"]), str(current["action_id"]),
+                    str(current["idempotency_key"]), result, str(worker_id), lease_id,
+                    int(current["attempt_count"]), str(current["input_hash"]), output_hash,
+                    canonical_json(evidence), current["started_at"], finished,
+                ),
+            )
+            cx.execute(
+                """UPDATE jobs SET state=?,finished_at=?,updated_at=?,lease_until=NULL,
+                   last_error=? WHERE id=? AND worker_id=? AND lease_id=?""",
+                (
+                    result, finished, finished,
+                    "" if result == "SUCCEEDED" else str(evidence.get("error") or result)[:500],
+                    job_id, str(worker_id), lease_id,
+                ),
+            )
+            cx.execute("COMMIT")
+    return {
+        "receipt_id": receipt_id,
+        "job_id": job_id,
+        "action_id": str(job.get("action_id") or ""),
+        "idempotency_key": str(job.get("idempotency_key") or ""),
+        "result": result,
+        "worker_id": str(worker_id),
+        "lease_id": lease_id,
+        "attempt_count": int(job.get("attempt_count") or 0),
+        "input_hash": str(job.get("input_hash") or ""),
+        "output_hash": output_hash,
+        "evidence": evidence,
+        "finished_at": finished,
+    }
+
+
+def _execute_allowlisted_pc_job(job: dict) -> dict:
+    kind = str(job.get("kind") or "").upper()
+    payload = dict(job.get("payload") or {})
+    if kind == "NOOP":
+        return {
+            "handler": "NOOP",
+            "ok": True,
+            "payload_hash": sha256_text(canonical_json(payload)),
+        }
+    if kind == "HEALTH_PROBE":
+        return {
+            "handler": "HEALTH_PROBE",
+            "ok": True,
+            "resources": system_resources(),
+            "operating_mode": pc_operating_mode(),
+        }
+    raise RuntimeError("unsupported_job_kind")
+
+
+def run_claimed_pc_job(job: dict, worker_id: str) -> dict:
+    _mark_pc_job_running(int(job["id"]), worker_id, str(job.get("lease_id") or ""))
+    try:
+        evidence = _execute_allowlisted_pc_job(job)
+        return _complete_pc_job(job, worker_id, "SUCCEEDED", evidence)
+    except Exception as e:
+        evidence = {
+            "handler": str(job.get("kind") or ""),
+            "ok": False,
+            "error": (str(e) or e.__class__.__name__)[:500],
+            "error_class": e.__class__.__name__,
+        }
+        return _complete_pc_job(job, worker_id, "FAILED", evidence)
+
+
+def pc_executor_status() -> dict:
+    with db_connection() as cx:
+        counts = {
+            state: int(cx.execute("SELECT COUNT(*) AS n FROM jobs WHERE state=?", (state,)).fetchone()["n"])
+            for state in ("READY","BLOCKED","WAITING_FOR_PC","LEASED","RUNNING","SUCCEEDED","FAILED","HOLD")
+        }
+        receipts = int(cx.execute("SELECT COUNT(*) AS n FROM job_receipts").fetchone()["n"])
+        oldest = cx.execute(
+            """SELECT created_at FROM jobs
+               WHERE state IN ('READY','BLOCKED','WAITING_FOR_PC')
+               ORDER BY created_at ASC LIMIT 1"""
+        ).fetchone()
+    return {
+        "implemented": True,
+        "started": bool(PC_EXECUTOR_STARTED),
+        "allowlisted_handlers": list(PC_JOB_HANDLER_KINDS),
+        "active_worker_count": 1 if PC_EXECUTOR_STARTED else 0,
+        "job_counts": counts,
+        "terminal_receipt_count": receipts,
+        "oldest_pending_created_at": str(oldest["created_at"]) if oldest else "",
+        "last_heartbeat": PC_EXECUTOR_LAST_HEARTBEAT,
+        "arbitrary_shell_allowed": False,
+    }
+
+
+def _pc_job_worker_loop() -> None:
+    global PC_EXECUTOR_LAST_HEARTBEAT
+    worker_id = f"{os.environ.get('COMPUTERNAME','BCP-PC')}:{os.getpid()}:executor-v1"
+    while True:
+        try:
+            PC_EXECUTOR_LAST_HEARTBEAT = utc_now()
+            job = claim_next_pc_job(worker_id)
+            if job is not None:
+                run_claimed_pc_job(job, worker_id)
+                continue
+        except Exception:
+            # The executor never kills the HTTP/control plane. Failed jobs remain
+            # durable and diagnostic state is exposed through the job tables.
+            pass
+        JOB_WAKE_EVENT.wait(2.0)
+        JOB_WAKE_EVENT.clear()
+
+
+def start_pc_job_executor() -> None:
+    global PC_EXECUTOR_STARTED, PC_EXECUTOR_LAST_HEARTBEAT
+    if PC_EXECUTOR_STARTED:
+        return
+    PC_EXECUTOR_STARTED = True
+    PC_EXECUTOR_LAST_HEARTBEAT = utc_now()
+    threading.Thread(target=_pc_job_worker_loop, name="BCP-PC-Executor", daemon=True).start()
 
 
 def get_head(project_id: str):
