@@ -11,6 +11,7 @@ on:
       - "release/android.json"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
       - ".github/workflows/coordinated-product.yml"
+      - ".github/workflows/coordinated-pc-package.yml"
 
 permissions:
   contents: read
