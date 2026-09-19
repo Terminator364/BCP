@@ -473,10 +473,36 @@ public final class BcpClient {
     public JSONObject contextPack() throws Exception {
         try {
             ensureConnected();
-            JSONObject r = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(getProject()) + "/context",
-                    null, getToken(), null, 2200, 5000);
+            JSONObject cached = orchestrator.cachedContext(getProject());
+            String knownHash = "";
+            JSONObject cachedRv = cached.optJSONObject("revision_vector");
+            if (cachedRv != null) knownHash = cachedRv.optString("context_hash", "");
+            String url = getServer() + "/v1/projects/" + enc(getProject()) + "/context";
+            if (!knownHash.isEmpty()) url += "?known_hash=" + enc(knownHash);
+            JSONObject r = requestJson("GET", url, null, getToken(), null, 2200, 5000);
+            if ("UNCHANGED".equals(r.optString("status", "")) && cached.length() > 0) {
+                cached.remove("source");
+                cached.remove("offline");
+                cached.remove("mode");
+                cached.remove("cached_at");
+                cached.put("status", "UNCHANGED_LOCAL_REUSE");
+                cached.put("operating_mode", r.optString("operating_mode",
+                        cached.optString("operating_mode", "")));
+                JSONObject runtime = r.optJSONObject("resources");
+                if (runtime != null) cached.put("resources", runtime);
+                JSONObject rv = cached.optJSONObject("revision_vector");
+                if (rv != null) {
+                    rv.put("runtime_state_hash",
+                            r.optString("runtime_state_hash", rv.optString("runtime_state_hash", "")));
+                }
+                orchestrator.cacheContext(getProject(), cached);
+                telemetry.add("CONTEXT_PACK_REUSED", knownHash);
+                return cached;
+            }
             orchestrator.cacheContext(getProject(), r);
+            telemetry.add("CONTEXT_PACK_REFRESHED",
+                    r.optJSONObject("revision_vector") == null ? "" :
+                            r.optJSONObject("revision_vector").optString("context_hash", ""));
             return r;
         } catch (Exception ex) {
             orchestrator.setMode("EDGE_ONLY");
