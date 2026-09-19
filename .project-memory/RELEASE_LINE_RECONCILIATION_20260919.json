@@ -1,0 +1,45 @@
+{
+  "schema": "bcp.release_line_reconciliation/1",
+  "observed_at": "2026-09-19",
+  "status": "RELEASE_LINE_RECONCILIATION_REQUIRED_NO_DOWNGRADE",
+  "current_main": {
+    "sha": "f4f5df5a7ee8a677cd75f1d0feaefc21da2bf165",
+    "server": "0.5.0",
+    "edge": "1.1.0-evergreen"
+  },
+  "preserved_candidate": {
+    "source_commit": "8b3896a71b5b04e714de05b41c6c7bd24d574ba6",
+    "branch": "work/integration/bcp06-edge2rc1-20260919",
+    "pr": 13,
+    "merged_to_main": false,
+    "server": "0.6.0",
+    "edge": "2.0.0-rc1-evergreen"
+  },
+  "divergence": {
+    "candidate_ahead_commits": 27,
+    "candidate_behind_main_commits": 96,
+    "mode": "SELECTIVE_RECONCILIATION_REQUIRED"
+  },
+  "drive_current": {
+    "version_code": 200,
+    "version_name": "2.0.0-rc1-evergreen",
+    "apk_sha256": "c1640260cbaafdd92bb69c98f6780b5b03d26ad4bf1553bce393dbaf33c8c389",
+    "signer_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+    "distribution_status": "PRIVATE_STABLE_SIGNING_VERIFIED",
+    "canonical_interpretation": "CANDIDATE_TESTED_NOT_YET_MAIN_PROMOTED"
+  },
+  "signing_authority": {
+    "status": "PRIVATE_AUTHORITY_EXISTS",
+    "public_material_allowed": [
+      "package_id",
+      "signer_fingerprint",
+      "artifact_sha256",
+      "version",
+      "ci_evidence"
+    ],
+    "secret_material_publication": "FORBIDDEN"
+  },
+  "anti_downgrade": "NORMAL_PUBLICATION_REQUIRES_CANDIDATE_VERSION_CODE_GTE_CURRENT_DRIVE_VERSION_CODE",
+  "next_gate": "RECONCILE_0_6_2_0_RC1_WITH_CURRENT_MAIN_AND_REQUALIFY_EXACT_HEAD",
+  "doc": "docs/RELEASE_LINE_RECONCILIATION_AND_ANTI_DOWNGRADE.md"
+}

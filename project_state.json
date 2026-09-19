@@ -173,9 +173,10 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-AUTOUPDATE-CURRENT-MANIFEST-20260919",
-    "status": "IMPLEMENTED_BRANCH_CI_PENDING",
-    "next_atomic_action": "Qualify exact branch head; merge only if CURRENT release contract + existing product gates PASS; then stop at true external signing/cloud authorization gates.",
+    "checkpoint_id": "BCP-POST-PR36-INTEGRATION-20260919",
+    "status": "CI_QUALIFIED_MERGED_TRUE_EXTERNAL_GATES_REMAIN",
+    "last_completed_action": "Merged Nexus MVP and unified CURRENT automatic-update manifest after exact-head CI qualification; bound silent-execution watchdog requirement.",
+    "next_atomic_action": "Prepare the remaining no-user-burden pieces, then stop only at irreducible external authorization/signing gates; do not reinstall or replay already-working Telegram/BCP components.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY"
   },
   "runtime_verification": {
@@ -740,7 +741,7 @@
     "offline_behavior": "DURABLE_STORE_AND_FORWARD"
   },
   "automatic_update_target": {
-    "status": "UNIFIED_CURRENT_MANIFEST_IMPLEMENTED_CI_PENDING",
+    "status": "UNIFIED_CURRENT_MANIFEST_CI_QUALIFIED_MERGED",
     "trigger": "QUALIFIED_RELEASE_EVENT_NOT_CHATGPT_SCHEDULED_AUTOMATION",
     "current_manifest": true,
     "pc_staged_verify_health_rollback": true,
@@ -756,10 +757,17 @@
     "windows_bcp_0_5_0": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_READBACK_PENDING",
     "android_b_edge_1_1_0": "CI_QUALIFIED_STABLE_SIGNED_DISTRIBUTION_PENDING",
     "nexus_0_1_0": "CI_QUALIFIED_FIELD_DEPLOYMENT_PENDING",
-    "scheduled_chatgpt_automation": false
+    "scheduled_chatgpt_automation": false,
+    "merged_main_sha": "f4f5df5a7ee8a677cd75f1d0feaefc21da2bf165",
+    "qualified_ci_runs": {
+      "current_release_contract": 35448850853,
+      "nexus_transport": 35448850840,
+      "coordinated_product": 35448850862
+    },
+    "next_gate": "ANDROID_STABLE_SIGNED_APK_DISTRIBUTION_PLUS_NEXUS_LIVE_FIELD_AUTHORIZATION"
   },
   "nexus_transport_mvp": {
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING_FIELD_UNVERIFIED",
+    "status": "CI_QUALIFIED_MERGED_FIELD_UNVERIFIED",
     "branch": "work/bcp/nexus-transport-mvp-20260919",
     "base_main_sha": "91f329d0a0a1a297e0857a526d46c1ce376ec35c",
     "worker": "nexus/cloudflare-worker/src/worker.mjs",
@@ -772,6 +780,26 @@
     "direct_telegram_default_preserved": true,
     "zero_usd_required": true,
     "secrets_committed": false,
-    "next_gate": "CI_QUALIFY_EXACT_HEAD_THEN_LIVE_CLOUD_AUTHORIZATION_AND_HOME_WIFI_FIELD_TEST"
+    "next_gate": "LIVE_ZERO_USD_CLOUD_AUTHORIZATION_SECRET_PROVISIONING_AND_HOME_WIFI_FIELD_ROUNDTRIP",
+    "merged_main_sha": "476f87ab07f6692ec8ba324380d9a5b1ae12deb4",
+    "qualified_ci_runs": {
+      "nexus_transport": 35448440968,
+      "telegram_observability": 35448440973,
+      "coordinated_product": 35448440996
+    }
+  },
+  "progress_presence_watchdog": {
+    "status": "CANONICAL_REQUIREMENT_BOUND",
+    "silent_interval_seconds": 60,
+    "escalation_recheck_seconds": 180,
+    "states": [
+      "NO_NEW_EXTERNAL_EVIDENCE",
+      "WAITING_EXTERNAL_ACTION",
+      "WAITING_EXTERNAL_CHAT_RESULT",
+      "PROVIDER_PENDING_UNKNOWN"
+    ],
+    "rule": "Spinner/UI silence is not progress evidence; checkpoint before slow actions; never replay unknown committed mutations.",
+    "user_is_not_telemetry_bus": true,
+    "canonical_doc": "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md"
   }
 }
