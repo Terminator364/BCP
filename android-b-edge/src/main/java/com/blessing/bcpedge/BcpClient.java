@@ -17,17 +17,19 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "1.0.0";
+    private static final String EDGE_VERSION = "1.1.0";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
     private final CredentialStore credentials;
+    private final EdgeOrchestrator orchestrator;
 
     public BcpClient(Context context) {
         this.context = context.getApplicationContext();
         this.prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         this.telemetry = new TelemetryStore(context);
         this.credentials = new CredentialStore(context);
+        this.orchestrator = new EdgeOrchestrator(context);
     }
 
     public String getServer() { return prefs.getString("server", ""); }
@@ -136,6 +138,7 @@ public final class BcpClient {
                     telemetry.add("RECONNECT_PASS", savedServer);
                     heartbeat("RECONNECT_PASS");
                     flushPendingCheckpoint();
+                    syncOrchestrationState();
                     JSONObject promoted = autoPromoteServerIfNeeded(progress);
                     return promoted != null ? promoted : h;
                 }
@@ -436,6 +439,103 @@ public final class BcpClient {
         } catch (Exception ignored) {}
     }
 
+    public JSONObject orchestratorStatus() throws Exception {
+        ensureConnected();
+        JSONObject r = requestJson("GET", getServer() + "/v1/orchestrator/status",
+                null, getToken(), null, 1800, 3500);
+        boolean pressure = "PC_MEMORY_PRESSURE".equals(r.optString("operating_mode", ""));
+        orchestrator.setMode(EdgePolicy.mode(true, pressure));
+        return r;
+    }
+
+    public JSONObject contextPack() throws Exception {
+        try {
+            ensureConnected();
+            JSONObject r = requestJson("GET",
+                    getServer() + "/v1/projects/" + enc(PROJECT) + "/context",
+                    null, getToken(), null, 2200, 5000);
+            orchestrator.cacheContext(r);
+            return r;
+        } catch (Exception ex) {
+            orchestrator.setMode("EDGE_ONLY");
+            JSONObject cached = orchestrator.cachedContext();
+            if (cached.length() > 0) return cached;
+            throw ex;
+        }
+    }
+
+    public JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) throws Exception {
+        JSONObject local = orchestrator.queueJob(kind, payload, requiresPc);
+        try {
+            ensureConnected();
+            JSONObject body = new JSONObject();
+            body.put("kind", kind);
+            body.put("payload", payload);
+            body.put("requires_pc", requiresPc);
+            String idem = "edge-job-" + local.optString("local_id", UUID.randomUUID().toString());
+            JSONObject r = requestJson("POST",
+                    getServer() + "/v1/projects/" + enc(PROJECT) + "/jobs",
+                    body.toString(), getToken(), idem, 2200, 5000);
+            flushQueuedJobs();
+            return r;
+        } catch (Exception ex) {
+            orchestrator.setMode("EDGE_ONLY");
+            local.put("offline", true);
+            local.put("queued_locally", true);
+            return local;
+        }
+    }
+
+    public void flushQueuedJobs() {
+        if (getServer().isEmpty() || getToken().isEmpty()) return;
+        try {
+            JSONArray q = orchestrator.pendingJobs();
+            JSONArray keep = new JSONArray();
+            for (int i = 0; i < q.length(); i++) {
+                JSONObject job = q.optJSONObject(i);
+                if (job == null) continue;
+                if (i >= 24) { keep.put(job); continue; }
+                try {
+                    JSONObject body = new JSONObject();
+                    body.put("kind", job.optString("kind", "generic"));
+                    body.put("payload", job.optJSONObject("payload") == null ? new JSONObject() : job.optJSONObject("payload"));
+                    body.put("requires_pc", job.optBoolean("requires_pc", true));
+                    requestJson("POST",
+                            getServer() + "/v1/projects/" + enc(PROJECT) + "/jobs",
+                            body.toString(), getToken(),
+                            "edge-job-" + job.optString("local_id", UUID.randomUUID().toString()),
+                            1800, 4000);
+                } catch (Exception ex) {
+                    keep.put(job);
+                }
+            }
+            orchestrator.replaceJobs(keep);
+        } catch (Exception ignored) {}
+    }
+
+    public JSONObject syncOrchestrationState() {
+        JSONObject out = new JSONObject();
+        try {
+            JSONObject st = orchestratorStatus();
+            out.put("mode", orchestrator.getMode());
+            JSONObject ctx = contextPack();
+            out.put("context_cached", ctx.length() > 0);
+            flushQueuedJobs();
+            out.put("queued_jobs_remaining", orchestrator.pendingJobs().length());
+            orchestrator.putMemory("OPERATING_STATE", "last_sync", out);
+            telemetry.add("ORCHESTRATOR_SYNC_PASS", orchestrator.getMode());
+        } catch (Exception ex) {
+            orchestrator.setMode("EDGE_ONLY");
+            try {
+                out.put("mode", "EDGE_ONLY");
+                out.put("offline", true);
+                out.put("queued_jobs_remaining", orchestrator.pendingJobs().length());
+            } catch (Exception ignored) {}
+            telemetry.add("ORCHESTRATOR_SYNC_DEGRADED", ex.getClass().getSimpleName());
+        }
+        return out;
+    }
+
     public JSONObject health() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/health", null, null, null, 1500, 2500);
@@ -473,6 +573,10 @@ public final class BcpClient {
             out.put("chatgpt_pc_error", ex.getClass().getSimpleName());
         }
 
+        JSONObject orch = syncOrchestrationState();
+        out.put("orchestration_mode", orch.optString("mode", ""));
+        out.put("context_cached", orch.optBoolean("context_cached", false));
+        out.put("queued_jobs_remaining", orch.optInt("queued_jobs_remaining", 0));
         out.put("paired", !getToken().isEmpty());
         out.put("ok", true);
         telemetry.add("EDGE_ACCEPTANCE_PASS",
@@ -483,6 +587,7 @@ public final class BcpClient {
 
     public void heartbeat(String reason) {
         telemetry.add("PHONE_HEARTBEAT", reason == null ? "FOREGROUND" : reason);
+        syncOrchestrationState();
         flushTelemetry();
     }
 
