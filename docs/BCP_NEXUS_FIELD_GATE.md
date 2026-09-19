@@ -98,7 +98,7 @@ The preferred live-deployment path is now a single bounded bootstrap action, not
 - persist a local receipt with URL/version/state but no secrets;
 - roll receiver ownership back toward DIRECT_TELEGRAM if migration fails after webhook activation.
 
-A missing Cloudflare/Wrangler login is a true human gate. It is not a reason to ask for the Telegram token again.
+A missing Cloudflare account authorization is a true human gate. The bootstrap now launches the provider browser-authorization flow itself and, after approval, continues in the same run; the user must not be asked to copy a token, type a second bootstrap command, or rerun the script merely because the CLI was not authenticated. A missing Node/Wrangler runtime remains an environment prerequisite to resolve separately.
 
 The helper is idempotent at the resource/configuration level: rerunning it may refresh generated secrets and deployment state, but it MUST NOT create competing Telegram receivers or duplicate canonical BCP state.
 
