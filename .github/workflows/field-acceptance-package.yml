@@ -60,7 +60,7 @@ jobs:
 
           $listenerMembers=@(
             $listenerRefs |
-              ForEach-Object { $_.Member.Extent.Text.Trim("'\"") } |
+              ForEach-Object { $_.Member.Extent.Text } |
               Sort-Object -Unique
           )
           $allowed=@(
