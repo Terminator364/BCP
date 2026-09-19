@@ -61,3 +61,20 @@ This charter is satisfied only when a field test demonstrates:
 - single-writer protection prevents concurrent mutation;
 - the user provides no screenshot or manual state reconstruction;
 - a later return of the original conversation reconciles instead of replaying stale work.
+
+
+## Universal-context UX requirement
+
+The normal fresh-conversation experience should become:
+
+`BCPGO -> tiny bootstrap manifest -> GLOBAL_CORE -> PROJECT_CORE -> TASK_DELTA -> useful answer/action`
+
+not:
+
+`new chat -> user re-explains preferences -> re-explains project architecture -> screenshots -> broad recovery scan`.
+
+A later turn should normally receive `UNCHANGED` or a bounded `DELTA`, not the entire memory corpus again.
+
+The user may keep many projects, but the assistant should see only the global core plus the active project's scoped context and task-relevant cross-project knowledge.
+
+The universal code is a trigger only; authorization comes from the connected BCP/Drive/app path.
