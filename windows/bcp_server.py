@@ -9,7 +9,9 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import socket
 import sqlite3
+import struct
 import subprocess
 import sys
 import threading
@@ -771,6 +773,114 @@ def _ensure_sqlite_column(cx, table: str, column: str, ddl: str) -> None:
     cols = {str(r[1]) for r in cx.execute(f"PRAGMA table_info({table})").fetchall()}
     if column not in cols:
         cx.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
+
+def _dns_name(name: str) -> bytes:
+    labels = [x for x in str(name).strip(".").split(".") if x]
+    out = bytearray()
+    for label in labels:
+        b = label.encode("utf-8")[:63]
+        out.append(len(b))
+        out.extend(b)
+    out.append(0)
+    return bytes(out)
+
+
+def _mdns_rr(name: str, rtype: int, rclass: int, ttl: int, rdata: bytes) -> bytes:
+    return _dns_name(name) + struct.pack("!HHIH", rtype, rclass, ttl, len(rdata)) + rdata
+
+
+def _lan_ipv4() -> str:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("192.0.2.1", 9))
+            ip = str(s.getsockname()[0])
+            if ip and not ip.startswith("127."):
+                return ip
+        finally:
+            s.close()
+    except Exception:
+        pass
+    try:
+        return socket.gethostbyname(socket.gethostname())
+    except Exception:
+        return ""
+
+
+def mdns_announcement_packet(port: int = 8765) -> bytes:
+    pc = (os.environ.get("COMPUTERNAME") or socket.gethostname() or "BCP-PC").replace(".", "-")[:40]
+    service = "_bcp._tcp.local"
+    instance = f"BCP-{pc}.{service}"
+    host = f"{pc}.local"
+    ip = _lan_ipv4()
+    if not ip:
+        raise RuntimeError("no_lan_ipv4_for_mdns")
+    txt_parts = [
+        f"ver={SERVER_VERSION}".encode("utf-8"),
+        b"proto=1",
+        public_identity_fingerprint(ensure_state()).encode("utf-8"),
+    ]
+    txt = b"".join(bytes([min(len(x), 255)]) + x[:255] for x in txt_parts)
+    records = [
+        _mdns_rr(service, 12, 1, 120, _dns_name(instance)),
+        _mdns_rr(instance, 33, 0x8001, 120, struct.pack("!HHH", 0, 0, int(port)) + _dns_name(host)),
+        _mdns_rr(instance, 16, 0x8001, 120, txt),
+        _mdns_rr(host, 1, 0x8001, 120, socket.inet_aton(ip)),
+    ]
+    return struct.pack("!HHHHHH", 0, 0x8400, 0, len(records), 0, 0) + b"".join(records)
+
+
+def start_mdns_advertiser(port: int = 8765) -> None:
+    def worker():
+        group = ("224.0.0.251", 5353)
+        tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        try:
+            tx.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
+        except Exception:
+            pass
+        rx = None
+        try:
+            rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            rx.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            rx.bind(("", 5353))
+            try:
+                rx.setsockopt(
+                    socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+                    socket.inet_aton("224.0.0.251") + socket.inet_aton("0.0.0.0"),
+                )
+            except Exception:
+                pass
+            rx.settimeout(1.0)
+        except Exception:
+            if rx is not None:
+                try: rx.close()
+                except Exception: pass
+            rx = None
+
+        last_announce = 0.0
+        burst = 3
+        while True:
+            try:
+                packet = mdns_announcement_packet(port)
+                now = time.monotonic()
+                if burst > 0 or (now - last_announce) >= 30.0:
+                    tx.sendto(packet, group)
+                    last_announce = now
+                    burst = max(0, burst - 1)
+                if rx is not None:
+                    try:
+                        data, _ = rx.recvfrom(4096)
+                        if b"_bcp" in data.lower():
+                            tx.sendto(packet, group)
+                    except socket.timeout:
+                        pass
+                else:
+                    time.sleep(1.0 if burst > 0 else 5.0)
+            except Exception:
+                time.sleep(3.0)
+
+    threading.Thread(target=worker, name="BCP-mDNS", daemon=True).start()
 
 
 def ensure_state() -> str:
@@ -1884,6 +1994,7 @@ def main():
     if not lifecycle.get("registered", False):
         mirror_telemetry_status("LIFECYCLE_REGISTRATION_DEGRADED", {"status": "DEGRADED"})
     start_external_heartbeat_worker()
+    start_mdns_advertiser(args.port)
     start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
     try:
