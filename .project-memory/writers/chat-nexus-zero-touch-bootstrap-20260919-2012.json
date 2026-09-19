@@ -1,0 +1,20 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-nexus-zero-touch-bootstrap-20260919-2012",
+  "project_or_mission": "API/BCP Nexus one-time zero-touch bootstrap and field handoff",
+  "base_main_sha": "1bf4e88d727d5850769c22b740d132115b761a70",
+  "created_at": "2026-09-19T20:12:00+01:00",
+  "intended_file_scope": [
+    "windows/BOOTSTRAP_BCP_NEXUS.ps1",
+    "windows/CONFIGURE_BCP_NEXUS.ps1",
+    ".github/workflows/nexus-transport.yml",
+    "docs/BCP_NEXUS_FIELD_GATE.md",
+    ".project-memory/writers/chat-nexus-zero-touch-bootstrap-20260919-2012.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Nexus Transport Qualification",
+    "BCP Telegram Observability Qualification",
+    "BCP Coordinated Product Qualification"
+  ],
+  "status": "ACTIVE_WRITER_BRANCH"
+}
