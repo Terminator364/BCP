@@ -7,6 +7,7 @@ on:
       - "nexus/**"
       - "windows/bcp_telegram_observability.py"
       - "windows/CONFIGURE_BCP_NEXUS.ps1"
+      - "windows/BOOTSTRAP_BCP_NEXUS.ps1"
       - "docs/BCP_NEXUS_FIELD_GATE.md"
       - "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -16,6 +17,7 @@ on:
       - "nexus/**"
       - "windows/bcp_telegram_observability.py"
       - "windows/CONFIGURE_BCP_NEXUS.ps1"
+      - "windows/BOOTSTRAP_BCP_NEXUS.ps1"
       - "docs/BCP_NEXUS_FIELD_GATE.md"
       - "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -81,11 +83,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Parse and self-test Nexus configurator
+      - name: Parse and self-test Nexus configurators
         shell: powershell
         run: |
           $null = [scriptblock]::Create((Get-Content -Raw '.\windows\CONFIGURE_BCP_NEXUS.ps1'))
+          $null = [scriptblock]::Create((Get-Content -Raw '.\windows\BOOTSTRAP_BCP_NEXUS.ps1'))
           & '.\windows\CONFIGURE_BCP_NEXUS.ps1' -SelfTest
+          & '.\windows\BOOTSTRAP_BCP_NEXUS.ps1' -SelfTest
 
   package:
     needs: [nexus-contract, pc-client, powershell]
@@ -102,6 +106,7 @@ jobs:
               "nexus/cloudflare-worker/wrangler.toml.example",
               "windows/bcp_telegram_observability.py",
               "windows/CONFIGURE_BCP_NEXUS.ps1",
+              "windows/BOOTSTRAP_BCP_NEXUS.ps1",
               "docs/BCP_NEXUS_FIELD_GATE.md",
           ]
           out = pathlib.Path("BCP_NEXUS_TRANSPORT_MVP.zip")
