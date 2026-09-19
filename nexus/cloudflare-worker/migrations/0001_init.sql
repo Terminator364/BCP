@@ -29,3 +29,10 @@ CREATE TABLE IF NOT EXISTS outbound (
   telegram_message_id TEXT,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS live_cards (
+  card_key TEXT PRIMARY KEY,
+  telegram_message_id TEXT NOT NULL,
+  body_hash TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
