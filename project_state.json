@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_4_NEXUS_0_1_5_TELEGRAM_V4_MERGED_FIELD_PROMOTION_PENDING",
-  "last_completed_atomic_action": "Telegram Cockpit V4 merged to main in PR #62 after exact-head CI PASS and a final main-head recheck. Main integration commit: f9d3b1a622edaf1839beb2ae40d1790c9d842a7e. Release/current now advertises BCP 0.6.4, Nexus 0.1.5 and Telegram human-cockpit-v4 as distribution-ready but FIELD_UNVERIFIED.",
-  "next_action": "Promote the merged CURRENT release through the existing resident update path and obtain fresh machine-readable field evidence for BCP 0.6.4 + Nexus 0.1.5 + Telegram V4. Do not ask for Telegram token re-entry or manual IP/chat-id relay. Prefer home-WiFi PC<->B-EDGE local relay plus Nexus HTTPS store-and-forward for degraded PC->Telegram egress. If provider authorization is required, surface exactly one explicit human gate; otherwise continue from durable receipts.",
+  "status": "BCP_0_6_4_FIELD_RUNNING_PAIRED_NEXUS_0_1_5_PROMOTION_PENDING",
+  "last_completed_atomic_action": "Fresh Google Drive machine readback at 2026-09-19T22:49:35Z proves BCP 0.6.4 running on MBMPC, paired, hash-matching release/current, and update_state=UP_TO_DATE. Telegram V4 code/spec is merged. Nexus bootstrap is active but still reports bundle 0.1.4 LAUNCHED, so Nexus 0.1.5 and end-to-end Telegram V4 remain FIELD_UNVERIFIED.",
+  "next_action": "Wait only for the next resident convergence evidence, then verify whether Nexus bundle 0.1.5 reaches a terminal receipt and perform the home-WiFi Nexus/Telegram V4 round-trip. Do not reinstall BCP, re-enter Telegram token/chat ID, or ask the user to shuttle files/logs. If provider authorization is surfaced, request only that one explicit human authorization gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1031,5 +1031,27 @@
     "chatgpt_scheduled_monitoring": false,
     "bcp_merge_watch_disabled": true,
     "resident_presence_and_updates": "LOCAL_BCP_BEDGE_NEXUS_EVENT_DRIVEN_ONLY"
+  },
+  "latest_field_evidence_0_6_4": {
+    "observed_at_utc": "2026-09-19T22:49:35+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "evidence_status": "MACHINE_READBACK",
+    "reason": "PERIODIC_HEARTBEAT",
+    "server_version": "0.6.4",
+    "server_pid": 7996,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "server_sha256": "074abe3cb94f91451bd2170746301e69cec22de1a9398e295f680f4c47eaec3e",
+    "release_sha256_match": true,
+    "update_state": "UP_TO_DATE",
+    "update_target_version": "0.6.4",
+    "nexus_bootstrap_state": "LAUNCHED",
+    "nexus_bootstrap_bundle_version": "0.1.4",
+    "nexus_target_version": "0.1.5",
+    "nexus_0_1_5_field_verified": false,
+    "telegram_v4_field_verified": false,
+    "chatgpt_pc_active_version": "6.0.32",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "conclusion": "BCP 0.6.4 resident self-update path is field-proven for this step; Nexus/Telegram V4 still requires terminal receipt and round-trip."
   }
 }
