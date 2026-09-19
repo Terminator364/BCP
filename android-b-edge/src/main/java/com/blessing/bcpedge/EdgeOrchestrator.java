@@ -29,7 +29,7 @@ public final class EdgeOrchestrator {
     public synchronized boolean shouldRunPeriodicSync(long minIntervalMs) {
         long now = System.currentTimeMillis();
         long last = prefs.getLong("orchestration_sync_attempt_at", 0L);
-        if (last > 0L && now >= last && (now - last) < Math.max(30_000L, minIntervalMs)) {
+        if (!EdgePolicy.shouldRunSync(now, last, minIntervalMs)) {
             return false;
         }
         prefs.edit().putLong("orchestration_sync_attempt_at", now).apply();
