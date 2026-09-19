@@ -370,3 +370,18 @@ Le suivi normal doit afficher, quand les preuves existent :
 Une absence de nouvelle preuve ne signifie pas automatiquement que ChatGPT est bloqué. Le cockpit doit dire qu’aucune nouvelle preuve durable n’a été observée, puis distinguer cette situation d’un vrai état BLOCKED/HOLD enregistré.
 
 Les notifications automatiques sont transitionnelles : elles réagissent à un changement humainement utile de mission, d’étape, de liaison, de résultat de test ou de bande d’activité. Un nouveau commit ou run CI qui ne change pas la situation utile ne doit pas produire un doublon.
+
+## Human Cockpit V3 binding — 2026-09-19
+
+The human-facing mission cockpit now follows `docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md`.
+
+Binding refinements:
+- one editable live mission card replaces repeated near-duplicate status pushes;
+- normal messages are medium-length, plain-language and explicitly show current step, last success, next step, human action, proof-of-life time/age and delivery lag;
+- truthful progress bars/percentages are permitted only for persisted finite plans with a machine-derived denominator;
+- raw PR/SHA/run/fence identifiers move behind `/details`;
+- zero-dollar spend is not repeated in the normal view;
+- one bot multiplexes multiple missions/projects/conversation sources by default rather than creating one bot per conversation;
+- resident progress presence is driven by BCP events/heartbeats and MUST NOT depend on an active ChatGPT turn;
+- resident timers are local BCP behavior, not ChatGPT scheduled automations;
+- optional lightweight images/cards are data-saver aware and not sent on every heartbeat.
