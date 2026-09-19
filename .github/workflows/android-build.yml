@@ -58,7 +58,7 @@ jobs:
 
           grep -F 'applicationId "com.blessing.bcpedge.evergreen"' "$GRADLE" >/dev/null
           grep -F 'versionCode 120' "$GRADLE" >/dev/null
-          grep -F 'versionName "1.1.0-evergreen"' "$GRADLE" >/dev/null
+          grep -F 'versionName "1.2.0-evergreen"' "$GRADLE" >/dev/null
           grep -F 'BCP Edge Evergreen' "$MANIFEST" >/dev/null
           grep -F '0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617' "$UPDATE" >/dev/null
           grep -F '/v1/edge/update' "$UPDATE" >/dev/null
