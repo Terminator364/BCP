@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_6_FINAL_ACCEPTANCE_PACKAGE_CI_GREEN_DRIVE_PUBLISHED",
-  "last_completed_atomic_action": "Strengthened public GitHub qualification: parse, self-test, AST internal object contract, version/stale-writer cross-check, server self-test and packaging all PASS before Drive publication. Fixed stale listener.pid consumer, removed duplicated stale runner tail, replaced fragile cleanup regex with prefix allowlists, and published only the green artifact.",
-  "next_action": "Run the refreshed Drive CURRENT final-acceptance package once. Do not use any older local copy. The campaign should complete pre-reboot gates, auto-reboot, RunOnce resume, post-reboot/resource/connectivity gates, and publish the final machine-readable report.",
+  "status": "BCP_0_4_6_FINAL_ACCEPTANCE_PRE_REBOOT_PASS_POST_REBOOT_PENDING",
+  "last_completed_atomic_action": "Final acceptance campaign 20260919T030237Z-30fb4610 passed all pre-reboot gates and scheduled automatic reboot. Drive hygiene removed legacy BCP artifacts; runtime 0.4.6, B-EDGE pairing, checkpoint revision 3, idempotency, stale-writer rejection, local/LAN health, lifecycle registration and managed listener PID/path/hash proof all passed.",
+  "next_action": "Do not replay pre-reboot tests. Observe post-reboot return only. If Windows is waiting at the sign-in screen, user sign-in is the only physical action required because both BCP lifecycle and acceptance continuation are user-logon scoped. After sign-in, read BCP_FINAL_ACCEPTANCE_LATEST.json and runtime heartbeat; if they do not advance, diagnose RunOnce/lifecycle recovery directly.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP046-FINAL-PACKAGE-CI-GREEN",
-    "status": "WAITING_SINGLE_FINAL_CAMPAIGN_RUN",
-    "next_atomic_action": "Run green CURRENT package once; then read BCP_FINAL_ACCEPTANCE_LATEST.json",
+    "checkpoint_id": "APIAX07-FINAL-ACCEPTANCE-PRE-REBOOT-PASS",
+    "status": "POST_REBOOT_EVIDENCE_PENDING",
+    "next_atomic_action": "Read post-reboot report/heartbeat only; do not rerun pre-reboot campaign",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -489,5 +489,28 @@
     "drive_size": 7359,
     "failed_builds_published_to_drive": false,
     "requirements_commit": "d827aa9c7a69edc806002e1129418bc15171f15f"
+  },
+  "final_acceptance_live": {
+    "campaign_id": "20260919T030237Z-30fb4610",
+    "target_version": "0.4.6",
+    "phase": "PRE_REBOOT",
+    "status": "PRE_REBOOT_PASS_REBOOT_SCHEDULED",
+    "prepared_reboot_at": "2026-09-19T03:02:46.0797444Z",
+    "drive_report_modified_at": "2026-09-19T03:03:00.406Z",
+    "pre_reboot_gates": {
+      "download_hygiene": "PASS",
+      "runtime_version": "PASS_0.4.6",
+      "pairing": "PASS_BEDGE_0.2.5",
+      "checkpoint": "PASS_REVISION_3",
+      "idempotency": "PASS",
+      "stale_writer": "PASS",
+      "local_health": "PASS",
+      "lan_health": "PASS",
+      "lifecycle": "PASS",
+      "managed_listener": "PASS_PID_PATH_SHA"
+    },
+    "post_reboot_report": "PENDING",
+    "last_observed_runtime_heartbeat": "2026-09-19T03:02:14+00:00",
+    "no_replay": true
   }
 }
