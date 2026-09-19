@@ -1,0 +1,117 @@
+name: BCP Telegram Observability Qualification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "windows/bcp_telegram_observability.py"
+      - "windows/CONFIGURE_BCP_TELEGRAM.ps1"
+      - "docs/TELEGRAM_*.md"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json"
+      - ".github/workflows/telegram-observability.yml"
+  push:
+    paths:
+      - "windows/bcp_telegram_observability.py"
+      - "windows/CONFIGURE_BCP_TELEGRAM.ps1"
+      - "docs/TELEGRAM_*.md"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json"
+      - ".github/workflows/telegram-observability.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-telegram-observability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-selftest:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile
+        run: python -m py_compile windows/bcp_telegram_observability.py
+      - name: Read-only observability self-test
+        run: python windows/bcp_telegram_observability.py --selftest
+
+  powershell-selftest:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and self-test configurator
+        shell: powershell
+        run: |
+          $null = [scriptblock]::Create((Get-Content -Raw '.\windows\CONFIGURE_BCP_TELEGRAM.ps1'))
+          & '.\windows\CONFIGURE_BCP_TELEGRAM.ps1' -SelfTest
+
+  contract-and-secret-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify read-only contract and no committed bot token
+        shell: python
+        run: |
+          import pathlib, re
+          py = pathlib.Path("windows/bcp_telegram_observability.py").read_text(encoding="utf-8")
+          ps = pathlib.Path("windows/CONFIGURE_BCP_TELEGRAM.ps1").read_text(encoding="utf-8")
+          joined = py + "\n" + ps
+          required = [
+              "/status", "/project", "/job", "/last", "/ci", "/holds",
+              "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
+              "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
+              "ACCEPTED", "NORMALIZED", "PLANNED", "QUEUED", "STARTED",
+              "DISPATCHED", "WAITING_PROVIDER", "RESULT_RECEIVED",
+              "VALIDATING", "COMMITTED", "CHECKPOINTED", "RETRY_SCHEDULED",
+              "BLOCKED", "HOLD", "DONE", "CANCELLED",
+              "READ_ONLY", "getUpdates",
+          ]
+          for item in required:
+              assert item in joined, item
+          assert not re.search(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b", joined)
+          for forbidden in ["import requests", "import aiohttp", "import telebot", "from telegram"]:
+              assert forbidden not in py
+          assert "api.telegram.org/bot" in py
+          assert "AsSecureString" in ps
+          assert "allowed_chat_id" in joined
+          assert "aggressive_polling = $false" in ps
+          print("BCP_TELEGRAM_CONTRACT_GUARDS=PASS")
+
+  package:
+    runs-on: ubuntu-latest
+    needs: [python-selftest, powershell-selftest, contract-and-secret-guards]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build auditable source package
+        shell: python
+        run: |
+          import hashlib, pathlib, zipfile
+          files = [
+              pathlib.Path("windows/bcp_telegram_observability.py"),
+              pathlib.Path("windows/CONFIGURE_BCP_TELEGRAM.ps1"),
+              pathlib.Path("docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md"),
+          ]
+          out = pathlib.Path("BCP_TELEGRAM_OBSERVABILITY_MVP.zip")
+          with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as z:
+              for p in files:
+                  z.write(p, p.name)
+          digest = hashlib.sha256(out.read_bytes()).hexdigest()
+          pathlib.Path(str(out) + ".sha256").write_text(
+              digest + "  " + out.name + "\n", encoding="ascii"
+          )
+          print("PACKAGE_SHA256=" + digest)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-telegram-observability-mvp-${{ github.sha }}
+          path: |
+            BCP_TELEGRAM_OBSERVABILITY_MVP.zip
+            BCP_TELEGRAM_OBSERVABILITY_MVP.zip.sha256
+          if-no-files-found: error
