@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_3_QUALIFICATION_RUNNING_BEDGE_0_2_5_CI_PASS_FIELD_PENDING",
-  "last_completed_atomic_action": "B-EDGE 0.2.5 automatic BCP server promotion built successfully; BCP 0.4.3 lifecycle persistence published and managed-update qualification passed",
-  "next_action": "Finish BCP 0.4.3 Windows qualification, then drive one live field promotion and read external heartbeat",
+  "status": "BCP_0_4_3_CI_QUALIFIED_FIELD_PROMOTION_TRIGGER_REQUIRED",
+  "last_completed_atomic_action": "BCP 0.4.3 fully qualified on managed-update, PC Sanity, Windows bootstrap/selftest and Windows E2E; B-EDGE 0.2.5 CI build PASS",
+  "next_action": "On currently installed B-EDGE 0.2.4, invoke the existing one-tap 'Mettre à jour le serveur PC maintenant' control once; then read BCP_RUNTIME_LATEST.json from Drive. No screenshot/log relay.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -127,9 +127,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP043-BEDGE025-QUALIFICATION",
-    "status": "ADVANCING",
-    "next_atomic_action": "Complete BCP 0.4.3 Windows qualification then obtain live Drive heartbeat",
+    "checkpoint_id": "APIAX07-BCP043-FIELD-TRIGGER",
+    "status": "WAITING_ONE_UNAVOIDABLE_LOCAL_ACTION",
+    "next_atomic_action": "Read Drive heartbeat and verify live BCP 0.4.3 after one-tap B-EDGE server update",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -199,8 +199,17 @@
     "pc_sanity_run_id": 35413377534,
     "pc_sanity_result": "PASS",
     "windows_validation_run_id": 35413377552,
-    "windows_validation_result": "IN_PROGRESS",
+    "windows_validation_result": "PASS",
     "lifecycle_launcher": "HKCU_RUN_SAME_MANAGED_PROCESS_IDEMPOTENT",
-    "field_runtime_readback": "PENDING"
+    "field_runtime_readback": "PENDING_NO_EXTERNAL_HEARTBEAT"
+  },
+  "field_trigger": {
+    "reason": "No direct local-PC execution channel is available in this chat and ChatGPT-PC interactive channel remains intentionally isolated",
+    "current_edge_capability": "B-EDGE 0.2.4 already exposes authenticated one-tap BCP server update endpoint",
+    "required_user_action": "Open B-EDGE > PARAMÈTRES / MISES À JOUR > METTRE À JOUR LE SERVEUR PC MAINTENANT",
+    "expected_result": "BCP server self-updates to 0.4.3, restarts, registers per-user lifecycle launcher, and begins BCP_RUNTIME_LATEST.json heartbeat",
+    "screenshots_required": false,
+    "manual_ip_token_project_required": false,
+    "repeat_install_required": false
   }
 }
