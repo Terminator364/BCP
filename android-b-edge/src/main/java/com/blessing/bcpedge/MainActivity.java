@@ -179,6 +179,7 @@ public class MainActivity extends Activity {
                 "Réparer ChatGPT-PC maintenant",
                 "Mettre à jour le serveur PC maintenant",
                 "Vérifier / mettre à jour BCP Edge",
+                "État orchestrateur / mémoire",
                 "Test rapide B-EDGE"
         };
         new AlertDialog.Builder(this)
@@ -210,6 +211,13 @@ public class MainActivity extends Activity {
                     } else if (which == 4) {
                         updates.check(true);
                     } else if (which == 5) {
+                        runAction("ORCHESTRATEUR", () -> {
+                            JSONObject out = client.orchestratorStatus();
+                            JSONObject ctx = client.contextPack();
+                            out.put("context_pack_cached", ctx.length() > 0);
+                            return out;
+                        });
+                    } else if (which == 6) {
                         runAction("TEST RAPIDE B-EDGE", () -> client.runQuickAcceptance());
                     }
                 })
