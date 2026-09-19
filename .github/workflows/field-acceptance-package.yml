@@ -75,8 +75,8 @@ jobs:
           if($listenerMembers -contains 'pid'){
             throw 'deprecated listener.pid reference detected'
           }
-          if($listenerMembers -notcontains 'listener_pid'){
-            throw 'listener_pid is never consumed'
+          if($listenerMembers -notcontains 'diagnostic_pid'){
+            throw 'diagnostic_pid is never consumed'
           }
           Write-Host ('BCP_ACCEPTANCE_LISTENER_CONTRACT=PASS members='+($listenerMembers -join ','))
 
