@@ -66,7 +66,8 @@
     "rdc_network_data_saver": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
     "home_wifi_edge_nexus_autoupdate": "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
     "nexus_field_gate": "docs/BCP_NEXUS_FIELD_GATE.md",
-    "qualified_current_release_manifest": "release/current.json"
+    "qualified_current_release_manifest": "release/current.json",
+    "telegram_human_cockpit_v3": "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -120,7 +121,8 @@
     "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
     "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
     "docs/BCP_NEXUS_FIELD_GATE.md",
-    "release/current.json"
+    "release/current.json",
+    "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -144,7 +146,10 @@
     "P0_correct_home_wifi_topology": true,
     "P1A_nexus_webhook_transport": true,
     "P0_qualified_automatic_update_plane": true,
-    "P0_mission_autonomy_and_observable_execution": true
+    "P0_mission_autonomy_and_observable_execution": true,
+    "P0_human_visible_mission_presence": true,
+    "P0_multi_mission_single_bot_cockpit": true,
+    "P0_no_chatgpt_scheduled_monitoring_for_presence": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -981,5 +986,23 @@
     "nexus_bootstrap_bundle_version": "0.1.2",
     "nexus_bootstrap_state": "EXITED_NO_RECEIPT",
     "conclusion": "Runtime alive; Nexus transport not yet committed."
+  },
+  "telegram_human_cockpit_v3_candidate": {
+    "status": "CODED_CI_QUALIFICATION_IN_PROGRESS_NOT_FIELD_VERIFIED",
+    "branch": "work/bcp/telegram-cockpit-v3-20260919-2232",
+    "telegram_release": "2026.09.19-human-cockpit-v3",
+    "nexus_release": "0.1.4",
+    "features": [
+      "editable live mission card",
+      "truthful finite-plan progress",
+      "evidence timestamps and age",
+      "explicit human action gate",
+      "multi-mission /missions view",
+      "fresh PC and B-EDGE presence",
+      "reduced duplicate transition pushes",
+      "Nexus live-card relay for degraded direct Telegram egress"
+    ],
+    "scheduled_chatgpt_automation": false,
+    "user_action": "NONE_UNTIL_EXACT_HEAD_CI_AND_MERGE"
   }
 }
