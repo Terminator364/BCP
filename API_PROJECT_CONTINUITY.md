@@ -297,3 +297,19 @@ For long-running work, the target execution model is:
 A short Telegram job code is a mission locator. `BCPGO <job_code>` may resolve it only through an actually qualified BCP integration; a typed number alone is not assumed to create network connectivity.
 
 Progress reporting stores observable step/decision summaries and evidence. It does not depend on hidden model chain-of-thought.
+
+
+## Cross-conversation repository writer fence
+
+Mandatory on every recovery and mutation-capable turn:
+- load `.project-memory/GIT_WRITER_LEASE_POLICY.json`;
+- load `docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md`;
+- treat every active ChatGPT conversation as a potentially concurrent writer;
+- do not mutate canonical `main` autonomously;
+- create/use one unique work branch per conversation/session/mission;
+- re-read `main` before integration;
+- if `main` moved, enter `REBASE_OR_RECONCILE_REQUIRED`;
+- serialize merges and verify the final integrated SHA;
+- preserve divergent useful work through recovery branches/draft PRs.
+
+Conversation memory is not a Git lock. Parallel reasoning is allowed; parallel direct writes to canonical state are not.
