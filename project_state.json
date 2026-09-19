@@ -74,5 +74,29 @@
     "blocker": "Recovery Plane reported not correctly relaunching runtime / queue not being consumed",
     "recovery_artifact": "G:\\Mon Drive\\CHATGPT_PC_AGENT\\RECOVERY\\0_APIAX07_RECOVER_NOW.cmd",
     "note": "Do not promote these statements to FIELD_VERIFIED until machine-readable telemetry/receipts confirm them."
+  },
+  "must_load_on_every_recovery": [
+    "API_PROJECT_CONTINUITY.md",
+    ".project-memory/SESSION_SURVIVAL_INVARIANTS.md",
+    ".project-memory/PLATFORM_FRICTION_P0.md",
+    ".project-memory/USER_FRICTION_CHARTER.md",
+    ".project-memory/WHY_API_EXISTS.json",
+    ".project-memory/API_SCOPE_PROFILE.json",
+    ".project-memory/PLATFORM_CUT_RESILIENCE.md",
+    "docs/TECHNICAL_REQUEST_CONTEXT_ENVELOPE.md",
+    "docs/DUAL_CONVERSATION_CONTINUITY.md"
+  ],
+  "product_priorities": {
+    "P0_session_survival": true,
+    "P0_platform_friction_resilience": true,
+    "P0_dual_conversation_continuity": true,
+    "P0_truthful_technical_context_envelope": true,
+    "expansion_after_continuity_field_verified": true
+  },
+  "conversation_dependency_policy": {
+    "chat_is_not_canonical_state": true,
+    "fresh_conversation_must_recover_without_user_reexplanation": true,
+    "screenshots_are_fallback_only": true,
+    "legitimate_scope_must_be_durable": true
   }
 }
