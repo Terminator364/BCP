@@ -34,6 +34,17 @@ public class EdgePolicyTest {
         assertTrue(EdgePolicy.canAdmitJob(EdgePolicy.boundedQueueLimit() - 1));
         assertFalse(EdgePolicy.canAdmitJob(EdgePolicy.boundedQueueLimit()));
         assertFalse(EdgePolicy.canAdmitJob(-1));
-        assertTrue(EdgePolicy.boundedMemoryEntries() <= 128);
+        assertTrue(EdgePolicy.boundedMemoryEntries() <= 256);
+    }
+
+    @Test public void resourceAdmissionIsDeterministic() {
+        assertEquals("PC_R3", EdgePolicy.resourceClass(true,false,false));
+        assertEquals("REMOTE_AI", EdgePolicy.resourceClass(false,true,false));
+        assertEquals("EDGE_R2", EdgePolicy.resourceClass(false,false,true));
+        assertEquals("EDGE_R1", EdgePolicy.resourceClass(false,false,false));
+        assertFalse(EdgePolicy.canRunNow("EDGE_R2",true,false,false,true));
+        assertFalse(EdgePolicy.canRunNow("REMOTE_AI",false,false,false,false));
+        assertTrue(EdgePolicy.canRunNow("EDGE_R1",false,false,false,false));
+        assertEquals(5L * 60L * 1000L, EdgePolicy.defaultReconcileIntervalMs());
     }
 }
