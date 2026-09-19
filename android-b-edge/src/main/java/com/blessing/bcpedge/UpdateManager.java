@@ -82,7 +82,7 @@ public final class UpdateManager {
 
                 int latest = m.getInt("version_code");
                 int current = currentVersionCode();
-                if (latest <= current) {
+                if (!UpdatePolicy.shouldInstall(current, latest)) {
                     cleanupUpdateCache();
                     if (userInitiated) status("B-EDGE EST À JOUR · " + currentVersionName());
                     client.recordEvent("EDGE_UPDATE_NOT_NEEDED", "version_code=" + current);
@@ -196,14 +196,14 @@ public final class UpdateManager {
 
     private void validateManifest(JSONObject m) throws Exception {
         if (!m.optBoolean("ok", false)) throw new IOException("EDGE_MANIFEST_NOT_OK");
-        if (!EVERGREEN_PACKAGE.equals(m.optString("package_id", "")))
-            throw new SecurityException("PACKAGE_ID_MISMATCH");
+        String packageId = m.optString("package_id", "");
         String cert = m.optString("signing_cert_sha256", "").toLowerCase(Locale.ROOT);
-        if (!EVERGREEN_CERT_SHA256.equals(cert))
-            throw new SecurityException("SIGNING_CERT_MANIFEST_MISMATCH");
         String sha = m.optString("apk_sha256", "").toLowerCase(Locale.ROOT);
-        if (sha.length() != 64) throw new SecurityException("APK_SHA256_INVALID");
-        if (m.optInt("version_code", 0) <= 0) throw new IOException("VERSION_CODE_INVALID");
+        int versionCode = m.optInt("version_code", 0);
+        if (!UpdatePolicy.trustedManifest(packageId, EVERGREEN_PACKAGE,
+                cert, EVERGREEN_CERT_SHA256, sha, versionCode)) {
+            throw new SecurityException("EDGE_MANIFEST_TRUST_POLICY_FAILED");
+        }
     }
 
     private void verifyInstalledIdentity() throws Exception {
