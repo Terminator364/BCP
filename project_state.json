@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_4_FIELD_RUNNING_PAIRED_NEXUS_0_1_5_PROMOTION_PENDING",
-  "last_completed_atomic_action": "Fresh Google Drive machine readback at 2026-09-19T22:49:35Z proves BCP 0.6.4 running on MBMPC, paired, hash-matching release/current, and update_state=UP_TO_DATE. Telegram V4 code/spec is merged. Nexus bootstrap is active but still reports bundle 0.1.4 LAUNCHED, so Nexus 0.1.5 and end-to-end Telegram V4 remain FIELD_UNVERIFIED.",
-  "next_action": "Wait only for the next resident convergence evidence, then verify whether Nexus bundle 0.1.5 reaches a terminal receipt and perform the home-WiFi Nexus/Telegram V4 round-trip. Do not reinstall BCP, re-enter Telegram token/chat ID, or ask the user to shuttle files/logs. If provider authorization is surfaced, request only that one explicit human authorization gate.",
+  "status": "BCP_0_6_6_FIELD_RUNNING_TELEGRAM_V5_MERGED_NEXUS_DIAGNOSTIC_0_6_7_0_1_6_CANDIDATE",
+  "last_completed_atomic_action": "Telegram Human Cockpit V5 merged after exact-head CI; fresh Drive readback proves BCP 0.6.6 running/UP_TO_DATE on MBMPC and paired. Nexus 0.1.5 exited code 3 as WRANGLER_RUNTIME_REQUIRED; new 0.6.7/0.1.6 candidate adds secret-free exact runtime-preparation diagnostics before any Cloudflare authorization gate.",
+  "next_action": "Qualify and merge BCP 0.6.7 + Nexus 0.1.6 diagnostics. Then allow resident auto-update to converge and read the new machine-readable Nexus failure class/stage/detail. Ask the user to click only if the durable state explicitly becomes CLOUDFLARE_LOGIN_REQUIRED; otherwise no manual install, token re-entry, ZIP shuttle, or PowerShell work.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -68,7 +68,8 @@
     "nexus_field_gate": "docs/BCP_NEXUS_FIELD_GATE.md",
     "qualified_current_release_manifest": "release/current.json",
     "telegram_human_cockpit_v3": "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md",
-    "telegram_human_cockpit_v4": "docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md"
+    "telegram_human_cockpit_v4": "docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md",
+    "telegram_human_cockpit_v5": "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -123,7 +124,8 @@
     "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
     "docs/BCP_NEXUS_FIELD_GATE.md",
     "release/current.json",
-    "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md"
+    "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md",
+    "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -180,13 +182,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-EXIT-DIAGNOSTIC-CANDIDATE-20260919",
+    "checkpoint_id": "BCP-NEXUS-RUNTIME-DIAGNOSTICS-067-016-20260920",
     "status": "CANDIDATE_CI_PENDING",
-    "last_completed_action": "Human-first Telegram cockpit V2 merged; Nexus EXITED_NO_RECEIPT reproduced in fresh Drive telemetry.",
-    "next_atomic_action": "Run exact-head CI for BCP 0.6.4/Nexus 0.1.3, then serialized merge only if green; wait for resident convergence and read machine receipt.",
-    "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/nexus-resume-diagnostics-20260919-2115",
-    "base_main_sha": "47a0d5b67b3e2c4c974fd566dd787eaba8b5686e",
+    "last_completed_action": "Telegram V5 merged; BCP 0.6.6 field convergence proven; Nexus failure classified to managed runtime preparation before provider authorization.",
+    "next_atomic_action": "Run exact-head CI for 0.6.7/0.1.6, merge only if green, then wait for resident convergence and read exact secret-free Nexus runtime failure diagnostics.",
+    "branch": "work/bcp/nexus-runtime-diagnostics-067-016-20260920",
+    "base_main_sha": "9079ab6187510c88ede6801f553c9daa496cee39",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1053,5 +1054,59 @@
     "chatgpt_pc_active_version": "6.0.32",
     "chatgpt_pc_command_plane": "ALIVE",
     "conclusion": "BCP 0.6.4 resident self-update path is field-proven for this step; Nexus/Telegram V4 still requires terminal receipt and round-trip."
+  },
+  "telegram_human_cockpit_v5": {
+    "status": "MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
+    "pr": 68,
+    "merged_main_sha": "9079ab6187510c88ede6801f553c9daa496cee39",
+    "qualified_head_sha": "53f21a950e22b528f337854876754233e2115a5e",
+    "release": "2026.09.20-human-cockpit-v5",
+    "requirements_revision": "2026-09-20-R11",
+    "behavior": [
+      "CONCRETE_CURRENT_LAST_NEXT_MICRO_ACTIONS",
+      "FINITE_PERSISTED_PLAN_PROGRESS_ONLY",
+      "NUMBERED_SQLITE_MISSION_EVENT_JOURNAL",
+      "EXPANDED_HUMAN_PDF",
+      "EXPANDED_TECHNICAL_PDF",
+      "NO_CHATGPT_SCHEDULED_MONITORING"
+    ],
+    "ci": {
+      "current_release_contract": 35477315786,
+      "telegram_observability": 35477315789,
+      "nexus_transport": 35477315792,
+      "coordinated_product": 35477315784,
+      "result": "PASS"
+    },
+    "field_verified": false
+  },
+  "latest_field_evidence_0_6_6": {
+    "observed_at_utc": "2026-09-19T23:49:13+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_EVENTS.jsonl",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.6.6",
+    "server_pid": 10796,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "server_sha256": "5ca88f51f9ad27a3a17da912243c0d7e28f792790e8e87438adaea0540248b9e",
+    "update_state": "UP_TO_DATE",
+    "update_target_version": "0.6.6",
+    "nexus_bootstrap_bundle_version": "0.1.5",
+    "nexus_bootstrap_state": "WRANGLER_RUNTIME_REQUIRED",
+    "nexus_bootstrap_exit_code": 3,
+    "chatgpt_pc_active_version": "6.0.32",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "lifecycle_registered": true,
+    "conclusion": "Resident BCP 0.6.6 converged successfully. Remaining Nexus blocker occurs before Cloudflare authorization and requires better machine diagnostics, not user clicking."
+  },
+  "nexus_runtime_diagnostics_0_6_7_0_1_6": {
+    "status": "CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/nexus-runtime-diagnostics-067-016-20260920",
+    "purpose": "Persist and externally mirror secret-free managed Node/Wrangler runtime-preparation failure class, stage and bounded detail.",
+    "user_action": "NONE_UNLESS_CLOUDFLARE_LOGIN_REQUIRED",
+    "manual_node_or_wrangler_install_required": false,
+    "telegram_token_reentry_required": false,
+    "scheduled_chatgpt_automation": false,
+    "target_server_version": "0.6.7",
+    "target_nexus_version": "0.1.6"
   }
 }
