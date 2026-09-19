@@ -563,3 +563,96 @@ For later messages:
 `request -> resolve_context(revision) -> UNCHANGED/DELTA -> answer/action -> validated outcome -> durable state`
 
 The user should stop being the memory bus.
+
+
+## 24. Integration-mode truth table
+
+BCPGO behavior is constrained by the integration surface actually available.
+
+### Connected Google Drive / connected-store mode
+- explicit live file lookup is the baseline;
+- do not assume a personal administrator-style synchronized index;
+- bootstrap reads stable named projection files;
+- acknowledged revisions may remain conversation-local;
+- transparent mandatory per-turn resolver invocation is not guaranteed by this mode.
+
+### Qualified remote app/plugin mode
+- may expose direct context resolution and revision checks where the ChatGPT product/plan actually permits them;
+- read/write capabilities are independently permissioned;
+- current Plus architecture MUST NOT assume full custom MCP write/modify support.
+
+### ChatGPT-PC bridge mode
+- may provide local high-fidelity context when PC is reachable;
+- is not universal-anywhere baseline.
+
+### Manual fallback
+- one compact recovery packet only;
+- never the normal integration bus.
+
+## 25. Projection publication and integrity
+
+Connected-store projections are derived read models, never canonical memory.
+
+Publication pipeline:
+`CANONICAL MEMORY -> CONTEXT COMPILER -> EXPORT FILTER -> INTEGRITY ENVELOPE -> ATOMIC PUBLISH -> READBACK -> CURRENT`.
+
+Integrity metadata SHOULD include:
+- schema;
+- global/project revision;
+- coordinator epoch;
+- content hash;
+- generated_at;
+- expires_at;
+- source snapshot/hash;
+- signer/key ID where signature verification is supported.
+
+An internal hash detects accidental corruption but is insufficient authentication if both file and hash can be replaced. Risky mutations MUST therefore verify canonical state through an authoritative write path rather than trusting a Drive projection alone.
+
+Previous verified CURRENT is retained until the replacement passes publication/readback.
+
+## 26. Memory export classes
+
+Every memory item intended for Context Fabric compilation MUST be classified:
+- `LOCAL_ONLY`;
+- `PROJECT_SANITIZED`;
+- `GLOBAL_SANITIZED`;
+- `EVIDENCE_REFERENCE_ONLY`;
+- `NEVER_EXPORT_SECRET`.
+
+Default for unknown sensitivity is non-export.
+
+Provider credentials, BCP bearer tokens, pairing secrets, encryption/recovery keys and unrelated private project content are never placed in remote context projections.
+
+## 27. NEXUS capability separation
+
+BCP NEXUS capabilities are separately authorized:
+- `INGRESS`: accept/deduplicate/queue bounded commands;
+- `CONTEXT_READ`: serve sanitized projections;
+- `WITNESS`: attest coordinator epoch/lease evidence;
+- `PROMOTION`: participate in coordinator promotion only under qualified quorum policy.
+
+Ingress credentials MUST NOT grant witness/promotion authority.
+
+Until witness behavior is independently security- and field-qualified, coordinator failover remains explicit-user-promotion or HOLD rather than automatic.
+
+## 28. Static projection vs live task delta
+
+The connected-store baseline exposes precomputed GLOBAL_CORE, PROJECT_CORE and optional revision delta.
+
+A truly request-specific TASK_DELTA requires a live resolver that sees the current task. Therefore:
+- Drive-only mode may let the consuming assistant select task-relevant items from the bounded projection;
+- live NEXUS/app mode may compute TASK_DELTA;
+- architecture MUST NOT claim static storage alone produces live task-semantic deltas.
+
+## 29. Fresh-chat context receipt
+
+BCPGO resolution SHOULD expose a compact, non-secret receipt containing:
+- integration mode;
+- global revision/hash;
+- selected project ID/revision/hash;
+- coordinator epoch if exportable;
+- generated_at/expires_at;
+- resolution state (`UNCHANGED|DELTA|FULL_REFRESH|CONFLICT|DEGRADED|HOLD`);
+- projection integrity state.
+
+This receipt is advisory context-cache state only. It cannot advance canonical project state.
