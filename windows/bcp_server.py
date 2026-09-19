@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.4"
+SERVER_VERSION = "0.6.5"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -923,6 +923,23 @@ def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
         candidate.write_bytes(payload)
         os.replace(candidate, target)
         staged += 1
+
+    prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+    prior_version = str(prior.get("bundle_version") or "")
+    prior_state = str(prior.get("state") or "")
+    preserve = {
+        "LAUNCHED", "COMMITTED", "WRANGLER_RUNTIME_REQUIRED",
+        "EXITED_NO_RECEIPT", "HUMAN_AUTH_REQUIRED",
+    }
+    if staged == 0 and prior_version == version and prior_state in preserve:
+        if auto_launch and bool(manifest.get("auto_launch_once", True)):
+            return _launch_nexus_bootstrap_once(version)
+        return {
+            "ok": True,
+            "result": "PRESERVED_" + prior_state,
+            "bundle_version": version,
+            "files_staged": 0,
+        }
 
     atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
         "schema": "bcp.nexus_bootstrap_delivery/1",
