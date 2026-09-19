@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.6.5",
+      "version": "0.6.6",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "56a4cbf29a0277f8a8a74747c2333c5280b9bedf79db932c83d09083339ebb75"
+        "sha256": "5ca88f51f9ad27a3a17da912243c0d7e28f792790e8e87438adaea0540248b9e"
       },
-      "notes": "BCP 0.6.5 preserves Nexus failure evidence, separates human authorization from transient runtime failures, and adds bounded exponential retry with stable jitter and an automatic-attempt ceiling. No token, ZIP, PowerShell relay, or ChatGPT scheduled automation is required."
+      "notes": "BCP 0.6.6 includes the 0.6.5 bounded Nexus retry contract and adds a 45-minute bootstrap watchdog, process-tree termination, orphan LAUNCHED recovery after server restart, and a serialized Nexus delivery lock. This prevents an alive-but-stalled bootstrap from blocking convergence indefinitely."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
