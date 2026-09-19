@@ -15,7 +15,11 @@ B-EDGE responsibilities:
 - delayed synchronization with the PC/control plane after reconnection;
 - recovery assistance after ChatGPT/session/network interruptions.
 
-It is not the canonical writer and is not intended to be a permanent public Internet server.
+Current P0 compatibility: B-EDGE is not yet the canonical writer; the existing PC-side BCP writer remains authoritative until the explicit V2 authority migration is qualified.
+
+Target V2: B-EDGE becomes the default orchestration coordinator with fencing, while the PC becomes a heavy worker. This target MUST NOT be activated by documentation alone.
+
+B-EDGE is not intended to be a permanent public Internet server.
 
 ## Pairing model
 
@@ -132,3 +136,54 @@ Only relevant context is injected. The entire historical corpus MUST NOT be sent
 Dedicated-phone mode permits larger RAM residency, but B-EDGE remains event-driven. Persistent busy loops, aggressive polling, large local LLMs and sustained heavy compute are prohibited by default.
 
 The node should exploit RAM for cache/index/state while keeping CPU/network wakeups bounded and reducing activity automatically on thermal or battery pressure.
+
+
+## Lifecycle/recovery rule
+
+"Always-on" means recoverable under Android lifecycle rules, not guaranteed process residency.
+
+- scheduler state and queues must be durable;
+- process death must be reconstructable;
+- WorkManager is the baseline for persistent deferrable work;
+- periodic work is inexact and not a sub-minute heartbeat clock;
+- permanent foreground data-sync services and exact-alarm loops are not the default architecture.
+
+## Discovery hardening
+
+Primary production discovery SHOULD migrate to Android Network Service Discovery (mDNS/DNS-SD) with a bounded discovery window.
+
+The current raw IPv4 /24 scan is a bootstrap/POC fallback only. It must not run periodically in the background.
+
+Fallback order:
+1. NSD/mDNS;
+2. QR bootstrap;
+3. Bluetooth/companion/system-mediated association where justified;
+4. bounded subnet diagnostic scan.
+
+Before targeting Android 17/API 37, B-EDGE MUST implement/test the required local-network permission or supported privacy-preserving system-mediated picker path.
+
+## Authenticated transport
+
+Discovery identity and transport identity must converge.
+
+Production pairing target:
+1. PC possesses a persistent cryptographic device identity.
+2. Discovery advertises only enough information to locate the service.
+3. User confirmation/QR binds the phone to the expected PC identity.
+4. Pairing bootstrap nonce is single-use and expires.
+5. Normal traffic uses authenticated encrypted transport.
+6. Unexpected PC certificate/key identity change enters HOLD and requires explicit re-trust.
+
+The current cleartext HTTP POC MUST NOT transport long-lived bearer/provider secrets in the final production path.
+
+## V2 partition/fencing behavior
+
+After V2 authority migration:
+- B-EDGE owns the current coordinator epoch;
+- each PC work envelope carries that epoch plus project revision/idempotency identity;
+- PC rejects stale epochs;
+- PC may finish an already-accepted immutable job during temporary loss of B-EDGE;
+- PC preserves the result receipt but does not independently advance global PROJECT_HEAD;
+- an automatic coordinator takeover requires a third witness/lease authority or explicit user promotion.
+
+This prevents two disconnected nodes from both becoming canonical writers.
