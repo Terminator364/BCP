@@ -421,3 +421,42 @@ Expected: compare revision/hash/authority; newest cannot automatically win if in
 
 T9. Raw SQLite/WAL file is presented as cross-device replica.
 Expected: reject as unsupported replication mechanism; require logical snapshot/event replication.
+
+
+## R. Durable queue vs executor semantics
+
+R1. B-EDGE submits a job and PC server returns QUEUED.
+Expected: local job becomes REMOTE_QUEUED, not DONE/COMMITTED.
+
+R2. REMOTE_QUEUED job survives process death/restart and appears in pending reconciliation.
+Expected: no tracking black hole.
+
+R3. Same action first has QUEUED receipt, then terminal SUCCESS receipt.
+Expected: terminal receipt replaces/supersedes queue observation for dependency evaluation.
+
+R4. Remote jobs snapshot already contains the idempotency key.
+Expected: B-EDGE observes queue presence and does not blindly POST the same job every reconciliation.
+
+R5. Local REMOTE_QUEUED row exists but remote row is missing after verified server-state loss.
+Expected: idempotent re-submit is permitted; no duplicate effect.
+
+R6. Device is offline during WorkManager reconciliation.
+Expected: local dependency promotion, expired-memory compaction and durable-state checks still execute.
+
+R7. Two reconciliation worker implementations are present.
+Expected: FAIL architecture gate. Exactly one WorkManager scheduling policy is allowed.
+
+R8. Server has durable queue but no qualified PC executor.
+Expected: machine-readable status reports `pc_executor_ready=false`; UI/Telegram cannot claim autonomous execution.
+
+R9. Queue ACK is used as dependency success.
+Expected: FAIL. Only terminal-success receipt unlocks dependent job.
+
+R10. Unknown/unregistered job kind reaches future PC executor.
+Expected: HOLD/REJECT; no arbitrary shell/eval execution.
+
+R11. Worker claims job under stale coordinator epoch.
+Expected: rejected before effect.
+
+R12. Worker effect succeeds but process dies before terminal receipt.
+Expected: recovery performs effect readback/idempotency reconciliation before retry.
