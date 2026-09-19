@@ -464,3 +464,46 @@ Promotion note:
 - a PASS in U proves only the tested causal invariant;
 - candidate PR evidence remains candidate until its source repository qualifies/merges it;
 - none of U upgrades B-EDGE/BCP runtime or field certification by itself.
+
+
+## V. AX15GO R4 gray-failure health vector
+
+Canonical contract:
+`.project-memory/AX15GO_GRAY_HEALTH_R4.json`.
+
+These are anti-false-green obligations. They do not promote the current runtime merely because the document exists.
+
+V1. `/health` returns process/HTTP liveness while an authenticated project command fails.
+Expected: liveness dimension may be PASS; `AUTHENTICATED_COMMAND_PATH_USABLE` fails and aggregate state is not END_TO_END_HEALTHY.
+
+V2. Home LAN remains usable while Internet/Nexus is unavailable.
+Expected: local BCP core stays usable; remote ingress is DEGRADED/OFFLINE independently. No false global DEAD state.
+
+V3. Heartbeat/process is fresh while SQLite canonical authority cannot acquire a writer transaction.
+Expected: `SQLITE_AUTHORITY_WRITABLE=FAIL`; mutation admission is HOLD/DEGRADED and no green aggregate is emitted.
+
+V4. Telegram cockpit replies successfully while coordinator epoch/fence is stale.
+Expected: cockpit health cannot authorize a canonical mutation; stale fence is rejected.
+
+V5. Process and network are alive while project revision/context evidence is stale.
+Expected: `PROJECT_REVISION_FRESH=STALE`; resolver refreshes or HOLDs before mutation.
+
+V6. Nexus `/health` is green while B-EDGE is offline.
+Expected: remote ingress may queue/receive only according to its durable contract; no claim of local execution or DONE.
+
+V7. B-EDGE is paired and LAN-reachable but the authenticated command plane stalls.
+Expected: pairing/liveness remain distinct from command usability; no END_TO_END_HEALTHY.
+
+V8. Wi-Fi association and DNS resolution succeed while one HTTPS dependency is blackholed.
+Expected: only that route/circuit is degraded; retries are bounded and local work remains nonblocking.
+
+V9. All fast liveness signals are green but server generation/identity differs from the pinned release.
+Expected: identity dimension fails closed; health aggregate is CONFLICT/HOLD, not healthy.
+
+V10. Health probes themselves are invoked repeatedly during a degraded network period.
+Expected: probes remain bounded, side-effect-free where feasible, do not become a polling storm, and do not enter the per-turn fast path.
+
+Promotion note:
+- current BCP 0.6.4 payload is intentionally unchanged by R4;
+- runtime closure requires a coordinated next release with exact hash/version/Android compatibility gates;
+- this avoids a same-version payload mutation while still making the gray-health defect and regression obligations canonical.
