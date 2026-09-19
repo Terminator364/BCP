@@ -45,16 +45,18 @@ jobs:
         run: |
           $release=Get-Content -Raw '.\release\server.json' -Encoding UTF8|ConvertFrom-Json
           $server=Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
-          if($release.version -ne '0.5.0'){throw 'SERVER_VERSION_NOT_0_5_0'}
-          if($server -notmatch 'SERVER_VERSION = "0.5.0"'){throw 'SOURCE_VERSION_DRIFT'}
+          $version=[string]$release.version
+          if(-not $version){throw 'SERVER_VERSION_MISSING'}
+          if($server -notmatch ('SERVER_VERSION = "'+[regex]::Escape($version)+'"')){throw 'SOURCE_VERSION_DRIFT'}
           $sha=(Get-FileHash -Algorithm SHA256 '.\windows\bcp_server.py').Hash.ToLowerInvariant()
           if($sha -ne ([string]$release.sha256).ToLowerInvariant()){throw "SERVER_SHA_MISMATCH manifest=$($release.sha256) actual=$sha"}
-          if($release.coordinated_edge_version -ne '1.1.0-evergreen'){throw 'EDGE_VERSION_CONTRACT_DRIFT'}
+          if(-not [string]$release.coordinated_edge_version){throw 'EDGE_VERSION_CONTRACT_MISSING'}
 
       - name: Build PC package
         shell: powershell
         run: |
-          $root='BCP_PC_0_5_0'
+          $release=Get-Content -Raw '.\\release\\server.json' -Encoding UTF8|ConvertFrom-Json
+          $root='BCP_PC_COORDINATED'
           New-Item -ItemType Directory -Force $root | Out-Null
           Copy-Item windows\INSTALL_BCP_FINAL.cmd $root\
           Copy-Item windows\INSTALL_BCP_FINAL.ps1 $root\
@@ -68,8 +70,9 @@ jobs:
           }
           [ordered]@{
             schema='bcp.pc.package/1'
-            version='0.5.0'
-            coordinated_edge_version='1.1.0-evergreen'
+            version=[string]$release.version
+            coordinated_edge_version=[string]$release.coordinated_edge_version
+            release_train=[string]$release.release_train
             source_commit='${{ github.sha }}'
             files=$hashes
           } | ConvertTo-Json -Depth 8 | Set-Content -Encoding UTF8 $root\PC_PACKAGE_MANIFEST.json
@@ -77,6 +80,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bcp-pc-0.5.0-coordinated
-          path: BCP_PC_0_5_0.zip
+          name: bcp-pc-coordinated
+          path: BCP_PC_COORDINATED.zip
           if-no-files-found: error
