@@ -62,7 +62,8 @@
     "git_writer_lease_protocol": "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
     "git_writer_lease_policy": ".project-memory/GIT_WRITER_LEASE_POLICY.json",
     "telegram_observability_mvp": "docs/TELEGRAM_OBSERVABILITY_MVP.md",
-    "telegram_observability_setup": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md"
+    "telegram_observability_setup": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
+    "rdc_network_data_saver": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -112,7 +113,8 @@
     "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md",
     "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
     ".project-memory/GIT_WRITER_LEASE_POLICY.json",
-    "docs/TELEGRAM_OBSERVABILITY_MVP.md"
+    "docs/TELEGRAM_OBSERVABILITY_MVP.md",
+    "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -130,7 +132,8 @@
     "P1A_telegram_mission_cockpit_after_current_field_acceptance": true,
     "P1A_observable_micro_action_journal": true,
     "P0_git_single_writer_integration_fence": true,
-    "P1A_telegram_read_only_observability_mvp": true
+    "P1A_telegram_read_only_observability_mvp": true,
+    "P0_rdc_data_saver_network_resilience": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -619,7 +622,7 @@
   "telegram_observability_mvp": {
     "mode": "READ_ONLY",
     "status": "KINSHASA_SMOKE_PASS_READ_ONLY_FIELD_ACTIVE",
-    "field_status": "KINSHASA_SMOKE_PASS",
+    "field_status": "KINSHASA_SMOKE_PASS_READ_ONLY_ACTIVE_HOME_WIFI_DIRECT_TELEGRAM_DEGRADED",
     "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
     "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
     "state_file": ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json",
@@ -629,7 +632,7 @@
     "zero_usd": true,
     "token_local_only": true,
     "chat_internal_state_access": false,
-    "next_action": "Continue read-only cockpit validation with /ci and /holds, then harden automatic packaging/update path; do not replay already committed setup.",
+    "next_action": "Implement and qualify selective Telegram transport/failover on B-EDGE; keep PC on home Wi-Fi; then proceed to Mission Event Journal and field-qualified zero-cost Model Broker adapters.",
     "integrated_pr": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
     "integrated_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
@@ -664,6 +667,13 @@
       "chatgpt": "UNKNOWN_INTERNAL_CHAT_STATE",
       "spend_usd": 0
     },
-    "installer_receipt_status": "LATE_RECEIPT_HASH_BUG_FIXED_IN_MAIN_PR26"
+    "installer_receipt_status": "LATE_RECEIPT_HASH_BUG_FIXED_IN_MAIN_PR26",
+    "transport_decision": {
+      "pc_default": "HOME_WIFI",
+      "direct_pc_telegram_home_wifi": "TCP_443_TIMEOUT",
+      "mobile_data_policy": "SELECTIVE_CONTROL_PLANE_FALLBACK_ONLY",
+      "preferred_next_transport": "B_EDGE_TELEGRAM_RELAY_WITH_LOCAL_AUTHENTICATED_PC_CHANNEL",
+      "full_pc_hotspot_default": false
+    }
   }
 }
