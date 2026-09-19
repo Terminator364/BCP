@@ -324,11 +324,13 @@ try {
     Start-Sleep -Seconds 2
     if ($proc.HasExited) { throw "BOT_PROCESS_EXITED_EARLY" }
 
-    $chatHash = [Convert]::ToHexString(
-        [Security.Cryptography.SHA256]::HashData(
-            [Text.Encoding]::UTF8.GetBytes([string]$chatId)
-        )
-    ).ToLowerInvariant().Substring(0,16)
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try {
+        $chatHashBytes = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes([string]$chatId))
+    } finally {
+        $sha256.Dispose()
+    }
+    $chatHash = ([BitConverter]::ToString($chatHashBytes)).Replace("-", "").ToLowerInvariant().Substring(0,16)
 
     $receipt = [ordered]@{
         schema = "bcp.telegram_setup_receipt/1"
