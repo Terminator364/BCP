@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_4_FIELD_RUNTIME_VERIFIED_RESTART_RECOVERY_TEST_PENDING",
-  "last_completed_atomic_action": "Verified live field runtime from machine-readable Drive telemetry after legacy migration: BCP 0.4.4 active on MBMPC, paired with B-EDGE 0.2.5, server hash matches qualified release, update state UP_TO_DATE, lifecycle registration active, ChatGPT-PC 6.0.32 alive and recovery healthy",
-  "next_action": "Perform/observe a controlled restart or equivalent lifecycle interruption and prove BCP 0.4.4 returns automatically with the same pairing/state; no reinstall or migration rerun",
+  "status": "BCP_0_4_5_CI_QUALIFIED_FINAL_ACCEPTANCE_BATCH_READY",
+  "last_completed_atomic_action": "Published and CI-qualified BCP 0.4.5 stale-writer revision protection plus one-shot reboot/resume final acceptance campaign; uploaded CURRENT acceptance package to canonical Drive",
+  "next_action": "Run API_BCP/00_A_INSTALLER/BCP_FINAL_ACCEPTANCE_CURRENT.zip once on the PC. The campaign updates to 0.4.5 if needed, executes pre-reboot gates, reboots Windows automatically, resumes via RunOnce, executes post-reboot gates, and writes BCP_FINAL_ACCEPTANCE_LATEST.json.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP044-FIELD-RUNTIME-VERIFIED",
-    "status": "FIELD_RUNTIME_VERIFIED_RESTART_GATE_PENDING",
-    "next_atomic_action": "Prove automatic restart/recovery of BCP 0.4.4 with same state/pairing",
+    "checkpoint_id": "APIAX07-BCP045-FINAL-ACCEPTANCE-BATCH-READY",
+    "status": "WAITING_ONE_BATCH_LAUNCH",
+    "next_atomic_action": "Run final acceptance CURRENT once; then read BCP_FINAL_ACCEPTANCE_LATEST.json",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -371,5 +371,52 @@
     "windows_behavior": "After verified success, remove only known BCP migration ZIP/CMD/PS1 artifacts and extracted BCP_PC_MIGRATE_CURRENT* folders from the user's Downloads folder; preserve failure evidence and unrelated user files",
     "android_behavior": "Future in-app updater must use app-owned cache and delete its own update payload after verified installation; do not request broad storage access merely to clean arbitrary Downloads",
     "current_drive_artifact_replaced_in_place": true
+  },
+  "bcp_0_4_5": {
+    "server_commit": "e7d6f9e3f8947cc82008f7865d8e1a88a0bbff45",
+    "server_sha256": "f176b92deb37a093878997f2804aea98ebf33e51e939f6e7e9a843e57264c94c",
+    "release_commit": "cfea8bcca5bb71cd3bbf2460476c5c66bf67452b",
+    "sequence_commit": "90e97b6580c14f8d58d886790c06dc5e7b71ef93",
+    "installer_commit": "c5f39df0ddc82874664c9f19dc183452652e31fa",
+    "managed_update_run_id": 35415941930,
+    "managed_update_result": "PASS",
+    "windows_validation_run_id": 35415943791,
+    "windows_validation_result": "PASS",
+    "pc_sanity_run_id": 35415943814,
+    "pc_sanity_result": "PASS",
+    "revision_precondition_header": "X-BCP-Expected-Revision",
+    "stale_writer_response_http": 409
+  },
+  "final_acceptance_batch": {
+    "ps1_commit": "fe3b0461911f4a9535e699fe0014c26926e4b984",
+    "cmd_commit": "a60d80cfc12ca859c8f3299e37b8cfc0b223ef23",
+    "workflow_commit": "1a8fbf2e00bfd79abc5df7f5eda9cff636c90d4b",
+    "ci_run_id": 35416017546,
+    "ci_result": "PASS",
+    "artifact_id": 10576465195,
+    "artifact_digest": "sha256:877060c9863cb596986543290f6a959fb30ef4259aaac1a0457db501faa2cc89",
+    "drive_file_id": "1XgHpGzO_SWJabwUu6hOVc8qOD0NCgVj4",
+    "drive_file_name": "BCP_FINAL_ACCEPTANCE_CURRENT.zip",
+    "drive_url": "https://drive.google.com/file/d/1XgHpGzO_SWJabwUu6hOVc8qOD0NCgVj4/view?usp=drivesdk",
+    "interaction_model": "ONE_LAUNCH_THEN_AUTOMATIC_REBOOT_AND_RUNONCE_RESUME",
+    "report_file": "BCP_FINAL_ACCEPTANCE_LATEST.json",
+    "cleanup_after_success": true,
+    "device_runtime_gates_batched": [
+      "target_version",
+      "pairing",
+      "checkpoint_commit",
+      "idempotency",
+      "stale_writer_rejection",
+      "loopback_health",
+      "LAN_health",
+      "managed_listener",
+      "lifecycle_registration",
+      "real_reboot",
+      "identity_persistence",
+      "exact_revision_hash_resume",
+      "resource_bounds",
+      "poor_connectivity_bounds"
+    ],
+    "platform_boundary_remaining": "Fresh ChatGPT conversation RESYNC spot-check cannot be instantiated by PC harness"
   }
 }
