@@ -1297,6 +1297,41 @@ def selftest():
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
         assert "shell=False" in source
+
+        edge_dist = Path(td) / "edge-dist"
+        edge_dist.mkdir(parents=True, exist_ok=True)
+        edge_apk = edge_dist / "BCP_EDGE_CURRENT.apk"
+        edge_apk.write_bytes(b"selftest-edge-apk-payload")
+        edge_sha = hashlib.sha256(edge_apk.read_bytes()).hexdigest()
+        atomic_json(edge_dist / "BCP_EDGE_CURRENT.json", {
+            "channel": "stable",
+            "package_id": "com.blessing.bcpedge.evergreen",
+            "version_code": 100,
+            "version_name": "1.0.0-evergreen",
+            "apk_sha256": edge_sha,
+            "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+            "published_at": utc_now(),
+        })
+        old_edge_dist = os.environ.get("BCP_EDGE_DISTRIBUTION_DIR")
+        os.environ["BCP_EDGE_DISTRIBUTION_DIR"] = str(edge_dist)
+        try:
+            bundle = edge_update_bundle()
+            assert bundle["manifest"]["version_code"] == 100
+            assert bundle["manifest"]["apk_sha256"] == edge_sha
+            assert bundle["apk_path"] == edge_apk
+            edge_apk.write_bytes(b"tampered")
+            tamper_rejected = False
+            try:
+                edge_update_bundle()
+            except FileNotFoundError as e:
+                tamper_rejected = "edge_apk_sha256_mismatch" in str(e)
+            assert tamper_rejected
+        finally:
+            if old_edge_dist is None:
+                os.environ.pop("BCP_EDGE_DISTRIBUTION_DIR", None)
+            else:
+                os.environ["BCP_EDGE_DISTRIBUTION_DIR"] = old_edge_dist
+
         control = Path(td) / "control"
         control.mkdir(parents=True, exist_ok=True)
         previous = os.environ.get("BCP_CONTROL_FOLDER")
