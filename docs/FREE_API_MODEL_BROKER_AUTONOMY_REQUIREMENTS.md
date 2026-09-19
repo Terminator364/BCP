@@ -659,3 +659,60 @@ The preferred division of labor is:
 - PC: build/test/heavy file and compute work when healthy;
 - remote free models: sparse semantic reasoning;
 - ChatGPT: optional high-level escalation, not routine orchestration.
+
+
+## Quota vector and pacing hardening
+
+The initial 50/25/25 allocation is a scheduling policy only. It MUST NOT collapse all provider constraints into one naive counter.
+
+For each ACTIVE provider/model, BCP SHOULD maintain a quota vector containing every observable dimension relevant to that provider, for example:
+- requests/second or requests/minute;
+- requests/day;
+- input/output/combined tokens per minute/day/month;
+- compute units such as Cloudflare Neurons;
+- included monthly usage/credit;
+- reset timestamp/window;
+- model-specific free/paid eligibility.
+
+Provider-specific observations:
+- Groq exposes multiple independent rate-limit dimensions and rate-limit response headers.
+- Gemini commonly applies RPM/TPM/RPD and evaluates each dimension independently.
+- Mistral documents request and token throughput plus plan/included usage visible in account limits.
+- Cloudflare Workers AI free allocation is measured in Neurons/day and some models may require a paid plan even when the platform has a free tier.
+- OpenRouter Free currently exposes a small daily request allowance; upstream/model restrictions remain separate.
+
+BCP MUST therefore evaluate the tightest relevant quota dimension before each call.
+
+For each long-window dimension, derive a sustainable pace:
+
+`safe_burn_rate = max(0, remaining - protected_reserve) / max(time_to_reset, epsilon)`
+
+Call admission SHOULD use an expected-cost model learned from recent calls for the task/provider/model combination.
+
+A provider can be:
+- `HEALTHY`;
+- `CONSERVE`;
+- `RESERVE_ONLY`;
+- `RATE_LIMITED`;
+- `CAPACITY_UNAVAILABLE`;
+- `FREE_EXHAUSTED`;
+- `PAID_ONLY_FOR_MODEL`;
+- `FIELD_UNVERIFIED`.
+
+A model marked `PAID_ONLY_FOR_MODEL` is excluded under ZERO_USD even if other models from the same provider remain free.
+
+The user-facing `AI_CAPACITY` indicator may compress this vector to a simple health percentage/status, but diagnostics MUST retain the full underlying dimensions.
+
+### Adaptive benchmarking
+
+Routing quality SHOULD be learned from real jobs using bounded telemetry:
+- success after deterministic verification;
+- repair/retry rate;
+- latency;
+- tokens/compute consumed;
+- context fit;
+- failure class.
+
+Do not send every task to multiple models merely to benchmark them.
+
+Small shadow/challenger evaluations are allowed only under a dedicated tiny benchmark budget and MUST NOT consume strategic reserve.
