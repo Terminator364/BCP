@@ -1073,6 +1073,25 @@ class Telegram:
         except Exception:
             self.max_events_per_push = 6
 
+    @staticmethod
+    def keyboard() -> dict:
+        return {
+            "inline_keyboard": [
+                [
+                    {"text": "🔄 Actualiser", "callback_data": "bcp:status"},
+                    {"text": "📍 Où ?", "callback_data": "bcp:where"},
+                ],
+                [
+                    {"text": "🗂 Missions", "callback_data": "bcp:missions"},
+                    {"text": "🧾 Détails", "callback_data": "bcp:details"},
+                ],
+                [
+                    {"text": "📄 PDF suivi", "callback_data": "bcp:pdf:summary"},
+                    {"text": "📚 PDF technique", "callback_data": "bcp:pdf:technical"},
+                ],
+            ]
+        }
+
     def api(self, method: str, payload: dict, timeout: int) -> dict:
         status, obj = self.http.json(
             self.base + "/" + method, method="POST", payload=payload, timeout=timeout
@@ -1082,30 +1101,122 @@ class Telegram:
             raise RuntimeError("telegram_api_error:" + desc)
         return obj
 
-    def send(self, text: str) -> int | None:
-        obj = self.api("sendMessage", {
+    def send(self, text: str, with_keyboard: bool = True) -> int | None:
+        payload = {
             "chat_id": self.chat_id,
             "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
             "disable_web_page_preview": True,
-        }, 20)
+        }
+        if with_keyboard:
+            payload["reply_markup"] = self.keyboard()
+        obj = self.api("sendMessage", payload, 20)
         result = obj.get("result") or {}
         try:
             return int(result.get("message_id"))
         except Exception:
             return None
 
-    def edit(self, message_id: int, text: str) -> bool:
+    def edit(self, message_id: int, text: str, with_keyboard: bool = True) -> bool:
         try:
-            self.api("editMessageText", {
+            payload = {
                 "chat_id": self.chat_id,
                 "message_id": int(message_id),
                 "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
                 "disable_web_page_preview": True,
-            }, 20)
+            }
+            if with_keyboard:
+                payload["reply_markup"] = self.keyboard()
+            self.api("editMessageText", payload, 20)
             return True
         except Exception as e:
             append_log("LIVE_CARD_EDIT_FAILED", error_class=type(e).__name__, detail=clean(e, 140))
             return False
+
+    def answer_callback(self, callback_id: str, text: str = "") -> None:
+        try:
+            payload = {"callback_query_id": str(callback_id)}
+            if text:
+                payload["text"] = clean(text, 160)
+            self.api("answerCallbackQuery", payload, 10)
+        except Exception as e:
+            append_log("CALLBACK_ACK_FAILED", error_class=type(e).__name__, detail=clean(e, 120))
+
+    def send_document(self, filename: str, data: bytes, caption: str) -> None:
+        if len(data) > 750_000:
+            raise RuntimeError("telegram_document_too_large_for_cockpit")
+        boundary = "----BCP" + hashlib.sha256(filename.encode("utf-8")).hexdigest()[:20]
+        chunks: list[bytes] = []
+        def field(name: str, value: str) -> None:
+            chunks.extend([
+                ("--" + boundary + "\r\n").encode("ascii"),
+                ('Content-Disposition: form-data; name="' + name + '"\r\n\r\n').encode("ascii"),
+                value.encode("utf-8"),
+                b"\r\n",
+            ])
+        field("chat_id", str(self.chat_id))
+        field("caption", clean(caption, 900))
+        chunks.extend([
+            ("--" + boundary + "\r\n").encode("ascii"),
+            ('Content-Disposition: form-data; name="document"; filename="' + filename.replace('"', "") + '"\r\n').encode("ascii"),
+            b"Content-Type: application/pdf\r\n\r\n",
+            data,
+            b"\r\n",
+            ("--" + boundary + "--\r\n").encode("ascii"),
+        ])
+        req = Request(
+            self.base + "/sendDocument",
+            data=b"".join(chunks),
+            headers={"Content-Type": "multipart/form-data; boundary=" + boundary,
+                     "User-Agent": "BCP-Telegram-Observability/1"},
+            method="POST",
+        )
+        try:
+            with urlopen(req, timeout=30) as res:
+                obj = json.loads(res.read().decode("utf-8"))
+        except Exception as e:
+            raise RuntimeError("telegram_send_document_failed:" + type(e).__name__) from e
+        if not isinstance(obj, dict) or not obj.get("ok"):
+            raise RuntimeError("telegram_send_document_failed")
+
+    def _callback_action(self, data: str) -> tuple[str, str]:
+        mapping = {
+            "bcp:status": ("/status", "Actualisation"),
+            "bcp:where": ("/where", "Position"),
+            "bcp:missions": ("/missions", "Missions"),
+            "bcp:details": ("/details", "Détails"),
+        }
+        return mapping.get(data, ("", ""))
+
+    def handle_callback(self, callback: dict) -> None:
+        callback_id = str(callback.get("id") or "")
+        data = str(callback.get("data") or "")
+        msg = callback.get("message") or {}
+        chat = msg.get("chat") or {}
+        incoming = int(chat.get("id") or 0)
+        authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
+        if not authorized:
+            self.answer_callback(callback_id, "Non autorisé")
+            return
+        if data == "bcp:pdf:summary":
+            self.answer_callback(callback_id, "Préparation du PDF…")
+            self.send_document("BCP_SUIVI.pdf", self.service.report_pdf(False), "BCP — rapport de suivi")
+            return
+        if data == "bcp:pdf:technical":
+            self.answer_callback(callback_id, "Préparation du PDF technique…")
+            self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
+            return
+        command, label = self._callback_action(data)
+        if not command:
+            self.answer_callback(callback_id, "Action inconnue")
+            return
+        self.answer_callback(callback_id, label)
+        response = self.service.dispatch(command)
+        message_id = msg.get("message_id")
+        if message_id and command in {"/status", "/where", "/missions", "/details"}:
+            if not self.edit(int(message_id), response):
+                self.send(response)
+        else:
+            self.send(response)
 
     def _push_presence(self) -> None:
         if not self.auto_push:
@@ -1194,19 +1305,31 @@ class Telegram:
         while True:
             try:
                 obj = self.api("getUpdates", {
-                    "offset": offset, "timeout": 20, "allowed_updates": ["message"]
+                    "offset": offset, "timeout": 20, "allowed_updates": ["message", "callback_query"]
                 }, 35)
                 failures = 0
                 for upd in obj.get("result") or []:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
-                    msg = upd.get("message") or {}
-                    chat = msg.get("chat") or {}
-                    incoming = int(chat.get("id") or 0)
-                    authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
-                    append_log("UPDATE", update_id=uid, authorized=authorized)
-                    if authorized:
-                        self.send(self.service.dispatch(str(msg.get("text") or "")))
+                    callback = upd.get("callback_query")
+                    if isinstance(callback, dict):
+                        append_log("CALLBACK_UPDATE", update_id=uid, callback_data=clean(callback.get("data"), 80))
+                        self.handle_callback(callback)
+                    else:
+                        msg = upd.get("message") or {}
+                        chat = msg.get("chat") or {}
+                        incoming = int(chat.get("id") or 0)
+                        authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
+                        append_log("UPDATE", update_id=uid, authorized=authorized)
+                        if authorized:
+                            raw = str(msg.get("text") or "")
+                            result = self.service.dispatch(raw)
+                            if result == "REPORT_PDF_SUMMARY":
+                                self.send_document("BCP_SUIVI.pdf", self.service.report_pdf(False), "BCP — rapport de suivi")
+                            elif result == "REPORT_PDF_TECHNICAL":
+                                self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
+                            else:
+                                self.send(result)
                     atomic_json(OFFSET_PATH, {
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
