@@ -190,3 +190,16 @@ Priority rule: until interruption-resilience and dual-conversation continuity ar
 Request formulation rule: when a legitimate technical task could appear ambiguous in isolation, API/BCP must automatically preserve the truthful minimum context envelope: owned/authorized target, local/controlled environment, engineering objective, narrow atomic action, boundaries, and expected evidence/rollback. This is for clarity and continuity, never for bypassing platform safeguards.
 
 Session-loss rule: assume this conversation may disappear at any time. No current-chat detail required for project recovery may remain only in chat memory.
+
+## Temporary manual relay while dual-conversation automation is unfinished
+
+Until automated ACTIVE/STANDBY writer leases are FIELD_VERIFIED, use `docs/MANUAL_CONVERSATION_RELAY.md`.
+
+Operational rule:
+- if a verification hold interrupts a useful turn, the user may stop that turn, open a fresh API conversation and send `CONTINUE ATOMIC`;
+- the fresh conversation must recover durable state and execute only the next uncommitted atomic action;
+- never keep two writer conversations mutating the project concurrently;
+- committed/PASS actions with receipts must not be replayed;
+- if state is ambiguous, HOLD and verify before writing.
+
+This relay may be repeated across fresh conversations. It is a continuity mechanism, not a mechanism for bypassing platform safeguards.
