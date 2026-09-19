@@ -9,10 +9,10 @@
   "apk_url": "/v1/edge/update/apk",
   "apk_sha256": "c1640260cbaafdd92bb69c98f6780b5b03d26ad4bf1553bce393dbaf33c8c389",
   "distribution_status": "PRIVATE_STABLE_SIGNING_VERIFIED",
-  "note": "B-EDGE 2.0.0-rc1 artifact remains unchanged and compatible from server 0.6.4 upward; coordinated server 0.6.5 hardens Nexus retry/recovery without requiring an APK reinstall.",
-  "coordinated_server_version": "0.6.5",
+  "note": "B-EDGE 2.0.0-rc1 artifact remains unchanged and compatible from server 0.6.4 upward; coordinated server 0.6.6 adds a bounded Nexus bootstrap watchdog and orphan-process recovery without requiring an APK reinstall.",
+  "coordinated_server_version": "0.6.6",
   "requirements_revision": "2026-09-19-R8",
-  "release_train": "BCP-0.6.5_EDGE-2.0.0-rc1",
+  "release_train": "BCP-0.6.6_EDGE-2.0.0-rc1",
   "source_commit": "8b3896a71b5b04e714de05b41c6c7bd24d574ba6",
   "signature_schemes_verified": [
     "v2",
