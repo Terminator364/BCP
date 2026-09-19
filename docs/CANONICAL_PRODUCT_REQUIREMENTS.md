@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R2
+Revision: 2026-09-19-R3
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -71,6 +71,60 @@ B-EDGE MUST:
 - continue/recover across intermittent connectivity;
 - use app-owned cache for future in-app update payloads and delete those payloads after verified installation; do not request broad storage access merely to clean arbitrary Downloads;
 - support a later fallback path (QR/Bluetooth or equivalent) only if measured LAN discovery failure justifies it.
+
+## P0 — Dedicated B-EDGE orchestration and project-memory role
+
+The old Android phone is a dedicated always-on B-EDGE node, not merely a telemetry relay.
+
+B-EDGE MUST provide a lightweight local control plane containing:
+- durable project-memory cache and project-state index;
+- local scheduler and dependency graph for jobs/agents;
+- policy/rule engine;
+- ERROR_LEDGER / validated-recipe lookup;
+- provider/quota state cache;
+- PC supervisor and resource-state cache;
+- local queue/outbox and checkpoint pointers;
+- compact context-pack builder for ChatGPT/agents;
+- HOT/WARM/COLD project-memory tiers.
+
+Before any agent/model call, B-EDGE/BCP SHOULD perform the maximum safe deterministic work locally:
+1. load canonical project state;
+2. resolve current project/head/checkpoint;
+3. inspect dependencies and blockers;
+4. check cache / ERROR_LEDGER / known recipes;
+5. deduplicate already-solved work;
+6. build the minimal context pack;
+7. decide whether an LLM call is necessary;
+8. dispatch only the unresolved semantic task.
+
+Normal orchestration decisions such as `dependencies_done -> queue(next_task)` MUST be local deterministic logic and MUST NOT consume LLM quota.
+
+B-EDGE MUST support at least these operating modes:
+- `EDGE_ONLY`: PC offline; memory, scheduler, queues, Telegram/control, light rules and remote free-API calls remain available.
+- `PC_AVAILABLE`: PC healthy; B-EDGE coordinates and dispatches heavy work to PC.
+- `PC_MEMORY_PRESSURE`: PC under high RAM/CPU pressure; heavy jobs queue/pause while B-EDGE continues memory/orchestration and may route reasoning to remote APIs.
+- `PC_UNAVAILABLE_RECOVERY`: PC lost/rebooting; B-EDGE preserves last committed revision, checkpoints and pending jobs, then reconciles and resumes when PC returns.
+
+Project-memory temperature policy:
+- `HOT`: active projects; recent state/index/context cache may stay resident in RAM.
+- `WARM`: recently used projects; partial cache resident.
+- `COLD`: inactive projects; persist on storage/SQLite and load on demand.
+
+Memory pressure MUST degrade HOT -> WARM -> COLD without losing durable state.
+
+B-EDGE may use a larger RAM cache in dedicated-phone mode, but heavy sustained CPU, local large-model inference, compilation, video processing, or other thermal-heavy workloads are out of scope by default. The preferred use of phone RAM is hot state/index/cache, not continuous heavy compute.
+
+BCP memory MUST be structured into at least:
+- USER_MEMORY / stable user preferences and cross-project defaults;
+- PROJECT_MEMORY / project-specific state, decisions, constraints and next actions;
+- TECHNICAL_KNOWLEDGE / ERROR_LEDGER, validated recipes and reusable lessons;
+- OPERATING_STATE / live node/job/provider state;
+- HISTORY / receipts/events;
+- POLICY / permissions, budgets and invariants.
+
+Before ChatGPT/agent execution, the Context Builder MUST assemble only the relevant subset of these layers. Chat history is never the sole source of truth.
+
+When the PC is offline, B-EDGE SHOULD precompute and prepare as much as possible: resolve project state, build work plans, prepare compact context, consult free remote models when policy allows, and queue heavy jobs as `WAITING_FOR_PC`. When the PC returns, it should receive already-prepared bounded work rather than redoing orchestration.
 
 ## P0 — Environment constraints
 
