@@ -102,7 +102,7 @@ public final class EdgeOrchestrator {
                           String evidenceClass, boolean pinned, Long expiresAt) {
         long now = System.currentTimeMillis();
         dao.putMemory(new EdgeMemoryEntity(
-                projectId, layer, key, JSONObject.valueToString(value),
+                projectId, layer, key, jsonValueString(value),
                 evidenceClass == null ? "UNVERIFIED" : evidenceClass,
                 "B_EDGE", pinned, now, now, expiresAt
         ));
@@ -240,5 +240,12 @@ public final class EdgeOrchestrator {
 
     public int compactExpiredMemory() {
         return dao.deleteExpiredMemory(System.currentTimeMillis());
+    }
+
+    private static String jsonValueString(Object value) {
+        if (value == null || value == JSONObject.NULL) return "null";
+        if (value instanceof JSONObject || value instanceof JSONArray) return value.toString();
+        if (value instanceof Number || value instanceof Boolean) return String.valueOf(value);
+        return JSONObject.quote(String.valueOf(value));
     }
 }
