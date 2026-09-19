@@ -110,3 +110,22 @@ A mandatory field scenario before this feature is called complete:
 7. Original ACTIVE returns and attempts stale mutation.
 8. BCP rejects stale fencing token.
 9. Both conversations converge on the same revision.
+
+
+## Universal context bootstrap integration
+
+`BCPGO` is the canonical read/bootstrap trigger for a fresh supported conversation.
+
+A conversation that invokes BCPGO does not become a writer automatically. Context read and mutation authority are separate.
+
+Bootstrap sequence:
+1. authenticate connector/client independently of the typed command;
+2. resolve project scope;
+3. fetch Context Capsule and current revisions;
+4. establish a read/session context lease;
+5. acquire writer lease only if/when a mutation is required;
+6. after work, submit proposed memory/state deltas with revision preconditions.
+
+A STANDBY conversation may therefore use BCPGO to become fully context-aware without competing for writer ownership.
+
+Context-session IDs are operational correlation identifiers only and are not authentication credentials.
