@@ -1,0 +1,21 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "BCPGO_TELEGRAM_OBSERVABILITY_TELEMETRY_MIRROR_20260919",
+  "project_or_mission": "API/BCP Telegram observability sanitized telemetry mirror",
+  "base_main_sha": "8dd40fe8ffb2d855f30ce4479b1cfcaa464aa076",
+  "created_at": "2026-09-19",
+  "work_branch": "work/bcp/telegram-observability-telemetry-mirror-20260919",
+  "intended_file_scope": [
+    "windows/bcp_telegram_observability.py",
+    "windows/CONFIGURE_BCP_TELEGRAM.ps1",
+    ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json",
+    "project_state.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Telegram Observability Qualification",
+    "BCP Coordinated Product Qualification"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_head_reread": true,
+  "zero_usd": true
+}
