@@ -633,3 +633,29 @@ A core optimization KPI is:
 `AI_CALLS_AVOIDED_WITHOUT_RELIABILITY_LOSS`
 
 The system should become less dependent on repeated model calls as its validated recipes, ERROR_LEDGER and deterministic automation improve.
+
+
+## B-EDGE local orchestration before agents
+
+The dedicated B-EDGE phone is the preferred always-on host for lightweight orchestration state.
+
+Before escalating to any model, B-EDGE/BCP SHOULD:
+- resolve project/state/checkpoint;
+- evaluate deterministic rules;
+- query the ERROR_LEDGER and validated recipes;
+- compute job dependencies and READY/BLOCKED transitions;
+- batch and deduplicate events;
+- check provider quota/health;
+- assemble the minimal context pack.
+
+The scheduler itself is deterministic. Agent sequencing such as `A DONE -> B READY -> BUILD READY -> TEST BLOCKED` MUST NOT require model inference.
+
+When the PC is unavailable, B-EDGE MAY continue planning, memory retrieval, queue maintenance, light local transforms and allowed remote-API reasoning, while marking compute-heavy jobs `WAITING_FOR_PC`.
+
+When the PC is under memory/resource pressure, B-EDGE SHOULD absorb more coordination/cache work and defer heavy execution rather than forcing the PC into instability.
+
+The preferred division of labor is:
+- B-EDGE: memory, policy, queues, scheduling, context building, cache, telemetry, light transforms;
+- PC: build/test/heavy file and compute work when healthy;
+- remote free models: sparse semantic reasoning;
+- ChatGPT: optional high-level escalation, not routine orchestration.
