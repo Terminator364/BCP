@@ -421,3 +421,28 @@ Expected: compare revision/hash/authority; newest cannot automatically win if in
 
 T9. Raw SQLite/WAL file is presented as cross-device replica.
 Expected: reject as unsupported replication mechanism; require logical snapshot/event replication.
+
+
+## U. AX15GO cross-project causal regression
+
+These cases are imported as causal mechanisms, not as lexical scenario counts. Canonical source:
+`.project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json`.
+
+U1. A bounded discovery/recovery operation launches one worker that never completes.
+Expected: every inner wait is derived from the remaining monotonic deadline; the operation exits within its declared deadline plus bounded scheduler tolerance. No unbounded `take()/wait()` may bypass the outer deadline.
+
+U2. A permanent product invariant is applied, then a later version/reconstruction patch reintroduces the old value.
+Expected: final-transform/final-artifact validation repairs or rejects the regression. Intermediate-source PASS cannot certify the published artifact.
+
+U3. Critical artifact publication reaches stage copy + replace + hash readback, then power is interrupted before durable flush.
+Expected: the system MUST NOT advertise `COMMITTED/DURABLE_LOCAL` before the platform-qualified flush boundary. Windows and Linux implementations are tested independently; noncritical telemetry remains outside this expensive durability class.
+
+U4. A sealed runtime has a known defect but only its future-engineering adapter/spec is corrected.
+Expected: runtime status remains unchanged/pending. No documentation, test-plan or vNext change may be reported as a deployed runtime fix.
+
+U5. A dedicated repository exists but its authority fence says PLACEHOLDER/NOT_AUTHORITY while another repository owns the canonical checkpoint.
+Expected: bootstrap/recovery resolves the declared canonical authority and refuses to reconstruct state from the placeholder. Promotion requires exact source SHA, migration/readback evidence and one writable authority.
+
+Promotion note:
+- a PASS here proves only the tested causal invariant;
+- it does not upgrade B-EDGE/BCP runtime or field certification by itself.
