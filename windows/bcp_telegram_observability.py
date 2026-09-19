@@ -258,12 +258,14 @@ class LocalTruth:
 
     def edge(self) -> dict:
         pair = read_json(self.state / "paired_edge.json", {}) or {}
-        evs = last_jsonl(self.telemetry / "phone-events.jsonl", 5)
+        event_path = self.telemetry / "phone-events.jsonl"
+        evs = last_jsonl(event_path, 5)
         last = evs[-1] if evs else {}
         return {
             "paired": bool(pair),
             "edge_version": clean(pair.get("edge_version"), 40),
             "last_event": clean(last.get("event_type") or last.get("type"), 80),
+            "_age_seconds": age_seconds(event_path),
         }
 
     def mission_events(self, limit: int = 80) -> list[dict]:
@@ -517,7 +519,8 @@ class Service:
 
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
-        edge_ok = bool(edge.get("paired"))
+        edge_age = edge.get("_age_seconds")
+        edge_ok = bool(edge.get("paired")) and isinstance(edge_age, int) and edge_age <= 300
         drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
         runs = gh.get("runs") or []
         run = runs[0] if runs else {}
@@ -578,7 +581,7 @@ class Service:
             "📨 Carte générée: " + rendered_at,
             "",
             ("✅ PC/BCP actif" if heartbeat_ok else "⚠️ PC/BCP: preuve récente absente"),
-            ("✅ Ancien téléphone connecté" if edge_ok else "⚠️ Ancien téléphone non observé"),
+            ("✅ Ancien téléphone actif" if edge_ok else ("🟡 Ancien téléphone appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone non observé")),
             ("✅ Sauvegarde Drive visible" if drive_ok else "⚠️ Sauvegarde Drive non observée"),
             "🌐 " + nexus_text,
             "🧪 " + self._human_ci(gh),
@@ -635,7 +638,8 @@ class Service:
 
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
-        edge_ok = bool(edge.get("paired"))
+        edge_age = edge.get("_age_seconds")
+        edge_ok = bool(edge.get("paired")) and isinstance(edge_age, int) and edge_age <= 300
         github_ok = bool(gh.get("ok"))
         drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
         nexus = str(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED").upper()
@@ -673,7 +677,7 @@ class Service:
             "📨 Réponse générée: " + rendered_at,
             "",
             ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
-            ("✅ Ancien téléphone" if edge_ok else "⚠️ Ancien téléphone — non observé"),
+            ("✅ Ancien téléphone — actif" if edge_ok else ("🟡 Ancien téléphone — appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone — non observé")),
             ("✅ GitHub" if github_ok else "⚠️ GitHub — non observé"),
             ("✅ Sauvegarde Drive" if drive_ok else "⚠️ Sauvegarde Drive — non observée"),
             "🌐 Relais Nexus: " + nexus_text,
@@ -1073,8 +1077,8 @@ class Telegram:
         while True:
             try:
                 obj = self.api("getUpdates", {
-                    "offset": offset, "timeout": 50, "allowed_updates": ["message"]
-                }, 65)
+                    "offset": offset, "timeout": 20, "allowed_updates": ["message"]
+                }, 35)
                 failures = 0
                 for upd in obj.get("result") or []:
                     uid = int(upd.get("update_id") or 0)
