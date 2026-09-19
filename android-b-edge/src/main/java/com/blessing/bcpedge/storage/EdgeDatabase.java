@@ -11,9 +11,11 @@ import androidx.room.RoomDatabase;
                 EdgeProjectEntity.class,
                 EdgeJobEntity.class,
                 EdgeMemoryEntity.class,
-                EdgeReceiptEntity.class
+                EdgeReceiptEntity.class,
+                EdgeDependencyEntity.class,
+                EdgeContextEntity.class
         },
-        version = 1,
+        version = 2,
         exportSchema = false
 )
 public abstract class EdgeDatabase extends RoomDatabase {
@@ -32,6 +34,7 @@ public abstract class EdgeDatabase extends RoomDatabase {
                                 EdgeDatabase.class,
                                 "bcp-edge-v2-shadow.db")
                         .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
+                        .fallbackToDestructiveMigration()
                         .build();
                 INSTANCE = local;
             }
