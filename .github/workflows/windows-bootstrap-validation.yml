@@ -8,6 +8,7 @@ on:
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/bcp_server.py"
+      - "windows/BCP_PC_MIGRATE_CURRENT.cmd"
       - "release/server.json"
       - "tests/chatgpt_pc_register_contract_cli.py"
       - ".github/workflows/windows-bootstrap-validation.yml"
@@ -64,6 +65,24 @@ jobs:
         shell: powershell
         run: |
           python '.\windows\bcp_server.py' --selftest
+
+      - name: Legacy migration bridge guards
+        shell: powershell
+        run: |
+          $bridge = Get-Content -Raw '.\windows\BCP_PC_MIGRATE_CURRENT.cmd'
+          if ($bridge -notmatch 'c0d10a286a5a4e18d755a31811e7b479f7ad9cff') { throw 'migration bridge pin missing' }
+          if ($bridge -notmatch '3ad1594a948768b15f583a7806eb7fb084935ecbcd1ccac0079ce88e43f6d53e') { throw 'installer hash pin missing' }
+          if ($bridge -notmatch 'c23e9d79262884b399cfb3abba382dae3c4b18ccbe158fe818e6497f7a493993') { throw 'server hash pin missing' }
+          if ($bridge -notmatch 'RUNTIME_READBACK=PASS') { throw 'runtime readback guard missing' }
+          if ($bridge -match '(?i)curl\s+http://' -or $bridge -match '(?i)Invoke-WebRequest.+http://raw') { throw 'insecure download path present' }
+          Write-Host 'BCP_LEGACY_MIGRATION_BRIDGE_GUARDS=PASS'
+
+      - name: Upload legacy migration bridge
+        uses: actions/upload-artifact@v4
+        with:
+          name: bcp-pc-legacy-migration-current
+          path: windows/BCP_PC_MIGRATE_CURRENT.cmd
+          if-no-files-found: error
 
       - name: Release manifest integrity
         shell: powershell
