@@ -203,3 +203,22 @@ Operational rule:
 - if state is ambiguous, HOLD and verify before writing.
 
 This relay may be repeated across fresh conversations. It is a continuity mechanism, not a mechanism for bypassing platform safeguards.
+
+## Resynchronization command
+
+Canonical resynchronization phrase:
+`APIAX07 RESYNC`
+
+Use this when the user remains inside the same API project but cannot access the most recent conversation/response because a device, browser, network, or page failed.
+
+Semantics:
+- do not treat this as a new project start;
+- recover the latest durable API/BCP state and the most recent completed/committed result available from project sources;
+- identify what the user had last requested and what output/result was produced or left pending;
+- present the missing latest result first, then the exact current state and next action;
+- do not replay already COMMITTED mutations;
+- do not require the user to copy/paste the inaccessible prior response;
+- avoid ChatGPT-PC during the currently active ChatGPT-PC isolation diagnostic mode unless the user explicitly ends that mode;
+- if no durable copy of the inaccessible response exists, say so explicitly and reconstruct only from durable evidence, without inventing missing content.
+
+`CONTINUE ATOMIC` remains the execution-resume command after state is already known. `APIAX07 RESYNC` is specifically for state/result resynchronization across conversations/devices.
