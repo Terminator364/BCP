@@ -7,7 +7,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$TargetVersion = "0.4.5"
+$TargetVersion = "0.4.6"
 $Project = "buildhub"
 $Port = 8765
 $BaseUrl = "http://127.0.0.1:$Port"
@@ -279,13 +279,24 @@ function Lifecycle-Registered {
 function Managed-Listener {
     try {
         $l=Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction Stop|Select-Object -First 1
-        $p=Get-CimInstance Win32_Process -Filter ("ProcessId="+[int]$l.OwningProcess) -ErrorAction Stop
+        $d=Invoke-BcpGet "/v1/diagnostics" 5
+        $managedPath=(Join-Path $ManagedRoot "server.py")
+        $localHash=File-Sha256 $managedPath
+        $pidMatch=([int]$l.OwningProcess -eq [int]$d.server_pid)
+        $fileMatch=([IO.Path]::GetFullPath([string]$d.server_file) -eq [IO.Path]::GetFullPath($managedPath))
+        $hashMatch=($localHash -and $localHash -eq [string]$d.server_sha256)
         return [ordered]@{
-            pass=([string]$p.CommandLine -match "ChatGPT_ManagedApps\\bcp\\server\.py")
-            pid=[int]$l.OwningProcess
-            command_line=[string]$p.CommandLine
+            pass=($pidMatch -and $fileMatch -and $hashMatch -and [string]$d.version -eq $TargetVersion)
+            listener_pid=[int]$l.OwningProcess
+            diagnostic_pid=[int]$d.server_pid
+            diagnostic_file=[string]$d.server_file
+            diagnostic_sha256=[string]$d.server_sha256
+            local_sha256=$localHash
+            pid_match=$pidMatch
+            file_match=$fileMatch
+            hash_match=$hashMatch
         }
-    } catch { return [ordered]@{pass=$false;pid=0;command_line=""} }
+    } catch { return [ordered]@{pass=$false;listener_pid=0;diagnostic_pid=0;error=$_.Exception.Message} }
 }
 
 function Schedule-ResumeAndReboot([string]$Id) {
