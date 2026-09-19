@@ -3,7 +3,7 @@
   "channel": "stable",
   "version": "0.4.7",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "e71f40f3bed65175a719248be20de8a83963996fab6a858b2b75925a80d5fd69",
+  "sha256": "48117c3eb0ffb76eec0554c0b9741494d19a1d9600cb8ee43e082a6eb7b27ed7",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS"
