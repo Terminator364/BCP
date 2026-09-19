@@ -18,6 +18,7 @@ public final class TelegramObservabilityWorker extends Worker {
     @Override public Result doWork() {
         TelegramConfigStore config = new TelegramConfigStore(getApplicationContext());
         if (!config.isEnabled() || !config.hasBotToken()) return Result.success();
+        if (config.servicePollFresh(90_000L)) return Result.success();
         try {
             new TelegramObservabilityPoller(getApplicationContext()).pollOnce(1);
             return Result.success();
