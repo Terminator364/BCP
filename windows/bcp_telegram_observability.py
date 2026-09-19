@@ -53,7 +53,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions",
+    "/tail", "/where", "/missions", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 
@@ -124,6 +124,90 @@ def append_log(event: str, **fields: Any) -> None:
         rec[key] = clean(value, 300) if isinstance(value, str) else value
     with LOG_PATH.open("a", encoding="utf-8") as h:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def _pdf_escape(text: str) -> str:
+    text = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    return text
+
+
+def _pdf_ascii(text: str) -> str:
+    replacements = {
+        "—": "-", "–": "-", "→": "->", "←": "<-", "•": "*",
+        "✅": "[OK]", "⚠️": "[!]", "⚠": "[!]", "🟢": "[OK]", "🟡": "[~]", "🟠": "[~]",
+        "🔴": "[X]", "⚪": "[ ]", "🤖": "BCP", "🎯": "NOW", "📊": "PROGRESS",
+        "➡️": "NEXT", "➡": "NEXT", "👤": "YOU", "🕒": "TIME", "⏱️": "AGE",
+        "📨": "SENT", "🌐": "NEXUS", "🧪": "TESTS", "🔧": "DETAILS", "ℹ️": "INFO",
+        "💾": "CHECKPOINT", "🏁": "DONE", "📌": "MISSION", "🧭": "PLAN",
+        "▶️": "START", "📤": "DISPATCH", "📥": "RESULT", "🔎": "VERIFY",
+        "🔁": "RETRY", "🛑": "BLOCKED", "⏹️": "STOP",
+    }
+    for src, dst in replacements.items():
+        text = text.replace(src, dst)
+    return text.encode("cp1252", errors="replace").decode("cp1252")
+
+
+def text_pdf_bytes(title: str, body: str) -> bytes:
+    # Tiny dependency-free PDF for low-data status exports.
+    lines: list[str] = []
+    for raw in (title + "\n\n" + body).splitlines():
+        raw = _pdf_ascii(raw)
+        if not raw:
+            lines.append("")
+            continue
+        while len(raw) > 92:
+            cut = raw.rfind(" ", 0, 92)
+            if cut < 24:
+                cut = 92
+            lines.append(raw[:cut].rstrip())
+            raw = raw[cut:].lstrip()
+        lines.append(raw)
+    per_page = 46
+    pages = [lines[i:i + per_page] for i in range(0, max(1, len(lines)), per_page)] or [[]]
+
+    objects: list[bytes] = []
+    # 1 Catalog, 2 Pages, 3 Helvetica font.
+    objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
+    objects.append(b"")
+    objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    page_refs: list[int] = []
+    next_obj = 4
+    for page_lines in pages:
+        page_obj = next_obj
+        stream_obj = next_obj + 1
+        next_obj += 2
+        page_refs.append(page_obj)
+        content = ["BT", "/F1 10 Tf", "48 790 Td", "12 TL"]
+        for idx, line in enumerate(page_lines):
+            if idx:
+                content.append("T*")
+            content.append("(" + _pdf_escape(line) + ") Tj")
+        content.append("ET")
+        stream = "\n".join(content).encode("cp1252", errors="replace")
+        objects.append(
+            ("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] "
+             "/Resources << /Font << /F1 3 0 R >> >> /Contents " +
+             str(stream_obj) + " 0 R >>").encode("ascii")
+        )
+        objects.append(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")
+    kids = " ".join(str(x) + " 0 R" for x in page_refs)
+    objects[1] = ("<< /Type /Pages /Kids [" + kids + "] /Count " + str(len(page_refs)) + " >>").encode("ascii")
+
+    out = bytearray(b"%PDF-1.4\n%BCP\n")
+    offsets = [0]
+    for i, obj in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out.extend(str(i).encode("ascii") + b" 0 obj\n" + obj + b"\nendobj\n")
+    xref = len(out)
+    out.extend(("xref\n0 " + str(len(objects) + 1) + "\n").encode("ascii"))
+    out.extend(b"0000000000 65535 f \n")
+    for off in offsets[1:]:
+        out.extend(f"{off:010d} 00000 n \n".encode("ascii"))
+    out.extend(
+        ("trailer\n<< /Size " + str(len(objects) + 1) + " /Root 1 0 R >>\n"
+         "startxref\n" + str(xref) + "\n%%EOF\n").encode("ascii")
+    )
+    return bytes(out)
 
 
 class Http:
@@ -727,6 +811,33 @@ class Service:
             "Spend: $" + format(spend, ".2f"),
         ])
 
+    def report_summary(self) -> str:
+        return "\n".join([
+            "BCP — Rapport de suivi",
+            "Généré: " + utc_now(),
+            "",
+            self.status(),
+        ])
+
+    def report_technical(self) -> str:
+        return "\n".join([
+            "BCP — Rapport technique",
+            "Généré: " + utc_now(),
+            "",
+            self.details(),
+            "",
+            "MICRO-ACTIONS",
+            self.tail(),
+            "",
+            "MISSIONS",
+            self.missions(),
+        ])
+
+    def report_pdf(self, technical: bool = False) -> bytes:
+        body = self.report_technical() if technical else self.report_summary()
+        title = "BCP Rapport technique" if technical else "BCP Rapport de suivi"
+        return text_pdf_bytes(title, body)
+
     def missions(self) -> str:
         events = self.local.mission_events(200)
         if not events:
@@ -905,7 +1016,9 @@ class Service:
         return (
             "BCP Cockpit — lecture simple\n"
             "/status — mission actuelle\n/missions — missions récentes\n/details — vue technique\n"
+            "/report — PDF de suivi\n/reporttech — PDF technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
+            "Les boutons du cockpit donnent accès aux vues utiles sans retaper les commandes. "
             "Les pourcentages portent seulement sur des plans finis et vérifiables. "
             "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
         )
@@ -918,7 +1031,7 @@ class Service:
         cmd = first.split("@", 1)[0].lower()
         arg = rest[0].strip() if rest else ""
         if cmd not in READ_ONLY_COMMANDS:
-            return "Lecture seule: /status /missions /details /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Lecture seule: /status /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -939,6 +1052,10 @@ class Service:
             return self.last()
         if cmd == "/ci":
             return self.ci()
+        if cmd == "/report":
+            return "REPORT_PDF_SUMMARY"
+        if cmd == "/reporttech":
+            return "REPORT_PDF_TECHNICAL"
         return self.holds()
 
 
@@ -956,6 +1073,25 @@ class Telegram:
         except Exception:
             self.max_events_per_push = 6
 
+    @staticmethod
+    def keyboard() -> dict:
+        return {
+            "inline_keyboard": [
+                [
+                    {"text": "🔄 Actualiser", "callback_data": "bcp:status"},
+                    {"text": "📍 Où ?", "callback_data": "bcp:where"},
+                ],
+                [
+                    {"text": "🗂 Missions", "callback_data": "bcp:missions"},
+                    {"text": "🧾 Détails", "callback_data": "bcp:details"},
+                ],
+                [
+                    {"text": "📄 PDF suivi", "callback_data": "bcp:pdf:summary"},
+                    {"text": "📚 PDF technique", "callback_data": "bcp:pdf:technical"},
+                ],
+            ]
+        }
+
     def api(self, method: str, payload: dict, timeout: int) -> dict:
         status, obj = self.http.json(
             self.base + "/" + method, method="POST", payload=payload, timeout=timeout
@@ -965,30 +1101,122 @@ class Telegram:
             raise RuntimeError("telegram_api_error:" + desc)
         return obj
 
-    def send(self, text: str) -> int | None:
-        obj = self.api("sendMessage", {
+    def send(self, text: str, with_keyboard: bool = True) -> int | None:
+        payload = {
             "chat_id": self.chat_id,
             "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
             "disable_web_page_preview": True,
-        }, 20)
+        }
+        if with_keyboard:
+            payload["reply_markup"] = self.keyboard()
+        obj = self.api("sendMessage", payload, 20)
         result = obj.get("result") or {}
         try:
             return int(result.get("message_id"))
         except Exception:
             return None
 
-    def edit(self, message_id: int, text: str) -> bool:
+    def edit(self, message_id: int, text: str, with_keyboard: bool = True) -> bool:
         try:
-            self.api("editMessageText", {
+            payload = {
                 "chat_id": self.chat_id,
                 "message_id": int(message_id),
                 "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
                 "disable_web_page_preview": True,
-            }, 20)
+            }
+            if with_keyboard:
+                payload["reply_markup"] = self.keyboard()
+            self.api("editMessageText", payload, 20)
             return True
         except Exception as e:
             append_log("LIVE_CARD_EDIT_FAILED", error_class=type(e).__name__, detail=clean(e, 140))
             return False
+
+    def answer_callback(self, callback_id: str, text: str = "") -> None:
+        try:
+            payload = {"callback_query_id": str(callback_id)}
+            if text:
+                payload["text"] = clean(text, 160)
+            self.api("answerCallbackQuery", payload, 10)
+        except Exception as e:
+            append_log("CALLBACK_ACK_FAILED", error_class=type(e).__name__, detail=clean(e, 120))
+
+    def send_document(self, filename: str, data: bytes, caption: str) -> None:
+        if len(data) > 750_000:
+            raise RuntimeError("telegram_document_too_large_for_cockpit")
+        boundary = "----BCP" + hashlib.sha256(filename.encode("utf-8")).hexdigest()[:20]
+        chunks: list[bytes] = []
+        def field(name: str, value: str) -> None:
+            chunks.extend([
+                ("--" + boundary + "\r\n").encode("ascii"),
+                ('Content-Disposition: form-data; name="' + name + '"\r\n\r\n').encode("ascii"),
+                value.encode("utf-8"),
+                b"\r\n",
+            ])
+        field("chat_id", str(self.chat_id))
+        field("caption", clean(caption, 900))
+        chunks.extend([
+            ("--" + boundary + "\r\n").encode("ascii"),
+            ('Content-Disposition: form-data; name="document"; filename="' + filename.replace('"', "") + '"\r\n').encode("ascii"),
+            b"Content-Type: application/pdf\r\n\r\n",
+            data,
+            b"\r\n",
+            ("--" + boundary + "--\r\n").encode("ascii"),
+        ])
+        req = Request(
+            self.base + "/sendDocument",
+            data=b"".join(chunks),
+            headers={"Content-Type": "multipart/form-data; boundary=" + boundary,
+                     "User-Agent": "BCP-Telegram-Observability/1"},
+            method="POST",
+        )
+        try:
+            with urlopen(req, timeout=30) as res:
+                obj = json.loads(res.read().decode("utf-8"))
+        except Exception as e:
+            raise RuntimeError("telegram_send_document_failed:" + type(e).__name__) from e
+        if not isinstance(obj, dict) or not obj.get("ok"):
+            raise RuntimeError("telegram_send_document_failed")
+
+    def _callback_action(self, data: str) -> tuple[str, str]:
+        mapping = {
+            "bcp:status": ("/status", "Actualisation"),
+            "bcp:where": ("/where", "Position"),
+            "bcp:missions": ("/missions", "Missions"),
+            "bcp:details": ("/details", "Détails"),
+        }
+        return mapping.get(data, ("", ""))
+
+    def handle_callback(self, callback: dict) -> None:
+        callback_id = str(callback.get("id") or "")
+        data = str(callback.get("data") or "")
+        msg = callback.get("message") or {}
+        chat = msg.get("chat") or {}
+        incoming = int(chat.get("id") or 0)
+        authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
+        if not authorized:
+            self.answer_callback(callback_id, "Non autorisé")
+            return
+        if data == "bcp:pdf:summary":
+            self.answer_callback(callback_id, "Préparation du PDF…")
+            self.send_document("BCP_SUIVI.pdf", self.service.report_pdf(False), "BCP — rapport de suivi")
+            return
+        if data == "bcp:pdf:technical":
+            self.answer_callback(callback_id, "Préparation du PDF technique…")
+            self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
+            return
+        command, label = self._callback_action(data)
+        if not command:
+            self.answer_callback(callback_id, "Action inconnue")
+            return
+        self.answer_callback(callback_id, label)
+        response = self.service.dispatch(command)
+        message_id = msg.get("message_id")
+        if message_id and command in {"/status", "/where", "/missions", "/details"}:
+            if not self.edit(int(message_id), response):
+                self.send(response)
+        else:
+            self.send(response)
 
     def _push_presence(self) -> None:
         if not self.auto_push:
@@ -1077,19 +1305,31 @@ class Telegram:
         while True:
             try:
                 obj = self.api("getUpdates", {
-                    "offset": offset, "timeout": 20, "allowed_updates": ["message"]
+                    "offset": offset, "timeout": 20, "allowed_updates": ["message", "callback_query"]
                 }, 35)
                 failures = 0
                 for upd in obj.get("result") or []:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
-                    msg = upd.get("message") or {}
-                    chat = msg.get("chat") or {}
-                    incoming = int(chat.get("id") or 0)
-                    authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
-                    append_log("UPDATE", update_id=uid, authorized=authorized)
-                    if authorized:
-                        self.send(self.service.dispatch(str(msg.get("text") or "")))
+                    callback = upd.get("callback_query")
+                    if isinstance(callback, dict):
+                        append_log("CALLBACK_UPDATE", update_id=uid, callback_data=clean(callback.get("data"), 80))
+                        self.handle_callback(callback)
+                    else:
+                        msg = upd.get("message") or {}
+                        chat = msg.get("chat") or {}
+                        incoming = int(chat.get("id") or 0)
+                        authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
+                        append_log("UPDATE", update_id=uid, authorized=authorized)
+                        if authorized:
+                            raw = str(msg.get("text") or "")
+                            result = self.service.dispatch(raw)
+                            if result == "REPORT_PDF_SUMMARY":
+                                self.send_document("BCP_SUIVI.pdf", self.service.report_pdf(False), "BCP — rapport de suivi")
+                            elif result == "REPORT_PDF_TECHNICAL":
+                                self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
+                            else:
+                                self.send(result)
                     atomic_json(OFFSET_PATH, {
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
@@ -1176,6 +1416,14 @@ class Nexus:
             "text": safe_text,
         }, timeout=25)
 
+    def publish_reports(self) -> None:
+        summary = TOKEN_RE.sub("[REDACTED_TOKEN]", self.service.report_summary())[:18000]
+        technical = TOKEN_RE.sub("[REDACTED_TOKEN]", self.service.report_technical())[:26000]
+        self.api("/v1/device/report", method="POST", payload={
+            "summary": summary,
+            "technical": technical,
+        }, timeout=30)
+
     def _push_presence(self) -> None:
         if not self.auto_push:
             return
@@ -1240,6 +1488,7 @@ class Nexus:
         prior = read_json(path, {}) or {}
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
+        self.publish_reports()
         self.live_card(str(snap["text"]), "mission:" + self.service.project_id)
         atomic_json(path, {
             "schema": "bcp.telegram_system_presence/2",
@@ -1267,6 +1516,12 @@ class Nexus:
                     if command_id <= cursor:
                         continue
                     response = self.service.dispatch(str(command.get("text") or ""))
+                    if response == "REPORT_PDF_SUMMARY":
+                        self.publish_reports()
+                        response = "📄 Rapport de suivi actualisé. Utilisez le bouton « PDF suivi »."
+                    elif response == "REPORT_PDF_TECHNICAL":
+                        self.publish_reports()
+                        response = "📚 Rapport technique actualisé. Utilisez le bouton « PDF technique »."
                     self.reply(command_id, response)
                     cursor = command_id
                     atomic_json(NEXUS_CURSOR_PATH, {
@@ -1423,6 +1678,24 @@ def selftest() -> int:
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Missions récentes" in svc.missions()
         assert "Lecture seule" in svc.dispatch("/run")
+        assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
+        assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
+        summary_pdf = svc.report_pdf(False)
+        technical_pdf = svc.report_pdf(True)
+        assert summary_pdf.startswith(b"%PDF-1.4")
+        assert technical_pdf.startswith(b"%PDF-1.4")
+        assert summary_pdf.rstrip().endswith(b"%%EOF")
+        assert technical_pdf.rstrip().endswith(b"%%EOF")
+        keyboard = Telegram.keyboard()
+        callback_values = {
+            button.get("callback_data")
+            for row in keyboard.get("inline_keyboard", [])
+            for button in row
+        }
+        assert {
+            "bcp:status", "bcp:where", "bcp:missions", "bcp:details",
+            "bcp:pdf:summary", "bcp:pdf:technical",
+        } <= callback_values
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
