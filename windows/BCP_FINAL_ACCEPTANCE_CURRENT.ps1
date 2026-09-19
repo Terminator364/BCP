@@ -278,25 +278,39 @@ function Lifecycle-Registered {
 
 function Managed-Listener {
     try {
-        $l=Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction Stop|Select-Object -First 1
+        $listeners=@(Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction Stop)
+        if($listeners.Count -lt 1){throw "NO_LISTENER_ON_MANAGED_PORT"}
+        # The authenticated diagnostics response is served by the control plane
+        # reached on the managed port. Path + SHA + version are the authoritative
+        # runtime identity proof. Windows TCP ownership is retained as secondary
+        # telemetry because it can transiently disagree across restart/wrapper
+        # boundaries and must not create a false-negative by itself.
         $d=Invoke-BcpGet "/v1/diagnostics" 5
         $managedPath=(Join-Path $ManagedRoot "server.py")
         $localHash=File-Sha256 $managedPath
-        $pidMatch=([int]$l.OwningProcess -eq [int]$d.server_pid)
+        $listenerPids=@($listeners | ForEach-Object {[int]$_.OwningProcess} | Sort-Object -Unique)
+        $pidMatch=($listenerPids -contains [int]$d.server_pid)
         $fileMatch=([IO.Path]::GetFullPath([string]$d.server_file) -eq [IO.Path]::GetFullPath($managedPath))
         $hashMatch=($localHash -and $localHash -eq [string]$d.server_sha256)
+        $versionMatch=([string]$d.version -eq $TargetVersion)
+        $identityPass=($fileMatch -and $hashMatch -and $versionMatch)
         return [ordered]@{
-            pass=($pidMatch -and $fileMatch -and $hashMatch -and [string]$d.version -eq $TargetVersion)
-            listener_pid=[int]$l.OwningProcess
+            pass=$identityPass
+            identity_proof="AUTHENTICATED_DIAGNOSTICS_PATH_SHA_VERSION"
+            listener_present=$true
+            listener_pids=$listenerPids
             diagnostic_pid=[int]$d.server_pid
             diagnostic_file=[string]$d.server_file
             diagnostic_sha256=[string]$d.server_sha256
+            diagnostic_version=[string]$d.version
             local_sha256=$localHash
             pid_match=$pidMatch
             file_match=$fileMatch
             hash_match=$hashMatch
+            version_match=$versionMatch
+            pid_mismatch_severity=if($pidMatch){"NONE"}else{"DIAGNOSTIC_ONLY"}
         }
-    } catch { return [ordered]@{pass=$false;listener_pid=0;diagnostic_pid=0;error=$_.Exception.Message} }
+    } catch { return [ordered]@{pass=$false;listener_present=$false;listener_pids=@();diagnostic_pid=0;error=$_.Exception.Message} }
 }
 
 function Schedule-ResumeAndReboot([string]$Id) {
@@ -405,7 +419,9 @@ if($SelfTest){
         "BCP_FINAL_ACCEPTANCE_CURRENT*.zip",
         "filePrefixes",
         "allowedExtensions",
-        "dirPrefixes"
+        "dirPrefixes",
+        "AUTHENTICATED_DIAGNOSTICS_PATH_SHA_VERSION",
+        "pid_mismatch_severity"
     )){
         if($raw -notmatch [regex]::Escape($needle)){throw ("SELFTEST_MISSING_"+$needle)}
     }
