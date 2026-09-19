@@ -1,15 +1,16 @@
 {
-  "channel": "stable",
-  "version_code": 110,
-  "version_name": "1.1.0-evergreen",
+  "channel": "candidate",
+  "version_code": 200,
+  "version_name": "2.0.0-rc1-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
-  "minimum_server_version": "0.5.0",
+  "minimum_server_version": "0.6.0",
   "transport": "BCP_LOCAL_AUTHENTICATED_DRIVE_RELAY",
   "apk_url": "",
   "apk_sha256": "",
   "distribution_status": "COORDINATED_CI_PENDING_PRIVATE_STABLE_SIGNING",
-  "note": "BCP 0.5.0 + B-EDGE 1.1.0 are one coordinated product train. Public CI qualifies source/unsigned APK and compatibility; private stable signing remains outside public GitHub.",
-  "coordinated_server_version": "0.5.0",
-  "requirements_revision": "2026-09-19-R4"
+  "note": "BCP 0.6.0 + B-EDGE 2.0.0-rc1 are one coordinated V2 candidate train. Public CI qualifies source, unsigned APK, Windows installer/acceptance and cross-component contracts; private Drive signing produces the installable APK with the pinned Evergreen identity.",
+  "coordinated_server_version": "0.6.0",
+  "requirements_revision": "2026-09-19-R4",
+  "release_train": "BCP-0.6.0_EDGE-2.0.0-rc1"
 }
