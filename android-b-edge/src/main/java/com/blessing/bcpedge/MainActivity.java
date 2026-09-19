@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
         root.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Zéro saisie · reprise · télémétrie · mises à jour vérifiées");
+        subtitle.setText("Mémoire durable · orchestration · reprise · télémétrie · mises à jour vérifiées");
         subtitle.setPadding(0,dp(6),0,dp(16));
         root.addView(subtitle);
 
@@ -74,6 +74,8 @@ public class MainActivity extends Activity {
 
         setContentView(scroll);
         updates.reconcileAfterLaunch();
+        EdgeReconcileWorker.schedule(this);
+        EdgeReconcileWorker.requestNow(this);
         autoConnect();
         heartbeat.scheduleAtFixedRate(() -> {
             try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
