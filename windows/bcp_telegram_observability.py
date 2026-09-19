@@ -1165,6 +1165,13 @@ class Nexus:
             "idempotency_key": idem,
         }, timeout=25)
 
+    def live_card(self, text: str, card_key: str = "mission-status") -> None:
+        safe_text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900]
+        self.api("/v1/device/live-card", method="POST", payload={
+            "card_key": clean(card_key, 96),
+            "text": safe_text,
+        }, timeout=25)
+
     def _push_presence(self) -> None:
         if not self.auto_push:
             return
@@ -1229,12 +1236,13 @@ class Nexus:
         prior = read_json(path, {}) or {}
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
-        self.push(str(snap["text"]), "system:" + str(snap["fingerprint"]))
+        self.live_card(str(snap["text"]), "mission:" + self.service.project_id)
         atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/1",
+            "schema": "bcp.telegram_system_presence/2",
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "NEXUS",
+            "card_key": "mission:" + self.service.project_id,
         })
 
     def run(self) -> int:
