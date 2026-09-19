@@ -110,6 +110,15 @@
       "mechanism": "one apparently green signal (process, heartbeat, discovery, repository existence, artifact existence, HTTP /health, provider mirror) can coexist with a failed useful command path, unwritable durable state, stale authority, wrong identity or degraded dependency",
       "permanent_rule": "health is a typed vector; no single supporting signal can promote end-to-end healthy, UNKNOWN/STALE are non-green, and independent dependencies are degraded separately rather than collapsing local core health",
       "regression_obligation": "inject green liveness with broken command/storage/authority/freshness dimensions in every project adapter and prove no false healthy promotion"
+    },
+    {
+      "id": "AXC-TOCTOU-STALE-EVIDENCE-LEASE-002",
+      "source_project": "CROSS_PROJECT",
+      "evidence_status": "ENGINEERING_R5_CANDIDATE",
+      "evidence": "AX15GO R4 counter-audit across PhoneMouse/P2PCR95/ChatGPT-PC/BuildHub/BROWSER4G/BCP",
+      "mechanism": "a correct health/context/readiness observation can become stale between observation and action because session, transport, topology, runtime, destination, revision, identity or coordinator generation changes",
+      "permanent_rule": "health/readiness evidence is capability-scoped and generation-bound; generation changes invalidate immediately; process restart drops in-memory leases; wall clock is secondary; mutations recheck authoritative revision/fence/idempotency/storage preconditions at effect boundary; no full health scan enters every turn",
+      "regression_obligation": "green evidence -> relevant generation change -> action must refresh/reject; unrelated dimension change must not invalidate unrelated capability; process restart cannot reuse old lease; wall-clock skew cannot extend mutation authority"
     }
   ]
 }
