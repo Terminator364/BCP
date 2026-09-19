@@ -307,6 +307,45 @@ function Schedule-ResumeAndReboot([string]$Id) {
     shutdown.exe /r /t 15 /c "BCP final acceptance: automatic reboot and recovery verification"
 }
 
+function Cleanup-Known-LegacyDownloads {
+    $downloads=Join-Path $HOME "Downloads"
+    $removed=New-Object System.Collections.Generic.List[string]
+    $failed=New-Object System.Collections.Generic.List[string]
+    if(-not (Test-Path -LiteralPath $downloads -PathType Container)){
+        return [ordered]@{removed=@();failed=@()}
+    }
+
+    $knownFiles=@(
+        "BCP_PC_BOOTSTRAP.cmd",
+        "BCP_PC_NATIVE_V0_1_1.zip",
+        "BCP_PC_NATIVE_V0_1_2_AUTO.zip",
+        "BCP_PC_NETWORK_REPAIR_V0_1_3.zip",
+        "INSTALL_BCP_EVERGREEN_v0.2.1.cmd",
+        "BCP_FINAL_BOOTSTRAP_0_3.zip",
+        "BCP_FINAL_BOOTSTRAP_0_3_1.zip",
+        "BCP_PC_MIGRATE_CURRENT.zip"
+    )
+    foreach($name in $knownFiles){
+        $p=Join-Path $downloads $name
+        if(Test-Path -LiteralPath $p -PathType Leaf){
+            try{[IO.File]::Delete($p);$removed.Add($p)}catch{$failed.Add($p)}
+        }
+    }
+
+    $knownDirs=@(
+        "BCP_PC_MIGRATE_CURRENT",
+        "BCP_FINAL_BOOTSTRAP_0_3",
+        "BCP_FINAL_BOOTSTRAP_0_3_1"
+    )
+    foreach($name in $knownDirs){
+        $p=Join-Path $downloads $name
+        if(Test-Path -LiteralPath $p -PathType Container){
+            try{[IO.Directory]::Delete($p,$true);$removed.Add($p)}catch{$failed.Add($p)}
+        }
+    }
+    return [ordered]@{removed=@($removed);failed=@($failed)}
+}
+
 function Schedule-SelfCleanup {
     $downloads=Join-Path $HOME "Downloads"
     if(-not (Test-Path -LiteralPath $downloads -PathType Container)){return}
@@ -358,6 +397,7 @@ if(-not $ResumeAfterReboot){
         gates=[ordered]@{}
     }
     try {
+        $report.gates.download_hygiene=Cleanup-Known-LegacyDownloads
         $h=Ensure-Target-Version
         $report.gates.runtime_version=[ordered]@{pass=([string]$h.version -eq $TargetVersion);version=[string]$h.version}
         $diag=Invoke-BcpGet "/v1/diagnostics" 5
