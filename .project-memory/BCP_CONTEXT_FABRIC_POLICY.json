@@ -1,0 +1,153 @@
+{
+  "schema": "bcp.context_fabric_policy/1",
+  "adopted_at": "2026-09-19",
+  "status": "DESIGN_HARDENED_RUNTIME_UNVERIFIED",
+  "universal_bootstrap": {
+    "command": "BCPGO",
+    "explicit_scope_syntax": "BCPGO <project>",
+    "aliases": {
+      "api_bcp": "APIAX07",
+      "next_atomic_action": "CONTINUE ATOMIC"
+    },
+    "is_authentication_secret": false,
+    "normal_bootstrap_requires_llm": false,
+    "normal_bootstrap_broad_scan": false
+  },
+  "logical_system": {
+    "single_logical_plane": true,
+    "components": {
+      "B_EDGE": {
+        "role": "DEDICATED_EDGE_MEMORY_COORDINATOR",
+        "durable_store": "ROOM_SQLITE",
+        "local_search": "FTS",
+        "ram_role": "REBUILDABLE_HOT_CACHE_INDEX_STATE",
+        "process_residency_required": false
+      },
+      "PC_WORKER": {
+        "role": "HEAVY_FENCED_WORKER_AND_VERIFIED_REPLICA",
+        "may_advance_global_head_without_valid_fence": false
+      },
+      "BCP_NEXUS": {
+        "role": "REMOTE_BOOTSTRAP_CONTEXT_WITNESS_INGRESS_FACADE",
+        "full_private_corpus_required": false,
+        "mandatory_vendor": false
+      }
+    }
+  },
+  "context_layers": [
+    "GLOBAL_CORE",
+    "PROJECT_CORE",
+    "TASK_DELTA",
+    "EVIDENCE_ON_DEMAND"
+  ],
+  "per_turn_resolution_states": [
+    "UNCHANGED",
+    "DELTA",
+    "FULL_REFRESH",
+    "CONFLICT",
+    "DEGRADED",
+    "HOLD"
+  ],
+  "bootstrap_targets": {
+    "warm_manifest_server_p95_ms": 1000,
+    "global_plus_project_resolution_server_p95_ms": 2000,
+    "normal_context_pack_max_serialized_bytes": 32768,
+    "note": "BCP-side targets only; ChatGPT platform/connector latency excluded."
+  },
+  "connected_store_projection": {
+    "preferred_current_path": "Google Drive",
+    "bootstrap": "API_BCP/00_CONTEXT/BCP_BOOTSTRAP_CURRENT.json",
+    "global": "API_BCP/00_CONTEXT/GLOBAL_CONTEXT_CURRENT.json",
+    "project_template": "API_BCP/00_CONTEXT/projects/<project_id>/PROJECT_CONTEXT_CURRENT.json",
+    "sanitized_no_secrets": true
+  },
+  "memory": {
+    "scopes": [
+      "USER_MEMORY",
+      "PROJECT_MEMORY",
+      "TECHNICAL_KNOWLEDGE",
+      "OPERATING_STATE",
+      "HISTORY",
+      "POLICY"
+    ],
+    "categories": [
+      "NORMATIVE",
+      "DESCRIPTIVE",
+      "DERIVED",
+      "UNTRUSTED_CONTENT"
+    ],
+    "authority_order": [
+      "CURRENT_EXPLICIT_USER_OR_SIGNED_POLICY",
+      "MACHINE_VERIFIED_CANONICAL",
+      "SOURCE_VERIFIED_PROJECT_FACT",
+      "VALIDATED_DERIVED_SUMMARY",
+      "MODEL_PROPOSED",
+      "UNTRUSTED_EXTERNAL_CONTENT"
+    ],
+    "model_direct_policy_write": false,
+    "external_content_direct_user_memory_write": false,
+    "memory_unit_strategy": "STRUCTURED_KEYS_PLUS_TOPIC_SEGMENTS_PLUS_RECEIPTS",
+    "full_history_prompt_default": false,
+    "llm_exportable_label_required": true
+  },
+  "context_compiler": {
+    "deterministic_first": true,
+    "retrieval_order": [
+      "PINNED_RELEVANT_POLICY",
+      "EXACT_PROJECT_STATE",
+      "EXACT_KEYS",
+      "VALIDATED_ERROR_RECIPES",
+      "SCOPED_FTS",
+      "RECENT_RELEVANT_RECEIPTS",
+      "OPTIONAL_SEMANTIC_ASSIST"
+    ],
+    "cross_project_leak_default": false,
+    "critical_policy_never_truncated": true,
+    "source_revision_hash_required": true
+  },
+  "consistency": {
+    "canonical_head_model": "SINGLE_WRITER_FENCED",
+    "crdt_for_project_head": false,
+    "crdt_optional_for_non_authoritative_mergeable_data": true,
+    "ambiguity_state": "HOLD_CONFLICT",
+    "replication": "LOGICAL_EVENTS_AND_VERIFIED_SNAPSHOTS_NOT_RAW_WAL"
+  },
+  "workflow": {
+    "scheduler_decisions": "DETERMINISTIC_REPLAYABLE",
+    "side_effects": "AT_LEAST_ONCE_WITH_IDEMPOTENT_EFFECTS",
+    "receipts_required": true,
+    "event_history_required": true
+  },
+  "chatgpt_integration": {
+    "current_plus_baseline": "CONNECTED_STORE_READ_BOOTSTRAP",
+    "custom_mcp_write_baseline": false,
+    "future_remote_adapter": "MCP_OR_PLUGIN_WHEN_PRODUCT_PLAN_FIELD_QUALIFIED",
+    "local_bridge_optional": true,
+    "manual_relay_fallback_only": true
+  },
+  "security": {
+    "universal_command_is_not_auth": true,
+    "untrusted_retrieved_content_is_data_not_instruction": true,
+    "secrets_excluded_from_context_projection": true,
+    "least_privilege_tools": true,
+    "memory_integrity_hashes": true,
+    "high_risk_mutation_human_approval": true,
+    "memory_poisoning_tests_required": true
+  },
+  "android": {
+    "always_on_semantics": "ALWAYS_RECOVERABLE_NOT_IMMORTAL_PROCESS",
+    "workmanager_for_deferrable_work": true,
+    "permanent_busy_loop": false,
+    "permanent_data_sync_foreground_service_default": false
+  },
+  "promotion_gates": [
+    "ROOM_SQLITE_MIGRATION_PASS",
+    "WORKMANAGER_RECOVERY_PASS",
+    "CONTEXT_COMPILER_PASS",
+    "FRESH_CHAT_BCPGO_PASS",
+    "DELTA_REFRESH_PASS",
+    "MEMORY_POISONING_TEST_PASS",
+    "THREE_NODE_PARTITION_TEST_PASS",
+    "ZERO_USD_REMOTE_GATEWAY_FIELD_PASS_IF_ENABLED"
+  ]
+}
