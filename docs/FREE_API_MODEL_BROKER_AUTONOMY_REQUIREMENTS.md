@@ -410,3 +410,226 @@ The first real provider test must be deliberately tiny and performed one provide
 7. immediately move to the next plan if region/account/payment blocks occur.
 
 The user must not manually shuttle API responses between providers in normal operation. These manual field checks are bootstrap-only; BCP should own the adapters afterward.
+
+
+## 24-hour endurance and quota-allocation policy
+
+### Objective
+
+BCP MUST optimize for continuous useful work over a full day, not maximum instantaneous LLM throughput. A continuous chantier means continuous progress, not continuous prompting.
+
+Default design target:
+- deterministic/local execution performs the overwhelming majority of operations;
+- LLM calls are sparse, event-driven and justified by unresolved semantic work;
+- free-provider capacity is treated as a finite strategic resource;
+- normal work must preserve capacity for user-facing incidents later in the day;
+- the system must remain useful even when every free LLM provider is exhausted.
+
+### Escalation ladder
+
+Every event/job MUST begin at the lowest adequate layer and escalate only when lower layers cannot resolve it:
+
+1. `L0_EVENT_ENGINE` — heartbeat, queueing, sync, checksums, lifecycle, telemetry, timers, retries, outbox.
+2. `L1_RULE_ENGINE` — deterministic policy and known-condition handling.
+3. `L2_KNOWLEDGE_CACHE` — ERROR_LEDGER, validated recipes, prior receipts, deduplicated known incidents.
+4. `L3_LOW_COST_MODEL` — classification, compact summarization, simple routing where an LLM is genuinely needed.
+5. `L4_REASONING_MODEL` — diagnosis, code generation, architecture reasoning, novel incident analysis.
+6. `L5_HUMAN_CHATGPT` — high-impact ambiguity, cross-system architectural decisions, low-confidence conflicts, or work explicitly escalated to the user's ChatGPT Plus session.
+
+A task MUST NOT be promoted to a higher layer merely because model capacity is available.
+
+### Local-first rule
+
+The following MUST NOT consume LLM quota by default:
+- heartbeats and liveness checks;
+- network up/down detection;
+- battery/RAM/CPU/disk observation;
+- file transfer and synchronization;
+- hashing/signature/readback;
+- build invocation;
+- test execution;
+- deterministic retry/backoff;
+- known-error recovery with validated recipe;
+- queue/outbox replay;
+- checkpoint creation;
+- routine templated notifications;
+- cache lookup and deduplication.
+
+### Batching and deduplication
+
+BCP MUST NOT map one event to one LLM call.
+
+Before any model call, the broker MUST:
+1. aggregate related events over a bounded window;
+2. deduplicate equivalent observations;
+3. group events by causal incident when possible;
+4. resolve known incidents from rules/cache/ERROR_LEDGER;
+5. remove information already represented in canonical state;
+6. send one compact evidence package only for the unresolved remainder.
+
+Offline replay MUST be compacted before any LLM use. Thousands of queued events may produce zero, one or a few model calls after local reconciliation.
+
+### Provider-budget model
+
+Provider limits MUST be discovered from real account/API telemetry whenever possible. BCP MUST NOT hard-code marketing quotas as operational truth.
+
+For each ACTIVE_FREE_PROVIDER, track at minimum:
+- provider/model;
+- quota dimensions exposed by the provider (requests, tokens, compute units/Neurons, monthly credits, etc.);
+- observed remaining capacity;
+- reset policy/window if known;
+- p50/p95 latency;
+- recent success/error/429 rate;
+- task-type success history;
+- last successful Kinshasa smoke test;
+- estimated consumption of the pending call.
+
+Initial conservative allocation policy after field validation:
+- at most ~50% of measured free capacity for planned/background work;
+- ~25% reserved for fallbacks and user-impacting incidents;
+- ~25% strategic reserve protected from ordinary jobs.
+
+These percentages are bootstrap policy, not provider facts. BCP may adapt them after sufficient telemetry, but MUST preserve a non-zero emergency reserve unless explicitly overridden.
+
+### Soft limits, hard limits and conservation mode
+
+Each provider MUST have:
+- `SOFT_LIMIT` — normal work begins to reroute/defer;
+- `RESERVE_FLOOR` — background jobs may not cross it;
+- `HARD_LIMIT` — BCP refuses further calls before accidental paid usage or uncontrolled exhaustion.
+
+When a provider approaches its soft limit, the broker SHOULD raise its internal routing cost and prefer cache, deterministic execution or another ACTIVE_FREE_PROVIDER.
+
+When global free capacity becomes constrained, BCP enters `AI_CONSERVATION_MODE` and continues useful non-LLM work such as tests, fuzzing, benchmarks, dependency checks, static analysis, log processing, backups, deterministic AX150K exploration, and known-error remediation.
+
+If no compliant free model path remains, enter `FREE_MODEL_CAPACITY_HOLD` for LLM-dependent work while continuing all safe deterministic work.
+
+### Global multi-project budget
+
+Parallel projects MUST share one global AI budget. A background chantier may never monopolize all free-provider capacity.
+
+The scheduler MUST support dynamic project weights, for example:
+- normal continuous-improvement project: background priority;
+- user-facing broken PhoneMouse/P2PCR95 path: user-impacting priority;
+- urgent recovery/security-integrity incident: critical priority.
+
+Weights are dynamically rebalanced. Paused or background projects checkpoint cleanly when a higher-priority incident needs reserved capacity.
+
+### Single-provider default and cross-check policy
+
+The normal path is one provider per reasoning step.
+
+BCP MUST NOT fan the same prompt to all providers by default.
+
+A second or third model may be used only for explicit reasons such as:
+- materially low confidence;
+- contradictory diagnoses;
+- high-impact architectural decision;
+- failed first-provider attempt;
+- designated audit/critic step where independent review is justified.
+
+Cross-checks are bounded and audited; model agreement is never treated as proof without deterministic verification.
+
+### Model-role policy
+
+Logical agents are provider-neutral. Multiple agents may share one provider, and one agent may switch providers through the broker.
+
+Initial role preference MAY favor:
+- low-latency/free models for classification and log triage;
+- stronger code/reasoning models for patch design and novel diagnosis;
+- OpenRouter-like aggregators primarily as reserve/multi-model fallback;
+- independent infrastructure providers as failure-domain diversity.
+
+These are hypotheses only. After field telemetry, routing MUST be driven by measured capability, reliability, latency and remaining free capacity rather than brand preference.
+
+### Call admission circuit breaker
+
+Every LLM request MUST pass a call-admission gate equivalent to:
+
+`provider_call_allowed(job, provider, model)`
+
+The gate MUST reject, defer or reroute when any of the following applies:
+- deterministic result already exists;
+- equivalent request/result is cached;
+- same incident was recently resolved;
+- provider is unhealthy or rate-limited;
+- projected call would violate reserve policy;
+- job priority is insufficient for remaining capacity;
+- provider is not ACTIVE_FREE_PROVIDER;
+- projected monetary cost is non-zero under ZERO_USD policy;
+- duplicate/retry loop is detected;
+- request exceeds configured context/token budget.
+
+This gate MUST prevent a buggy agent loop from draining all providers.
+
+### Continuous chantier execution model
+
+A command such as "continue improving the architecture" MUST create a durable long-running mission composed of bounded cycles:
+
+observe -> identify next weakness -> resolve locally if possible -> call broker only if needed -> mutate -> deterministic test -> audit -> checkpoint -> next cycle.
+
+The mission MUST stop/pause on:
+- no meaningful improvement frontier;
+- provider reserve floor reached;
+- PC resource pressure;
+- network/power degradation that makes further work unsafe;
+- human approval requirement;
+- high-risk/irreversible change;
+- repeated failure/no-new-evidence condition.
+
+BCP MUST never interpret "continuous" as an unbounded tight LLM loop.
+
+### ChatGPT escalation path
+
+ChatGPT Plus remains a high-level human-interactive reasoning surface, not a free OpenAI API backend.
+
+Normal operation MUST NOT require the user to manually shuttle prompts between providers. If a hard problem needs ChatGPT-level review and no automated authorized bridge is available, BCP MAY generate one compact, copy-ready escalation packet as a fallback only.
+
+The preferred long-term path is an authorized ChatGPT-PC/BCP bridge that packages canonical context and reconciles the returned result without making the user the integration layer.
+
+### Human-facing AI capacity abstraction
+
+Telegram/UI SHOULD expose one compact `AI_CAPACITY` view instead of forcing the user to understand every provider's quota units.
+
+Minimum view:
+- current-day capacity state;
+- strategic/emergency reserve state;
+- monthly/long-window capacity state where applicable;
+- provider health states;
+- number of model calls avoided by cache/rules;
+- current spend, which MUST remain `0.00 USD` under ZERO_USD policy.
+
+Provider-specific details remain available in diagnostics.
+
+### Notification ergonomics
+
+Silence means normal operation.
+
+Telegram/cockpit SHOULD notify primarily for:
+- mission completion or meaningful checkpoint;
+- user-impacting incident;
+- approval/decision required;
+- free-capacity hold or recovery;
+- requested status/report.
+
+Routine heartbeat success MUST NOT spam the user.
+
+### Telemetry and optimization KPIs
+
+Track at minimum:
+- deterministic operations count;
+- LLM calls by provider/model/project/task type;
+- calls avoided by cache/rules/deduplication;
+- tokens/requests/compute units consumed when observable;
+- budget and reserve remaining;
+- provider 429/timeouts/errors;
+- task success/failure after model advice;
+- time-to-recovery;
+- percentage of incidents resolved without LLM;
+- ZERO_USD spend invariant.
+
+A core optimization KPI is:
+
+`AI_CALLS_AVOIDED_WITHOUT_RELIABILITY_LOSS`
+
+The system should become less dependent on repeated model calls as its validated recipes, ERROR_LEDGER and deterministic automation improve.
