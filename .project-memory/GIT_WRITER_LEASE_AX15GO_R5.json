@@ -1,0 +1,23 @@
+{
+  "schema": "bcp.git_writer_lease_instance/1",
+  "writer_or_session_id": "chat-ax15go-multiproject-20260919-r5",
+  "project_or_mission": "BCP / AX15GO R5 generation-bound evidence lease",
+  "base_main_sha": "bb16aa62b13737a71c662af019bae880f85ba51c",
+  "created_at": "2026-09-19T23:30:00+01:00",
+  "intended_file_scope": [
+    ".project-memory/AX15GO_EVIDENCE_LEASE_R5.json",
+    ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json",
+    ".project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json",
+    "docs/BEDGE_V2_TEST_MATRIX.md",
+    ".project-memory/GIT_WRITER_LEASE_AX15GO_R5.json"
+  ],
+  "expected_ci_gates": [
+    "BCP coordinated product qualification exact PR head",
+    "no runtime/release payload mutation",
+    "context-fabric policy JSON parse/readback"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_reread": true,
+  "moved_main_behavior": "REBASE_OR_RECONCILE_REQUIRED",
+  "status": "WORK_BRANCH_ACTIVE"
+}
