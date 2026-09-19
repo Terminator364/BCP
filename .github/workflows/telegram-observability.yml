@@ -65,7 +65,7 @@ jobs:
           ps = pathlib.Path("windows/CONFIGURE_BCP_TELEGRAM.ps1").read_text(encoding="utf-8")
           joined = py + "\n" + ps
           required = [
-              "/status", "/details", "/project", "/job", "/tail", "/where", "/last", "/ci", "/holds",
+              "/status", "/missions", "/details", "/project", "/job", "/tail", "/where", "/last", "/ci", "/holds",
               "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
               "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
               "ACCEPTED", "NORMALIZED", "PLANNED", "QUEUED", "STARTED",
@@ -80,6 +80,9 @@ jobs:
           for forbidden in ["import requests", "import aiohttp", "import telebot", "from telegram"]:
               assert forbidden not in py
           assert "api.telegram.org/bot" in py
+          assert "editMessageText" in py
+          assert "telegram_system_presence_state" in py
+          assert "💰 Coût: $0.00" not in py.split("def details", 1)[0]
           assert "AsSecureString" in ps
           assert "allowed_chat_id" in joined
           assert "aggressive_polling = $false" in ps
