@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_EXITED_DIAGNOSTIC_RELEASE_0_6_4_0_1_3_CANDIDATE",
-  "last_completed_atomic_action": "Fresh Drive telemetry at 2026-09-19T21:07:42Z proves BCP 0.6.3 alive/paired/UP_TO_DATE and Nexus bundle 0.1.2 present, but the Nexus bootstrap exited without a success receipt. Telegram cockpit human-progress V2 was merged separately in PR #54 after all exact-head CI gates passed.",
-  "next_action": "Qualify BCP 0.6.4 + Nexus 0.1.3. This release externalizes bootstrap exit_code/receipt_status and writes a secret-free failure receipt so the next resident zero-touch attempt can be diagnosed without reinstall, token re-entry, file copy, or screenshot. If the receipt reports HUMAN_AUTH_REQUIRED, the only intended human gate is one Cloudflare browser authorization; otherwise fix the classified failure from durable evidence.",
+  "status": "BCP_0_6_4_NEXUS_0_1_5_TELEGRAM_V4_MERGED_FIELD_PROMOTION_PENDING",
+  "last_completed_atomic_action": "Telegram Cockpit V4 merged to main in PR #62 after exact-head CI PASS and a final main-head recheck. Main integration commit: f9d3b1a622edaf1839beb2ae40d1790c9d842a7e. Release/current now advertises BCP 0.6.4, Nexus 0.1.5 and Telegram human-cockpit-v4 as distribution-ready but FIELD_UNVERIFIED.",
+  "next_action": "Promote the merged CURRENT release through the existing resident update path and obtain fresh machine-readable field evidence for BCP 0.6.4 + Nexus 0.1.5 + Telegram V4. Do not ask for Telegram token re-entry or manual IP/chat-id relay. Prefer home-WiFi PC<->B-EDGE local relay plus Nexus HTTPS store-and-forward for degraded PC->Telegram egress. If provider authorization is required, surface exactly one explicit human gate; otherwise continue from durable receipts.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -67,7 +67,8 @@
     "home_wifi_edge_nexus_autoupdate": "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
     "nexus_field_gate": "docs/BCP_NEXUS_FIELD_GATE.md",
     "qualified_current_release_manifest": "release/current.json",
-    "telegram_human_cockpit_v3": "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md"
+    "telegram_human_cockpit_v3": "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md",
+    "telegram_human_cockpit_v4": "docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -1004,5 +1005,31 @@
     ],
     "scheduled_chatgpt_automation": false,
     "user_action": "NONE_UNTIL_EXACT_HEAD_CI_AND_MERGE"
+  },
+  "telegram_human_cockpit_v4": {
+    "status": "MERGED_CI_QUALIFIED_FIELD_UNVERIFIED",
+    "pr": 62,
+    "merged_main_sha": "f9d3b1a622edaf1839beb2ae40d1790c9d842a7e",
+    "qualified_head_sha": "7dd468ca5c2f3457e3fa861274ab9fe47e648e26",
+    "telegram_release": "2026.09.19-human-cockpit-v4",
+    "nexus_release": "0.1.5",
+    "bcp_release": "0.6.4",
+    "features": [
+      "one editable live mission card",
+      "inline refresh/current-step/missions/details controls",
+      "human and technical PDF exports",
+      "truthful finite-plan progress only",
+      "Nexus callback routing",
+      "sanitized cached reports for degraded PC-to-Telegram egress",
+      "no ChatGPT scheduled automation",
+      "no Telegram token re-entry"
+    ],
+    "field_verified": false,
+    "next_gate": "RESIDENT_UPDATE_CONVERGENCE_AND_KINSHASA_FIELD_ROUNDTRIP"
+  },
+  "operational_automation_policy": {
+    "chatgpt_scheduled_monitoring": false,
+    "bcp_merge_watch_disabled": true,
+    "resident_presence_and_updates": "LOCAL_BCP_BEDGE_NEXUS_EVENT_DRIVEN_ONLY"
   }
 }
