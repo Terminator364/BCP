@@ -7,7 +7,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$TargetVersion = "0.4.7"
+$TargetVersion = "0.5.0"
 $Project = "buildhub"
 $Port = 8765
 $BaseUrl = "http://127.0.0.1:$Port"
@@ -478,7 +478,7 @@ if(-not $ResumeAfterReboot){
             pair_sha256=File-Sha256 $PairPath
             committed_revision=$checkpoint.committed_revision
             committed_hash=$checkpoint.committed_hash
-            pre_server_pid=$listener.listener_pid
+            pre_server_pid=$listener.diagnostic_pid
             pre_boot_time=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("o")
             prepared_at=UtcNow
         }
