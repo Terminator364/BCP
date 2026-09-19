@@ -1,0 +1,18 @@
+{
+  "schema": "bcp.writer_branch_metadata/1",
+  "writer_or_session_id": "chatgpt-ax15go-20260919",
+  "project_or_mission": "BCP / AX15GO cross-project causal learning",
+  "base_main_sha": "47a0d5b67b3e2c4c974fd566dd787eaba8b5686e",
+  "created_at": "2026-09-19",
+  "intended_file_scope": [
+    ".project-memory/AX15GO_CROSS_PROJECT_CAUSAL_LEDGER.json",
+    ".project-memory/AX15GO_WRITER_SESSION_20260919.json",
+    "docs/BEDGE_V2_TEST_MATRIX.md"
+  ],
+  "expected_ci_gates": [
+    "static JSON validity",
+    "test-matrix source review",
+    "no runtime/release mutation"
+  ],
+  "direct_main_write": false
+}
