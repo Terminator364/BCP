@@ -85,6 +85,11 @@ public final class EdgePolicy {
                 || "DONE".equals(r) || "PASS".equals(r) || "SUCCESS".equals(r);
     }
 
+    public static boolean isTerminalResult(String result) {
+        String r = result == null ? "" : result.trim().toUpperCase();
+        return isCompletionResult(r) || "FAILED".equals(r) || "CANCELLED".equals(r);
+    }
+
     public static boolean isRemoteQueueAccepted(String result) {
         String r = result == null ? "" : result.trim().toUpperCase();
         return "QUEUED".equals(r) || "ALREADY_QUEUED".equals(r) || "ACCEPTED".equals(r);
@@ -97,7 +102,7 @@ public final class EdgePolicy {
         // every reconciliation wastes network/battery and can obscure progress.
         if (remoteAlreadyPresent) return false;
         return "READY".equals(s) || "WAITING_FOR_PC".equals(s)
-                || "HOLD".equals(s) || "REMOTE_QUEUED".equals(s);
+                || "REMOTE_QUEUED".equals(s);
     }
 
     public static int boundedQueueLimit() { return 256; }
