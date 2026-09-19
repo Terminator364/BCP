@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.7"
+SERVER_VERSION = "0.4.8"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -44,6 +44,11 @@ def canonical_json(obj) -> str:
 
 def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def public_identity_fingerprint(token: str) -> str:
+    """Stable non-secret PC identity hint for one-time user confirmation."""
+    return hashlib.sha256(("BCP-PC-IDENTITY:" + token).encode("utf-8")).hexdigest()[:20]
 
 
 def private_or_loopback(addr: str) -> bool:
@@ -1010,6 +1015,7 @@ class Handler(BaseHTTPRequestHandler):
                     "service": "BCP PC Node Windows Native",
                     "version": SERVER_VERSION,
                     "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
+                    "identity_fingerprint": public_identity_fingerprint(self.server.bcp_token),
                     "pairing_open": True,
                     "time": utc_now(),
                 },
@@ -1097,6 +1103,15 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 body = self.read_json()
                 device_name = str(body.get("device_name", ""))[:120]
+                expected_identity = public_identity_fingerprint(self.server.bcp_token)
+                supplied_identity = str(body.get("identity_fingerprint", ""))[:80]
+                if supplied_identity != expected_identity:
+                    self.send_json(409, {
+                        "error": "pc_identity_confirmation_mismatch",
+                        "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
+                        "identity_fingerprint": expected_identity,
+                    })
+                    return
                 existing = read_json(PAIR_PATH, {}) or {}
                 if existing and existing.get("device_name") not in ("", device_name):
                     self.send_json(
@@ -1123,6 +1138,7 @@ class Handler(BaseHTTPRequestHandler):
                         "paired": True,
                         "token": self.server.bcp_token,
                         "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
+                        "identity_fingerprint": expected_identity,
                         "version": SERVER_VERSION,
                     },
                 )
@@ -1285,14 +1301,16 @@ def selftest():
             stale_rejected = str(e).startswith("stale_revision:")
         assert stale_rejected
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.7") > _version_tuple("0.4.6")
-        assert _version_tuple("0.4.7") == (0, 4, 7)
+        assert _version_tuple("0.4.8") > _version_tuple("0.4.7")
+        assert _version_tuple("0.4.8") == (0, 4, 8)
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert '"server_pid": os.getpid()' in source
         assert '"server_sha256": hashlib.sha256' in source
         assert "/v1/edge/update" in source
         assert "BCP_EDGE_CURRENT.apk" in source
         assert "edge_apk_sha256_mismatch" in source
+        assert "identity_fingerprint" in source
+        assert "pc_identity_confirmation_mismatch" in source
         assert "API_BCP" in source and "02_TELEMETRY" in source
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
