@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.8"
+SERVER_VERSION = "0.5.0"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -821,6 +821,142 @@ def connect_db():
     cx = sqlite3.connect(DB_PATH, timeout=15, isolation_level=None)
     cx.row_factory = sqlite3.Row
     return cx
+
+
+MEMORY_LAYERS = ("USER_MEMORY", "PROJECT_MEMORY", "TECHNICAL_KNOWLEDGE", "OPERATING_STATE", "HISTORY", "POLICY")
+
+
+def system_resources() -> dict:
+    total = available = 0
+    try:
+        if os.name == "nt":
+            import ctypes
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("sullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
+            st = MEMORYSTATUSEX()
+            st.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(st)):
+                total, available = int(st.ullTotalPhys), int(st.ullAvailPhys)
+        elif hasattr(os, "sysconf"):
+            page = int(os.sysconf("SC_PAGE_SIZE"))
+            total = page * int(os.sysconf("SC_PHYS_PAGES"))
+            available = page * int(os.sysconf("SC_AVPHYS_PAGES"))
+    except Exception:
+        pass
+    used_pct = round((1.0 - (available / total)) * 100.0, 1) if total > 0 else None
+    return {"total_bytes": total, "available_bytes": available, "used_pct": used_pct}
+
+
+def pc_operating_mode() -> str:
+    used = system_resources().get("used_pct")
+    return "PC_MEMORY_PRESSURE" if isinstance(used, (int, float)) and used >= 85.0 else "PC_AVAILABLE"
+
+
+def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP") -> dict:
+    layer = str(layer or "").upper()
+    if layer not in MEMORY_LAYERS:
+        raise ValueError("invalid_memory_layer")
+    key = str(key or "").strip()
+    if not key or len(key) > 180:
+        raise ValueError("invalid_memory_key")
+    raw = canonical_json(value)
+    if len(raw.encode("utf-8")) > 64000:
+        raise ValueError("memory_value_too_large")
+    now = utc_now()
+    with DB_LOCK:
+        with connect_db() as cx:
+            cx.execute(
+                """INSERT INTO memory_records(project_id,layer,key,value_json,source,updated_at)
+                   VALUES(?,?,?,?,?,?)
+                   ON CONFLICT(project_id,layer,key) DO UPDATE SET
+                   value_json=excluded.value_json,source=excluded.source,updated_at=excluded.updated_at""",
+                (project_id, layer, key, raw, str(source)[:80], now),
+            )
+    return {"project_id": project_id, "layer": layer, "key": key, "updated_at": now}
+
+
+def memory_list(project_id: str, limit_per_layer: int = 24) -> dict:
+    limit_per_layer = max(1, min(int(limit_per_layer), 50))
+    out = {k: [] for k in MEMORY_LAYERS}
+    with connect_db() as cx:
+        for layer in MEMORY_LAYERS:
+            rows = cx.execute(
+                """SELECT key,value_json,source,updated_at FROM memory_records
+                   WHERE project_id=? AND layer=? ORDER BY updated_at DESC LIMIT ?""",
+                (project_id, layer, limit_per_layer),
+            ).fetchall()
+            for row in rows:
+                out[layer].append({
+                    "key": row["key"],
+                    "value": json.loads(row["value_json"]),
+                    "source": row["source"],
+                    "updated_at": row["updated_at"],
+                })
+    return out
+
+
+def build_context_pack(project_id: str) -> dict:
+    return {
+        "schema": "bcp.context_pack/1",
+        "project_id": project_id,
+        "generated_at": utc_now(),
+        "head": get_head(project_id),
+        "recent_events": recent_events(project_id, 8),
+        "memory": memory_list(project_id, 12),
+        "operating_mode": pc_operating_mode(),
+        "resources": system_resources(),
+        "policy": {
+            "default_paid_spend_usd": 0.0,
+            "llm_required_for_known_transitions": False,
+            "chat_history_is_canonical": False,
+        },
+    }
+
+
+def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_pc: bool = True) -> dict:
+    if not idem or len(idem) > 200:
+        raise ValueError("invalid_idempotency_key")
+    if not isinstance(payload, dict):
+        raise ValueError("payload_must_be_object")
+    mode = pc_operating_mode()
+    state = "WAITING_FOR_PC" if requires_pc and mode == "PC_MEMORY_PRESSURE" else "READY"
+    now = utc_now()
+    with DB_LOCK:
+        with connect_db() as cx:
+            old = cx.execute(
+                "SELECT * FROM jobs WHERE project_id=? AND idempotency_key=?",
+                (project_id, idem),
+            ).fetchone()
+            if old:
+                return {"result": "ALREADY_QUEUED", **dict(old)}
+            cur = cx.execute(
+                """INSERT INTO jobs(project_id,kind,payload_json,state,requires_pc,idempotency_key,created_at,updated_at)
+                   VALUES(?,?,?,?,?,?,?,?)""",
+                (project_id, str(kind)[:80], canonical_json(payload), state, 1 if requires_pc else 0, idem, now, now),
+            )
+            job_id = int(cur.lastrowid)
+    return {"result": "QUEUED", "job_id": job_id, "project_id": project_id, "state": state, "operating_mode": mode}
+
+
+def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
+    limit = max(1, min(int(limit), 100))
+    with connect_db() as cx:
+        rows = cx.execute(
+            "SELECT * FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT ?",
+            (project_id, limit),
+        ).fetchall()
+    out = []
+    for row in rows:
+        d = dict(row)
+        d["payload"] = json.loads(d.pop("payload_json"))
+        out.append(d)
+    return out
 
 
 def get_head(project_id: str):
