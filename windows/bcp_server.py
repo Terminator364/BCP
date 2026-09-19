@@ -25,10 +25,11 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.1"
+SERVER_VERSION = "0.4.2"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
+EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
 
@@ -119,6 +120,99 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
         f.write(canonical_json(rec) + "\n")
     return True
 
+
+
+def external_telemetry_roots() -> list[Path]:
+    """Return safe external folders where sanitized runtime truth can be mirrored.
+
+    This path is intentionally independent from the ChatGPT-PC interactive
+    channel. Missing/unmounted candidates are ignored without blocking BCP.
+    """
+    roots: list[Path] = []
+    override = os.environ.get("BCP_EXTERNAL_TELEMETRY_DIR", "").strip()
+    if override:
+        roots.append(Path(override))
+
+    candidates = [
+        Path(r"G:\\Mon Drive\\CHATGPT_PC_AGENT\\03_TELEMETRY\\BCP"),
+        Path(r"G:\\My Drive\\CHATGPT_PC_AGENT\\03_TELEMETRY\\BCP"),
+        Path.home() / "My Drive" / "CHATGPT_PC_AGENT" / "03_TELEMETRY" / "BCP",
+        Path.home() / "Mon Drive" / "CHATGPT_PC_AGENT" / "03_TELEMETRY" / "BCP",
+    ]
+    for p in candidates:
+        try:
+            parent = p
+            while not parent.exists() and parent.parent != parent:
+                parent = parent.parent
+            if parent.exists():
+                roots.append(p)
+        except Exception:
+            pass
+
+    # Existing control folder remains a valid mirror if it is present, but is
+    # not required for the external heartbeat.
+    control = chatgpt_control_folder()
+    if control is not None:
+        roots.append(control / "03_TELEMETRY" / "BCP")
+
+    dedup: list[Path] = []
+    seen = set()
+    for p in roots:
+        key = str(p).lower()
+        if key not in seen:
+            seen.add(key)
+            dedup.append(p)
+    return dedup
+
+
+def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[str]:
+    """Publish sanitized runtime truth to any available synced external folder."""
+    update = read_json(STATE_DIR / "server_update.json", {}) or {}
+    chat = chatgpt_pc_status()
+    rec = {
+        "schema": "bcp.external_runtime/1",
+        "reason": str(reason)[:80],
+        "server_version": SERVER_VERSION,
+        "server_pid": os.getpid(),
+        "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
+        "updated_at": utc_now(),
+        "paired": PAIR_PATH.exists(),
+        "server_file": str(SERVER_FILE),
+        "server_sha256": hashlib.sha256(SERVER_FILE.read_bytes()).hexdigest(),
+        "update_state": str(update.get("state") or "NONE")[:80],
+        "update_target_version": str(update.get("target_version") or "")[:40],
+        "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
+        "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
+        "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
+        "chatgpt_pc_heartbeat_age_seconds": chat.get("heartbeat_age_seconds"),
+        "chatgpt_pc_command_plane": str(chat.get("command_plane") or "")[:80],
+        "chatgpt_pc_command_plane_age_seconds": chat.get("command_plane_age_seconds"),
+        "recovery_phase": str(chat.get("recovery_phase") or "")[:80],
+        "recovery_result_status": str(chat.get("recovery_result_status") or "")[:80],
+    }
+    written: list[str] = []
+    for root in external_telemetry_roots():
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            atomic_json(root / "BCP_RUNTIME_LATEST.json", rec)
+            with (root / "BCP_RUNTIME_EVENTS.jsonl").open("a", encoding="utf-8") as h:
+                h.write(canonical_json(rec) + "\n")
+            written.append(str(root))
+        except Exception:
+            continue
+    return written
+
+
+def start_external_heartbeat_worker() -> None:
+    def worker():
+        while True:
+            try:
+                mirror_external_runtime_status("PERIODIC_HEARTBEAT")
+            except Exception:
+                pass
+            time.sleep(EXTERNAL_HEARTBEAT_INTERVAL_SECONDS)
+
+    threading.Thread(target=worker, daemon=True, name="bcp-external-heartbeat").start()
 
 
 def _file_age_seconds(path: Path) -> float | None:
@@ -974,8 +1068,8 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.1") > _version_tuple("0.4.0")
-        assert _version_tuple("0.4.1") == (0, 4, 1)
+        assert _version_tuple("0.4.2") > _version_tuple("0.4.1")
+        assert _version_tuple("0.4.2") == (0, 4, 2)
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
@@ -993,6 +1087,21 @@ def selftest():
             data = json.loads(raw)
             assert data["schema"] == "bcp.telemetry.bridge/1"
             assert data["last_event_type"] == "PHONE_HEARTBEAT"
+            external = Path(td) / "external"
+            old_external = os.environ.get("BCP_EXTERNAL_TELEMETRY_DIR")
+            os.environ["BCP_EXTERNAL_TELEMETRY_DIR"] = str(external)
+            try:
+                written = mirror_external_runtime_status("SELFTEST")
+                assert str(external) in written
+                runtime = json.loads((external / "BCP_RUNTIME_LATEST.json").read_text(encoding="utf-8"))
+                assert runtime["schema"] == "bcp.external_runtime/1"
+                assert runtime["server_version"] == SERVER_VERSION
+                assert "token" not in json.dumps(runtime).lower()
+            finally:
+                if old_external is None:
+                    os.environ.pop("BCP_EXTERNAL_TELEMETRY_DIR", None)
+                else:
+                    os.environ["BCP_EXTERNAL_TELEMETRY_DIR"] = old_external
         finally:
             if previous is None:
                 os.environ.pop("BCP_CONTROL_FOLDER", None)
@@ -1015,6 +1124,8 @@ def main():
     token = ensure_state()
     server = ThreadingHTTPServer((args.bind, args.port), Handler)
     server.bcp_token = token
+    mirror_external_runtime_status("SERVER_START")
+    start_external_heartbeat_worker()
     start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
     try:
