@@ -3,8 +3,8 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "BCP_0_4_7_FIELD_HEALTHY_ACCEPTANCE_ORACLE_FIX_PENDING_QUALIFICATION",
-  "last_completed_atomic_action": "Read canonical Drive post-reboot evidence: real reboot, runtime return, identity persistence and exact checkpoint recovery all PASS. Runtime heartbeat confirms BCP 0.4.7 UP_TO_DATE, ChatGPT-PC 6.0.32 ALIVE, recovery HEALTHY. Identified managed-listener PID mismatch as an observer false-negative because authenticated diagnostics path/SHA matched the managed server. Patched acceptance oracle in cf83931cfd329437f247405b937d5f3905bce7bb; not yet promoted to Drive CURRENT.",
-  "next_action": "Qualify commit cf83931cfd329437f247405b937d5f3905bce7bb through the full final-acceptance package CI gates before replacing Drive CURRENT. Then run one batched PC+reboot+resource+network acceptance against BCP 0.4.7 and consume B-EDGE telemetry without manual screenshots.",
+  "last_completed_atomic_action": "Implemented B-EDGE Telegram read-only observability adapter, encrypted config, allowlist confirmation flow, long polling service, WorkManager fallback, evidence collector, tests and CI static guards on work branch.",
+  "next_action": "Qualify exact branch head through Android CI. Re-read main and reconcile if moved. Integrate only after exact-SHA green CI. Then stop at human gate for BotFather token plus physical Telegram identity confirmation.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -159,9 +159,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP047-POSTREBOOT-ORACLE-HARDENING",
-    "status": "PATCH_COMMITTED_CI_QUALIFICATION_PENDING",
-    "next_atomic_action": "CI qualify cf83931c then publish CURRENT only if all gates pass",
+    "checkpoint_id": "BCPGO-TELEGRAM-OBS-MVP0-BRANCH-IMPLEMENTED",
+    "status": "CI_QUALIFICATION_PENDING",
+    "next_atomic_action": "QUALIFY_EXACT_BRANCH_HEAD_ANDROID_CI",
     "diagnostic_mode": "MACHINE_READABLE_TELEMETRY_PRIMARY"
   },
   "runtime_verification": {
@@ -614,5 +614,41 @@
     "ci_bound_to_exact_sha": true,
     "force_update_main_normal_automation": false,
     "recovery_branch_for_divergent_work": true
+  },
+  "telegram_observability_mvp0": {
+    "status": "WORK_BRANCH_IMPLEMENTED_CI_QUALIFICATION_PENDING",
+    "branch": "work/bcp/telegram-observability-mvp0-20260919-1038",
+    "writer_session": "chatgpt-api-bcp-telegram-observability-mvp0-20260919-1038",
+    "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
+    "implementation": {
+      "host": "B_EDGE",
+      "mode": "READ_ONLY_MVP0",
+      "commands": [
+        "/status",
+        "/project",
+        "/job",
+        "/last",
+        "/ci",
+        "/holds",
+        "/help"
+      ],
+      "telegram_token_storage": "ANDROID_KEYSTORE_AES_GCM",
+      "identity_authorization": "ONE_PENDING_PRIVATE_IDENTITY_THEN_PHYSICAL_B_EDGE_CONFIRMATION",
+      "foreground_service": "SPECIAL_USE_USER_CONFIGURED_OBSERVABILITY",
+      "workmanager_fallback": true,
+      "active_poller_fence": true,
+      "chat_visibility_default_without_receipt": "UNKNOWN_INTERNAL_CHAT_STATE",
+      "public_github_evidence": [
+        "Terminator364/BCP",
+        "Terminator364/BuildHub"
+      ]
+    },
+    "last_completed_atomic_action": "Implemented B-EDGE Telegram read-only observability adapter, encrypted config, allowlist confirmation flow, long polling service, WorkManager fallback, evidence collector, tests and CI static guards on work branch.",
+    "next_atomic_action": "Qualify exact branch head through Android CI. Re-read main and reconcile if moved. Integrate only after exact-SHA green CI. Then stop at human gate for BotFather token plus physical Telegram identity confirmation.",
+    "human_gate": {
+      "required_after_ci_and_integration": true,
+      "reason": "A real Telegram bot credential and the user's Telegram identity cannot be fabricated or safely committed.",
+      "action": "Enter BotFather token locally in BCP Edge, send /start to the bot, then physically approve the detected identity in BCP Edge."
+    }
   }
 }
