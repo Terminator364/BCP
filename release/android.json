@@ -1,8 +1,8 @@
 {
   "channel": "stable",
-  "version_code": 3,
-  "version_name": "0.2.1-auto-evergreen",
+  "version_code": 7,
+  "version_name": "0.2.5-auto-server-promotion",
   "apk_url": "",
-  "distribution_status": "SIGNED_DISTRIBUTION_PENDING",
-  "note": "Updater is scaffolded; stable signed APK publication will be activated after signing identity is fixed."
+  "distribution_status": "CI_BUILD_PENDING_SIGNED_DISTRIBUTION",
+  "note": "B-EDGE 0.2.5 automatically promotes BCP server after reconnect/pairing. Stable self-update distribution still requires a fixed Android signing identity."
 }
