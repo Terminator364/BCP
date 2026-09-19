@@ -111,6 +111,7 @@ jobs:
               pathlib.Path("windows/bcp_telegram_observability.py"),
               pathlib.Path("windows/CONFIGURE_BCP_TELEGRAM.ps1"),
               pathlib.Path("docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md"),
+              pathlib.Path("docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md"),
           ]
           out = pathlib.Path("BCP_TELEGRAM_OBSERVABILITY_MVP.zip")
           with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as z:
