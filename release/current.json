@@ -15,7 +15,7 @@
     "windows_bcp": {
       "version": "0.6.3",
       "source_manifest": "release/server.json",
-      "qualification": "PENDING",
+      "qualification": "CI_QUALIFIED_FIELD_UNVERIFIED",
       "distribution_ready": true,
       "field_verified": false,
       "auto_update_eligible": true,
@@ -24,7 +24,7 @@
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
         "sha256": "ac9da44abb0c6506df0be9c01529e777b3b4f73daa8f50a952754f9fac1c5c43"
       },
-      "notes": "BCP 0.6.3 keeps hash-pinned self-update/rollback, shortens the convergence window to 30 minutes after this field hop, and stages/launches the Nexus bootstrap bundle exactly once. Fresh exact-head CI and field readback remain required."
+      "notes": "BCP 0.6.3 exact-head release contract and coordinated product CI passed. Hash-pinned self-update/rollback remains active; future convergence is 30 minutes and Nexus bootstrap staging/one-time launch is resident. Fresh field readback remains required."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -43,7 +43,7 @@
     "nexus": {
       "version": "0.1.1",
       "source_manifest": "release/nexus_bootstrap.json",
-      "qualification": "PENDING",
+      "qualification": "CI_QUALIFIED_FIELD_UNVERIFIED",
       "distribution_ready": true,
       "field_verified": false,
       "auto_update_eligible": true,
@@ -52,7 +52,7 @@
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
         "sha256": "2b9f29e4cb8d4c953cccef4bb27a2a7e4653f15d25b19ddabf10227a41f56a1d"
       },
-      "notes": "Nexus bootstrap 0.1.1 is now a hash-pinned four-file bundle staged by resident BCP and launched once. Cloudflare browser authorization remains the only intended human deployment gate; field round-trip is still unverified."
+      "notes": "Nexus bootstrap 0.1.1 exact-head release contract and coordinated product CI passed. The four-file bundle is hash-pinned, staged by resident BCP and launched once. Cloudflare browser authorization remains the intended human gate; field round-trip is still unverified."
     }
   }
 }
