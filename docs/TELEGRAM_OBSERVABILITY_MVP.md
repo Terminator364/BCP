@@ -126,3 +126,19 @@ Promotion states:
 - KINSHASA_SMOKE_PASS / READ_ONLY_FIELD_ACTIVE only after getMe + private getUpdates + sendMessage + /status succeed on the user's normal Kinshasa network without VPN or false geography.
 
 Source-specific absence is represented as NOT_OBSERVED or the applicable UNKNOWN state. Absence of evidence is never converted into a fabricated percentage, RUNNING claim, CI pass, ChatGPT internal state, or field-verification claim.
+
+
+## Field refinement — home-Wi-Fi Telegram egress failure
+
+Kinshasa field smoke proved the read-only cockpit over mobile data. A separate PC-side test on home Wi-Fi proved:
+- DNS resolution for api.telegram.org succeeds;
+- TCP/443 to the resolved Telegram API endpoint times out;
+- therefore direct PC->Telegram over that home-Wi-Fi path is DEGRADED and must not be treated as the only transport.
+
+Steady-state requirement:
+- keep the PC on home Wi-Fi;
+- migrate Telegram transport/failover toward B-EDGE so only small control-plane traffic may use cellular when required;
+- persist events before dispatch and resume after connectivity returns;
+- do not require a full-PC hotspot for routine operation.
+
+See `docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md`.
