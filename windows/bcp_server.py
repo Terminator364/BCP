@@ -1402,7 +1402,7 @@ def _job_dependencies_satisfied(cx, job_id: int) -> bool:
     return int(unresolved["n"] if unresolved else 0) == 0
 
 
-def _recover_and_promote_jobs_locked(cx) -> None:
+def _recover_and_promote_jobs_locked(cx, force_pc_available: bool = False) -> None:
     now = utc_now()
     # Only allowlisted handlers can be replayed automatically after an expired
     # lease. Unknown future handlers fail closed in HOLD.
@@ -1426,7 +1426,7 @@ def _recover_and_promote_jobs_locked(cx) -> None:
                 (now, int(row["id"])),
             )
 
-    mode = pc_operating_mode()
+    mode = "PC_AVAILABLE" if force_pc_available else pc_operating_mode()
     if mode == "PC_AVAILABLE":
         cx.execute(
             """UPDATE jobs SET state='READY',updated_at=?
@@ -1460,8 +1460,8 @@ def _recover_and_promote_jobs_locked(cx) -> None:
             )
 
 
-def claim_next_pc_job(worker_id: str, lease_seconds: int = 90):
-    if pc_operating_mode() != "PC_AVAILABLE":
+def claim_next_pc_job(worker_id: str, lease_seconds: int = 90, resource_gate: bool = True):
+    if resource_gate and pc_operating_mode() != "PC_AVAILABLE":
         return None
     worker_id = str(worker_id or "")[:120]
     if not worker_id:
@@ -1470,7 +1470,7 @@ def claim_next_pc_job(worker_id: str, lease_seconds: int = 90):
     with DB_LOCK:
         with db_connection() as cx:
             cx.execute("BEGIN IMMEDIATE")
-            _recover_and_promote_jobs_locked(cx)
+            _recover_and_promote_jobs_locked(cx, force_pc_available=not resource_gate)
             row = cx.execute(
                 """SELECT * FROM jobs
                    WHERE state='READY' AND requires_pc=1 AND resource_class='PC_R3'
@@ -1903,16 +1903,19 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/v1/orchestrator/status":
+            executor = pc_executor_status()
             self.send_json(200, {
                 "ok": True,
-                "schema": "bcp.orchestrator_status/1",
+                "schema": "bcp.orchestrator_status/2",
                 "server_version": SERVER_VERSION,
                 "operating_mode": pc_operating_mode(),
                 "resources": system_resources(),
                 "memory_layers": list(MEMORY_LAYERS),
                 "durable_queue_ready": True,
-                "pc_executor_ready": False,
-                "pc_executor_state": "CONTRACT_DEFINED_NOT_IMPLEMENTED",
+                "pc_executor_ready": bool(executor.get("started")),
+                "pc_executor_implemented": bool(executor.get("implemented")),
+                "pc_executor_field_verified": False,
+                "pc_executor": executor,
                 "queue_ack_is_completion": False,
                 "default_paid_spend_usd": 0.0,
             })
@@ -2247,7 +2250,8 @@ def selftest():
         assert "recovery_package_sha256_mismatch" in source
         assert "shell=False" in source
         assert "/v1/orchestrator/status" in source
-        assert '"pc_executor_ready": False' in source
+        assert "start_pc_job_executor" in source
+        assert "claim_next_pc_job" in source
         assert '"queue_ack_is_completion": False' in source
         assert 'parts[3] == "context"' in source
         assert 'parts[3] == "memory"' in source
@@ -2416,6 +2420,7 @@ def main():
         mirror_telemetry_status("LIFECYCLE_REGISTRATION_DEGRADED", {"status": "DEGRADED"})
     start_external_heartbeat_worker()
     start_mdns_advertiser(args.port)
+    start_pc_job_executor()
     start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
     try:
