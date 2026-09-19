@@ -103,7 +103,7 @@ function Ensure-NetworkAndFirewall {
 if ($SelfTest) {
     if (-not (Test-Path -LiteralPath $BundledServer -PathType Leaf)) { throw "SELFTEST_BUNDLED_SERVER_MISSING" }
     $raw = Get-Content -Raw -LiteralPath $BundledServer -Encoding UTF8
-    if ($raw -notmatch 'SERVER_VERSION = "0.4.1"') { throw "SELFTEST_SERVER_VERSION_MISMATCH" }
+    if ($raw -notmatch 'SERVER_VERSION = "0.4.2"') { throw "SELFTEST_SERVER_VERSION_MISMATCH" }
     if ($raw -notmatch '/pair' -or $raw -notmatch '/v1/telemetry') { throw "SELFTEST_REQUIRED_ENDPOINTS_MISSING" }
 
     $probeDir = Join-Path ([System.IO.Path]::GetTempPath()) ("bcp-json-selftest-" + [Guid]::NewGuid().ToString("N"))
