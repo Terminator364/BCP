@@ -811,6 +811,33 @@ class Service:
             "Spend: $" + format(spend, ".2f"),
         ])
 
+    def report_summary(self) -> str:
+        return "\n".join([
+            "BCP — Rapport de suivi",
+            "Généré: " + utc_now(),
+            "",
+            self.status(),
+        ])
+
+    def report_technical(self) -> str:
+        return "\n".join([
+            "BCP — Rapport technique",
+            "Généré: " + utc_now(),
+            "",
+            self.details(),
+            "",
+            "MICRO-ACTIONS",
+            self.tail(),
+            "",
+            "MISSIONS",
+            self.missions(),
+        ])
+
+    def report_pdf(self, technical: bool = False) -> bytes:
+        body = self.report_technical() if technical else self.report_summary()
+        title = "BCP Rapport technique" if technical else "BCP Rapport de suivi"
+        return text_pdf_bytes(title, body)
+
     def missions(self) -> str:
         events = self.local.mission_events(200)
         if not events:
@@ -989,7 +1016,9 @@ class Service:
         return (
             "BCP Cockpit — lecture simple\n"
             "/status — mission actuelle\n/missions — missions récentes\n/details — vue technique\n"
+            "/report — PDF de suivi\n/reporttech — PDF technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
+            "Les boutons du cockpit donnent accès aux vues utiles sans retaper les commandes. "
             "Les pourcentages portent seulement sur des plans finis et vérifiables. "
             "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
         )
@@ -1002,7 +1031,7 @@ class Service:
         cmd = first.split("@", 1)[0].lower()
         arg = rest[0].strip() if rest else ""
         if cmd not in READ_ONLY_COMMANDS:
-            return "Lecture seule: /status /missions /details /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Lecture seule: /status /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -1023,6 +1052,10 @@ class Service:
             return self.last()
         if cmd == "/ci":
             return self.ci()
+        if cmd == "/report":
+            return "REPORT_PDF_SUMMARY"
+        if cmd == "/reporttech":
+            return "REPORT_PDF_TECHNICAL"
         return self.holds()
 
 
