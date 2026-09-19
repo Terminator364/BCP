@@ -203,8 +203,149 @@ Write-Host "The BotFather token will stay on this PC only."
 Write-Host "Do NOT paste it into ChatGPT, GitHub, Drive, source files, issues, or PRs."
 Write-Host ""
 
-$secure = Read-Host "Paste the BotFather token here locally" -AsSecureString
-$token = Convert-SecureToPlain $secure
+$secure = $null
+$token = $null
+if (Test-Path -LiteralPath $TokenPath -PathType Leaf) {
+    try {
+        $existingToken = ([System.IO.File]::ReadAllText($TokenPath)).Trim()
+        if ($existingToken -match '^\d{6,12}:[A-Za-z0-9_-]{20,}
+    if ($token -notmatch '^\d{6,12}:[A-Za-z0-9_-]{20,}$') {
+        throw "TELEGRAM_TOKEN_FORMAT_INVALID"
+    }
+
+    $me = Invoke-Telegram $token "getMe" @{} 20
+    if (-not $me.ok -or -not $me.result.username) {
+        throw "TELEGRAM_GETME_FAILED"
+    }
+    $username = [string]$me.result.username
+
+    $webhook = Invoke-Telegram $token "getWebhookInfo" @{} 20
+    if ($webhook.ok -and [string]$webhook.result.url) {
+        throw "TELEGRAM_WEBHOOK_ALREADY_CONFIGURED_REFUSING_TO_OVERRIDE"
+    }
+
+    Copy-Item -Force -LiteralPath $SourceBot -Destination $InstalledBot
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($TokenPath, $token + [Environment]::NewLine, $utf8)
+    Protect-LocalFile $TokenPath
+
+    Write-Host ""
+    Write-Host ("Bot verified: @" + $username)
+    Write-Host ("Open Telegram -> @" + $username + " -> Start, then send /status.")
+    Write-Host "BCP will detect only a PRIVATE chat. No chat ID copy/paste is needed."
+    Write-Host ""
+
+    $nextOffset = 0
+    $candidate = $null
+    $deadline = [DateTime]::UtcNow.AddMinutes(10)
+    while ([DateTime]::UtcNow -lt $deadline -and -not $candidate) {
+        $updates = Invoke-Telegram $token "getUpdates" @{
+            offset = $nextOffset
+            timeout = 20
+            allowed_updates = @("message")
+        } 30
+        foreach ($update in @($updates.result)) {
+            $uid = [int64]$update.update_id
+            if ($uid -ge $nextOffset) { $nextOffset = $uid + 1 }
+            if ($update.message -and $update.message.chat -and [string]$update.message.chat.type -eq "private") {
+                $candidate = $update.message
+            }
+        }
+    }
+    if (-not $candidate) {
+        throw "HUMAN_GATE_NO_PRIVATE_TELEGRAM_MESSAGE_OBSERVED_RESUMABLE"
+    }
+
+    $chatId = [int64]$candidate.chat.id
+    $display = ([string]$candidate.from.first_name + " " + [string]$candidate.from.last_name).Trim()
+    $tgUser = [string]$candidate.from.username
+    Write-Host ("Detected private Telegram identity: " + $display + " @" + $tgUser)
+    $confirm = Read-Host "Authorize this PRIVATE chat for READ-ONLY BCP observability? Type YES"
+    if ($confirm -ne "YES") {
+        throw "HUMAN_GATE_CHAT_ID_NOT_AUTHORIZED"
+    }
+
+    $config = [ordered]@{
+        schema = "bcp.telegram_observability_config/1"
+        mode = "READ_ONLY"
+        allowed_chat_id = $chatId
+        default_project = "API/BCP"
+        github_repo = "Terminator364/BCP"
+        writer_branch = ""
+        polling = [ordered]@{
+            transport = "TELEGRAM_LONG_POLL"
+            timeout_seconds = 50
+            aggressive_polling = $false
+        }
+        budget = [ordered]@{
+            paid_spend_usd = 0.0
+            auto_billing = $false
+        }
+        configured_at = UtcNow
+    }
+    Write-JsonAtomic $config $ConfigPath
+    Protect-LocalFile $ConfigPath
+
+    & $Python $InstalledBot --selftest
+    if ($LASTEXITCODE -ne 0) { throw "BOT_SELFTEST_FAILED" }
+
+    Stop-ExistingBot
+    New-Item -ItemType Directory -Force -Path $RunKey | Out-Null
+    $runCommand = '"' + $Python + '" "' + $InstalledBot + '"'
+    Set-ItemProperty -Path $RunKey -Name $RunName -Value $runCommand
+
+    $proc = Start-Process -FilePath $Python -ArgumentList @($InstalledBot) -WindowStyle Hidden -PassThru
+    Start-Sleep -Seconds 2
+    if ($proc.HasExited) { throw "BOT_PROCESS_EXITED_EARLY" }
+
+    $chatHash = [Convert]::ToHexString(
+        [Security.Cryptography.SHA256]::HashData(
+            [Text.Encoding]::UTF8.GetBytes([string]$chatId)
+        )
+    ).ToLowerInvariant().Substring(0,16)
+
+    $receipt = [ordered]@{
+        schema = "bcp.telegram_setup_receipt/1"
+        status = "CONFIGURED"
+        bot_username = $username
+        allowed_chat_id_sha256_prefix = $chatHash
+        token_stored = "LOCAL_ONLY"
+        token_logged = $false
+        startup = "HKCU_RUN"
+        python = $Python
+        process_id = $proc.Id
+        configured_at = UtcNow
+        spend_usd = 0.0
+        field_gate = "KINSHASA_LIVE_MESSAGE_PENDING"
+    }
+    Write-JsonAtomic $receipt $ReceiptPath
+
+    Invoke-Telegram $token "sendMessage" @{
+        chat_id = $chatId
+        text = 'BCP Telegram Observability MVP connecté. Mode READ-ONLY. Teste /status, /ci et /holds. Spend: $0.00'
+        disable_web_page_preview = $true
+    } 20 | Out-Null
+
+    Write-Host ""
+    Write-Host "BCP_TELEGRAM_LOCAL_SETUP=PASS"
+    Write-Host ("Bot: @" + $username)
+    Write-Host "Mode: READ_ONLY"
+    Write-Host 'Spend: $0.00'
+    Write-Host "Final field gate: verify that /status replies over your normal Kinshasa connection."
+} finally {
+    $token = $null
+    $secure = $null
+}
+) {
+            $token = $existingToken
+            Write-Host "Reusing previously verified local BotFather token. No copy/paste needed."
+        }
+    } catch {}
+}
+if (-not $token) {
+    $secure = Read-Host "Paste the BotFather token here locally" -AsSecureString
+    $token = Convert-SecureToPlain $secure
+}
 try {
     if ($token -notmatch '^\d{6,12}:[A-Za-z0-9_-]{20,}$') {
         throw "TELEGRAM_TOKEN_FORMAT_INVALID"
