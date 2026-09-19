@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_MERGED_AWAITING_RESIDENT_CONVERGENCE",
-  "last_completed_atomic_action": "PR #52 merged to main at 88e1844129d0f0c031eb2a29eddb83857487e42b after all exact-head CI gates passed. Main now publishes Nexus bootstrap 0.1.2 with pinned portable Node.js 24.21.0 and Wrangler 4.135.0 so WRANGLER_RUNTIME_REQUIRED is no longer a manual installation requirement. Latest machine heartbeat after merge still reports bundle 0.1.1/WRANGLER_RUNTIME_REQUIRED, which is expected until the resident updater observes the new manifest.",
-  "next_action": "No user reinstall or token/file copy. Wait for the resident BCP 0.6.3 updater to observe Nexus manifest 0.1.2, then verify external runtime telemetry. If it reaches LAUNCHED/CLOUDFLARE_LOGIN_REQUIRED, the only human gate is one-time Cloudflare browser authorization. If it reaches COMMITTED, verify Nexus receipt and one Telegram /status round trip on home Wi-Fi. If it remains on 0.1.1 beyond a full convergence window, diagnose manifest/update evidence rather than replaying installation.",
+  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_EXITED_DIAGNOSTIC_RELEASE_0_6_4_0_1_3_CANDIDATE",
+  "last_completed_atomic_action": "Fresh Drive telemetry at 2026-09-19T21:07:42Z proves BCP 0.6.3 alive/paired/UP_TO_DATE and Nexus bundle 0.1.2 present, but the Nexus bootstrap exited without a success receipt. Telegram cockpit human-progress V2 was merged separately in PR #54 after all exact-head CI gates passed.",
+  "next_action": "Qualify BCP 0.6.4 + Nexus 0.1.3. This release externalizes bootstrap exit_code/receipt_status and writes a secret-free failure receipt so the next resident zero-touch attempt can be diagnosed without reinstall, token re-entry, file copy, or screenshot. If the receipt reports HUMAN_AUTH_REQUIRED, the only intended human gate is one Cloudflare browser authorization; otherwise fix the classified failure from durable evidence.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,13 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-PR52-MERGED-AWAITING-NEXUS-012-CONVERGENCE-20260919",
-    "status": "PR52_MERGED_FIELD_CONVERGENCE_PENDING",
-    "last_completed_action": "Merged PR #52 after Nexus Transport, CURRENT Release Contract, and Coordinated Product Qualification all passed exact-head.",
-    "next_atomic_action": "Read external BCP runtime after resident convergence; act only on new durable evidence.",
+    "checkpoint_id": "BCP-NEXUS-EXIT-DIAGNOSTIC-CANDIDATE-20260919",
+    "status": "CANDIDATE_CI_PENDING",
+    "last_completed_action": "Human-first Telegram cockpit V2 merged; Nexus EXITED_NO_RECEIPT reproduced in fresh Drive telemetry.",
+    "next_atomic_action": "Run exact-head CI for BCP 0.6.4/Nexus 0.1.3, then serialized merge only if green; wait for resident convergence and read machine receipt.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "main",
-    "base_main_sha": "88e1844129d0f0c031eb2a29eddb83857487e42b",
+    "branch": "work/bcp/nexus-resume-diagnostics-20260919-2115",
+    "base_main_sha": "47a0d5b67b3e2c4c974fd566dd787eaba8b5686e",
     "no_replay": true
   },
   "runtime_verification": {
@@ -970,5 +970,16 @@
     "admin_required": false,
     "telegram_secret_reentry_required": false,
     "field_state": "AWAITING_RESIDENT_MANIFEST_CONVERGENCE"
+  },
+  "latest_machine_nexus_evidence": {
+    "source": "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "observed_updated_at": "2026-09-19T21:07:42+00:00",
+    "evidence_class": "FRESH_MACHINE_READABLE_FIELD_RUNTIME",
+    "server_version": "0.6.3",
+    "paired": true,
+    "update_state": "UP_TO_DATE",
+    "nexus_bootstrap_bundle_version": "0.1.2",
+    "nexus_bootstrap_state": "EXITED_NO_RECEIPT",
+    "conclusion": "Runtime alive; Nexus transport not yet committed."
   }
 }
