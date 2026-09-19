@@ -587,7 +587,9 @@ public final class BcpClient {
 
     public void heartbeat(String reason) {
         telemetry.add("PHONE_HEARTBEAT", reason == null ? "FOREGROUND" : reason);
-        syncOrchestrationState();
+        if (orchestrator.shouldRunPeriodicSync(5L * 60L * 1000L)) {
+            syncOrchestrationState();
+        }
         flushTelemetry();
     }
 
