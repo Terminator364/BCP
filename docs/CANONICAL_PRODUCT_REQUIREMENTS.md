@@ -106,16 +106,16 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.6.
+Current target: BCP 0.4.7.
 
-BCP 0.4.6 keeps the 0.4.5 revision-precondition/stale-writer guarantees and adds native managed-runtime proof in authenticated diagnostics: server PID, exact server path, SHA-256 and lifecycle registration. Process CommandLine visibility is not an acceptance oracle.
+BCP 0.4.7 keeps the 0.4.6 field-proof guarantees and adds an authenticated local B-EDGE update relay backed by the canonical Drive installer folder. The server recomputes the APK SHA-256 before exposing release metadata or bytes.
 
 Promotion gate:
 - CI qualification PASS;
 - Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.6;
+- existing managed-update path consumes 0.4.7;
 - `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.6 runtime;
+- its timestamp/version/hash prove a live 0.4.7 runtime;
 - B-EDGE telemetry/readback follows.
 
 No blind reinstall is allowed merely because telemetry is missing.
@@ -219,3 +219,21 @@ Known legacy BCP artifacts in the Windows Downloads folder are deleted by exact 
 ### Publication gate
 
 A Drive `CURRENT` artifact MUST NOT be replaced by an unqualified build. Publication requires all applicable public GitHub CI gates to pass first: syntax/parse, self-test, internal object-contract checks, version/manifest cross-checks, server self-test and package creation. Failed/cancelled builds remain diagnostic evidence only and are never promoted to `API_BCP/00_A_INSTALLER`.
+
+
+## P0 — B-EDGE Evergreen distribution
+
+The canonical Android line is B-EDGE Evergreen.
+
+Requirements:
+- stable package identity and stable Android signing certificate;
+- private signing key MUST remain outside public GitHub;
+- public GitHub receives only non-secret certificate fingerprint/release metadata and must qualify source/unsigned APK before signing;
+- signed APK promotion to `API_BCP/00_A_INSTALLER/BCP_EDGE_CURRENT.apk` happens only after all Android CI gates pass;
+- B-EDGE downloads future updates through the authenticated local BCP relay, not from an unauthenticated arbitrary URL;
+- update manifest package ID, version, APK SHA-256 and signing-certificate SHA-256 are verified before installation;
+- APK payload lives in app-owned cache and is cleaned after a verified successful update;
+- normal micro-patch flow is one tap in B-EDGE plus the Android installation confirmation required by the OS;
+- update failures never destroy pairing or canonical project state;
+- the first transition from the legacy debug-signed 0.2.5 line may use a one-time side-by-side Evergreen package because the old ephemeral signing key cannot be recovered safely;
+- subsequent Evergreen versions MUST update in place without uninstall/reinstall cycles.
