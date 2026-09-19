@@ -34,13 +34,13 @@ public interface EdgeDao {
     @Query("SELECT COUNT(*) FROM edge_receipts WHERE idempotencyKey = :key")
     int receiptCount(String key);
 
-    @Query("SELECT COUNT(*) FROM edge_job_dependencies d JOIN edge_jobs j ON j.localId = d.dependsOnJobId WHERE d.jobId = :jobId AND j.state NOT IN ('DONE','COMMITTED')")
+    @Query("SELECT COUNT(*) FROM edge_job_dependencies d WHERE d.jobId = :jobId AND NOT EXISTS (SELECT 1 FROM edge_receipts r WHERE r.jobId = d.dependsOnJobId)")
     int unresolvedDependencies(String jobId);
 
-    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
+    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
     List<EdgeJobEntity> pendingJobs(String projectId, int limit);
 
-    @Query("SELECT COUNT(*) FROM edge_jobs WHERE state IN ('READY','WAITING_FOR_PC','HOLD')")
+    @Query("SELECT COUNT(*) FROM edge_jobs WHERE state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED')")
     int countPendingJobs();
 
     @Query("SELECT * FROM edge_memory WHERE projectId = :projectId AND scope = :scope AND (expiresAt IS NULL OR expiresAt > :now) ORDER BY pinned DESC, updatedAt DESC LIMIT :limit")
