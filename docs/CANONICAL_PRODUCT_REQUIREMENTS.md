@@ -655,3 +655,23 @@ Requirements:
 
 Canonical detailed policy:
 `docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md`.
+ 
+
+## P0/P1A — Progress Presence during opaque ChatGPT/UI delays
+
+The immediate user-facing objective of the Telegram cockpit is certainty of progress when ChatGPT UI is delayed, interrupted, disconnected or under additional verification.
+
+BCP MUST provide proactive, durable progress presence from external evidence:
+- per-mission event journal;
+- current component/step and elapsed time;
+- last confirmed checkpoint/proof;
+- next safe action;
+- transition notifications;
+- sparse adaptive waiting heartbeats;
+- explicit `NO_NEW_EXTERNAL_EVIDENCE` / `WAITING_EXTERNAL_CHAT_RESULT` instead of invented thinking progress;
+- Telegram `/watch`, `/tail`, `/where` surfaces.
+
+This does not claim access to hidden model chain-of-thought or internal platform verification state.
+
+Detailed contract:
+`docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md`.
