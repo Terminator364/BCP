@@ -16,7 +16,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 from urllib.request import Request, urlopen
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
@@ -25,13 +25,15 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.5.0"
+SERVER_VERSION = "0.6.0"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
+RESOURCE_LOCK = threading.RLock()
+_RESOURCE_MODE = "PC_AVAILABLE"
 
 
 def utc_now() -> str:
@@ -818,8 +820,33 @@ def ensure_state() -> str:
                 key TEXT NOT NULL,
                 value_json TEXT NOT NULL,
                 source TEXT NOT NULL,
+                evidence_class TEXT NOT NULL DEFAULT 'LEGACY',
+                provenance_id TEXT NOT NULL DEFAULT '',
+                pinned INTEGER NOT NULL DEFAULT 0,
+                expires_at TEXT,
                 updated_at TEXT NOT NULL,
                 PRIMARY KEY(project_id,layer,key)
+            )"""
+        )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS memory_candidates(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id TEXT NOT NULL,
+                layer TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value_json TEXT NOT NULL,
+                source TEXT NOT NULL,
+                evidence_class TEXT NOT NULL,
+                provenance_id TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'CANDIDATE'
+            )"""
+        )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS coordinator_epochs(
+                project_id TEXT PRIMARY KEY,
+                epoch INTEGER NOT NULL,
+                updated_at TEXT NOT NULL
             )"""
         )
         cx.execute(
@@ -831,11 +858,39 @@ def ensure_state() -> str:
                 state TEXT NOT NULL,
                 requires_pc INTEGER NOT NULL,
                 idempotency_key TEXT NOT NULL,
+                action_id TEXT NOT NULL DEFAULT '',
+                priority INTEGER NOT NULL DEFAULT 50,
+                resource_class TEXT NOT NULL DEFAULT 'PC_R3',
+                expected_revision INTEGER,
+                input_hash TEXT NOT NULL DEFAULT '',
+                coordinator_epoch INTEGER NOT NULL DEFAULT 1,
+                evidence_contract TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 UNIQUE(project_id,idempotency_key)
             )"""
         )
+        def ensure_column(table, name, ddl):
+            cols = {row[1] for row in cx.execute(f"PRAGMA table_info({table})").fetchall()}
+            if name not in cols:
+                cx.execute(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+        for name, ddl in [
+            ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'LEGACY'"),
+            ("provenance_id", "provenance_id TEXT NOT NULL DEFAULT ''"),
+            ("pinned", "pinned INTEGER NOT NULL DEFAULT 0"),
+            ("expires_at", "expires_at TEXT")
+        ]:
+            ensure_column("memory_records", name, ddl)
+        for name, ddl in [
+            ("action_id", "action_id TEXT NOT NULL DEFAULT ''"),
+            ("priority", "priority INTEGER NOT NULL DEFAULT 50"),
+            ("resource_class", "resource_class TEXT NOT NULL DEFAULT 'PC_R3'"),
+            ("expected_revision", "expected_revision INTEGER"),
+            ("input_hash", "input_hash TEXT NOT NULL DEFAULT ''"),
+            ("coordinator_epoch", "coordinator_epoch INTEGER NOT NULL DEFAULT 1"),
+            ("evidence_contract", "evidence_contract TEXT NOT NULL DEFAULT ''")
+        ]:
+            ensure_column("jobs", name, ddl)
         cx.commit()
     finally:
         cx.close()
@@ -849,6 +904,12 @@ def connect_db():
 
 
 MEMORY_LAYERS = ("USER_MEMORY", "PROJECT_MEMORY", "TECHNICAL_KNOWLEDGE", "OPERATING_STATE", "HISTORY", "POLICY")
+TRUSTED_EVIDENCE = {"USER_DECLARED", "MACHINE_READBACK", "VERIFIED", "SIGNED_CONFIG", "FIELD_VERIFIED"}
+CONTEXT_MAX_BYTES = 24 * 1024
+RESOURCE_ENTER_USED_PCT = 86.0
+RESOURCE_EXIT_USED_PCT = 78.0
+RESOURCE_ENTER_AVAILABLE_BYTES = 384 * 1024 * 1024
+RESOURCE_EXIT_AVAILABLE_BYTES = 640 * 1024 * 1024
 
 
 def system_resources() -> dict:
@@ -878,13 +939,42 @@ def system_resources() -> dict:
     return {"total_bytes": total, "available_bytes": available, "used_pct": used_pct}
 
 
+def resource_mode_from_snapshot(snapshot: dict, previous: str = "PC_AVAILABLE") -> str:
+    used = snapshot.get("used_pct")
+    available = int(snapshot.get("available_bytes") or 0)
+    known = isinstance(used, (int, float)) and int(snapshot.get("total_bytes") or 0) > 0
+    if not known:
+        return previous
+    if previous == "PC_MEMORY_PRESSURE":
+        if used <= RESOURCE_EXIT_USED_PCT and available >= RESOURCE_EXIT_AVAILABLE_BYTES:
+            return "PC_AVAILABLE"
+        return "PC_MEMORY_PRESSURE"
+    if used >= RESOURCE_ENTER_USED_PCT or available <= RESOURCE_ENTER_AVAILABLE_BYTES:
+        return "PC_MEMORY_PRESSURE"
+    return "PC_AVAILABLE"
+
+
 def pc_operating_mode() -> str:
-    used = system_resources().get("used_pct")
-    return "PC_MEMORY_PRESSURE" if isinstance(used, (int, float)) and used >= 85.0 else "PC_AVAILABLE"
+    global _RESOURCE_MODE
+    with RESOURCE_LOCK:
+        _RESOURCE_MODE = resource_mode_from_snapshot(system_resources(), _RESOURCE_MODE)
+        return _RESOURCE_MODE
 
 
-def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP") -> dict:
+def _memory_admissible(layer: str, evidence_class: str, pinned: bool) -> bool:
+    evidence_class = str(evidence_class or "UNVERIFIED").upper()
+    if evidence_class in TRUSTED_EVIDENCE:
+        return True
+    if pinned:
+        return False
+    return layer in {"OPERATING_STATE", "HISTORY"}
+
+
+def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP",
+               evidence_class: str = "UNVERIFIED", provenance_id: str = "",
+               pinned: bool = False, expires_at: str | None = None) -> dict:
     layer = str(layer or "").upper()
+    evidence_class = str(evidence_class or "UNVERIFIED").upper()
     if layer not in MEMORY_LAYERS:
         raise ValueError("invalid_memory_layer")
     key = str(key or "").strip()
@@ -894,61 +984,133 @@ def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP"
     if len(raw.encode("utf-8")) > 64000:
         raise ValueError("memory_value_too_large")
     now = utc_now()
+    admitted = _memory_admissible(layer, evidence_class, bool(pinned))
     with DB_LOCK:
         with connect_db() as cx:
+            if not admitted:
+                cur = cx.execute(
+                    """INSERT INTO memory_candidates(project_id,layer,key,value_json,source,evidence_class,provenance_id,created_at,status)
+                       VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (project_id, layer, key, raw, str(source)[:80], evidence_class,
+                     str(provenance_id)[:160], now, "CANDIDATE"),
+                )
+                return {"result": "CANDIDATE", "candidate_id": int(cur.lastrowid),
+                        "project_id": project_id, "layer": layer, "key": key, "updated_at": now}
             cx.execute(
-                """INSERT INTO memory_records(project_id,layer,key,value_json,source,updated_at)
-                   VALUES(?,?,?,?,?,?)
+                """INSERT INTO memory_records(project_id,layer,key,value_json,source,evidence_class,provenance_id,pinned,expires_at,updated_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(project_id,layer,key) DO UPDATE SET
-                   value_json=excluded.value_json,source=excluded.source,updated_at=excluded.updated_at""",
-                (project_id, layer, key, raw, str(source)[:80], now),
+                   value_json=excluded.value_json,source=excluded.source,
+                   evidence_class=excluded.evidence_class,provenance_id=excluded.provenance_id,
+                   pinned=excluded.pinned,expires_at=excluded.expires_at,updated_at=excluded.updated_at""",
+                (project_id, layer, key, raw, str(source)[:80], evidence_class,
+                 str(provenance_id)[:160], 1 if pinned else 0, expires_at, now),
             )
-    return {"project_id": project_id, "layer": layer, "key": key, "updated_at": now}
+    return {"result": "COMMITTED_MEMORY", "project_id": project_id, "layer": layer,
+            "key": key, "evidence_class": evidence_class, "pinned": bool(pinned), "updated_at": now}
 
 
 def memory_list(project_id: str, limit_per_layer: int = 24) -> dict:
     limit_per_layer = max(1, min(int(limit_per_layer), 50))
     out = {k: [] for k in MEMORY_LAYERS}
+    now = utc_now()
     with connect_db() as cx:
         for layer in MEMORY_LAYERS:
             rows = cx.execute(
-                """SELECT key,value_json,source,updated_at FROM memory_records
-                   WHERE project_id=? AND layer=? ORDER BY updated_at DESC LIMIT ?""",
-                (project_id, layer, limit_per_layer),
+                """SELECT key,value_json,source,evidence_class,provenance_id,pinned,expires_at,updated_at
+                   FROM memory_records WHERE project_id=? AND layer=?
+                   AND (expires_at IS NULL OR expires_at > ?)
+                   ORDER BY pinned DESC, updated_at DESC LIMIT ?""",
+                (project_id, layer, now, limit_per_layer),
             ).fetchall()
             for row in rows:
                 out[layer].append({
-                    "key": row["key"],
-                    "value": json.loads(row["value_json"]),
-                    "source": row["source"],
+                    "key": row["key"], "value": json.loads(row["value_json"]),
+                    "source": row["source"], "evidence_class": row["evidence_class"],
+                    "provenance_id": row["provenance_id"], "pinned": bool(row["pinned"]),
                     "updated_at": row["updated_at"],
                 })
     return out
 
 
-def build_context_pack(project_id: str) -> dict:
-    return {
-        "schema": "bcp.context_pack/1",
+def _context_score(entry: dict, task_terms: set[str]) -> int:
+    score = 100 if entry.get("pinned") else 0
+    if str(entry.get("evidence_class") or "") in TRUSTED_EVIDENCE:
+        score += 30
+    hay = (str(entry.get("key") or "") + " " + canonical_json(entry.get("value"))).lower()
+    score += sum(12 for term in task_terms if term and term in hay)
+    return score
+
+
+def build_context_pack(project_id: str, task: str = "", max_bytes: int = CONTEXT_MAX_BYTES) -> dict:
+    max_bytes = max(4096, min(int(max_bytes or CONTEXT_MAX_BYTES), 65536))
+    terms = {x.lower() for x in str(task or "").replace("/", " ").replace("_", " ").split() if len(x) >= 3}
+    source = memory_list(project_id, 50)
+    selected = {k: [] for k in MEMORY_LAYERS}
+    candidates = []
+    for layer, entries in source.items():
+        for e in entries:
+            candidates.append((_context_score(e, terms), layer, e))
+    candidates.sort(key=lambda x: (x[0], x[2].get("updated_at", "")), reverse=True)
+    base = {
+        "schema": "bcp.context_pack/2",
         "project_id": project_id,
         "generated_at": utc_now(),
         "head": get_head(project_id),
-        "recent_events": recent_events(project_id, 8),
-        "memory": memory_list(project_id, 12),
+        "recent_events": recent_events(project_id, 6),
+        "memory": selected,
         "operating_mode": pc_operating_mode(),
         "resources": system_resources(),
+        "task": str(task or "")[:500],
         "policy": {
             "default_paid_spend_usd": 0.0,
             "llm_required_for_known_transitions": False,
             "chat_history_is_canonical": False,
         },
     }
+    for _, layer, entry in candidates:
+        selected[layer].append(entry)
+        if len(canonical_json(base).encode("utf-8")) > max_bytes:
+            selected[layer].pop()
+    base["source_revision"] = int((base.get("head") or {}).get("revision") or 0)
+    base["context_hash"] = sha256_text(canonical_json({
+        "project_id": project_id, "source_revision": base["source_revision"],
+        "memory": selected, "task": base["task"]
+    }))
+    base["size_bytes"] = len(canonical_json(base).encode("utf-8"))
+    return base
 
 
-def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_pc: bool = True) -> dict:
+def current_coordinator_epoch(project_id: str) -> int:
+    with DB_LOCK:
+        with connect_db() as cx:
+            row = cx.execute("SELECT epoch FROM coordinator_epochs WHERE project_id=?", (project_id,)).fetchone()
+            if row:
+                return int(row["epoch"])
+            cx.execute("INSERT OR IGNORE INTO coordinator_epochs(project_id,epoch,updated_at) VALUES(?,?,?)",
+                       (project_id, 1, utc_now()))
+            return 1
+
+
+def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_pc: bool = True,
+                action_id: str = "", priority: int = 50, resource_class: str = "",
+                expected_revision: int | None = None, coordinator_epoch: int | None = None,
+                evidence_contract: str = "") -> dict:
     if not idem or len(idem) > 200:
         raise ValueError("invalid_idempotency_key")
     if not isinstance(payload, dict):
         raise ValueError("payload_must_be_object")
+    priority = max(0, min(int(priority), 100))
+    resource_class = str(resource_class or ("PC_R3" if requires_pc else "EDGE_R1"))[:32]
+    action_id = str(action_id or sha256_text(project_id + "\n" + idem))[:80]
+    input_hash = sha256_text(canonical_json(payload))
+    epoch = current_coordinator_epoch(project_id)
+    if coordinator_epoch is not None and int(coordinator_epoch) != epoch:
+        raise ValueError(f"stale_coordinator_epoch:{coordinator_epoch}:{epoch}")
+    head = get_head(project_id)
+    head_revision = int((head or {}).get("revision") or 0)
+    if expected_revision is not None and int(expected_revision) != head_revision:
+        raise ValueError(f"stale_job_revision:{expected_revision}:{head_revision}")
     mode = pc_operating_mode()
     state = "WAITING_FOR_PC" if requires_pc and mode == "PC_MEMORY_PRESSURE" else "READY"
     now = utc_now()
@@ -961,19 +1123,27 @@ def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_p
             if old:
                 return {"result": "ALREADY_QUEUED", **dict(old)}
             cur = cx.execute(
-                """INSERT INTO jobs(project_id,kind,payload_json,state,requires_pc,idempotency_key,created_at,updated_at)
-                   VALUES(?,?,?,?,?,?,?,?)""",
-                (project_id, str(kind)[:80], canonical_json(payload), state, 1 if requires_pc else 0, idem, now, now),
+                """INSERT INTO jobs(project_id,kind,payload_json,state,requires_pc,idempotency_key,
+                   action_id,priority,resource_class,expected_revision,input_hash,coordinator_epoch,
+                   evidence_contract,created_at,updated_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (project_id, str(kind)[:80], canonical_json(payload), state, 1 if requires_pc else 0,
+                 idem, action_id, priority, resource_class, expected_revision, input_hash, epoch,
+                 str(evidence_contract)[:240], now, now),
             )
             job_id = int(cur.lastrowid)
-    return {"result": "QUEUED", "job_id": job_id, "project_id": project_id, "state": state, "operating_mode": mode}
+    return {"result": "QUEUED", "job_id": job_id, "action_id": action_id,
+            "project_id": project_id, "state": state, "operating_mode": mode,
+            "input_hash": input_hash, "coordinator_epoch": epoch,
+            "expected_revision": expected_revision, "resource_class": resource_class,
+            "priority": priority}
 
 
 def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
     limit = max(1, min(int(limit), 100))
     with connect_db() as cx:
         rows = cx.execute(
-            "SELECT * FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT ?",
+            "SELECT * FROM jobs WHERE project_id=? ORDER BY priority DESC,id DESC LIMIT ?",
             (project_id, limit),
         ).fetchall()
     out = []
@@ -1167,7 +1337,9 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
         if path == "/health":
             self.send_json(
                 200,
@@ -1225,6 +1397,13 @@ class Handler(BaseHTTPRequestHandler):
                 "operating_mode": pc_operating_mode(),
                 "resources": system_resources(),
                 "memory_layers": list(MEMORY_LAYERS),
+                "coordinator_epoch": current_coordinator_epoch("buildhub"),
+                "resource_governor": {
+                    "enter_used_pct": RESOURCE_ENTER_USED_PCT,
+                    "exit_used_pct": RESOURCE_EXIT_USED_PCT,
+                    "enter_available_bytes": RESOURCE_ENTER_AVAILABLE_BYTES,
+                    "exit_available_bytes": RESOURCE_EXIT_AVAILABLE_BYTES,
+                },
                 "default_paid_spend_usd": 0.0,
             })
             return
@@ -1264,7 +1443,9 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 return
             if parts[3] == "context":
-                self.send_json(200, build_context_pack(project))
+                task = (query.get("task") or [""])[0]
+                max_bytes = int((query.get("max_bytes") or [str(CONTEXT_MAX_BYTES)])[0])
+                self.send_json(200, build_context_pack(project, task=task, max_bytes=max_bytes))
                 return
             if parts[3] == "jobs":
                 self.send_json(200, {"project_id": project, "jobs": jobs_snapshot(project)})
@@ -1384,7 +1565,11 @@ class Handler(BaseHTTPRequestHandler):
                 body = self.read_json()
                 receipt = memory_put(
                     parts[2], body.get("layer"), body.get("key"),
-                    body.get("value"), body.get("source", "B-EDGE")
+                    body.get("value"), body.get("source", "B-EDGE"),
+                    body.get("evidence_class", "UNVERIFIED"),
+                    body.get("provenance_id", ""),
+                    bool(body.get("pinned", False)),
+                    body.get("expires_at")
                 )
                 self.send_json(200, {"ok": True, **receipt})
             except Exception as e:
@@ -1397,7 +1582,10 @@ class Handler(BaseHTTPRequestHandler):
                 idem = self.headers.get("Idempotency-Key") or body.get("idempotency_key")
                 receipt = enqueue_job(
                     parts[2], body.get("kind", "generic"), body.get("payload", {}),
-                    str(idem or ""), bool(body.get("requires_pc", True))
+                    str(idem or ""), bool(body.get("requires_pc", True)),
+                    body.get("action_id", ""), body.get("priority", 50),
+                    body.get("resource_class", ""), body.get("expected_revision"),
+                    body.get("coordinator_epoch"), body.get("evidence_contract", "")
                 )
                 self.send_json(200, receipt)
             except Exception as e:
@@ -1505,8 +1693,8 @@ def selftest():
             stale_rejected = str(e).startswith("stale_revision:")
         assert stale_rejected
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.8") > _version_tuple("0.4.7")
-        assert _version_tuple("0.4.8") == (0, 4, 8)
+        assert _version_tuple("0.6.0") > _version_tuple("0.5.0")
+        assert _version_tuple("0.6.0") == (0, 6, 0)
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert '"server_pid": os.getpid()' in source
         assert '"server_sha256": hashlib.sha256' in source
@@ -1523,13 +1711,30 @@ def selftest():
         assert 'parts[3] == "context"' in source
         assert 'parts[3] == "memory"' in source
         assert 'parts[3] == "jobs"' in source
-        memory_put("buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest")
-        pack = build_context_pack("buildhub")
+        committed = memory_put("buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"},
+                               "selftest", "VERIFIED", "selftest:goal", True)
+        assert committed["result"] == "COMMITTED_MEMORY"
+        candidate = memory_put("buildhub", "PROJECT_MEMORY", "model_guess", {"value": "maybe"},
+                               "model", "UNVERIFIED", "selftest:candidate", False)
+        assert candidate["result"] == "CANDIDATE"
+        pack = build_context_pack("buildhub", task="final product", max_bytes=12000)
+        assert pack["schema"] == "bcp.context_pack/2"
         assert pack["memory"]["PROJECT_MEMORY"][0]["key"] == "goal"
-        q1 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False)
-        q2 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False)
+        assert pack["size_bytes"] <= 12000
+        assert len(pack["context_hash"]) == 64
+        q1 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False,
+                         action_id="selftest-action", priority=70, resource_class="EDGE_R1",
+                         expected_revision=1, coordinator_epoch=1, evidence_contract="receipt_required")
+        q2 = enqueue_job("buildhub", "test", {"x": 1}, "job-idem", requires_pc=False,
+                         action_id="selftest-action", priority=70, resource_class="EDGE_R1",
+                         expected_revision=1, coordinator_epoch=1, evidence_contract="receipt_required")
         assert q1["result"] == "QUEUED"
         assert q2["result"] == "ALREADY_QUEUED"
+        assert q1["input_hash"] == sha256_text(canonical_json({"x": 1}))
+        assert q1["coordinator_epoch"] == 1
+        assert resource_mode_from_snapshot({"total_bytes": 4*1024**3, "available_bytes": 300*1024**2, "used_pct": 92.0}, "PC_AVAILABLE") == "PC_MEMORY_PRESSURE"
+        assert resource_mode_from_snapshot({"total_bytes": 4*1024**3, "available_bytes": 500*1024**2, "used_pct": 80.0}, "PC_MEMORY_PRESSURE") == "PC_MEMORY_PRESSURE"
+        assert resource_mode_from_snapshot({"total_bytes": 4*1024**3, "available_bytes": 800*1024**2, "used_pct": 70.0}, "PC_MEMORY_PRESSURE") == "PC_AVAILABLE"
         assert pc_operating_mode() in ("PC_AVAILABLE", "PC_MEMORY_PRESSURE")
 
         edge_dist = Path(td) / "edge-dist"

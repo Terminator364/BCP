@@ -40,10 +40,10 @@ public interface EdgeDao {
     @Query("SELECT COUNT(*) FROM edge_job_dependencies d WHERE d.jobId = :jobId AND NOT EXISTS (SELECT 1 FROM edge_receipts r WHERE r.jobId = d.dependsOnJobId)")
     int unresolvedDependencies(String jobId);
 
-    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
+    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND state IN ('READY','WAITING_FOR_PC','HOLD','HOLD_RESOURCE','BLOCKED') ORDER BY priority DESC, createdAt ASC LIMIT :limit")
     List<EdgeJobEntity> pendingJobs(String projectId, int limit);
 
-    @Query("SELECT COUNT(*) FROM edge_jobs WHERE state IN ('READY','WAITING_FOR_PC','HOLD','BLOCKED')")
+    @Query("SELECT COUNT(*) FROM edge_jobs WHERE state IN ('READY','WAITING_FOR_PC','HOLD','HOLD_RESOURCE','BLOCKED')")
     int countPendingJobs();
 
     @Query("SELECT * FROM edge_memory WHERE projectId = :projectId AND scope = :scope AND (expiresAt IS NULL OR expiresAt > :now) ORDER BY pinned DESC, updatedAt DESC LIMIT :limit")
@@ -51,6 +51,10 @@ public interface EdgeDao {
 
     @Query("UPDATE edge_jobs SET state = :state, updatedAt = :updatedAt WHERE localId = :localId")
     int setJobState(String localId, String state, long updatedAt);
+
+    @Query("UPDATE edge_jobs SET state = 'READY', updatedAt = :updatedAt WHERE projectId = :projectId AND state = 'HOLD_RESOURCE' AND resourceClass = :resourceClass")
+    int releaseResourceHolds(String projectId, String resourceClass, long updatedAt);
+
 
     @Query("DELETE FROM edge_jobs WHERE localId = :localId")
     int deleteJob(String localId);

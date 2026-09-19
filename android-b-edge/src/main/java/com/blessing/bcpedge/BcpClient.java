@@ -17,12 +17,13 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "1.1.0";
+    private static final String EDGE_VERSION = "1.2.0";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
     private final CredentialStore credentials;
     private final EdgeOrchestrator orchestrator;
+    private final ResourceGovernor resources;
 
     public BcpClient(Context context) {
         this.context = context.getApplicationContext();
@@ -30,6 +31,7 @@ public final class BcpClient {
         this.telemetry = new TelemetryStore(context);
         this.credentials = new CredentialStore(context);
         this.orchestrator = new EdgeOrchestrator(context);
+        this.resources = new ResourceGovernor(context);
     }
 
     public String getServer() { return prefs.getString("server", ""); }
@@ -457,11 +459,15 @@ public final class BcpClient {
         return r;
     }
 
-    public JSONObject contextPack() throws Exception {
+    public JSONObject contextPack() throws Exception { return contextPack(""); }
+
+    public JSONObject contextPack(String task) throws Exception {
         try {
             ensureConnected();
+            String suffix = task == null || task.trim().isEmpty()
+                    ? "" : "?task=" + enc(task.trim()) + "&max_bytes=24576";
             JSONObject r = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(getProject()) + "/context",
+                    getServer() + "/v1/projects/" + enc(getProject()) + "/context" + suffix,
                     null, getToken(), null, 2200, 5000);
             orchestrator.cacheContext(getProject(), r);
             return r;
@@ -474,9 +480,11 @@ public final class BcpClient {
     }
 
     public JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) throws Exception {
+        String resourceClass = requiresPc ? "PC_R3" : "EDGE_R1";
+        boolean localAllowed = requiresPc || resources.allowed(resourceClass);
         JSONObject local = orchestrator.queueJob(
                 getProject(), kind, payload, requiresPc, 50,
-                requiresPc ? "PC_R3" : "EDGE_R1", new JSONArray());
+                resourceClass, localAllowed, new JSONArray());
         if (!local.optBoolean("queued", false)) return local;
         try {
             ensureConnected();
@@ -485,6 +493,9 @@ public final class BcpClient {
             body.put("payload", payload);
             body.put("requires_pc", requiresPc);
             body.put("resource_class", local.optString("resource_class", ""));
+            body.put("priority", local.optInt("priority", 50));
+            body.put("action_id", local.optString("local_id", ""));
+            body.put("evidence_contract", "durable_remote_receipt");
             String idem = local.optString("idempotency_key", "");
             JSONObject r = requestJson("POST",
                     getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
@@ -514,6 +525,9 @@ public final class BcpClient {
                     body.put("payload", job.optJSONObject("payload") == null ? new JSONObject() : job.optJSONObject("payload"));
                     body.put("requires_pc", job.optBoolean("requires_pc", true));
                     body.put("resource_class", job.optString("resource_class", ""));
+                    body.put("priority", job.optInt("priority", 50));
+                    body.put("action_id", job.optString("local_id", ""));
+                    body.put("evidence_contract", "durable_remote_receipt");
                     JSONObject receipt = requestJson("POST",
                             getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
                             body.toString(), getToken(),
@@ -532,7 +546,14 @@ public final class BcpClient {
         try {
             JSONObject st = orchestratorStatus();
             out.put("mode", orchestrator.getMode());
-            JSONObject ctx = contextPack();
+            JSONObject resource = resources.snapshot();
+            out.put("edge_resources", resource);
+            int released = orchestrator.releaseResourceHolds(
+                    getProject(),
+                    resource.optBoolean("edge_r1_allowed", false),
+                    resource.optBoolean("edge_r2_allowed", false));
+            out.put("resource_holds_released", released);
+            JSONObject ctx = contextPack("active project next action blockers");
             out.put("context_cached", ctx.length() > 0);
             flushQueuedJobs();
             out.put("queued_jobs_remaining", orchestrator.pendingCount());
@@ -592,6 +613,8 @@ public final class BcpClient {
         out.put("context_cached", orch.optBoolean("context_cached", false));
         out.put("queued_jobs_remaining", orch.optInt("queued_jobs_remaining", 0));
         out.put("paired", !getToken().isEmpty());
+        out.put("edge_resources", resources.snapshot());
+        out.put("project_registry", projectRegistry());
         out.put("ok", true);
         telemetry.add("EDGE_ACCEPTANCE_PASS",
                 "revision=" + out.optInt("project_revision", 0));

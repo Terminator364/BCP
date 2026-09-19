@@ -133,6 +133,13 @@ public final class EdgeOrchestrator {
     public JSONObject queueJob(String projectId, String kind, JSONObject payload,
                                boolean requiresPc, int priority, String resourceClass,
                                JSONArray dependencies) {
+        return queueJob(projectId, kind, payload, requiresPc, priority, resourceClass,
+                true, dependencies);
+    }
+
+    public JSONObject queueJob(String projectId, String kind, JSONObject payload,
+                               boolean requiresPc, int priority, String resourceClass,
+                               boolean localResourceAllowed, JSONArray dependencies) {
         JSONObject out = new JSONObject();
         try {
             if (dao.countPendingJobs() >= EdgePolicy.boundedQueueLimit()) {
@@ -146,7 +153,10 @@ public final class EdgeOrchestrator {
             String idem = "edge-job-" + id;
             long now = System.currentTimeMillis();
             String state = dependencies != null && dependencies.length() > 0
-                    ? "BLOCKED" : EdgePolicy.nextState(requiresPc, getMode());
+                    ? "BLOCKED" : EdgePolicy.nextState(
+                            requiresPc, getMode(),
+                            resourceClass == null ? (requiresPc ? "PC_R3" : "EDGE_R1") : resourceClass,
+                            localResourceAllowed);
             EdgeJobEntity job = new EdgeJobEntity(
                     id, projectId, kind, payload.toString(), state, requiresPc,
                     priority, resourceClass == null ? (requiresPc ? "PC_R3" : "EDGE_R1") : resourceClass,
@@ -232,6 +242,14 @@ public final class EdgeOrchestrator {
                 dao.deleteJob(localId);
             }
         } catch (Exception ignored) {}
+    }
+
+    public int releaseResourceHolds(String projectId, boolean edgeR1Allowed, boolean edgeR2Allowed) {
+        int changed = 0;
+        long now = System.currentTimeMillis();
+        if (edgeR1Allowed) changed += dao.releaseResourceHolds(projectId, "EDGE_R1", now);
+        if (edgeR2Allowed) changed += dao.releaseResourceHolds(projectId, "EDGE_R2", now);
+        return changed;
     }
 
     public int pendingCount() {
