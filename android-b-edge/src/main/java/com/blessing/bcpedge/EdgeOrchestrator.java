@@ -82,6 +82,15 @@ public final class EdgeOrchestrator {
     public synchronized JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) {
         try {
             JSONArray q = new JSONArray(prefs.getString("job_queue", "[]"));
+            if (!EdgePolicy.canAdmitJob(q.length())) {
+                JSONObject hold = new JSONObject();
+                hold.put("result", "LOCAL_QUEUE_FULL_HOLD");
+                hold.put("state", "HOLD");
+                hold.put("accepted_local", false);
+                hold.put("queue_depth", q.length());
+                hold.put("queue_limit", EdgePolicy.boundedQueueLimit());
+                return hold;
+            }
             JSONObject job = new JSONObject();
             job.put("local_id", UUID.randomUUID().toString());
             job.put("kind", kind);
@@ -89,12 +98,8 @@ public final class EdgeOrchestrator {
             job.put("requires_pc", requiresPc);
             job.put("state", EdgePolicy.nextState(requiresPc, getMode()));
             job.put("created_at", System.currentTimeMillis());
+            job.put("accepted_local", true);
             q.put(job);
-            while (q.length() > EdgePolicy.boundedQueueLimit()) {
-                JSONArray n = new JSONArray();
-                for (int i = 1; i < q.length(); i++) n.put(q.get(i));
-                q = n;
-            }
             prefs.edit().putString("job_queue", q.toString()).apply();
             return job;
         } catch (Exception e) {
@@ -109,6 +114,21 @@ public final class EdgeOrchestrator {
 
     public synchronized void replaceJobs(JSONArray q) {
         prefs.edit().putString("job_queue", q.toString()).apply();
+    }
+
+    public synchronized void acknowledgeJob(String localId) {
+        if (localId == null || localId.isEmpty()) return;
+        try {
+            JSONArray q = new JSONArray(prefs.getString("job_queue", "[]"));
+            JSONArray keep = new JSONArray();
+            for (int i = 0; i < q.length(); i++) {
+                JSONObject job = q.optJSONObject(i);
+                if (job == null || !localId.equals(job.optString("local_id", ""))) {
+                    if (job != null) keep.put(job);
+                }
+            }
+            prefs.edit().putString("job_queue", keep.toString()).apply();
+        } catch (Exception ignored) {}
     }
 
     private void compactMemory(JSONObject all) throws Exception {
