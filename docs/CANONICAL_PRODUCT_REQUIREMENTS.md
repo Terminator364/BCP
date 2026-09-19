@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R3
+Revision: 2026-09-19-R4
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -125,6 +125,106 @@ BCP memory MUST be structured into at least:
 Before ChatGPT/agent execution, the Context Builder MUST assemble only the relevant subset of these layers. Chat history is never the sole source of truth.
 
 When the PC is offline, B-EDGE SHOULD precompute and prepare as much as possible: resolve project state, build work plans, prepare compact context, consult free remote models when policy allows, and queue heavy jobs as `WAITING_FOR_PC`. When the PC returns, it should receive already-prepared bounded work rather than redoing orchestration.
+
+
+## P0/P1 — B-EDGE V2 hardening invariants
+
+The dedicated-phone architecture MUST distinguish current field-proven P0 behavior from the target B-EDGE V2 authority migration.
+
+### Android process/lifecycle invariant
+
+"Always-on B-EDGE" means always recoverable, not process immortality.
+
+- correctness MUST NOT depend on the Android app process remaining resident;
+- in-memory state is rebuildable cache only;
+- durable project/job/memory state migrates to a transactional Room/SQLite fabric;
+- WorkManager is the baseline persistent/deferred execution primitive;
+- a permanent foreground data-sync service or exact-alarm loop is not the baseline scheduler;
+- after process/device restart, B-EDGE reconstructs runnable state from durable storage and reconciles receipts/idempotency.
+
+### Durable memory invariant
+
+Complex multi-project state MUST NOT remain implemented as one hard-coded project plus SharedPreferences slots.
+
+Target storage MUST support:
+- project registry;
+- scoped memory;
+- multi-job DAG/dependencies;
+- multiple pending actions/checkpoints;
+- receipts/idempotency ledger;
+- outbox;
+- provider/node state;
+- ERROR_LEDGER;
+- Context Pack cache and provenance.
+
+Secrets remain in Android Keystore-protected storage and MUST NOT be copied into ordinary memory/telemetry/Drive/GitHub.
+
+### Agent invariant
+
+Agents are ephemeral logical workers. They do not form a permanent peer-to-peer chat network.
+
+`JOB -> CONTEXT_PACK -> WORKER -> STRUCTURED_RESULT -> VALIDATOR -> TOOL/EFFECT -> RECEIPT -> DURABLE_STATE`
+
+BCP owns sequencing, permissions, retries, budgets and stop conditions.
+
+A model output cannot directly become canonical memory or a committed project mutation without validation/evidence.
+
+### Delivery/idempotency invariant
+
+BCP MUST NOT claim impossible network-level exactly-once execution.
+
+The target is replayable/at-least-once delivery with:
+- stable idempotency keys;
+- revision preconditions;
+- coordinator epoch/fencing;
+- effect/readback receipts;
+- unique committed-effect deduplication.
+
+### Split-brain invariant
+
+During the V2 authority phase, B-EDGE becomes the default orchestration coordinator and the PC becomes a fenced heavy worker.
+
+During a partition:
+- PC may complete already-issued immutable jobs and preserve receipts;
+- PC MUST NOT independently advance the global project head without a valid coordinator fence;
+- delayed stale-epoch commands are rejected;
+- automatic writer takeover requires an independent third witness/lease service or explicit user promotion.
+
+Until this migration is field-qualified, the existing PC-side canonical writer remains authoritative. Authority migration MUST be explicit, versioned, reversible and tested.
+
+### Resource governor invariant
+
+Every job is classified before execution:
+- `EDGE_R0`: tiny deterministic;
+- `EDGE_R1`: light DB/network/context;
+- `EDGE_R2`: heavier index/compaction/bulk work under favorable battery/thermal/RAM conditions;
+- `PC_R3`: heavy build/test/file/CPU work;
+- `REMOTE_AI`: semantic reasoning subject to quota/privacy gates.
+
+Android memory pressure evicts HOT/WARM caches before any durable state. Thermal/power-save/battery/network state can defer noncritical work.
+
+### Discovery/transport invariant
+
+The current raw /24 scan + cleartext HTTP path is POC-compatible behavior, not final production architecture.
+
+Target:
+- NSD/mDNS-DNS-SD primary discovery with bounded lifetime;
+- QR explicit bootstrap fallback;
+- subnet scan only as bounded diagnostic fallback;
+- Android 17 local-network permission/system-mediated picker migration before targetSdk 37;
+- persistent PC identity and authenticated encrypted LAN transport;
+- no bearer/API credential over unrestricted cleartext HTTP in production mode.
+
+### Telegram/remote-ingress invariant
+
+Telegram is a cockpit adapter, never canonical state.
+
+A future zero-cost webhook/push ingress may improve wake latency, but remains optional and must pass the same real Kinshasa/account field gate. Durable BCP queue state, not push delivery, is authoritative.
+
+Canonical hardening documents:
+- `docs/BEDGE_RUNTIME_V2_HARDENING.md`
+- `docs/BEDGE_V2_TEST_MATRIX.md`
+- `.project-memory/BEDGE_RUNTIME_V2_POLICY.json`
 
 ## P0 — Synchronized product release train
 
