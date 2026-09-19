@@ -47,6 +47,49 @@ public final class EdgePolicy {
         return currentDepth >= 0 && currentDepth < boundedQueueLimit();
     }
 
+    public static int evidenceRank(String evidenceClass) {
+        String e = evidenceClass == null ? "UNVERIFIED" : evidenceClass.trim().toUpperCase();
+        switch (e) {
+            case "SYSTEM_POLICY": return 7;
+            case "USER_DECLARED": return 6;
+            case "VALIDATED": return 5;
+            case "MACHINE_READBACK":
+            case "MACHINE_VERIFIED": return 4;
+            case "SOURCE_VERIFIED": return 3;
+            case "CACHE": return 2;
+            case "MODEL_PROPOSED": return 1;
+            case "UNTRUSTED_EXTERNAL":
+            case "UNVERIFIED":
+            default: return 0;
+        }
+    }
+
+    public static boolean canReplaceMemory(String scope, String oldEvidence,
+                                           boolean oldPinned, String newEvidence) {
+        String s = scope == null ? "" : scope.trim().toUpperCase();
+        String n = newEvidence == null ? "UNVERIFIED" : newEvidence.trim().toUpperCase();
+        if (("USER_MEMORY".equals(s) || "POLICY".equals(s))
+                && !("USER_DECLARED".equals(n) || "VALIDATED".equals(n) || "SYSTEM_POLICY".equals(n))) {
+            return false;
+        }
+        if (oldEvidence == null || oldEvidence.trim().isEmpty()) return true;
+        int oldRank = evidenceRank(oldEvidence);
+        int newRank = evidenceRank(n);
+        if (oldPinned && newRank < oldRank) return false;
+        return newRank >= oldRank;
+    }
+
+    public static boolean isCompletionResult(String result) {
+        String r = result == null ? "" : result.trim().toUpperCase();
+        return "COMMITTED".equals(r) || "ALREADY_COMMITTED".equals(r)
+                || "DONE".equals(r) || "PASS".equals(r) || "SUCCESS".equals(r);
+    }
+
+    public static boolean isRemoteQueueAccepted(String result) {
+        String r = result == null ? "" : result.trim().toUpperCase();
+        return "QUEUED".equals(r) || "ALREADY_QUEUED".equals(r) || "ACCEPTED".equals(r);
+    }
+
     public static int boundedQueueLimit() { return 256; }
     public static int boundedMemoryEntries() { return 256; }
 }
