@@ -275,6 +275,9 @@ class LocalTruth:
             if str(x.get("state") or "").upper() in MISSION_STATES
         ]
 
+    def mission_activity_age(self) -> int | None:
+        return age_seconds(self.state / MISSION_EVENT_LOG_PATH.name)
+
     def buildhub(self) -> dict:
         raw = os.environ.get("BCP_BUILDHUB_RECEIPT", "").strip()
         if raw:
@@ -475,63 +478,98 @@ class Service:
         return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
 
     def status(self) -> str:
-        head = self._head()
         runtime = self.local.runtime()
         edge = self.local.edge()
         gh = self.github.snapshot()
         drive = self.local.drive()
         chat = self.local.chat(self.project_id)
+        events = [
+            e for e in self.local.mission_events(160)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        ev = events[-1] if events else {}
+        mission_state = str(ev.get("state") or "NOT_OBSERVED").upper()
+        action = clean(
+            ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
+            "Aucune micro-action durable récente.",
+            150,
+        )
+        next_action = self._human_action(
+            ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
+        )
+        age = self.local.mission_activity_age()
+        if isinstance(age, int) and age < 60:
+            age_label = str(age) + " s"
+        elif isinstance(age, int) and age < 3600:
+            age_label = str(age // 60) + " min"
+        elif isinstance(age, int):
+            age_label = str(age // 3600) + " h " + str((age % 3600) // 60) + " min"
+        else:
+            age_label = "inconnue"
+
+        progress = "Étape: " + mission_state.replace("_", " ").lower()
+        try:
+            idx = int(ev.get("step_index"))
+            total = int(ev.get("step_total"))
+            if 0 <= idx <= total and total > 0:
+                pct = int(round(idx * 100 / total))
+                progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
+        except Exception:
+            pass
+
+        if mission_state in HOLD_STATES:
+            activity = "🟠 En attente d’un élément externe ou d’une reprise."
+        elif isinstance(age, int) and age <= 120:
+            activity = "🟢 Activité récente."
+        elif isinstance(age, int) and age <= 600:
+            activity = "🟡 Aucune nouvelle preuve depuis " + age_label + ". Réseau, CI ou service externe peuvent être en attente."
+        elif isinstance(age, int):
+            activity = "🟠 Aucune nouvelle preuve depuis " + age_label + ". La liaison doit être revérifiée avant de conclure à un blocage."
+        else:
+            activity = "⚪ Âge de la dernière preuve non observé."
 
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
         edge_ok = bool(edge.get("paired"))
         github_ok = bool(gh.get("ok"))
         drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
-        checks = [heartbeat_ok, edge_ok, github_ok, drive_ok]
-        done = sum(1 for x in checks if x)
-        total = len(checks)
-        percent = int(round(done * 100 / total)) if total else 0
-
-        global_state = str(
-            (head or {}).get("status") or runtime.get("recovery_phase") or runtime.get("status") or "UNKNOWN"
-        ).upper()
-        if "HEALTH" in global_state or "UP_TO_DATE" in global_state:
-            state_label = "🟢 Système actif"
-        elif "HOLD" in global_state or "BLOCK" in global_state or "FAIL" in global_state:
-            state_label = "🔴 Attention requise"
-        else:
-            state_label = "🟡 Actif / état partiellement observé"
+        nexus = str(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED").upper()
+        nexus_text = {
+            "COMMITTED": "✅ actif",
+            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": "✅ actif",
+            "EXITED_NO_RECEIPT": "🟡 reprise automatique à réparer",
+            "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation en cours",
+        }.get(nexus, "⚪ " + clean(nexus, 45).replace("_", " ").lower())
 
         chat_state = str(chat.get("state") or "UNKNOWN_INTERNAL_CHAT_STATE")
-        chat_labels = {
+        chat_text = {
             "OBSERVED_CHAT_ACTION": "✅ action externe observée",
             "CHAT_WAITING": "⏳ réponse en attente",
             "CHAT_PLATFORM_HOLD_REPORTED": "🟠 vérification ChatGPT signalée",
-            "UNKNOWN_INTERNAL_CHAT_STATE": "⚪ état interne non visible",
-        }
-        next_action = self._human_action(
-            (head or {}).get("next_action") or "continuer depuis le dernier checkpoint durable"
-        )
-        latest_ci = self._human_ci(gh)
+            "UNKNOWN_INTERNAL_CHAT_STATE": "⚪ activité interne non visible",
+        }.get(chat_state, "⚪ " + clean(chat_state, 60))
+
         return "\n".join([
             "🤖 BCP Cockpit",
-            state_label,
             "",
-            "Progression vérifiable des liaisons",
-            self._bar(done, total) + "  " + str(percent) + "% (" + str(done) + "/" + str(total) + ")",
+            "🎯 Maintenant: " + action,
+            "📊 " + progress,
+            "⏱️ Dernière preuve: il y a " + age_label,
+            activity,
             "",
-            ("✅" if heartbeat_ok else "⚠️") + " PC/BCP",
-            ("✅" if edge_ok else "⚠️") + " Téléphone B-EDGE",
-            ("✅" if github_ok else "⚠️") + " GitHub",
-            ("✅" if drive_ok else "⚠️") + " Sauvegarde Drive",
+            ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
+            ("✅ Ancien téléphone" if edge_ok else "⚠️ Ancien téléphone — non observé"),
+            ("✅ GitHub" if github_ok else "⚠️ GitHub — non observé"),
+            ("✅ Sauvegarde Drive" if drive_ok else "⚠️ Sauvegarde Drive — non observée"),
+            "🌐 Relais Nexus: " + nexus_text,
+            "ChatGPT: " + chat_text,
+            "🧪 " + self._human_ci(gh),
             "",
-            "ChatGPT: " + chat_labels.get(chat_state, "⚪ " + clean(chat_state, 60)),
-            "Tests: " + clean(latest_ci, 110),
-            "",
-            "➡️ Prochaine étape: " + next_action,
+            "➡️ Ensuite: " + next_action,
             "💰 Coût: $0.00",
             "",
-            "Détails techniques: /details",
+            "ℹ️ Seules les micro-actions et preuves observables sont affichées; la réflexion privée de ChatGPT n’est pas lue.",
+            "🔧 Détails techniques: /details",
         ])
 
     def details(self) -> str:
@@ -1167,8 +1205,8 @@ def selftest() -> int:
         )
         status = svc.status()
         assert "🤖 BCP Cockpit" in status
-        assert "Progression vérifiable des liaisons" in status
-        assert "Téléphone B-EDGE" in status
+        assert "🎯 Maintenant:" in status
+        assert "Ancien téléphone" in status
         assert "ChatGPT: ⏳ réponse en attente" in status
         assert "💰 Coût: $0.00" in status
         assert "Tests: ✅ tests réussis" in status
