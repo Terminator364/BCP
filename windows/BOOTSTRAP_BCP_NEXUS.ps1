@@ -245,6 +245,30 @@ if ($SelfTest) {
     exit 0
 }
 
+trap {
+    $rawError = [string]$_.Exception.Message
+    $safeError = ($rawError -replace '[^A-Za-z0-9_: .-]', '_')
+    if ($safeError.Length -gt 180) { $safeError = $safeError.Substring(0, 180) }
+    $failureStatus = "NEXUS_BOOTSTRAP_FAILED"
+    if ($safeError -match '^CLOUDFLARE_BROWSER_AUTHORIZATION_FAILED_OR_CANCELLED' -or $safeError -match '^CLOUDFLARE_AUTHORIZATION_NOT_CONFIRMED') {
+        $failureStatus = "HUMAN_AUTH_REQUIRED"
+    }
+    $failure = [ordered]@{
+        schema = "bcp.nexus_bootstrap_receipt/1"
+        status = $failureStatus
+        error_class = $safeError
+        failed_at = UtcNow
+        spend_policy = "ZERO_USD"
+        spend_usd = 0.0
+    }
+    try {
+        Write-JsonAtomic $failure $ReceiptPath
+        Protect-LocalFile $ReceiptPath
+    } catch {}
+    Write-Host ("BCP_NEXUS_BOOTSTRAP_FAILURE=" + $failureStatus + " " + $safeError)
+    exit 4
+}
+
 if (-not (Test-Path -LiteralPath $TokenPath -PathType Leaf)) { throw "LOCAL_TELEGRAM_TOKEN_NOT_FOUND_RUN_TELEGRAM_BOOTSTRAP_ONCE" }
 if (-not (Test-Path -LiteralPath $TelegramConfigPath -PathType Leaf)) { throw "LOCAL_TELEGRAM_CONFIG_NOT_FOUND_RUN_TELEGRAM_BOOTSTRAP_ONCE" }
 if (-not (Test-Path -LiteralPath $InstalledBot -PathType Leaf)) { throw "LOCAL_TELEGRAM_WORKER_NOT_FOUND_WAIT_FOR_BCP_0_6_2_COMPANION_DELIVERY" }
