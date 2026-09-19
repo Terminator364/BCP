@@ -1,0 +1,144 @@
+{
+  "schema": "bcp.bedge_runtime_v2_policy/1",
+  "adopted_at": "2026-09-19",
+  "status": "DESIGN_HARDENED_RUNTIME_UNVERIFIED",
+  "invariants": {
+    "process_residency_required": false,
+    "durable_state_required": true,
+    "ram_is_cache": true,
+    "default_paid_spend_usd": 0,
+    "exactly_once_claim": false,
+    "delivery_model": "AT_LEAST_ONCE_WITH_IDEMPOTENT_EFFECTS",
+    "single_canonical_head": true,
+    "model_direct_memory_write": false,
+    "permanent_foreground_service_default": false,
+    "aggressive_polling_default": false
+  },
+  "runtime": {
+    "persistent_scheduler": "Android WorkManager",
+    "canonical_structured_store": "Room/SQLite",
+    "secrets_store": "Android Keystore",
+    "local_search_initial": "Room FTS",
+    "appsearch_optional_after_measurement": true,
+    "process_restart_rehydrate_from_db": true
+  },
+  "operating_modes": [
+    "EDGE_ONLY",
+    "PC_AVAILABLE",
+    "PC_MEMORY_PRESSURE",
+    "PC_UNAVAILABLE_RECOVERY"
+  ],
+  "memory_scopes": [
+    "USER_MEMORY",
+    "PROJECT_MEMORY",
+    "TECHNICAL_KNOWLEDGE",
+    "OPERATING_STATE",
+    "HISTORY",
+    "POLICY"
+  ],
+  "memory_evidence_classes": [
+    "USER_DECLARED",
+    "MACHINE_VERIFIED",
+    "SOURCE_VERIFIED",
+    "MODEL_PROPOSED",
+    "STALE",
+    "CONTRADICTED"
+  ],
+  "resource_classes": {
+    "EDGE_R0": "tiny deterministic state/rule operation",
+    "EDGE_R1": "light DB/network/context operation",
+    "EDGE_R2": "indexing/compaction/bulk sync under favorable resource state",
+    "PC_R3": "heavy build/test/file/CPU operation on PC",
+    "REMOTE_AI": "semantic reasoning subject to quota/privacy admission"
+  },
+  "scheduler_priorities": [
+    "CRITICAL_INTEGRITY_RECOVERY",
+    "USER_INTERACTIVE",
+    "NORMAL_PROJECT",
+    "BACKGROUND_IMPROVEMENT"
+  ],
+  "split_brain": {
+    "target_v2_default_coordinator": "B_EDGE",
+    "pc_role": "FENCED_WORKER",
+    "pc_can_finish_already_issued_job_during_partition": true,
+    "pc_can_advance_global_project_head_without_valid_fence": false,
+    "automatic_failover_requires": "THIRD_WITNESS_OR_EXPLICIT_USER_PROMOTION",
+    "p0_migration_note": "Current PC-side canonical-writer behavior remains authoritative until explicit V2 authority migration passes."
+  },
+  "job_envelope_required": [
+    "job_id",
+    "action_id",
+    "idempotency_key",
+    "expected_project_revision",
+    "coordinator_epoch",
+    "input_hash",
+    "evidence_contract"
+  ],
+  "agent_policy": {
+    "ephemeral_workers": true,
+    "direct_agent_to_agent_chat": false,
+    "durable_artifact_handoff": true,
+    "bounded_iterations": true,
+    "recursive_spawning_default": false,
+    "one_provider_per_reasoning_step_default": true
+  },
+  "discovery": {
+    "primary": "NSD_MDNS_DNS_SD",
+    "fallback": [
+      "QR_BOOTSTRAP",
+      "BLUETOOTH_OR_COMPANION_IF_JUSTIFIED",
+      "BOUNDED_SUBNET_SCAN_DIAGNOSTIC_ONLY"
+    ],
+    "android_17_local_network_migration_required": true
+  },
+  "transport_security": {
+    "current_cleartext_poc": "TEMPORARY_ONLY",
+    "production_requires_authenticated_encrypted_lan": true,
+    "target": "TLS_WITH_PERSISTENT_PC_IDENTITY_AND_PINNING",
+    "bearer_over_unrestricted_cleartext_allowed": false
+  },
+  "telegram": {
+    "adapter_not_authority": true,
+    "update_id_dedup": true,
+    "optional_cloud_ingress_field_gated": true,
+    "optional_fcm_wake_hint_field_gated": true,
+    "durable_queue_authoritative": true
+  },
+  "quota": {
+    "vector_dimensions": [
+      "requests",
+      "tokens",
+      "compute_units",
+      "credit",
+      "reset_window"
+    ],
+    "safe_burn_rate_formula": "max(0, remaining - protected_reserve) / max(time_to_reset, epsilon)",
+    "bootstrap_allocation": {
+      "planned_background": 0.5,
+      "fallback_incident": 0.25,
+      "strategic_reserve": 0.25
+    },
+    "zero_usd_fail_closed": true
+  },
+  "migration_order": [
+    "PRESERVE_FIELD_PROVEN_P0",
+    "ADD_ROOM_SCHEMA_AND_MIGRATION_TESTS",
+    "MOVE_PROJECT_REGISTRY_CHECKPOINT_OUTBOX_TO_DB",
+    "ADD_WORKMANAGER_RECONCILIATION",
+    "ADD_RESOURCE_GOVERNOR",
+    "REMOVE_HARDCODED_SINGLE_PROJECT",
+    "ADD_CONTEXT_PACK_AND_MEMORY_ADMISSION",
+    "ADD_DETERMINISTIC_DAG_SCHEDULER",
+    "NSD_PRIMARY_DISCOVERY",
+    "AUTHENTICATED_TLS_LAN",
+    "FENCING_SPLIT_BRAIN_QUALIFICATION",
+    "OPTIONAL_TELEGRAM_INGRESS_PUSH",
+    "PROMOTE_BEDGE_V2_AUTHORITY"
+  ],
+  "canonical_docs": [
+    "docs/BEDGE_RUNTIME_V2_HARDENING.md",
+    "docs/BEDGE_V2_TEST_MATRIX.md",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "docs/BEDGE_PAIRING_ARCHITECTURE.md"
+  ]
+}
