@@ -2387,6 +2387,34 @@ def selftest():
         assert claimed_dep and int(claimed_dep["id"]) == int(dependent_noop["job_id"])
         assert run_claimed_pc_job(claimed_dep, "selftest-worker")["result"] == "SUCCEEDED"
 
+        failing_root = enqueue_job(
+            "buildhub", "NOOP", {"probe": "forced-failure"}, "job-noop-fail-root",
+            requires_pc=True, priority=95, resource_class="PC_R3",
+            action_id="selftest-noop-fail-root", expected_revision=1,
+            coordinator_epoch=1, evidence_contract="SELFTEST_FAILED_RECEIPT"
+        )
+        claimed_fail = claim_next_pc_job("selftest-worker", resource_gate=False)
+        assert claimed_fail and int(claimed_fail["id"]) == int(failing_root["job_id"])
+        _mark_pc_job_running(int(claimed_fail["id"]), "selftest-worker", str(claimed_fail["lease_id"]))
+        assert _complete_pc_job(
+            claimed_fail, "selftest-worker", "FAILED",
+            {"ok": False, "error": "SELFTEST_FORCED_FAILURE"}
+        )["result"] == "FAILED"
+        blocked_by_failure = enqueue_job(
+            "buildhub", "NOOP", {"probe": "must-hold"}, "job-blocked-by-failure",
+            requires_pc=True, priority=94, resource_class="PC_R3",
+            action_id="selftest-blocked-by-failure", expected_revision=1,
+            coordinator_epoch=1, evidence_contract="SELFTEST_HOLD",
+            dependencies=[failing_root["job_id"]]
+        )
+        assert blocked_by_failure["state"] == "BLOCKED"
+        assert claim_next_pc_job("selftest-worker", resource_gate=False) is None
+        failed_child = {int(j["id"]): j for j in jobs_snapshot("buildhub", 100)}[
+            int(blocked_by_failure["job_id"])
+        ]
+        assert failed_child["state"] == "HOLD"
+        assert failed_child["last_error"] == "DEPENDENCY_FAILED"
+
         unsupported = enqueue_job(
             "buildhub", "ARBITRARY_SHELL", {"command": "whoami"}, "job-unsupported",
             requires_pc=True, priority=99, resource_class="PC_R3",
