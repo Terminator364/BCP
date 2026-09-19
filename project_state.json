@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_2_EXTERNAL_TELEMETRY_BRIDGE_PUBLISHED_CI_PARTIAL_PASS_FIELD_UNVERIFIED",
-  "last_completed_atomic_action": "Implemented and published BCP 0.4.2 external Drive runtime heartbeat bridge; managed-update qualification passed; corrected Windows installer version guard",
-  "next_action": "Wait for the current Windows validation/sanity runs to finish, then allow the existing BCP auto-update path to promote 0.4.2 and read BCP_RUNTIME_LATEST.json from Drive; do not reinstall or replay committed work",
+  "status": "BCP_0_4_2_CI_QUALIFIED_FIELD_HEARTBEAT_PENDING",
+  "last_completed_atomic_action": "BCP 0.4.2 external telemetry bridge qualified: managed-update PASS, PC Sanity PASS, Windows bootstrap validation PASS, Windows 2022/latest E2E PASS",
+  "next_action": "Observe first live BCP_RUNTIME_LATEST.json from synced Drive; if absent, use the already-built BCP-native recovery/update path rather than reinstalling",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -50,7 +50,8 @@
     "technical_scope_profile": ".project-memory/API_SCOPE_PROFILE.json",
     "dual_conversation_design": "docs/DUAL_CONVERSATION_CONTINUITY.md",
     "continuation_handoff": "API_PROJECT_CONTINUITY.md",
-    "free_api_model_broker_autonomy": "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
+    "free_api_model_broker_autonomy": "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md",
+    "canonical_current": "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -80,6 +81,7 @@
     "note": "Do not replay install/commit. Promote only after fresh machine-readable runtime evidence."
   },
   "must_load_on_every_recovery": [
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
     "API_PROJECT_CONTINUITY.md",
     ".project-memory/SESSION_SURVIVAL_INVARIANTS.md",
     ".project-memory/PLATFORM_FRICTION_P0.md",
@@ -125,9 +127,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP042-EXTERNAL-TELEMETRY-BRIDGE-PUBLISHED",
-    "status": "MUTATION_COMPLETE_CI_PARTIAL_PASS_FIELD_PENDING",
-    "next_atomic_action": "Resolve current CI if needed, then read the first external BCP_RUNTIME_LATEST.json heartbeat from Drive",
+    "checkpoint_id": "APIAX07-BCP042-CI-QUALIFIED-FIELD-HEARTBEAT-PENDING",
+    "status": "CI_QUALIFIED",
+    "next_atomic_action": "Obtain first live external heartbeat or trigger bounded BCP-native recovery/update path",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -165,10 +167,11 @@
     "external_runtime_file": "CHATGPT_PC_AGENT/03_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
     "heartbeat_interval_seconds": 45,
     "contains_secrets": false,
-    "windows_validation_run_id": 35412631205,
-    "windows_validation_state": "IN_PROGRESS",
-    "pc_sanity_run_id": 35412631244,
-    "pc_sanity_state": "IN_PROGRESS",
-    "field_runtime_readback": "PENDING"
+    "windows_validation_run_id": 35413092364,
+    "windows_validation_state": "PASS",
+    "pc_sanity_run_id": 35413092476,
+    "pc_sanity_state": "PASS",
+    "field_runtime_readback": "PENDING_NO_DRIVE_HEARTBEAT_YET",
+    "cahier_des_charges_commit": "24a9a99e75c2d546d5fa623810c0989779dd5e5a"
   }
 }
