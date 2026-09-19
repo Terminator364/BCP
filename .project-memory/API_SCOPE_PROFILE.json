@@ -1,0 +1,49 @@
+{
+  "schema": "api.scope-profile/1",
+  "project": "API / BCP",
+  "purpose": [
+    "Personal software development, testing, automation, continuity and resilience",
+    "Operate only on the user's own devices, accounts, repositories, local network and controlled test environments unless a narrower authorized target is explicitly supplied"
+  ],
+  "normal_targets": [
+    "Windows PC owned/controlled by user",
+    "Android phones owned/controlled by user",
+    "User GitHub repositories and CI",
+    "User Google Drive/project storage",
+    "Local LAN services and test endpoints",
+    "User-built applications such as ChatGPT-PC, BuildHub, PhoneMouse, P2PCR95, BROWSER4G and B-EDGE"
+  ],
+  "default_intent": "Defensive engineering, debugging, reliability, deployment, observability, recovery and performance optimization",
+  "request_context_contract": {
+    "include_when_relevant": [
+      "target ownership/authorization",
+      "local or controlled environment",
+      "concrete engineering goal",
+      "minimum necessary operation",
+      "success criteria and rollback/receipt"
+    ],
+    "avoid": [
+      "unnecessary exploit detail when the engineering goal is defensive",
+      "broad ambiguous requests detached from the owned target",
+      "large mixed tool bursts when atomic execution is possible"
+    ]
+  },
+  "platform_checks": {
+    "verification_hold": "External nonterminal platform event; checkpoint and resume, do not reset project",
+    "rate_limit_429": "Backoff and serialize",
+    "tool_transient": "Retry only failed uncommitted atomic action with readback"
+  },
+  "non_goals": [
+    "Bypassing or weakening platform safety systems",
+    "Targeting third-party systems without established authorization",
+    "Using the user as a manual telemetry bus"
+  ],
+  "execution_profile": {
+    "staged_recovery": true,
+    "atomic_batches": true,
+    "durable_checkpoint_before_long_turn": true,
+    "idempotency_and_receipts": true,
+    "single_writer_lease": true,
+    "background_device_jobs_may_continue_if_already_dispatched": true
+  }
+}
