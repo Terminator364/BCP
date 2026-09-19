@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_EXITED_DIAGNOSTIC_RELEASE_0_6_4_0_1_3_CANDIDATE",
-  "last_completed_atomic_action": "Fresh Drive telemetry at 2026-09-19T21:07:42Z proves BCP 0.6.3 alive/paired/UP_TO_DATE and Nexus bundle 0.1.2 present, but the Nexus bootstrap exited without a success receipt. Telegram cockpit human-progress V2 was merged separately in PR #54 after all exact-head CI gates passed.",
-  "next_action": "Qualify BCP 0.6.4 + Nexus 0.1.3. This release externalizes bootstrap exit_code/receipt_status and writes a secret-free failure receipt so the next resident zero-touch attempt can be diagnosed without reinstall, token re-entry, file copy, or screenshot. If the receipt reports HUMAN_AUTH_REQUIRED, the only intended human gate is one Cloudflare browser authorization; otherwise fix the classified failure from durable evidence.",
+  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_RELAUNCH_BUG_IDENTIFIED_0_6_5_CANDIDATE",
+  "last_completed_atomic_action": "Fresh Drive telemetry first showed Nexus 0.1.2 EXITED_NO_RECEIPT, then later showed LAUNCHED again on the same bundle. Code audit identified the mechanism: each periodic apply rewrote nexus_bootstrap_delivery.json to STAGED before _launch_nexus_bootstrap_once read prior state, erasing the terminal failure and permitting repeated same-version relaunches. This explains recurring visible PowerShell bootstrap windows and redundant attempts.",
+  "next_action": "Qualify and merge BCP 0.6.5. It preserves same-version terminal Nexus state across periodic update checks, while 0.6.4/0.1.3 diagnostics expose exit_code and secret-free receipt_status. After resident convergence, read Drive runtime evidence; do not reinstall, re-enter Telegram token, or copy files. If HUMAN_AUTH_REQUIRED is reported, perform only the one-time Cloudflare browser authorization.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,13 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-EXIT-DIAGNOSTIC-CANDIDATE-20260919",
+    "checkpoint_id": "BCP-NEXUS-SAME-VERSION-RELAUNCH-FIX-CANDIDATE-20260919",
     "status": "CANDIDATE_CI_PENDING",
-    "last_completed_action": "Human-first Telegram cockpit V2 merged; Nexus EXITED_NO_RECEIPT reproduced in fresh Drive telemetry.",
-    "next_atomic_action": "Run exact-head CI for BCP 0.6.4/Nexus 0.1.3, then serialized merge only if green; wait for resident convergence and read machine receipt.",
+    "last_completed_action": "Root cause of repeated Nexus bootstrap relaunches identified and fixed in BCP 0.6.5 candidate.",
+    "next_atomic_action": "Exact-head CI -> serialized merge -> resident convergence -> Drive readback of server 0.6.5 and Nexus 0.1.3 receipt/exit status.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/nexus-resume-diagnostics-20260919-2115",
-    "base_main_sha": "47a0d5b67b3e2c4c974fd566dd787eaba8b5686e",
+    "branch": "work/bcp/nexus-state-preserve-r56",
+    "base_main_sha": "557a05c28fb26b5ab05dede8370c9b11778dd8b4",
     "no_replay": true
   },
   "runtime_verification": {
