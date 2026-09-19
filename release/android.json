@@ -11,5 +11,5 @@
   "distribution_status": "COORDINATED_CI_PENDING_PRIVATE_STABLE_SIGNING",
   "note": "BCP 0.5.0 + B-EDGE 1.1.0 are one coordinated product train. Public CI qualifies source/unsigned APK and compatibility; private stable signing remains outside public GitHub.",
   "coordinated_server_version": "0.5.0",
-  "requirements_revision": "2026-09-19-R3"
+  "requirements_revision": "2026-09-19-R4"
 }
