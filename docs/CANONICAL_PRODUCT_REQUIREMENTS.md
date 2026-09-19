@@ -103,16 +103,16 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.3.
+Current target: BCP 0.4.4.
 
-BCP 0.4.3 includes the external Drive runtime heartbeat bridge and adds an idempotent per-user Windows lifecycle launcher for the same BCP managed process, so runtime truth can be observed without the interactive ChatGPT-PC channel and the managed app can return after user logon.
+BCP 0.4.4 includes the external Drive runtime heartbeat bridge, the idempotent per-user Windows lifecycle launcher for the same BCP managed process, and makes API_BCP/02_TELEMETRY/BCP the preferred Drive telemetry destination while keeping the previous ChatGPT-PC tree as compatibility fallback.
 
 Promotion gate:
 - CI qualification PASS;
 - Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.3;
+- existing managed-update path consumes 0.4.4;
 - `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.3 runtime;
+- its timestamp/version/hash prove a live 0.4.4 runtime;
 - B-EDGE telemetry/readback follows.
 
 No blind reinstall is allowed merely because telemetry is missing.
