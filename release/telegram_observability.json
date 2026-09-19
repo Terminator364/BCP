@@ -3,7 +3,7 @@
   "channel": "stable",
   "version": "2026.09.19-human-progress-v2",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "e0eb23b06f157d6c0182794ed2fa2ec23a87d2485b2da2d83f23aad5d83f8c24",
+  "sha256": "3f19409dd0610f1206e5216fe8fc534c328c16c377908034baa87c875801f214",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
