@@ -143,7 +143,8 @@
     "P0_progress_presence_during_chat_uncertainty": true,
     "P0_correct_home_wifi_topology": true,
     "P1A_nexus_webhook_transport": true,
-    "P0_qualified_automatic_update_plane": true
+    "P0_qualified_automatic_update_plane": true,
+    "P0_mission_autonomy_and_observable_execution": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -173,11 +174,19 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-POST-PR36-INTEGRATION-20260919",
-    "status": "CI_QUALIFIED_MERGED_TRUE_EXTERNAL_GATES_REMAIN",
-    "last_completed_action": "Merged Nexus MVP and unified CURRENT automatic-update manifest after exact-head CI qualification; bound silent-execution watchdog requirement.",
-    "next_atomic_action": "Prepare the remaining no-user-burden pieces, then stop only at irreducible external authorization/signing gates; do not reinstall or replay already-working Telegram/BCP components.",
-    "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY"
+    "checkpoint_id": "BCP-MISSION-AUTONOMY-CORE-20260919",
+    "status": "IMPLEMENTED_SELFTEST_PASS_RELEASE_ALIGNMENT_PLATFORM_HOLD",
+    "last_completed_action": "Durable mission core implemented in windows/bcp_server.py; managed-update server selftest/package PASS; release/server.json and release/android.json aligned to 0.5.1.",
+    "next_atomic_action": "Resume release alignment only when repository mutation controls permit: align CURRENT/installer/coordinated CI, bind R7 canonical requirement, requalify exact head, then merge through writer fence.",
+    "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
+    "branch": "work/bcp/mission-autonomy-observable-20260919",
+    "base_main_sha": "a26389ce967cdf13a082265ac44b846e145a4b02",
+    "mission_core_commit": "3edf18ed4f7cec973ca29f3f697214437c886af6",
+    "server_candidate_sha256": "1ad03ce3d00528da20c4c3517bfad2eb79c5fdcc2eb4aed6416e499ad94b1844",
+    "managed_update_ci_run_id": 35451813153,
+    "managed_update_ci_result": "PASS",
+    "blocking_reason": "PLATFORM_HOLD_ON_DEPLOYMENT_AND_CI_FILE_MUTATIONS",
+    "no_replay": true
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",

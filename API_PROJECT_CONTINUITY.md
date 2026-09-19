@@ -313,3 +313,14 @@ Mandatory on every recovery and mutation-capable turn:
 - preserve divergent useful work through recovery branches/draft PRs.
 
 Conversation memory is not a Git lock. Parallel reasoning is allowed; parallel direct writes to canonical state are not.
+
+
+## P0 mission autonomy recovery binding — 2026-09-19
+
+Canonical requirement ID: `P0_MISSION_AUTONOMY_AND_OBSERVABLE_EXECUTION`.
+
+BCPGO recovery MUST first read the durable mission/checkpoint state and continue from the next uncommitted action. A conversation boundary, network interruption, worker loss, or platform hold is not mission completion.
+
+Before significant work, persist the mission envelope. Each bounded step produces observable event/evidence state. Model or agent workers are replaceable and cannot directly promote unvalidated output to canonical project state.
+
+The current implementation line is BCP 0.5.1 candidate on a writer-fenced work branch. FIELD_VERIFIED remains false until exact-head CI, serialized integration, managed update/readback, interruption recovery, and human-first cockpit evidence pass.
