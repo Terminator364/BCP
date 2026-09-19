@@ -207,10 +207,15 @@ public final class EdgeOrchestrator {
         for (EdgeJobEntity j : dao.pendingJobs(projectId, 128)) {
             JSONObject o = new JSONObject();
             try {
-                if ("BLOCKED".equals(j.state) && dao.unresolvedDependencies(j.localId) == 0) {
-                    String next = EdgePolicy.nextState(j.requiresPc, getMode());
-                    dao.setJobState(j.localId, next, System.currentTimeMillis());
-                    j.state = next;
+                if ("BLOCKED".equals(j.state)) {
+                    if (dao.failedDependencies(j.localId) > 0) {
+                        dao.setJobState(j.localId, "HOLD", System.currentTimeMillis());
+                        j.state = "HOLD";
+                    } else if (dao.unresolvedDependencies(j.localId) == 0) {
+                        String next = EdgePolicy.nextState(j.requiresPc, getMode());
+                        dao.setJobState(j.localId, next, System.currentTimeMillis());
+                        j.state = next;
+                    }
                 }
                 o.put("local_id", j.localId);
                 o.put("project_id", j.projectId);
