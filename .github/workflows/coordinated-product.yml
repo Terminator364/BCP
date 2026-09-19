@@ -5,10 +5,9 @@ on:
   pull_request:
   push:
     paths:
-      - "windows/bcp_server.py"
+      - "windows/**"
       - "android-b-edge/**"
-      - "release/server.json"
-      - "release/android.json"
+      - "release/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
       - ".github/workflows/coordinated-product.yml"
 
@@ -24,84 +23,180 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Server release contract
+      - name: Python syntax and release contract
         shell: powershell
         run: |
+          python -m py_compile .\windows\bcp_server.py
           $release=Get-Content -Raw '.\release\server.json' -Encoding UTF8|ConvertFrom-Json
           $server=Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
-          if($release.version -ne '0.5.0'){throw 'server release version drift'}
-          if($release.coordinated_edge_version -ne '1.1.0-evergreen'){throw 'server/edge coordination drift'}
-          if($server -notmatch 'SERVER_VERSION = "0.5.0"'){throw 'server source version drift'}
-          if($server -notmatch '/v1/orchestrator/status'){throw 'orchestrator status missing'}
-          if($server -notmatch 'memory_records'){throw 'memory schema missing'}
-          if($server -notmatch 'WAITING_FOR_PC'){throw 'resource-aware job queue missing'}
+          if($release.version -ne '0.6.0'){throw 'server release version drift'}
+          if($release.coordinated_edge_version -ne '1.2.0-evergreen'){throw 'server/edge coordination drift'}
+          if($release.requirements_revision -ne '2026-09-19-R5'){throw 'requirements revision drift'}
+          if($server -notmatch 'SERVER_VERSION = "0.6.0"'){throw 'server source version drift'}
+          $raw=[IO.File]::ReadAllText((Resolve-Path '.\windows\bcp_server.py'),[Text.UTF8Encoding]::new($false))
+          $canonical=($raw -replace "`r`n","`n") -replace "`r","`n"
+          $bytes=[Text.UTF8Encoding]::new($false).GetBytes($canonical)
+          $sha=[Security.Cryptography.SHA256]::Create()
+          try{$actual=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace("-","").ToLowerInvariant()}finally{$sha.Dispose()}
+          if($actual -ne $release.sha256){throw "server sha mismatch actual=$actual manifest=$($release.sha256)"}
+          foreach($needle in @('/v1/orchestrator/status','memory_candidates','TRUSTED_EVIDENCE','bcp.context_pack/2','context_hash','coordinator_epoch','input_hash','RESOURCE_ENTER_AVAILABLE_BYTES')){
+            if($server -notmatch [regex]::Escape($needle)){throw "server contract missing $needle"}
+          }
       - name: Server self-test
+        shell: powershell
         run: python .\windows\bcp_server.py --selftest
+      - name: Windows installer parse and self-test
+        shell: powershell
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\windows\INSTALL_BCP_FINAL.ps1'),[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count){$errors|Format-List *;throw 'installer parse failed'}
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_FINAL.ps1' -SelfTest
+      - name: Batched acceptance parse and self-test
+        shell: powershell
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1'),[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count){$errors|Format-List *;throw 'acceptance parse failed'}
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -SelfTest
+      - name: Windows package hashes
+        shell: powershell
+        run: |
+          Get-FileHash -Algorithm SHA256 '.\windows\bcp_server.py' | ForEach-Object {$_.Hash.ToLowerInvariant()+'  bcp_server.py'} | Set-Content -Encoding ascii server.sha256
+          Get-FileHash -Algorithm SHA256 '.\windows\INSTALL_BCP_FINAL.ps1' | ForEach-Object {$_.Hash.ToLowerInvariant()+'  INSTALL_BCP_FINAL.ps1'} | Set-Content -Encoding ascii installer.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-windows-0.6.0
+          path: |
+            windows/bcp_server.py
+            windows/INSTALL_BCP_FINAL.ps1
+            windows/INSTALL_BCP_FINAL.cmd
+            windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1
+            windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd
+            server.sha256
+            installer.sha256
+          if-no-files-found: error
 
   android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
+      - name: Install Android SDK components
+        shell: bash
+        run: |
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Coordinated Android contract
+      - name: Coordinated Android static contract
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'versionCode 110' android-b-edge/build.gradle
-          grep -F 'versionName "1.1.0-evergreen"' android-b-edge/build.gradle
-          grep -F 'private static final String EDGE_VERSION = "1.1.0";' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
-          grep -F 'EdgeOrchestrator' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
-          grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F 'PC_MEMORY_PRESSURE' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F '"minimum_server_version": "0.5.0"' release/android.json
+          G=android-b-edge/build.gradle
+          C=android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
+          P=android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
+          O=android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java
+          D=android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDao.java
+          R=android-b-edge/src/main/java/com/blessing/bcpedge/ResourceGovernor.java
+          grep -F 'versionCode 120' "$G"
+          grep -F 'versionName "1.2.0-evergreen"' "$G"
+          grep -F 'EDGE_VERSION = "1.2.0"' "$C"
+          grep -F 'androidx.room:room-runtime' "$G"
+          grep -F 'androidx.work:work-runtime' "$G"
+          grep -F 'ResourceGovernor' "$C"
+          grep -F 'HOLD_RESOURCE' "$P"
+          grep -F 'HOLD_RESOURCE' "$D"
+          grep -F 'edge_r2_allowed' "$R"
+          grep -F 'B_EDGE_ROOM_CACHE' "$O"
+          grep -F 'durable_remote_receipt' "$C"
+          grep -F '"minimum_server_version": "0.6.0"' release/android.json
+          grep -F '"coordinated_server_version": "0.6.0"' release/android.json
+          grep -F '"version_name": "1.2.0-evergreen"' release/android.json
+          if grep -R -E 'storepass|keypass|BEGIN PRIVATE KEY' android-b-edge release; then echo "private signing material detected"; exit 1; fi
       - name: Unit tests
         run: gradle :android-b-edge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
-      - name: Lint
+      - name: Android lint
         run: gradle :android-b-edge:lintDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
-      - name: Build APKs
+      - name: Build debug and unsigned release APK
         run: gradle :android-b-edge:assembleDebug :android-b-edge:assembleRelease --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
-      - name: Package contract
+      - name: APK contract and signing verifier
         shell: bash
         run: |
           set -euo pipefail
           DEBUG=android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk
           RELEASE=android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
-          test -s "$DEBUG"
-          test -s "$RELEASE"
-          sha256sum "$DEBUG" > android-b-edge-debug.apk.sha256
-          sha256sum "$RELEASE" > android-b-edge-release-unsigned.apk.sha256
+          test -s "$DEBUG"; test -s "$RELEASE"
+          sha256sum "$DEBUG" | tee android-b-edge-debug.apk.sha256
+          sha256sum "$RELEASE" | tee android-b-edge-release-unsigned.apk.sha256
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$RELEASE" | tee android-b-edge-release.badging.txt
+          grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='120'" android-b-edge-release.badging.txt
+          cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar ./apksigner.jar
+          test -s ./apksigner.jar
+          sha256sum ./apksigner.jar > apksigner.jar.sha256
       - uses: actions/upload-artifact@v4
         with:
-          name: bcp-edge-1.1.0-coordinated
+          name: bcp-edge-1.2.0-unsigned
           path: |
             android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk
             android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
             android-b-edge-debug.apk.sha256
             android-b-edge-release-unsigned.apk.sha256
+            android-b-edge-release.badging.txt
+            apksigner.jar
+            apksigner.jar.sha256
+          if-no-files-found: error
 
   compatibility:
     runs-on: ubuntu-latest
     needs: [server, android]
     steps:
       - uses: actions/checkout@v4
-      - name: Cross-component release contract
+      - uses: actions/download-artifact@v4
+        with:
+          name: bcp-windows-0.6.0
+          path: product/windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: bcp-edge-1.2.0-unsigned
+          path: product/android
+      - name: Cross-component contract and qualification receipt
         shell: python
         run: |
-          import json, pathlib, re, hashlib
-          sr=json.loads(pathlib.Path("release/server.json").read_text())
-          ar=json.loads(pathlib.Path("release/android.json").read_text())
-          server=pathlib.Path("windows/bcp_server.py").read_bytes()
-          client=pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text()
-          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"] == "0.5.0"
-          assert sr["coordinated_edge_version"] == ar["version_name"] == "1.1.0-evergreen"
+          import json, pathlib, hashlib, os, datetime
+          root=pathlib.Path(".")
+          sr=json.loads((root/"release/server.json").read_text())
+          ar=json.loads((root/"release/android.json").read_text())
+          coverage=json.loads((root/"release/COORDINATED_PRODUCT_COVERAGE.json").read_text())
+          server=(root/"windows/bcp_server.py").read_bytes()
+          client=(root/"android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text()
+          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"] == "0.6.0"
+          assert sr["coordinated_edge_version"] == ar["version_name"] == "1.2.0-evergreen"
+          assert sr["requirements_revision"] == ar["requirements_revision"] == coverage["requirements_revision"] == "2026-09-19-R5"
           assert hashlib.sha256(server).hexdigest() == sr["sha256"]
-          for endpoint in ["/v1/orchestrator/status", "/context", "/jobs"]:
+          for endpoint in ["/v1/orchestrator/status","/context","/jobs","/memory"]:
               assert endpoint in client or endpoint in server.decode()
+          q={
+            "schema":"bcp.qualification/1","status":"CI_PASS","server_version":"0.6.0","edge_version":"1.2.0-evergreen",
+            "requirements_revision":"2026-09-19-R5","source_sha":os.environ.get("GITHUB_SHA",""),
+            "server_sha256":hashlib.sha256(server).hexdigest(),
+            "coverage_sha256":hashlib.sha256((root/"release/COORDINATED_PRODUCT_COVERAGE.json").read_bytes()).hexdigest(),
+            "qualified_at":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "gates":["server_syntax","server_selftest","windows_installer_selftest","acceptance_selftest","android_unit","android_lint","android_build","manifest_compatibility"],
+            "private_signing_required":True,
+            "field_gates_remaining":["signed_apk_verify","android_install_confirmation","real_device_edge_telemetry","bcp_0_6_reboot_readback"]
+          }
+          pathlib.Path("product/QUALIFICATION.json").write_text(json.dumps(q,indent=2)+"\n")
+          (pathlib.Path("product")/"release").mkdir(exist_ok=True)
+          for p in ["release/server.json","release/android.json","release/COORDINATED_PRODUCT_COVERAGE.json"]:
+              src=pathlib.Path(p); (pathlib.Path("product/release")/src.name).write_bytes(src.read_bytes())
           print("BCP_COORDINATED_COMPATIBILITY=PASS")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-product-0.6.0-edge-1.2.0-rc
+          path: product/
+          if-no-files-found: error
