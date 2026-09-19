@@ -1,0 +1,204 @@
+{
+  "schema": "bcp.coordinated_coverage/1",
+  "requirements_revision": "2026-09-19-R5",
+  "product": {
+    "pc": "0.6.0",
+    "edge": "1.2.0-evergreen"
+  },
+  "policy": "NO_USER_FACING_PROMOTION_UNLESS_PC_EDGE_COMPATIBILITY_AND_APPLICABLE_CI_GATES_PASS",
+  "capabilities": [
+    {
+      "id": "PC_LIFECYCLE_REBOOT",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI",
+        "TESTED_DEVICE",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "prior 0.4.x reboot campaign + retained acceptance harness"
+    },
+    {
+      "id": "PC_4GB_RESOURCE_GOVERNOR",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC",
+        "TESTED_CI"
+      ],
+      "evidence": "hysteretic percent+absolute-free-RAM governor; field revalidation required on 0.6"
+    },
+    {
+      "id": "EDGE_DURABLE_ROOM_MEMORY",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "Room project/memory/job/receipt/dependency store; CI build/unit/lint gate"
+    },
+    {
+      "id": "EDGE_WORKMANAGER_RECONCILIATION",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "bounded periodic/on-demand reconciliation"
+    },
+    {
+      "id": "MULTI_PROJECT_REGISTRY",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "durable active-project registry and project-scoped memory/jobs"
+    },
+    {
+      "id": "DEPENDENCY_DAG_QUEUE",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "BLOCKED dependencies released by durable receipts"
+    },
+    {
+      "id": "QUEUE_BACKPRESSURE_NO_SILENT_DROP",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "bounded queue, HOLD/HOLD_RESOURCE, at-least-once remote receipt"
+    },
+    {
+      "id": "EVIDENCE_GATED_CANONICAL_MEMORY",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI"
+      ],
+      "evidence": "trusted evidence admitted; unverified project/policy memory becomes CANDIDATE"
+    },
+    {
+      "id": "CONTEXT_PACK_V2",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI"
+      ],
+      "evidence": "task relevance, pinned/evidence scoring, byte budget, revision, SHA-256 context hash"
+    },
+    {
+      "id": "BCPGO_CONTEXT_FABRIC",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "bootstrap/context contracts and writer-lease design; native fresh-chat integration remains surface-dependent"
+    },
+    {
+      "id": "EDGE_RESOURCE_GOVERNOR",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "RAM/battery/power-save/thermal/metered-network admission for EDGE_R0/R1/R2"
+    },
+    {
+      "id": "JOB_IDEMPOTENCY_FENCING",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI"
+      ],
+      "evidence": "idempotency key, action_id, input hash, revision precondition, coordinator epoch, evidence contract"
+    },
+    {
+      "id": "PAIRING_KEYSTORE_IDENTITY",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI",
+        "TESTED_DEVICE"
+      ],
+      "evidence": "one-confirmation PC fingerprint + Android Keystore token"
+    },
+    {
+      "id": "OFFLINE_EDGE_MODE",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "cached context, durable queue, EDGE_ONLY, reconnect reconciliation"
+    },
+    {
+      "id": "TELEMETRY_MACHINE_READABLE",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "Drive runtime heartbeat + bounded Android telemetry ACK"
+    },
+    {
+      "id": "SIGNED_ANDROID_EVERGREEN_UPDATE",
+      "status": [
+        "IMPLEMENTED",
+        "TESTED_CI"
+      ],
+      "evidence": "private stable signing + package/version/APK hash/certificate verification; 1.2 signed artifact required before promotion"
+    },
+    {
+      "id": "NSD_MDNS_DISCOVERY",
+      "status": [
+        "DEFERRED"
+      ],
+      "evidence": "raw /24 remains bounded compatibility path"
+    },
+    {
+      "id": "ENCRYPTED_LAN_TRANSPORT",
+      "status": [
+        "DEFERRED"
+      ],
+      "evidence": "authenticated LAN present; TLS/no-cleartext migration not yet field-qualified"
+    },
+    {
+      "id": "BEDGE_CANONICAL_WRITER_AUTHORITY",
+      "status": [
+        "DEFERRED"
+      ],
+      "evidence": "PC writer remains authoritative until explicit reversible fencing migration is field-qualified"
+    },
+    {
+      "id": "REMOTE_BCP_NEXUS",
+      "status": [
+        "NOT_IMPLEMENTED"
+      ],
+      "evidence": "logical architecture defined; no zero-cost remote runtime promoted"
+    },
+    {
+      "id": "PROVIDER_MODEL_BROKER",
+      "status": [
+        "DEFERRED"
+      ],
+      "evidence": "P1 after P0 continuity field qualification"
+    },
+    {
+      "id": "TELEGRAM_COCKPIT",
+      "status": [
+        "DEFERRED"
+      ],
+      "evidence": "not part of this release candidate"
+    }
+  ],
+  "acceptance": {
+    "required_before_drive_current": [
+      "server_selftest",
+      "windows_installer_selftest",
+      "acceptance_script_selftest",
+      "android_unit_tests",
+      "android_lint",
+      "android_debug_and_release_build",
+      "cross_component_manifest_hash_contract",
+      "private_android_signature_verification",
+      "coordinated_bundle_hash_manifest"
+    ],
+    "irreducible_field_gates": [
+      "Android OS install confirmation",
+      "real-device B-EDGE 1.2 telemetry",
+      "BCP 0.6 reboot/readback campaign"
+    ]
+  }
+}
