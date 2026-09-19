@@ -11,7 +11,7 @@
   "distribution_status": "PRIVATE_STABLE_SIGNING_VERIFIED",
   "note": "BCP 0.6.1 + B-EDGE 2.0.0-rc1 reconciles the field-proven 0.6/Edge2 line with R7 durable mission continuity. The Drive CURRENT APK hash was independently read back; field installation of this exact APK remains unproven.",
   "coordinated_server_version": "0.6.1",
-  "requirements_revision": "2026-09-19-R7",
+  "requirements_revision": "2026-09-19-R8",
   "release_train": "BCP-0.6.1_EDGE-2.0.0-rc1",
   "source_commit": "8b3896a71b5b04e714de05b41c6c7bd24d574ba6",
   "signature_schemes_verified": [
