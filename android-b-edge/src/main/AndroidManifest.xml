@@ -6,7 +6,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="BCP Edge"
+        android:label="BCP Edge Evergreen"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
         <provider
