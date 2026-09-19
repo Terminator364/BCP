@@ -106,16 +106,16 @@ A valid Windows field promotion requires at minimum:
 
 ## P0 — Current release objective
 
-Current target: BCP 0.4.5.
+Current target: BCP 0.4.6.
 
-BCP 0.4.5 keeps the 0.4.4 runtime/Drive/lifecycle guarantees and adds revision preconditions for canonical mutations so a stale writer using an obsolete expected revision is rejected without changing state.
+BCP 0.4.6 keeps the 0.4.5 revision-precondition/stale-writer guarantees and adds native managed-runtime proof in authenticated diagnostics: server PID, exact server path, SHA-256 and lifecycle registration. Process CommandLine visibility is not an acceptance oracle.
 
 Promotion gate:
 - CI qualification PASS;
 - Windows installer/selftest PASS;
-- existing managed-update path consumes 0.4.5;
+- existing managed-update path consumes 0.4.6;
 - `BCP_RUNTIME_LATEST.json` appears in synced Drive;
-- its timestamp/version/hash prove a live 0.4.5 runtime;
+- its timestamp/version/hash prove a live 0.4.6 runtime;
 - B-EDGE telemetry/readback follows.
 
 No blind reinstall is allowed merely because telemetry is missing.
@@ -165,3 +165,8 @@ The canonical field campaign is `BCP_FINAL_ACCEPTANCE_CURRENT` and must:
 - clean only its own known downloaded/extracted acceptance artifacts after success.
 
 The user must not be required to return between individual gates. One launch may cover the device/runtime acceptance campaign. A brand-new ChatGPT conversation is a platform boundary and may be spot-checked separately because the local PC harness cannot instantiate a new ChatGPT conversation itself.
+
+
+### Downloads hygiene
+
+Known legacy BCP artifacts in the Windows Downloads folder are deleted by exact allowlisted names at the beginning of the final acceptance campaign. The currently-running acceptance package is preserved until the campaign succeeds, then its own downloaded/extracted files are removed. Unrelated user files are never matched by the cleanup rule.
