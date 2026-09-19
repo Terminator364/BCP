@@ -430,7 +430,7 @@ if(-not $ResumeAfterReboot){
             pair_sha256=File-Sha256 $PairPath
             committed_revision=$checkpoint.committed_revision
             committed_hash=$checkpoint.committed_hash
-            pre_server_pid=$listener.pid
+            pre_server_pid=$listener.listener_pid
             pre_boot_time=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToUniversalTime().ToString("o")
             prepared_at=UtcNow
         }
