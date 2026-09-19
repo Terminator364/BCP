@@ -1,0 +1,56 @@
+{
+  "schema": "bcp.git_writer_lease_policy/1",
+  "adopted_at": "2026-09-19",
+  "status": "CANONICAL",
+  "canonical_branch": "main",
+  "autonomous_direct_main_write_allowed": false,
+  "emergency_direct_main_write": "HUMAN_EXPLICIT_ONLY_AND_AUDIT_REQUIRED",
+  "work_branch_pattern": "work/<project>/<session-or-mission-id>",
+  "recovery_branch_pattern": "recovery/<purpose>-<date>",
+  "required_branch_metadata": [
+    "writer_or_session_id",
+    "project_or_mission",
+    "base_main_sha",
+    "created_at",
+    "intended_file_scope",
+    "expected_ci_gates"
+  ],
+  "write_rules": {
+    "serial_mutations_per_branch": true,
+    "parallel_contents_writes_same_branch": false,
+    "file_blob_sha_is_global_repo_lease": false,
+    "force_update_main_normal_automation": false
+  },
+  "integration": {
+    "one_at_a_time": true,
+    "reread_main_before_merge": true,
+    "moved_main_requires_reconcile": true,
+    "merge_requires_exact_pr_head_sha": true,
+    "verify_main_after_merge": true,
+    "stale_state": "REBASE_OR_RECONCILE_REQUIRED"
+  },
+  "ci": {
+    "result_bound_to_exact_commit_sha": true,
+    "cancelled_is_pass": false,
+    "newer_commit_cannot_inherit_prior_green_run": true
+  },
+  "publication": {
+    "exact_qualified_integration_sha_required": true,
+    "receipt_fields": [
+      "source_commit_sha",
+      "pr_or_merge_identity",
+      "artifact_sha256",
+      "component_versions",
+      "requirements_revision",
+      "ci_run_ids",
+      "field_verification_state"
+    ]
+  },
+  "divergence_recovery": [
+    "CREATE_RECOVERY_BRANCH_AT_EXACT_SHA",
+    "OPEN_DRAFT_PR",
+    "COMPARE_AND_RECONCILE",
+    "REQUALIFY",
+    "NO_FORCE_PUSH"
+  ]
+}
