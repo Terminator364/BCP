@@ -22,7 +22,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "7da4dc241f164089db94016c1f4b0a1b92ed409e4cd21fd84d6de44330aab213"
+        "sha256": "c97b8c66d9ba0d27428af6f59d7d53987cc6efaa306229688ae388f89f53c82e"
       },
       "notes": "Field telemetry proves BCP 0.6.0 is currently running. BCP 0.6.1 reconciles that field line with R7 durable mission continuity and is CI-qualified for managed auto-update; fresh 0.6.1 field readback is still required."
     },
