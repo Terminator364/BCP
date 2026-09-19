@@ -1,13 +1,15 @@
 {
   "channel": "stable",
-  "version_code": 100,
-  "version_name": "1.0.0-evergreen",
+  "version_code": 110,
+  "version_name": "1.1.0-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
-  "minimum_server_version": "0.4.7",
+  "minimum_server_version": "0.5.0",
   "transport": "BCP_LOCAL_AUTHENTICATED_DRIVE_RELAY",
   "apk_url": "",
   "apk_sha256": "",
-  "distribution_status": "CI_UNSIGNED_RELEASE_PENDING_PRIVATE_STABLE_SIGNING",
-  "note": "Public GitHub qualifies source/unsigned APK only. Stable signing authority is private in API_BCP/99_PRIVATE_SIGNING. Signed CURRENT is promoted only after all CI gates pass."
+  "distribution_status": "COORDINATED_CI_PENDING_PRIVATE_STABLE_SIGNING",
+  "note": "BCP 0.5.0 + B-EDGE 1.1.0 are one coordinated product train. Public CI qualifies source/unsigned APK and compatibility; private stable signing remains outside public GitHub.",
+  "coordinated_server_version": "0.5.0",
+  "requirements_revision": "2026-09-19-R3"
 }
