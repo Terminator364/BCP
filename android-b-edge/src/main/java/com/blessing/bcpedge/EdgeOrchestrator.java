@@ -246,6 +246,10 @@ public final class EdgeOrchestrator {
             if (EdgePolicy.isCompletionResult(result)) {
                 dao.setJobState(localId, "COMMITTED", System.currentTimeMillis());
                 dao.deleteJob(localId);
+            } else if ("FAILED".equals(result) || "CANCELLED".equals(result)) {
+                // Terminal non-success is preserved for diagnostics and must not retry
+                // without an explicit retry policy/new action.
+                dao.setJobState(localId, result, System.currentTimeMillis());
             } else if (EdgePolicy.isRemoteQueueAccepted(result)) {
                 // Dispatch acknowledgement is not completion proof.
                 dao.setJobState(localId, "REMOTE_QUEUED", System.currentTimeMillis());
