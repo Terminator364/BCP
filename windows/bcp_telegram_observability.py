@@ -302,14 +302,19 @@ class LocalTruth:
     def _query(self, sql: str, args: tuple = ()) -> list[dict]:
         if not self.db.is_file():
             return []
+        cx = None
         try:
             cx = sqlite3.connect("file:" + self.db.as_posix() + "?mode=ro", uri=True, timeout=2)
             cx.row_factory = sqlite3.Row
-            rows = [dict(x) for x in cx.execute(sql, args).fetchall()]
-            cx.close()
-            return rows
+            return [dict(x) for x in cx.execute(sql, args).fetchall()]
         except Exception:
             return []
+        finally:
+            if cx is not None:
+                try:
+                    cx.close()
+                except Exception:
+                    pass
 
     def head(self, project: str) -> dict | None:
         rows = self._query("SELECT * FROM heads WHERE project_id=?", (project,))
@@ -1689,6 +1694,16 @@ def selftest() -> int:
         CREATE TABLE heads(project_id TEXT PRIMARY KEY,revision INTEGER,last_event_id INTEGER,last_event_hash TEXT,status TEXT,last_completed_action TEXT,next_action TEXT,updated_at TEXT);
         CREATE TABLE events(id INTEGER PRIMARY KEY,project_id TEXT,revision INTEGER,event_type TEXT,payload_json TEXT,idempotency_key TEXT,created_at TEXT,prev_hash TEXT,event_hash TEXT);
         CREATE TABLE jobs(id INTEGER PRIMARY KEY,project_id TEXT,kind TEXT,payload_json TEXT,state TEXT,requires_pc INTEGER,idempotency_key TEXT,created_at TEXT,updated_at TEXT);
+        CREATE TABLE missions(
+            mission_id TEXT PRIMARY KEY,project_id TEXT,current_step TEXT,last_committed_step TEXT,
+            next_step TEXT,last_progress_at TEXT,worker_component TEXT,receipt_evidence TEXT,
+            status TEXT,hold_reason TEXT,plan_json TEXT,created_at TEXT,updated_at TEXT
+        );
+        CREATE TABLE mission_events(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,mission_id TEXT,seq INTEGER,event_type TEXT,
+            step_id TEXT,worker_component TEXT,summary TEXT,evidence_ref TEXT,status TEXT,
+            failure_hold_reason TEXT,created_at TEXT
+        );
         """)
         cx.execute("INSERT INTO heads VALUES(?,?,?,?,?,?,?,?)", (
             "API/BCP", 7, 7, "abc", "EN_COURS", "CI patch persisted",
@@ -1700,6 +1715,24 @@ def selftest() -> int:
         ))
         cx.execute("INSERT INTO jobs VALUES(?,?,?,?,?,?,?,?,?)", (
             42, "API/BCP", "android-build", "{}", "WAITING_FOR_PC", 1, "j42", utc_now(), utc_now()
+        ))
+        now = utc_now()
+        cx.execute("INSERT INTO missions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+            "mission-test", "API/BCP", "run-test", "check-commit", "read-log",
+            now, "GITHUB_CI", "run:9", "STARTED", "", "[{\"id\":\"read-spec\",\"label\":\"Lire le cahier des charges courant\",\"state\":\"DONE\",\"verified\":true},{\"id\":\"check-commit\",\"label\":\"Vérifier le commit de la PR\",\"state\":\"DONE\",\"verified\":true},{\"id\":\"run-test\",\"label\":\"Lancer le test Windows Bootstrap\",\"state\":\"RUNNING\",\"verified\":false},{\"id\":\"read-log\",\"label\":\"Lire le journal du test Windows\",\"state\":\"PENDING\",\"verified\":false}]",
+            now, now
+        ))
+        cx.execute("INSERT INTO mission_events(mission_id,seq,event_type,step_id,worker_component,summary,evidence_ref,status,failure_hold_reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
+            "mission-test", 1, "STEP_COMMITTED", "read-spec", "LOCAL",
+            "Lire le cahier des charges courant", "spec:R11", "COMMITTED", "", now
+        ))
+        cx.execute("INSERT INTO mission_events(mission_id,seq,event_type,step_id,worker_component,summary,evidence_ref,status,failure_hold_reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
+            "mission-test", 2, "STEP_COMMITTED", "check-commit", "GITHUB",
+            "Vérifier le commit de la PR", "commit:test", "COMMITTED", "", now
+        ))
+        cx.execute("INSERT INTO mission_events(mission_id,seq,event_type,step_id,worker_component,summary,evidence_ref,status,failure_hold_reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
+            "mission-test", 3, "STEP_STARTED", "run-test", "GITHUB_CI",
+            "Lancer le test Windows Bootstrap", "run:9", "STARTED", "", now
         ))
         cx.commit()
         cx.close()
@@ -1733,23 +1766,28 @@ def selftest() -> int:
         )
         status = svc.status()
         assert "🤖 BCP Cockpit" in status
-        assert "🎯 Maintenant:" in status
+        assert "🎯 Micro-action actuelle: Lancer le test Windows Bootstrap" in status
+        assert "📊 Progression: █████░░░░░ 50% — 2/4 micro-actions vérifiées" in status
+        assert "✅ Dernière micro-action terminée: Vérifier le commit de la PR" in status
+        assert "➡️ Prochaine micro-action: Lire le journal du test Windows" in status
         assert "Ancien téléphone" in status
-        assert "ChatGPT: ⏳ réponse en attente" in status
         assert "💰 Coût: $0.00" not in status
         assert "👤 Action pour vous: AUCUNE" in status
-        assert "🕒 Preuve observée:" in status
+        assert "🕒 Dernière preuve:" in status
         assert "🧪 ✅ tests réussis" in status
+        assert "1. ✅ Lire le cahier des charges courant" in svc.plan_view()
+        assert "3. ▶️ Lancer le test Windows Bootstrap" in svc.plan_view()
         presence = svc.presence_snapshot()
         assert len(presence["fingerprint"]) == 64
-        assert "🤖 BCP — suivi" in presence["text"]
+        assert "🤖 BCP Cockpit" in presence["text"]
         assert "Ancien téléphone" in presence["text"]
         details = svc.details()
         assert "État global: EN_COURS" in details
         assert "GitHub CI: Windows=SUCCESS [work/test]" in details
         assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
         assert "48273195" in svc.job("48273195")
-        assert "CI patch persisted" in svc.tail("48273195")
+        assert "Vérifier le commit de la PR" in svc.tail()
+        assert "Lancer le test Windows Bootstrap" in svc.tail()
         assert "étape enregistrée" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Missions récentes" in svc.missions()
