@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_7_FIELD_HEALTHY_ACCEPTANCE_ORACLE_FIX_PENDING_QUALIFICATION",
-  "last_completed_atomic_action": "Read canonical Drive post-reboot evidence: real reboot, runtime return, identity persistence and exact checkpoint recovery all PASS. Runtime heartbeat confirms BCP 0.4.7 UP_TO_DATE, ChatGPT-PC 6.0.32 ALIVE, recovery HEALTHY. Identified managed-listener PID mismatch as an observer false-negative because authenticated diagnostics path/SHA matched the managed server. Patched acceptance oracle in cf83931cfd329437f247405b937d5f3905bce7bb; not yet promoted to Drive CURRENT.",
-  "next_action": "Qualify commit cf83931cfd329437f247405b937d5f3905bce7bb through the full final-acceptance package CI gates before replacing Drive CURRENT. Then run one batched PC+reboot+resource+network acceptance against BCP 0.4.7 and consume B-EDGE telemetry without manual screenshots.",
+  "status": "BCP_0_6_1_RUNTIME_ACTIVE_EDGE_2RC1_FIELD_VERIFY_PENDING",
+  "last_completed_atomic_action": "Machine-readable Drive telemetry after the B-EDGE initiated managed update proves BCP server 0.6.1 is now running on MBMPC with the release-pinned SHA-256 c97b8c66d9ba0d27428af6f59d7d53987cc6efaa306229688ae388f89f53c82e, lifecycle registration present, pairing preserved and update_state=UP_TO_DATE. The update transitioned through SELFTEST -> SERVER_START -> APPLIED_RESTART_PENDING -> UP_TO_DATE without replaying the install.",
+  "next_action": "Do not reinstall the Windows server. Verify exact B-EDGE 2.0.0-rc1 Evergreen identity/readback on the dedicated old phone and investigate the remaining ChatGPT-PC recovery_result_status ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD before promoting the coordinated release train to FIELD_VERIFIED. Then continue the Telegram progress-presence/Nexus field gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,18 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-MISSION-AUTONOMY-CORE-20260919",
-    "status": "IMPLEMENTED_SELFTEST_PASS_RELEASE_ALIGNMENT_PLATFORM_HOLD",
-    "last_completed_action": "Durable mission core implemented in windows/bcp_server.py; managed-update server selftest/package PASS; release/server.json and release/android.json aligned to 0.5.1.",
-    "next_atomic_action": "Resume release alignment only when repository mutation controls permit: align CURRENT/installer/coordinated CI, bind R7 canonical requirement, requalify exact head, then merge through writer fence.",
+    "checkpoint_id": "BCP-061-FIELD-RUNTIME-READBACK-20260919-1916",
+    "status": "WINDOWS_RUNTIME_VERIFIED_EDGE_AND_RECOVERY_GATES_PENDING",
+    "last_completed_action": "Captured post-update 0.6.1 machine-readable heartbeat and update transition from Drive.",
+    "next_atomic_action": "Verify exact B-EDGE 2.0.0-rc1 identity/readback and classify the remaining recovery pointer mismatch hold; no reinstall/replay.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/mission-autonomy-observable-20260919",
-    "base_main_sha": "a26389ce967cdf13a082265ac44b846e145a4b02",
-    "mission_core_commit": "3edf18ed4f7cec973ca29f3f697214437c886af6",
-    "server_candidate_sha256": "1ad03ce3d00528da20c4c3517bfad2eb79c5fdcc2eb4aed6416e499ad94b1844",
-    "managed_update_ci_run_id": 35451813153,
-    "managed_update_ci_result": "PASS",
-    "blocking_reason": "PLATFORM_HOLD_ON_DEPLOYMENT_AND_CI_FILE_MUTATIONS",
+    "branch": "work/bcp/field-readback-061-20260919-1916",
+    "base_main_sha": "a9064a43f9cf7f7d67bf86e86e0f204873236ea7",
     "no_replay": true
   },
   "runtime_verification": {
@@ -810,5 +805,41 @@
     "rule": "Spinner/UI silence is not progress evidence; checkpoint before slow actions; never replay unknown committed mutations.",
     "user_is_not_telemetry_bus": true,
     "canonical_doc": "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md"
+  },
+  "latest_field_evidence_0_6_1": {
+    "observed_at_utc": "2026-09-19T18:16:05+00:00",
+    "observed_at_kinshasa": "2026-09-19T19:16:05+01:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.6.1",
+    "server_pid": 4480,
+    "pc_name": "MBMPC",
+    "server_sha256": "c97b8c66d9ba0d27428af6f59d7d53987cc6efaa306229688ae388f89f53c82e",
+    "paired": true,
+    "update_state": "UP_TO_DATE",
+    "update_target_version": "0.6.1",
+    "lifecycle_registration": {
+      "supported": true,
+      "registered": true,
+      "value_name": "BlessingControlPlane"
+    },
+    "recovery_phase": "HEALTHY",
+    "recovery_result_status": "ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
+    "chatgpt_pc_active_version": "6.0.32",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "transition_evidence": [
+      "2026-09-19T18:13:09Z candidate 0.6.1 SELFTEST",
+      "2026-09-19T18:13:29Z server 0.6.1 SERVER_START / APPLIED_RESTART_PENDING",
+      "2026-09-19T18:14:20Z server 0.6.1 UP_TO_DATE",
+      "2026-09-19T18:16:05Z server 0.6.1 UP_TO_DATE / recovery_phase HEALTHY"
+    ],
+    "no_manual_reinstall_required": true,
+    "windows_field_runtime_verified": true,
+    "coordinated_release_field_verified": false,
+    "remaining_gates": [
+      "exact B-EDGE 2.0.0-rc1 Evergreen installation/readback",
+      "resolve or classify ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
+      "coordinated PC<->B-EDGE final field acceptance"
+    ]
   }
 }
