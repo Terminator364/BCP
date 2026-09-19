@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_2_CI_QUALIFIED_BEDGE_0_2_5_BUILDING_FIELD_HEARTBEAT_PENDING",
-  "last_completed_atomic_action": "Consolidated canonical project requirements; qualified BCP 0.4.2 on Windows; implemented B-EDGE 0.2.5 automatic BCP server promotion",
-  "next_action": "Finish B-EDGE 0.2.5 CI; then obtain field heartbeat via current B-EDGE 0.2.4 one-time server-update control or automatic 0.2.5 path when deployed",
+  "status": "BCP_0_4_3_QUALIFICATION_RUNNING_BEDGE_0_2_5_CI_PASS_FIELD_PENDING",
+  "last_completed_atomic_action": "B-EDGE 0.2.5 automatic BCP server promotion built successfully; BCP 0.4.3 lifecycle persistence published and managed-update qualification passed",
+  "next_action": "Finish BCP 0.4.3 Windows qualification, then drive one live field promotion and read external heartbeat",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -127,9 +127,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-WINDOWS-GREEN-BEDGE-AUTO-PROMOTION-BUILDING",
+    "checkpoint_id": "APIAX07-BCP043-BEDGE025-QUALIFICATION",
     "status": "ADVANCING",
-    "next_atomic_action": "Complete B-EDGE CI and drive first field BCP 0.4.2 heartbeat",
+    "next_atomic_action": "Complete BCP 0.4.3 Windows qualification then obtain live Drive heartbeat",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -182,7 +182,25 @@
     "ci_guard_commit": "ef877b4fc0721effc6caf4b9695cca87305aaa1c",
     "release_metadata_commit": "f1c0eab7bc242fccbd11001ff33a07b1065f3aac",
     "ci_run_id": 35413252285,
-    "ci_state": "IN_PROGRESS",
-    "signed_self_update_distribution": "PENDING_FIXED_SIGNING_IDENTITY"
+    "ci_state": "PASS",
+    "signed_self_update_distribution": "PENDING_FIXED_SIGNING_IDENTITY",
+    "ci_artifact_id": 10574896146,
+    "ci_artifact_digest": "sha256:b7fec7dbd5a774f29d84c7a9057ae1e723664963549b95fe7ddb9b02b2898f30"
+  },
+  "bcp_0_4_3": {
+    "server_commit": "3d914d0acd09ed14f58539e302aec0077920cf72",
+    "server_sha256": "99db472485b9d961c5d545bc1f5e9a4e6c32ca81c48ed938d075dcefcab29591",
+    "release_commit": "2aedaae1af4d0cfb35e31af208922eb3386f3530",
+    "managed_update_sequence_commit": "fc5f704277fba21562876c26fb5b0a93b69ab803",
+    "installer_alignment_commit": "521e2baed1f81522d13c65efea73d0e0f0f7dcdd",
+    "canonical_requirements_commit": "b46014a653e3951691a39ebeb73d3d5fde82b077",
+    "managed_update_run_id": 35413375179,
+    "managed_update_result": "PASS",
+    "pc_sanity_run_id": 35413377534,
+    "pc_sanity_result": "PASS",
+    "windows_validation_run_id": 35413377552,
+    "windows_validation_result": "IN_PROGRESS",
+    "lifecycle_launcher": "HKCU_RUN_SAME_MANAGED_PROCESS_IDEMPOTENT",
+    "field_runtime_readback": "PENDING"
   }
 }
