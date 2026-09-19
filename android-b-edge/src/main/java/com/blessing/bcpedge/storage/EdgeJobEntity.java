@@ -30,6 +30,14 @@ public final class EdgeJobEntity {
     public String resourceClass;
     @NonNull
     public String idempotencyKey;
+    @NonNull
+    public String actionId;
+    public long expectedRevision;
+    @NonNull
+    public String inputHash;
+    public long coordinatorEpoch;
+    @NonNull
+    public String evidenceContract;
     public long createdAt;
     public long updatedAt;
 
@@ -37,6 +45,9 @@ public final class EdgeJobEntity {
                          @NonNull String kind, @NonNull String payloadJson,
                          @NonNull String state, boolean requiresPc, int priority,
                          @NonNull String resourceClass, @NonNull String idempotencyKey,
+                         @NonNull String actionId, long expectedRevision,
+                         @NonNull String inputHash, long coordinatorEpoch,
+                         @NonNull String evidenceContract,
                          long createdAt, long updatedAt) {
         this.localId = localId;
         this.projectId = projectId;
@@ -47,6 +58,11 @@ public final class EdgeJobEntity {
         this.priority = priority;
         this.resourceClass = resourceClass;
         this.idempotencyKey = idempotencyKey;
+        this.actionId = actionId;
+        this.expectedRevision = expectedRevision;
+        this.inputHash = inputHash;
+        this.coordinatorEpoch = coordinatorEpoch;
+        this.evidenceContract = evidenceContract;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
