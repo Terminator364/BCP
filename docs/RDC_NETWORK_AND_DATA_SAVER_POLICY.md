@@ -70,3 +70,18 @@ The transport is FIELD_VERIFIED only when:
 - measured Telegram control traffic remains compact;
 - spend remains $0.00;
 - no VPN, geo-spoofing or unofficial bypass is used.
+
+
+## Selective B-EDGE relay refinement
+
+The dedicated old Android phone is the preferred Telegram relay/witness, not the PC replacement.
+
+The steady-state routing target is:
+`PC-WORKER --authenticated LAN--> B-EDGE --Telegram transport--> Telegram`.
+
+B-EDGE keeps local PC communication on the home LAN. If the home-Wi-Fi route to the official Telegram Bot API is unavailable, a qualified Android implementation may bind only the small Telegram control-plane connection to cellular while leaving bulk traffic on Wi-Fi. If no route exists, compact events are queued and later resumed idempotently.
+
+The PC therefore remains on home Wi-Fi. Full-PC mobile hotspot is a diagnostic fallback only, not a product dependency.
+
+Detailed transport/progress/update architecture:
+`docs/TELEGRAM_PROGRESS_RELAY_AND_UPDATE_ARCHITECTURE.md`.
