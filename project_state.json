@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_5_CI_QUALIFIED_FINAL_ACCEPTANCE_BATCH_READY",
-  "last_completed_atomic_action": "Published and CI-qualified BCP 0.4.5 stale-writer revision protection plus one-shot reboot/resume final acceptance campaign; uploaded CURRENT acceptance package to canonical Drive",
-  "next_action": "Run API_BCP/00_A_INSTALLER/BCP_FINAL_ACCEPTANCE_CURRENT.zip once on the PC. The campaign updates to 0.4.5 if needed, executes pre-reboot gates, reboots Windows automatically, resumes via RunOnce, executes post-reboot gates, and writes BCP_FINAL_ACCEPTANCE_LATEST.json.",
+  "status": "BCP_0_4_6_CI_QUALIFIED_FINAL_ACCEPTANCE_V2_READY",
+  "last_completed_atomic_action": "Diagnosed final acceptance pre-reboot false negative: lifecycle PASS but Windows CIM returned empty listener command line. Replaced fragile command-line oracle with BCP-native diagnostics PID/path/SHA proof, added explicit legacy Downloads cleanup, qualified BCP 0.4.6 and replaced final acceptance CURRENT in Drive.",
+  "next_action": "Run refreshed API_BCP/00_A_INSTALLER/BCP_FINAL_ACCEPTANCE_CURRENT.zip once. It will clean known legacy BCP downloads, auto-update to 0.4.6, run all pre-reboot gates, reboot automatically, resume via RunOnce, run post-reboot/resource/network gates, and publish one final report.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP045-FINAL-ACCEPTANCE-BATCH-READY",
-    "status": "WAITING_ONE_BATCH_LAUNCH",
-    "next_atomic_action": "Run final acceptance CURRENT once; then read BCP_FINAL_ACCEPTANCE_LATEST.json",
+    "checkpoint_id": "APIAX07-BCP046-FINAL-ACCEPTANCE-V2-READY",
+    "status": "WAITING_SINGLE_BATCH_RELAUNCH",
+    "next_atomic_action": "Run refreshed final acceptance CURRENT once; then read final report instead of requesting screenshots",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -391,10 +391,10 @@
     "ps1_commit": "fe3b0461911f4a9535e699fe0014c26926e4b984",
     "cmd_commit": "a60d80cfc12ca859c8f3299e37b8cfc0b223ef23",
     "workflow_commit": "1a8fbf2e00bfd79abc5df7f5eda9cff636c90d4b",
-    "ci_run_id": 35416017546,
+    "ci_run_id": 35416525071,
     "ci_result": "PASS",
-    "artifact_id": 10576465195,
-    "artifact_digest": "sha256:877060c9863cb596986543290f6a959fb30ef4259aaac1a0457db501faa2cc89",
+    "artifact_id": 10576141178,
+    "artifact_digest": "sha256:4b5129187bf2b75cb12037983643ff37194b979291e8c0fdbc12d2e2bcb54fa2",
     "drive_file_id": "1XgHpGzO_SWJabwUu6hOVc8qOD0NCgVj4",
     "drive_file_name": "BCP_FINAL_ACCEPTANCE_CURRENT.zip",
     "drive_url": "https://drive.google.com/file/d/1XgHpGzO_SWJabwUu6hOVc8qOD0NCgVj4/view?usp=drivesdk",
@@ -417,6 +417,57 @@
       "resource_bounds",
       "poor_connectivity_bounds"
     ],
-    "platform_boundary_remaining": "Fresh ChatGPT conversation RESYNC spot-check cannot be instantiated by PC harness"
+    "platform_boundary_remaining": "Fresh ChatGPT conversation RESYNC spot-check cannot be instantiated by PC harness",
+    "version": "V2",
+    "target_version": "0.4.6",
+    "runner_managed_listener_commit": "9c9afbb227ecb5235d22ee1d377032bebd72482b",
+    "download_cleanup_commit": "3fd6a10e8a6a88d91f571c095637b014dd5714fe",
+    "drive_replaced_at": "2026-09-19T02:44:38Z",
+    "preflight_cleanup_exact_files": [
+      "BCP_PC_BOOTSTRAP.cmd",
+      "BCP_PC_NATIVE_V0_1_1.zip",
+      "BCP_PC_NATIVE_V0_1_2_AUTO.zip",
+      "BCP_PC_NETWORK_REPAIR_V0_1_3.zip",
+      "INSTALL_BCP_EVERGREEN_v0.2.1.cmd",
+      "BCP_FINAL_BOOTSTRAP_0_3.zip",
+      "BCP_FINAL_BOOTSTRAP_0_3_1.zip",
+      "BCP_PC_MIGRATE_CURRENT.zip"
+    ]
+  },
+  "final_acceptance_last_failure": {
+    "campaign_id": "20260919T023914Z-cc60d118",
+    "phase": "PRE_REBOOT",
+    "status": "FAIL_PRE_REBOOT",
+    "failed_gate": "managed_listener",
+    "error": "LIFECYCLE_OR_LISTENER_NOT_MANAGED",
+    "runtime_version": "0.4.5",
+    "pairing_pass": true,
+    "checkpoint_pass": true,
+    "checkpoint_revision": 1,
+    "idempotency_pass": true,
+    "stale_writer_pass": true,
+    "local_health_pass": true,
+    "lan_health_pass": true,
+    "lifecycle_registered": true,
+    "listener_pid": 11032,
+    "listener_command_line": "",
+    "diagnosis": "FALSE_NEGATIVE_ORACLE: Windows CIM returned an empty CommandLine even though BCP heartbeat identified the active managed server path. Do not use process CommandLine as authoritative managed-runtime proof."
+  },
+  "bcp_0_4_6": {
+    "server_commit": "09d432c6cb61279c20b52d1d15a44b048c6f06dc",
+    "selftest_fix_commit": "040ee952562a27ad92b457c0f518f964eef60c78",
+    "server_sha256": "09f5e3ec4fde445593d21c9b6da2be7c2aa883578505f96feb9ca830b8183d24",
+    "release_hash_commit": "47bcf4440d402eeb818c11f9dd8fb45260658423",
+    "managed_update_run_id": 35416525067,
+    "managed_update_result": "PASS",
+    "windows_validation_run_id": 35416525057,
+    "windows_validation_result": "PASS",
+    "native_diagnostics_fields": [
+      "server_pid",
+      "server_file",
+      "server_sha256",
+      "lifecycle_registration"
+    ],
+    "requirements_commit": "65135c6c282570ba2de3d222b1cdcf6b7fc0b08f"
   }
 }
