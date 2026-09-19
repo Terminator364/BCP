@@ -52,6 +52,8 @@ jobs:
           UPDATE="android-b-edge/src/main/java/com/blessing/bcpedge/UpdateManager.java"
           POLICY="android-b-edge/src/main/java/com/blessing/bcpedge/UpdatePolicy.java"
           TELE="android-b-edge/src/main/java/com/blessing/bcpedge/TelemetryStore.java"
+          DB="android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java"
+          JOB="android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeJobEntity.java"
           MANIFEST="android-b-edge/src/main/AndroidManifest.xml"
           GRADLE="android-b-edge/build.gradle"
           PATHS="android-b-edge/src/main/res/xml/file_paths.xml"
@@ -86,6 +88,16 @@ jobs:
           grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
           grep -F 'PC_MEMORY_PRESSURE' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
           grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
+          grep -F 'version = 2' "$DB" >/dev/null
+          grep -F 'MIGRATION_1_2' "$DB" >/dev/null
+          grep -F 'expectedRevision' "$JOB" >/dev/null
+          grep -F 'coordinatorEpoch' "$JOB" >/dev/null
+          grep -F 'evidenceContract' "$JOB" >/dev/null
+          grep -F 'inputHash' "$JOB" >/dev/null
+          grep -F 'actionId' "$JOB" >/dev/null
+          grep -F 'known_hash=' "$CLIENT" >/dev/null
+          grep -F 'STALE_REVISION' "$CLIENT" >/dev/null
+          grep -F 'runtime_state_hash' "$CLIENT" >/dev/null
 
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
             echo "Credential rendering regression detected"
