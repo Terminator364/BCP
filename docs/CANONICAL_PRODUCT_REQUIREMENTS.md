@@ -596,3 +596,18 @@ Requirements:
 Canonical protocol:
 - `docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md`
 - `.project-memory/GIT_WRITER_LEASE_POLICY.json`
+
+
+### Telegram observability MVP
+
+Before full Telegram mission execution is enabled, deploy a read-only observability MVP that aggregates BCP runtime, GitHub/CI, BuildHub, B-EDGE/PC telemetry, Model Broker lifecycle and other durable receipts.
+
+ChatGPT visibility is evidence-based:
+- externally committed/checkpointed ChatGPT work may be shown as observed;
+- a dispatched request with no completion receipt is shown as `CHAT_WAITING`;
+- a reported verification state may be shown as `CHAT_PLATFORM_HOLD_REPORTED`;
+- if the standard ChatGPT UI exposes no supported telemetry, show `UNKNOWN_INTERNAL_CHAT_STATE`.
+
+Never claim access to hidden chain-of-thought or OpenAI internal verification progress.
+
+Canonical design: `docs/TELEGRAM_OBSERVABILITY_MVP.md`.
