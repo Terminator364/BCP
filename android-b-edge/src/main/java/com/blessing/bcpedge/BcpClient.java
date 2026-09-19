@@ -3,6 +3,8 @@ package com.blessing.bcpedge;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
+import com.blessing.bcpedge.work.EdgeWorkScheduler;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -17,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "1.1.0";
+    private static final String EDGE_VERSION = "2.0.0-rc1";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -262,54 +264,65 @@ public final class BcpClient {
     }
 
     private JSONObject discoverLan(Progress progress) throws Exception {
-        String ip = localIpv4();
-        if (ip == null) throw new IOException("NO_LAN_IPV4");
-        String[] p = ip.split("\\.");
-        if (p.length != 4) throw new IOException("UNSUPPORTED_SUBNET");
-        String prefix = p[0] + "." + p[1] + "." + p[2] + ".";
+        progress.onStage("DISCOVERY_NSD", "Recherche mDNS/NSD du PC");
+        String nsd=NsdDiscovery.discover(context,2400L);
+        if(!nsd.isEmpty()){
+            JSONObject found=probeServer(nsd,700,1000);
+            if(found!=null){
+                telemetry.add("DISCOVERY_NSD_PASS",nsd);
+                progress.onStage("DISCOVERY_PASS",found.optString("pc_name",found.optString("server","")));
+                return found;
+            }
+            telemetry.add("DISCOVERY_NSD_STALE",nsd);
+        }
 
-        ExecutorService pool = Executors.newFixedThreadPool(32);
-        CompletionService<String> cs = new ExecutorCompletionService<>(pool);
-        List<Future<String>> futures = new ArrayList<>();
-        for (int i = 1; i <= 254; i++) {
-            final String host = prefix + i;
-            if (host.equals(ip)) continue;
-            futures.add(cs.submit(() -> {
-                String base = "http://" + host + ":8765";
-                try {
-                    JSONObject h = requestJson("GET", base + "/health", null,
-                            null, null, 280, 450);
-                    if (h.optBoolean("ok") && h.optString("service", "").startsWith("BCP")) {
-                        JSONObject found = new JSONObject();
-                        found.put("server", base);
-                        found.put("pc_name", h.optString("pc_name", "BCP PC"));
-                        found.put("version", h.optString("version", ""));
-                        found.put("identity_fingerprint",
-                                h.optString("identity_fingerprint", ""));
-                        return found.toString();
-                    }
-                } catch (Exception ignored) {}
-                return null;
+        String ip=localIpv4();
+        if(ip==null) throw new IOException("NO_LAN_IPV4");
+        String[] p=ip.split("\\.");
+        if(p.length!=4) throw new IOException("UNSUPPORTED_SUBNET");
+        String prefix=p[0]+"."+p[1]+"."+p[2]+".";
+        telemetry.add("DISCOVERY_SUBNET_FALLBACK",prefix+"0/24");
+
+        ExecutorService pool=Executors.newFixedThreadPool(12);
+        CompletionService<String> cs=new ExecutorCompletionService<>(pool);
+        List<Future<String>> futures=new ArrayList<>();
+        for(int n=1;n<=254;n++){
+            final String host=prefix+n;
+            if(host.equals(ip)) continue;
+            futures.add(cs.submit(()->{
+                JSONObject found=probeServer("http://"+host+":8765",180,320);
+                return found==null?null:found.toString();
             }));
         }
-
-        JSONObject found = null;
-        try {
-            int total = futures.size();
-            long deadline = System.currentTimeMillis() + 6500;
-            for (int i = 0; i < total && System.currentTimeMillis() < deadline; i++) {
-                Future<String> f = cs.poll(450, TimeUnit.MILLISECONDS);
-                if (f == null) continue;
-                String raw = f.get();
-                if (raw != null) { found = new JSONObject(raw); break; }
+        JSONObject found=null;
+        try{
+            int total=futures.size();
+            long deadline=System.currentTimeMillis()+3800;
+            for(int n=0;n<total && System.currentTimeMillis()<deadline;n++){
+                Future<String> future=cs.poll(220,TimeUnit.MILLISECONDS);
+                if(future==null) continue;
+                String raw=future.get();
+                if(raw!=null){found=new JSONObject(raw);break;}
             }
-        } finally {
-            for (Future<String> f : futures) f.cancel(true);
+        }finally{
+            for(Future<String> future:futures) future.cancel(true);
             pool.shutdownNow();
         }
-        if (found != null) progress.onStage("DISCOVERY_PASS",
-                found.optString("pc_name", found.optString("server", "")));
+        if(found!=null) progress.onStage("DISCOVERY_PASS",found.optString("pc_name",found.optString("server","")));
         return found;
+    }
+
+    private JSONObject probeServer(String base,int connectMs,int readMs){
+        try{
+            JSONObject h=requestJson("GET",base+"/health",null,null,null,connectMs,readMs);
+            if(!h.optBoolean("ok") || !h.optString("service","").startsWith("BCP")) return null;
+            JSONObject found=new JSONObject();
+            found.put("server",base);
+            found.put("pc_name",h.optString("pc_name","BCP PC"));
+            found.put("version",h.optString("version",""));
+            found.put("identity_fingerprint",h.optString("identity_fingerprint",""));
+            return found;
+        }catch(Exception ignored){return null;}
     }
 
     private static String localIpv4() throws SocketException {
@@ -458,33 +471,61 @@ public final class BcpClient {
     }
 
     public JSONObject contextPack() throws Exception {
+        return contextPack("");
+    }
+
+    public JSONObject contextPack(String task) throws Exception {
+        JSONObject cached=orchestrator.cachedContext(getProject());
         try {
             ensureConnected();
-            JSONObject r = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(getProject()) + "/context",
-                    null, getToken(), null, 2200, 5000);
-            orchestrator.cacheContext(getProject(), r);
+            String known="";
+            JSONObject rv=cached.optJSONObject("revision_vector");
+            if(rv!=null) known=rv.optString("context_hash","");
+            String url=getServer()+"/v1/projects/"+enc(getProject())+"/context?byte_budget=24000";
+            if(task!=null && !task.trim().isEmpty()) url+="&task="+enc(task.trim());
+            if(!known.isEmpty()) url+="&known_hash="+enc(known);
+            JSONObject r=requestJson("GET",url,null,getToken(),null,2200,5000);
+            if("UNCHANGED".equals(r.optString("status","")) && cached.length()>0){
+                cached.put("offline",false);
+                cached.put("source","B_EDGE_ROOM_CACHE_NO_CHANGE");
+                return cached;
+            }
+            orchestrator.cacheContext(getProject(),r);
             return r;
-        } catch (Exception ex) {
+        } catch(Exception ex) {
             orchestrator.setMode("EDGE_ONLY");
-            JSONObject cached = orchestrator.cachedContext(getProject());
-            if (cached.length() > 0) return cached;
+            if(cached.length()>0) return cached;
             throw ex;
         }
     }
 
     public JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) throws Exception {
+        String resourceClass=EdgePolicy.resourceClass(requiresPc,false,false);
         JSONObject local = orchestrator.queueJob(
                 getProject(), kind, payload, requiresPc, 50,
-                requiresPc ? "PC_R3" : "EDGE_R1", new JSONArray());
+                resourceClass, new JSONArray());
         if (!local.optBoolean("queued", false)) return local;
+        JSONObject resources=EdgeResourceGovernor.snapshot(context);
+        if(EdgeResourceGovernor.shouldDefer(resourceClass,resources)){
+            local.put("deferred_by_resource_governor",true);
+            local.put("resources",resources);
+            EdgeWorkScheduler.requestImmediate(context);
+            return local;
+        }
         try {
             ensureConnected();
             JSONObject body = new JSONObject();
             body.put("kind", kind);
             body.put("payload", payload);
             body.put("requires_pc", requiresPc);
+            body.put("priority", local.optInt("priority",50));
             body.put("resource_class", local.optString("resource_class", ""));
+            body.put("action_id", local.optString("local_id",""));
+            JSONObject projectState=orchestrator.projectState(getProject());
+            if(projectState.length()>0){
+                body.put("expected_revision",projectState.optLong("head_revision",0));
+                body.put("coordinator_epoch",projectState.optLong("coordinator_epoch",0));
+            }
             String idem = local.optString("idempotency_key", "");
             JSONObject r = requestJson("POST",
                     getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
@@ -513,7 +554,14 @@ public final class BcpClient {
                     body.put("kind", job.optString("kind", "generic"));
                     body.put("payload", job.optJSONObject("payload") == null ? new JSONObject() : job.optJSONObject("payload"));
                     body.put("requires_pc", job.optBoolean("requires_pc", true));
+                    body.put("priority", job.optInt("priority",50));
                     body.put("resource_class", job.optString("resource_class", ""));
+                    body.put("action_id",job.optString("local_id",""));
+                    JSONObject projectState=orchestrator.projectState(getProject());
+                    if(projectState.length()>0){
+                        body.put("expected_revision",projectState.optLong("head_revision",0));
+                        body.put("coordinator_epoch",projectState.optLong("coordinator_epoch",0));
+                    }
                     JSONObject receipt = requestJson("POST",
                             getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
                             body.toString(), getToken(),
@@ -601,8 +649,8 @@ public final class BcpClient {
 
     public void heartbeat(String reason) {
         telemetry.add("PHONE_HEARTBEAT", reason == null ? "FOREGROUND" : reason);
-        if (orchestrator.shouldRunPeriodicSync(5L * 60L * 1000L)) {
-            syncOrchestrationState();
+        if (orchestrator.shouldRunPeriodicSync(EdgePolicy.defaultReconcileIntervalMs())) {
+            EdgeWorkScheduler.requestImmediate(context);
         }
         flushTelemetry();
     }
