@@ -1,0 +1,10 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-062-release-consistency-hotfix-20260919",
+  "project_or_mission": "BCP 0.6.2 release consistency repair",
+  "base_main_sha": "af18e91f41ed44532c5c41c397138ce1a8f97c33",
+  "created_at": "2026-09-19T20:06:00+01:00",
+  "intended_file_scope": ["windows/INSTALL_BCP_FINAL.ps1", "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1", "docs/CANONICAL_PRODUCT_REQUIREMENTS.md", ".project-memory/writers/chat-062-release-consistency-hotfix-20260919.json"],
+  "expected_ci_gates": ["BCP Final Acceptance Package", "BCP Windows Bootstrap Validation", "BCP Coordinated PC Package", "BCP Qualified CURRENT Release Contract"],
+  "status": "ACTIVE_WRITER_BRANCH"
+}
