@@ -51,7 +51,8 @@
     "dual_conversation_design": "docs/DUAL_CONVERSATION_CONTINUITY.md",
     "continuation_handoff": "API_PROJECT_CONTINUITY.md",
     "free_api_model_broker_autonomy": "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md",
-    "canonical_current": "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+    "canonical_current": "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "rdc_zero_cost_ai_provider_plan": ".project-memory/AI_PROVIDER_PLAN_RDC.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -91,7 +92,8 @@
     ".project-memory/PLATFORM_CUT_RESILIENCE.md",
     "docs/TECHNICAL_REQUEST_CONTEXT_ENVELOPE.md",
     "docs/DUAL_CONVERSATION_CONTINUITY.md",
-    "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
+    "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md",
+    ".project-memory/AI_PROVIDER_PLAN_RDC.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -101,7 +103,8 @@
     "expansion_after_continuity_field_verified": true,
     "P1_free_api_model_broker_after_field_continuity": true,
     "P1_lightweight_cockpit_after_field_continuity": true,
-    "P1_bounded_autonomous_loops_after_field_continuity": true
+    "P1_bounded_autonomous_loops_after_field_continuity": true,
+    "P1_rdc_zero_cost_provider_field_validation_after_p0": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
