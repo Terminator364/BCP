@@ -13,8 +13,8 @@
   ],
   "expected_ci_gates": [
     "BCP Nexus Transport Qualification",
-    "BCP Telegram Observability Qualification",
     "BCP Coordinated Product Qualification"
   ],
-  "status": "ACTIVE_WRITER_BRANCH"
+  "status": "PR_OPEN_CI_PENDING",
+  "pr_number": 48
 }
