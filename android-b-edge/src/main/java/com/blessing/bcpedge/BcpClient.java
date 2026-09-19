@@ -33,6 +33,10 @@ public final class BcpClient {
     public String getProject() { return PROJECT; }
     public String getEdgeVersion() { return EDGE_VERSION; }
 
+    public void recordEvent(String type, String detail) {
+        telemetry.add(type, detail);
+    }
+
     public JSONObject serverUpdateStatus() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/v1/system/update", null,
@@ -240,18 +244,49 @@ public final class BcpClient {
 
     public JSONObject checkpoint(String completed, String next) throws Exception {
         ensureConnected();
+
+        JSONObject current = requestJson("GET",
+                getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                null, getToken(), null, 2500, 5000);
+        JSONObject head = current.optJSONObject("head");
+        int expectedRevision = head == null ? 0 : head.optInt("revision", 0);
+
         JSONObject payload = new JSONObject();
         payload.put("status", "ACTIVE");
         payload.put("last_completed_action", completed);
         payload.put("next_action", next);
+        payload.put("edge_version", EDGE_VERSION);
+
         JSONObject body = new JSONObject();
         body.put("type", "checkpoint");
         body.put("payload", payload);
-        telemetry.add("CHECKPOINT_START", null);
+        body.put("expected_revision", expectedRevision);
+
+        String fingerprint = completed + "\n" + next + "\n" + expectedRevision;
+        String savedFingerprint = prefs.getString("pending_checkpoint_fingerprint", "");
+        String idem = prefs.getString("pending_checkpoint_idem", "");
+        if (idem.isEmpty() || !fingerprint.equals(savedFingerprint)) {
+            idem = "edge-" + UUID.randomUUID();
+            prefs.edit()
+                    .putString("pending_checkpoint_idem", idem)
+                    .putString("pending_checkpoint_fingerprint", fingerprint)
+                    .apply();
+        }
+
+        telemetry.add("CHECKPOINT_START", "expected_revision=" + expectedRevision);
         JSONObject r = requestJson("POST",
                 getServer() + "/v1/projects/" + enc(PROJECT) + "/events",
-                body.toString(), getToken(), "edge-" + UUID.randomUUID(), 2500, 5000);
-        telemetry.add("CHECKPOINT_PASS", r.optString("event_hash", ""));
+                body.toString(), getToken(), idem, 2500, 5000);
+
+        String result = r.optString("result", "");
+        if ("COMMITTED".equals(result) || "ALREADY_COMMITTED".equals(result)) {
+            prefs.edit()
+                    .remove("pending_checkpoint_idem")
+                    .remove("pending_checkpoint_fingerprint")
+                    .apply();
+        }
+        telemetry.add("CHECKPOINT_PASS",
+                "revision=" + r.optInt("revision", -1) + ",result=" + result);
         flushTelemetry();
         return r;
     }
@@ -270,6 +305,46 @@ public final class BcpClient {
     public JSONObject health() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/health", null, null, null, 1500, 2500);
+    }
+
+    public JSONObject runQuickAcceptance() throws Exception {
+        ensureConnected();
+        telemetry.add("EDGE_ACCEPTANCE_START", null);
+        JSONObject out = new JSONObject();
+        out.put("edge_version", EDGE_VERSION);
+
+        JSONObject h = health();
+        out.put("health_ok", h.optBoolean("ok", false));
+        out.put("server_version", h.optString("version", ""));
+        if (!h.optBoolean("ok", false)) throw new IOException("SERVER_UNHEALTHY");
+
+        JSONObject r = requestJson("GET",
+                getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                null, getToken(), null, 2500, 5000);
+        JSONObject head = r.optJSONObject("head");
+        out.put("project_head_reachable", true);
+        out.put("project_revision", head == null ? 0 : head.optInt("revision", 0));
+
+        JSONObject up = serverUpdateStatus();
+        out.put("server_update_available", up.optBoolean("available", false));
+        out.put("server_target", up.optString("target_version", ""));
+
+        try {
+            JSONObject cp = chatgptPcStatus();
+            out.put("chatgpt_pc_reachable", cp.optBoolean("ok", true));
+            out.put("chatgpt_pc_version", cp.optString("active_version",
+                    cp.optString("version", "")));
+        } catch (Exception ex) {
+            out.put("chatgpt_pc_reachable", false);
+            out.put("chatgpt_pc_error", ex.getClass().getSimpleName());
+        }
+
+        out.put("paired", !getToken().isEmpty());
+        out.put("ok", true);
+        telemetry.add("EDGE_ACCEPTANCE_PASS",
+                "revision=" + out.optInt("project_revision", 0));
+        flushTelemetry();
+        return out;
     }
 
     public void heartbeat(String reason) {
