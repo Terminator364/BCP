@@ -142,3 +142,20 @@ Steady-state requirement:
 - do not require a full-PC hotspot for routine operation.
 
 See `docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md`.
+
+
+## Human-first Telegram dashboard
+
+The default `/status` response is intentionally non-technical.
+
+It must show:
+- a plain-language health state;
+- a visual bar and percentage only for a finite set of **verifiable** links/steps, never hidden reasoning;
+- PC/BCP, B-EDGE, GitHub and Drive as simple checkmarks/warnings;
+- a human-readable ChatGPT observation state;
+- the next useful action;
+- $0.00 spend.
+
+Technical fields remain available behind `/details`.
+
+This preserves evidence-first truthfulness while keeping Git SHA, branch/fence details and raw telemetry out of the user's normal view.
