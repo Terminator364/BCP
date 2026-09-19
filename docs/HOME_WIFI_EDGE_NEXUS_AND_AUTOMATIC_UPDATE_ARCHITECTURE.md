@@ -262,3 +262,17 @@ The manifest is deliberately truthful:
 - Nexus 0.1.0: CI-qualified implementation, but no live deployment URL exists until external zero-cost provider authorization and home-WiFi field qualification.
 
 No component can become auto-update eligible merely because a version string changed. Distribution metadata, hash/signing evidence and the relevant field gate must agree.
+
+## Field topology and relay refinement — 2026-09-19
+
+The old Android phone is B-EDGE and remains on the home Wi-Fi with the PC. It does not need Telegram installed. The current phone is the user's Telegram/UI endpoint and may switch between home Wi-Fi and mobile data; it is not required infrastructure.
+
+Because direct PC -> Telegram API egress has timed out on the home Wi-Fi in field tests, the target delivery path is decoupled:
+
+`PC mission event -> durable local outbox -> B-EDGE and/or Nexus HTTPS ingress -> Telegram -> current phone`.
+
+Do not assume B-EDGE has a different Internet path merely because it is a phone. Field-test PC->Nexus and B-EDGE->Nexus separately on the same home Wi-Fi. Prefer the lowest-data path that actually passes.
+
+If all remote paths fail, local work and journaling continue; delivery resumes idempotently after connectivity returns.
+
+Update delivery is event-driven from qualified release metadata. It does not use ChatGPT scheduled automations. Windows may self-update automatically with hash/readback/rollback; Android may prefetch a verified APK but must respect any OS-required human install confirmation.

@@ -221,6 +221,70 @@ async function pushEvent(request, env) {
   }
 }
 
+
+async function liveCard(request, env) {
+  if (!deviceAuthorized(request, env)) return jsonResponse({ ok: false }, 401);
+  let body;
+  try { body = await request.json(); }
+  catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
+
+  const text = cleanText(body?.text || "");
+  const cardKey = cleanText(body?.card_key || "mission-status", 96);
+  if (!text || !cardKey) return jsonResponse({ ok: false, error: "invalid_live_card" }, 400);
+
+  const bodyHash = await sha256Hex(cardKey + "\n" + text);
+  const prior = await env.DB.prepare(
+    "SELECT telegram_message_id, body_hash FROM live_cards WHERE card_key=?1"
+  ).bind(cardKey).first();
+
+  if (prior && String(prior.body_hash || "") === bodyHash) {
+    return jsonResponse({
+      ok: true,
+      duplicate: true,
+      edited: false,
+      telegram_message_id: String(prior.telegram_message_id || ""),
+    });
+  }
+
+  let messageId = prior ? String(prior.telegram_message_id || "") : "";
+  let edited = false;
+
+  if (messageId) {
+    try {
+      const result = await telegramCall(env, "editMessageText", {
+        chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
+        message_id: Number(messageId),
+        text,
+        disable_web_page_preview: true,
+      });
+      messageId = String(result?.message_id ?? messageId);
+      edited = true;
+    } catch (_) {
+      messageId = "";
+    }
+  }
+
+  if (!messageId) {
+    const result = await telegramCall(env, "sendMessage", {
+      chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
+      text,
+      disable_web_page_preview: true,
+    });
+    messageId = String(result?.message_id ?? "");
+  }
+
+  await env.DB.prepare(
+    "INSERT INTO live_cards(card_key, telegram_message_id, body_hash, updated_at) VALUES(?1, ?2, ?3, ?4) " +
+    "ON CONFLICT(card_key) DO UPDATE SET telegram_message_id=excluded.telegram_message_id, body_hash=excluded.body_hash, updated_at=excluded.updated_at"
+  ).bind(cardKey, messageId, bodyHash, nowIso()).run();
+
+  return jsonResponse({
+    ok: true,
+    edited,
+    telegram_message_id: messageId,
+  });
+}
+
 async function health(env) {
   let db = "UNKNOWN";
   try {
@@ -249,6 +313,7 @@ export default {
       if (request.method === "GET" && url.pathname === "/v1/device/commands") return pullCommands(request, env);
       if (request.method === "POST" && url.pathname === "/v1/device/reply") return replyToCommand(request, env);
       if (request.method === "POST" && url.pathname === "/v1/device/push") return pushEvent(request, env);
+      if (request.method === "POST" && url.pathname === "/v1/device/live-card") return liveCard(request, env);
       return jsonResponse({ ok: false, error: "not_found" }, 404);
     } catch (error) {
       return jsonResponse({ ok: false, error: "internal_error" }, 500);

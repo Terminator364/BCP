@@ -1,12 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.19-human-progress-v2",
+  "version": "2026.09.19-human-cockpit-v3",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "3f19409dd0610f1206e5216fe8fc534c328c16c377908034baa87c875801f214",
+  "sha256": "7718303cb1586710dc2e2896b5c8445369e861f7ece7565b6e56636e2401b829",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first mission progress: verifiable micro-steps, honest bounded percentages, last-proof age, de-noised transitions, technical detail kept behind /details. No hidden ChatGPT reasoning is claimed."
+  "notes": "Human-first multi-mission cockpit V3: truthful bounded progress, explicit user action, evidence timestamps/age, /missions, lower-noise transition alerts, and an editable live status card. Routine progress no longer requires repeated duplicate messages. No hidden ChatGPT reasoning is claimed.",
+  "requirements_revision": "2026-09-19-R9"
 }

@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R8
+Revision: 2026-09-19-R9
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -779,3 +779,29 @@ The field topology remains unchanged: PC-WORKER and dedicated B-EDGE normally us
 - Les changements d’état utiles sont poussés automatiquement sans spammer les états inchangés.
 - Les contraintes RDC restent P0 : faible débit, intermittence, données mobiles coûteuses, reprise locale, B-EDGE et Nexus.
 - Aucun automate ChatGPT/Work planifié n’est requis pour cette surveillance.
+
+## P0 — Human-visible mission presence and Telegram cockpit V3
+
+BCP MUST provide a non-technical, durable mission-presence surface that remains useful when the ChatGPT UI is delayed, interrupted or ambiguous.
+
+Active requirements:
+- one editable live Telegram mission card per active mission rather than repeated duplicate status messages;
+- medium-length plain-language status with current step, last completed step, next expected step, explicit user action, last proof-of-life timestamp/age and delivery lag;
+- truthful progress bar and percentage only when a finite persisted plan denominator exists; otherwise show step position without invented percentage;
+- normal view hides raw PR/SHA/workflow/fence identifiers and exposes them via `/details`;
+- repeated zero spend is omitted from the normal view and surfaced only when financially relevant or requested;
+- one bot multiplexes multiple projects/missions/conversation sources by default;
+- resident progress presence comes from BCP Mission Event Journal, heartbeats and receipts, not hidden ChatGPT reasoning;
+- local presence/update timers MUST NOT use ChatGPT scheduled automations or consume Work quota;
+- optional progress-card images are low-data, cached and not heartbeat-driven;
+- PC, B-EDGE, Nexus/remote ingress and durable evidence freshness are independently observable;
+- user action is always explicit as AUCUNE / REQUISE / OPTIONNELLE;
+- updates are event-driven, qualified, hash-pinned and as automatic as the OS permits.
+
+Canonical detailed requirement:
+- `docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md`
+
+Implementation candidate on 2026-09-19:
+- Telegram companion `2026.09.19-human-cockpit-v3` implements `/missions`, fresh B-EDGE presence, explicit human-action/timing fields, low-noise transition alerts, and one editable direct-Telegram live card;
+- Nexus `0.1.4` adds persistent D1 live-card state plus `/v1/device/live-card`, using Telegram `editMessageText` with send fallback;
+- this is CI-qualified candidate work until merged and then proven by field readback; it is not yet claimed FIELD_VERIFIED.
