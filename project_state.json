@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_3_CI_QUALIFIED_FIELD_PROMOTION_TRIGGER_REQUIRED",
-  "last_completed_atomic_action": "BCP 0.4.3 fully qualified on managed-update, PC Sanity, Windows bootstrap/selftest and Windows E2E; B-EDGE 0.2.5 CI build PASS",
-  "next_action": "Install B-EDGE 0.2.5 APK on old phone; reconnect once; verify automatic promotion of PC server from 0.3.0 to 0.4.3 and then read BCP_RUNTIME_LATEST.json from Drive.",
+  "status": "BCP_0_4_4_PUBLISHED_UNIFIED_DRIVE_CHANNEL_FIELD_PENDING",
+  "last_completed_atomic_action": "Created canonical API_BCP Drive distribution tree, uploaded stable BCP_EDGE_CURRENT.apk, documented bounded retention, and published BCP 0.4.4 preferring unified Drive telemetry",
+  "next_action": "Qualify BCP 0.4.4 CI, install BCP_EDGE_CURRENT.apk from API_BCP/00_A_INSTALLER on old phone, then verify automatic PC server promotion and heartbeat in API_BCP/02_TELEMETRY/BCP",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-LEGACY-BEDGE-CONFIRMED-025-APK-DELIVERED",
-    "status": "WAITING_APK_INSTALL_ON_OLD_PHONE",
-    "next_atomic_action": "After B-EDGE 0.2.5 opens, read Drive heartbeat and verify live BCP 0.4.3",
+    "checkpoint_id": "APIAX07-UNIFIED-DRIVE-BCP044-PUBLISHED",
+    "status": "ADVANCING",
+    "next_atomic_action": "Qualify BCP 0.4.4 CI and install Drive CURRENT APK on old phone",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -226,5 +226,65 @@
     "pc_name": "MBMPC",
     "pairing_open": true,
     "implication": "Existing phone app predates recovery/update UI; fresh B-EDGE 0.2.5 APK required to reach automatic server promotion path."
+  },
+  "drive_canonical": {
+    "root": {
+      "id": "1Sq6AKo6kEIhQKmYrzrfbXg9V4jClxATT",
+      "name": "API_BCP",
+      "url": "https://drive.google.com/drive/folders/1Sq6AKo6kEIhQKmYrzrfbXg9V4jClxATT"
+    },
+    "installer": {
+      "id": "13pN-ZFBHJdM8kem8Y-l-K_PKVyZoAcHI",
+      "name": "00_A_INSTALLER"
+    },
+    "releases": {
+      "id": "1n_swDb4rRFQcK6Wd3t0wOi6os-gcdmEo",
+      "name": "01_RELEASES"
+    },
+    "telemetry": {
+      "id": "1pgL-SDEc9Tt6D84zyF4jS-GRbqdDGGBJ",
+      "name": "02_TELEMETRY"
+    },
+    "telemetry_bcp": {
+      "id": "1BQ5vyRnHTYUywcbrrb9EJpUGfyDo-1Kk",
+      "name": "BCP"
+    },
+    "documentation": {
+      "id": "11OLRwp6kBbtISPUXcct_f4y5-Tw3bIRG",
+      "name": "03_DOCUMENTATION"
+    },
+    "archives": {
+      "id": "1aG0TzgnzUh4_PBxkwA5pQ-qToPNqhfge",
+      "name": "90_ARCHIVES"
+    },
+    "readme_doc": {
+      "id": "1kwSUje9JTLVWEuyhmp0zmAAtdVwnv3xWY-fwtvhBMf8",
+      "name": "README_API_BCP"
+    },
+    "current_edge_apk": {
+      "id": "1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR",
+      "name": "BCP_EDGE_CURRENT.apk",
+      "url": "https://drive.google.com/file/d/1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR/view?usp=drivesdk"
+    },
+    "update_semantics": "REPLACE_CURRENT_IN_PLACE",
+    "retention": {
+      "current_per_product": 1,
+      "previous_releases": 2,
+      "rollback_archives": 2,
+      "delete_temp_failed_duplicate_superseded_on_publish": true
+    }
+  },
+  "bcp_0_4_4": {
+    "server_commit": "bd23cf82ee8991d1dc18fd94a3e18ca4c6e1f3fd",
+    "server_sha256": "45a6a1a860e2bf585e29ea61fb1ff0bb014d5f8b63fdddfe94cb668174bab446",
+    "release_commit": "e161f109cf71a16c3a1e0e18cf1e8df805e97ed1",
+    "sequence_commit": "5fb351e14170104ad53846015dae46d4e3e5029c",
+    "installer_commit": "f13071061ae5cd4e73bfa68d9d8c6fc541549bfa",
+    "requirements_commit": "3806cc199f83ff7d095ecc8f67e0ab664ffa0bf8",
+    "managed_update_sequence": 202609190404,
+    "preferred_external_telemetry_path": "API_BCP/02_TELEMETRY/BCP",
+    "legacy_telemetry_fallback_preserved": true,
+    "ci_state": "PENDING",
+    "field_runtime_readback": "PENDING"
   }
 }
