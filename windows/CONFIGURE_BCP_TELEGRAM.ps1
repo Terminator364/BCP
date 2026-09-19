@@ -36,7 +36,8 @@ function Write-JsonAtomic($Object, [string]$Path) {
 function Protect-LocalFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
     $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-    & icacls.exe $Path /inheritance:r /grant:r "${user}:(R,W)" /c | Out-Null
+    $aclGrant = $user + ":(R,W)"
+    & icacls.exe $Path /inheritance:r /grant:r $aclGrant /c | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "LOCAL_SECRET_ACL_HARDENING_FAILED" }
 }
 
