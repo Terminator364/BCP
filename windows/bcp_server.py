@@ -1120,10 +1120,13 @@ def memory_put(
                    WHERE project_id=? AND layer=? AND key=?""",
                 (project_id, layer, key),
             ).fetchone()
-            if old and int(old["pinned"] or 0) == 1:
+            effective_pinned = bool(pinned)
+            if old:
                 old_rank = _MEMORY_EVIDENCE_RANK.get(str(old["evidence_class"]), 0)
-                if _MEMORY_EVIDENCE_RANK[evidence_class] < old_rank:
-                    raise ValueError("memory_admission_rejected_pinned_precedence")
+                new_rank = _MEMORY_EVIDENCE_RANK[evidence_class]
+                if new_rank < old_rank:
+                    raise ValueError("memory_admission_rejected_precedence")
+                effective_pinned = effective_pinned or int(old["pinned"] or 0) == 1
             cx.execute(
                 """INSERT INTO memory_records(
                        project_id,layer,key,value_json,source,updated_at,
@@ -1140,7 +1143,7 @@ def memory_put(
                        supersedes_key=excluded.supersedes_key""",
                 (
                     project_id, layer, key, raw, str(source)[:80], now,
-                    evidence_class, str(source_id)[:180], 1 if pinned else 0,
+                    evidence_class, str(source_id)[:180], 1 if effective_pinned else 0,
                     expires_at, str(supersedes_key)[:180],
                 ),
             )
@@ -1150,7 +1153,7 @@ def memory_put(
         "layer": layer,
         "key": key,
         "evidence_class": evidence_class,
-        "pinned": bool(pinned),
+        "pinned": bool(effective_pinned),
         "updated_at": now,
     }
 
@@ -1575,6 +1578,10 @@ class Handler(BaseHTTPRequestHandler):
                 "operating_mode": pc_operating_mode(),
                 "resources": system_resources(),
                 "memory_layers": list(MEMORY_LAYERS),
+                "durable_queue_ready": True,
+                "pc_executor_ready": False,
+                "pc_executor_state": "CONTRACT_DEFINED_NOT_IMPLEMENTED",
+                "queue_ack_is_completion": False,
                 "default_paid_spend_usd": 0.0,
             })
             return
@@ -1908,6 +1915,8 @@ def selftest():
         assert "recovery_package_sha256_mismatch" in source
         assert "shell=False" in source
         assert "/v1/orchestrator/status" in source
+        assert '"pc_executor_ready": False' in source
+        assert '"queue_ack_is_completion": False' in source
         assert 'parts[3] == "context"' in source
         assert 'parts[3] == "memory"' in source
         assert 'parts[3] == "jobs"' in source
