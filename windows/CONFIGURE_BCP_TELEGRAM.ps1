@@ -33,6 +33,51 @@ function Write-JsonAtomic($Object, [string]$Path) {
     }
 }
 
+function Publish-SanitizedTelegramReceipt($Receipt) {
+    $public = [ordered]@{
+        schema = "bcp.telegram_setup_public/1"
+        status = [string]$Receipt.status
+        bot_username = [string]$Receipt.bot_username
+        allowed_chat_id_sha256_prefix = [string]$Receipt.allowed_chat_id_sha256_prefix
+        token_present = $false
+        token_logged = $false
+        mode = "READ_ONLY"
+        startup = [string]$Receipt.startup
+        configured_at = [string]$Receipt.configured_at
+        spend_usd = 0.0
+        field_gate = [string]$Receipt.field_gate
+    }
+    $roots = New-Object System.Collections.Generic.List[string]
+    if ($env:BCP_EXTERNAL_TELEMETRY_DIR) {
+        try {
+            $parent = Split-Path -Parent ([string]$env:BCP_EXTERNAL_TELEMETRY_DIR)
+            if ($parent) { $roots.Add((Join-Path $parent "TELEGRAM")) }
+        } catch {}
+    }
+    foreach ($apiRoot in @(
+        "G:\Mon Drive\API_BCP",
+        "G:\My Drive\API_BCP",
+        (Join-Path $HOME "Mon Drive\API_BCP"),
+        (Join-Path $HOME "My Drive\API_BCP")
+    )) {
+        try {
+            if (Test-Path -LiteralPath $apiRoot -PathType Container) {
+                $roots.Add((Join-Path $apiRoot "02_TELEMETRY\TELEGRAM"))
+            }
+        } catch {}
+    }
+    $seen = @{}
+    foreach ($root in $roots) {
+        $key = ([string]$root).ToLowerInvariant()
+        if ($seen.ContainsKey($key)) { continue }
+        $seen[$key] = $true
+        try {
+            New-Item -ItemType Directory -Force -Path $root | Out-Null
+            Write-JsonAtomic $public (Join-Path $root "TELEGRAM_SETUP_LATEST.json")
+        } catch {}
+    }
+}
+
 function Protect-LocalFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return }
     $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
@@ -98,7 +143,9 @@ if ($SelfTest) {
         '"/last"',
         '"/ci"',
         '"/holds"',
-        "getUpdates"
+        "getUpdates",
+        "TELEGRAM_RUNTIME_LATEST.json",
+        "TELEGRAM_SETUP_LATEST.json"
     )) {
         if ($raw -notmatch [regex]::Escape($required)) {
             throw ("SELFTEST_REQUIRED_CONTRACT_MISSING " + $required)
@@ -249,6 +296,7 @@ try {
         field_gate = "KINSHASA_LIVE_MESSAGE_PENDING"
     }
     Write-JsonAtomic $receipt $ReceiptPath
+    Publish-SanitizedTelegramReceipt $receipt
 
     Invoke-Telegram $token "sendMessage" @{
         chat_id = $chatId
