@@ -135,3 +135,15 @@ Future stages remain separately gated:
 - MVP-4: Model Broker using only field-qualified zero-cost providers.
 
 No later stage may weaken the writer fence, idempotency, secret handling, zero-dollar invariant, or evidence rules established by MVP-0.
+
+## Sanitized machine-visible telemetry
+
+To avoid making the user the telemetry transport, the qualified deployment also mirrors sanitized Telegram health into the existing API_BCP telemetry tree when that Drive tree is actually mounted.
+
+Files:
+- 02_TELEMETRY/TELEGRAM/TELEGRAM_SETUP_LATEST.json — setup receipt without token or raw chat ID;
+- 02_TELEMETRY/TELEGRAM/TELEGRAM_RUNTIME_LATEST.json — low-frequency runtime state (STARTED/ACTIVE/NETWORK_RETRY/HOLD/STOPPED), process id, hashed chat locator, last command name, timestamp and spend_usd=0.0.
+
+The runtime mirror is refreshed on observed commands and otherwise at a bounded interval of about five minutes. It never creates a fake local Drive tree when no canonical API_BCP Drive root is mounted. Failure to mirror telemetry never blocks the local Telegram cockpit.
+
+This mirror is observability-only. It does not turn Drive into a command channel and does not weaken the read-only Telegram MVP.
