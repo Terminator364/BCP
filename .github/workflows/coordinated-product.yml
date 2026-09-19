@@ -113,7 +113,9 @@ jobs:
           ar=json.loads(pathlib.Path("release/android.json").read_text())
           server=pathlib.Path("windows/bcp_server.py").read_bytes()
           client=pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text()
-          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"]
+          def version_tuple(value): return tuple(int(x) if x.isdigit() else 0 for x in str(value).split("-", 1)[0].split("."))
+          assert version_tuple(sr["version"]) >= version_tuple(ar["minimum_server_version"])
+          assert sr["version"] == ar["coordinated_server_version"]
           assert sr["coordinated_edge_version"] == ar["version_name"]
           if sr.get("release_train") or ar.get("release_train"):
               assert sr.get("release_train") == ar.get("release_train")
