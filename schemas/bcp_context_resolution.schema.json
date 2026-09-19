@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_context_resolution.schema.json",
+  "title": "BCP Context Resolution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "current_revisions"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.context_resolution/1"
+    },
+    "status": {
+      "enum": [
+        "UNCHANGED",
+        "DELTA",
+        "FULL_REFRESH",
+        "CONFLICT",
+        "DEGRADED",
+        "HOLD"
+      ]
+    },
+    "current_revisions": {
+      "type": "object",
+      "required": [
+        "global_revision",
+        "project_revision",
+        "coordinator_epoch"
+      ],
+      "properties": {
+        "global_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "project_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coordinator_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "context_pack": {
+      "oneOf": [
+        {
+          "$ref": "bcp_context_pack.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "delta_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ttl_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
