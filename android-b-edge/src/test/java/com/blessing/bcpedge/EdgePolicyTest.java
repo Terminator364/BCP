@@ -65,6 +65,7 @@ public class EdgePolicyTest {
         assertTrue(EdgePolicy.isCompletionResult("COMMITTED"));
         assertTrue(EdgePolicy.isCompletionResult("ALREADY_COMMITTED"));
         assertTrue(EdgePolicy.isCompletionResult("SUCCESS"));
+        assertTrue(EdgePolicy.isCompletionResult("SUCCEEDED"));
     }
 
     @Test public void durableRemotePresenceSuppressesBlindRedispatch() {
