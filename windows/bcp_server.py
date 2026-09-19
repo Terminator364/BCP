@@ -922,95 +922,276 @@ def system_resources() -> dict:
     return {"total_bytes": total, "available_bytes": available, "used_pct": used_pct}
 
 
+_PC_MODE_STATE = "PC_AVAILABLE"
+_PC_MODE_CHANGED_AT = 0.0
+
+
 def pc_operating_mode() -> str:
-    used = system_resources().get("used_pct")
-    return "PC_MEMORY_PRESSURE" if isinstance(used, (int, float)) and used >= 85.0 else "PC_AVAILABLE"
+    global _PC_MODE_STATE, _PC_MODE_CHANGED_AT
+    r = system_resources()
+    used = r.get("used_pct")
+    available = int(r.get("available_bytes") or 0)
+    enter_pressure = (
+        (isinstance(used, (int, float)) and used >= 88.0)
+        or (available > 0 and available < 384 * 1024 * 1024)
+    )
+    exit_pressure = (
+        (not isinstance(used, (int, float)) or used <= 78.0)
+        and (available == 0 or available >= 640 * 1024 * 1024)
+    )
+    now = time.monotonic()
+    if _PC_MODE_STATE != "PC_MEMORY_PRESSURE" and enter_pressure:
+        _PC_MODE_STATE = "PC_MEMORY_PRESSURE"
+        _PC_MODE_CHANGED_AT = now
+    elif _PC_MODE_STATE == "PC_MEMORY_PRESSURE" and exit_pressure and (now - _PC_MODE_CHANGED_AT) >= 30.0:
+        _PC_MODE_STATE = "PC_AVAILABLE"
+        _PC_MODE_CHANGED_AT = now
+    return _PC_MODE_STATE
 
 
-def memory_put(project_id: str, layer: str, key: str, value, source: str = "BCP") -> dict:
+_MEMORY_EVIDENCE_RANK = {
+    "UNTRUSTED_EXTERNAL": 0,
+    "MODEL_DERIVED": 1,
+    "UNCLASSIFIED": 1,
+    "LOCAL_DETERMINISTIC": 2,
+    "MACHINE_READBACK": 3,
+    "VALIDATED": 4,
+    "USER_DECLARED": 5,
+    "SYSTEM_POLICY": 6,
+}
+
+
+def memory_put(
+    project_id: str,
+    layer: str,
+    key: str,
+    value,
+    source: str = "BCP",
+    evidence_class: str = "UNCLASSIFIED",
+    source_id: str = "",
+    pinned: bool = False,
+    expires_at: str | None = None,
+    supersedes_key: str = "",
+) -> dict:
     layer = str(layer or "").upper()
     if layer not in MEMORY_LAYERS:
         raise ValueError("invalid_memory_layer")
     key = str(key or "").strip()
     if not key or len(key) > 180:
         raise ValueError("invalid_memory_key")
+    evidence_class = str(evidence_class or "UNCLASSIFIED").upper()
+    if evidence_class not in _MEMORY_EVIDENCE_RANK:
+        raise ValueError("invalid_evidence_class")
+    if layer in ("USER_MEMORY", "POLICY") and evidence_class not in ("USER_DECLARED", "VALIDATED", "SYSTEM_POLICY"):
+        raise ValueError("memory_admission_rejected_protected_layer")
     raw = canonical_json(value)
     if len(raw.encode("utf-8")) > 64000:
         raise ValueError("memory_value_too_large")
     now = utc_now()
     with DB_LOCK:
         with connect_db() as cx:
+            old = cx.execute(
+                """SELECT evidence_class,pinned FROM memory_records
+                   WHERE project_id=? AND layer=? AND key=?""",
+                (project_id, layer, key),
+            ).fetchone()
+            if old and int(old["pinned"] or 0) == 1:
+                old_rank = _MEMORY_EVIDENCE_RANK.get(str(old["evidence_class"]), 0)
+                if _MEMORY_EVIDENCE_RANK[evidence_class] < old_rank:
+                    raise ValueError("memory_admission_rejected_pinned_precedence")
             cx.execute(
-                """INSERT INTO memory_records(project_id,layer,key,value_json,source,updated_at)
-                   VALUES(?,?,?,?,?,?)
+                """INSERT INTO memory_records(
+                       project_id,layer,key,value_json,source,updated_at,
+                       evidence_class,source_id,pinned,expires_at,supersedes_key
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(project_id,layer,key) DO UPDATE SET
-                   value_json=excluded.value_json,source=excluded.source,updated_at=excluded.updated_at""",
-                (project_id, layer, key, raw, str(source)[:80], now),
+                       value_json=excluded.value_json,
+                       source=excluded.source,
+                       updated_at=excluded.updated_at,
+                       evidence_class=excluded.evidence_class,
+                       source_id=excluded.source_id,
+                       pinned=excluded.pinned,
+                       expires_at=excluded.expires_at,
+                       supersedes_key=excluded.supersedes_key""",
+                (
+                    project_id, layer, key, raw, str(source)[:80], now,
+                    evidence_class, str(source_id)[:180], 1 if pinned else 0,
+                    expires_at, str(supersedes_key)[:180],
+                ),
             )
-    return {"project_id": project_id, "layer": layer, "key": key, "updated_at": now}
+    return {
+        "result": "MEMORY_COMMITTED",
+        "project_id": project_id,
+        "layer": layer,
+        "key": key,
+        "evidence_class": evidence_class,
+        "pinned": bool(pinned),
+        "updated_at": now,
+    }
 
 
 def memory_list(project_id: str, limit_per_layer: int = 24) -> dict:
     limit_per_layer = max(1, min(int(limit_per_layer), 50))
     out = {k: [] for k in MEMORY_LAYERS}
+    now = utc_now()
     with connect_db() as cx:
         for layer in MEMORY_LAYERS:
             rows = cx.execute(
-                """SELECT key,value_json,source,updated_at FROM memory_records
-                   WHERE project_id=? AND layer=? ORDER BY updated_at DESC LIMIT ?""",
-                (project_id, layer, limit_per_layer),
+                """SELECT key,value_json,source,updated_at,evidence_class,source_id,
+                          pinned,expires_at,supersedes_key
+                   FROM memory_records
+                   WHERE project_id=? AND layer=?
+                     AND (expires_at IS NULL OR expires_at='' OR expires_at>?)
+                   ORDER BY pinned DESC, updated_at DESC LIMIT ?""",
+                (project_id, layer, now, limit_per_layer),
             ).fetchall()
             for row in rows:
                 out[layer].append({
                     "key": row["key"],
                     "value": json.loads(row["value_json"]),
                     "source": row["source"],
+                    "source_id": row["source_id"],
+                    "evidence_class": row["evidence_class"],
+                    "pinned": bool(row["pinned"]),
+                    "expires_at": row["expires_at"],
+                    "supersedes_key": row["supersedes_key"],
                     "updated_at": row["updated_at"],
                 })
     return out
 
 
-def build_context_pack(project_id: str) -> dict:
-    return {
-        "schema": "bcp.context_pack/1",
+def _context_relevance(entry: dict, task_terms: set[str]) -> int:
+    score = 100 if entry.get("pinned") else 0
+    score += 10 * _MEMORY_EVIDENCE_RANK.get(str(entry.get("evidence_class", "")), 0)
+    if not task_terms:
+        return score
+    hay = (str(entry.get("key", "")) + " " + canonical_json(entry.get("value"))).lower()
+    score += 20 * sum(1 for term in task_terms if term in hay)
+    return score
+
+
+def build_context_pack(project_id: str, task: str = "", byte_budget: int = 24000) -> dict:
+    budget = max(4096, min(int(byte_budget), 48000))
+    task_terms = {x for x in str(task).lower().replace("/", " ").replace("_", " ").split() if len(x) >= 3}
+    project_memory = memory_list(project_id, 36)
+    global_memory = memory_list("__global__", 24)
+    selected = {k: [] for k in MEMORY_LAYERS}
+    used = 0
+    for layer in MEMORY_LAYERS:
+        candidates = list(project_memory.get(layer, []))
+        if layer in ("USER_MEMORY", "POLICY", "TECHNICAL_KNOWLEDGE"):
+            candidates += list(global_memory.get(layer, []))
+        candidates.sort(key=lambda e: (_context_relevance(e, task_terms), str(e.get("updated_at", ""))), reverse=True)
+        for entry in candidates:
+            encoded = canonical_json(entry).encode("utf-8")
+            if used + len(encoded) > budget:
+                continue
+            selected[layer].append(entry)
+            used += len(encoded)
+    head = get_head(project_id)
+    pack = {
+        "schema": "bcp.context_pack/2",
         "project_id": project_id,
+        "task": str(task)[:1000],
         "generated_at": utc_now(),
-        "head": get_head(project_id),
+        "head": head,
         "recent_events": recent_events(project_id, 8),
-        "memory": memory_list(project_id, 12),
+        "memory": selected,
         "operating_mode": pc_operating_mode(),
         "resources": system_resources(),
+        "budget": {"bytes": budget, "used_bytes": used},
         "policy": {
             "default_paid_spend_usd": 0.0,
             "llm_required_for_known_transitions": False,
             "chat_history_is_canonical": False,
+            "external_content_can_self_promote": False,
         },
     }
+    pack["revision_vector"] = {
+        "project_revision": int(head["revision"]) if head else 0,
+        "context_hash": sha256_text(canonical_json(pack)),
+    }
+    return pack
 
 
-def enqueue_job(project_id: str, kind: str, payload: dict, idem: str, requires_pc: bool = True) -> dict:
+def enqueue_job(
+    project_id: str,
+    kind: str,
+    payload: dict,
+    idem: str,
+    requires_pc: bool = True,
+    priority: int = 50,
+    resource_class: str = "",
+    action_id: str = "",
+    expected_revision: int | None = None,
+    input_hash: str = "",
+    coordinator_epoch: int = 0,
+    evidence_contract: str = "",
+    dependencies: list[int] | None = None,
+) -> dict:
     if not idem or len(idem) > 200:
         raise ValueError("invalid_idempotency_key")
     if not isinstance(payload, dict):
         raise ValueError("payload_must_be_object")
+    priority = max(0, min(int(priority), 100))
+    resource_class = str(resource_class or ("PC_R3" if requires_pc else "EDGE_R1")).upper()
+    if resource_class not in ("EDGE_R0", "EDGE_R1", "EDGE_R2", "PC_R3", "REMOTE_AI"):
+        raise ValueError("invalid_resource_class")
+    action_id = str(action_id or ("action-" + secrets.token_hex(12)))[:120]
+    input_hash = str(input_hash or sha256_text(canonical_json(payload)))[:128]
+    evidence_contract = str(evidence_contract or "EFFECT_RECEIPT_REQUIRED")[:240]
+    dependencies = [int(x) for x in (dependencies or []) if int(x) > 0][:64]
     mode = pc_operating_mode()
     state = "WAITING_FOR_PC" if requires_pc and mode == "PC_MEMORY_PRESSURE" else "READY"
+    if dependencies:
+        state = "BLOCKED"
     now = utc_now()
     with DB_LOCK:
         with connect_db() as cx:
+            cx.execute("BEGIN IMMEDIATE")
             old = cx.execute(
                 "SELECT * FROM jobs WHERE project_id=? AND idempotency_key=?",
                 (project_id, idem),
             ).fetchone()
             if old:
+                cx.execute("COMMIT")
                 return {"result": "ALREADY_QUEUED", **dict(old)}
+            if expected_revision is not None:
+                head = cx.execute("SELECT revision FROM heads WHERE project_id=?", (project_id,)).fetchone()
+                actual = int(head["revision"]) if head else 0
+                if int(expected_revision) != actual:
+                    cx.execute("ROLLBACK")
+                    raise ValueError(f"stale_job_revision:expected={int(expected_revision)}:actual={actual}")
             cur = cx.execute(
-                """INSERT INTO jobs(project_id,kind,payload_json,state,requires_pc,idempotency_key,created_at,updated_at)
-                   VALUES(?,?,?,?,?,?,?,?)""",
-                (project_id, str(kind)[:80], canonical_json(payload), state, 1 if requires_pc else 0, idem, now, now),
+                """INSERT INTO jobs(
+                       project_id,kind,payload_json,state,requires_pc,idempotency_key,created_at,updated_at,
+                       action_id,priority,resource_class,expected_revision,input_hash,coordinator_epoch,evidence_contract
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    project_id, str(kind)[:80], canonical_json(payload), state, 1 if requires_pc else 0,
+                    idem, now, now, action_id, priority, resource_class, expected_revision,
+                    input_hash, int(coordinator_epoch), evidence_contract,
+                ),
             )
             job_id = int(cur.lastrowid)
-    return {"result": "QUEUED", "job_id": job_id, "project_id": project_id, "state": state, "operating_mode": mode}
+            for dep in dependencies:
+                cx.execute(
+                    "INSERT OR IGNORE INTO job_dependencies(job_id,depends_on_job_id) VALUES(?,?)",
+                    (job_id, dep),
+                )
+            cx.execute("COMMIT")
+    return {
+        "result": "QUEUED",
+        "job_id": job_id,
+        "action_id": action_id,
+        "project_id": project_id,
+        "state": state,
+        "priority": priority,
+        "resource_class": resource_class,
+        "input_hash": input_hash,
+        "coordinator_epoch": int(coordinator_epoch),
+        "operating_mode": mode,
+    }
 
 
 def jobs_snapshot(project_id: str, limit: int = 50) -> list[dict]:
