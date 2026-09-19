@@ -39,7 +39,7 @@ jobs:
           $h=[Security.Cryptography.SHA256]::Create()
           try{$actual=([BitConverter]::ToString($h.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}finally{$h.Dispose()}
           if($actual -ne $release.sha256){throw "server sha mismatch actual=$actual manifest=$($release.sha256)"}
-          foreach($needle in @('/v1/orchestrator/status','memory_candidates','TRUSTED_EVIDENCE','bcp.context_pack/2','context_hash','coordinator_epoch','input_hash','RESOURCE_ENTER_AVAILABLE_BYTES')){
+          foreach($needle in @('/v1/orchestrator/status','memory_candidates','TRUSTED_EVIDENCE','bcp.context_pack/2','context_hash','coordinator_epoch','input_hash','RESOURCE_ENTER_AVAILABLE_BYTES','APP_ROOT / "edge_distribution"')){
             if($server -notmatch [regex]::Escape($needle)){throw "server contract missing $needle"}
           }
       - name: Server self-test
@@ -59,6 +59,14 @@ jobs:
           [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1'),[ref]$null,[ref]$errors)|Out-Null
           if($errors.Count){$errors|Format-List *;throw 'acceptance parse failed'}
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -SelfTest
+
+      - name: Coordinated product installer parse and self-test
+        shell: powershell
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\windows\INSTALL_BCP_PRODUCT_CURRENT.ps1'),[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count){$errors|Format-List *;throw 'product installer parse failed'}
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_PRODUCT_CURRENT.ps1' -SelfTest
       - name: Windows package hashes
         shell: powershell
         run: |
@@ -73,6 +81,8 @@ jobs:
             windows/INSTALL_BCP_FINAL.cmd
             windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1
             windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd
+            windows/INSTALL_BCP_PRODUCT_CURRENT.ps1
+            windows/INSTALL_BCP_PRODUCT_CURRENT.cmd
             server.sha256
             installer.sha256
           if-no-files-found: error
