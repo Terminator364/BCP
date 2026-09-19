@@ -65,7 +65,9 @@ jobs:
           assert f'versionCode {code}' in gradle, 'Android versionCode drift'
           assert f'versionName "{name}"' in gradle, 'Android versionName drift'
           assert f'private static final String EDGE_VERSION = "{edge_core}";' in client, 'BcpClient EDGE_VERSION drift'
-          assert ar['minimum_server_version'] == ar['coordinated_server_version'] == sr['version'], 'Android/server version contract drift'
+          def version_tuple(value): return tuple(int(x) if x.isdigit() else 0 for x in str(value).split('-', 1)[0].split('.'))
+          assert version_tuple(sr['version']) >= version_tuple(ar['minimum_server_version']), 'Android minimum server compatibility drift'
+          assert ar['coordinated_server_version'] == sr['version'], 'Android/current coordinated server drift'
           assert sr['coordinated_edge_version'] == name, 'server/edge version contract drift'
           if sr.get('release_train') or ar.get('release_train'): assert sr.get('release_train') == ar.get('release_train'), 'release train drift'
           PY
