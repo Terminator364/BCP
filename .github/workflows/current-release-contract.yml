@@ -86,6 +86,12 @@ jobs:
               "nexus_bootstrap_delivery_status",
               "apply_nexus_bootstrap_delivery",
               "nexus_bootstrap_sha256_mismatch",
+              "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS",
+              "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS",
+              "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS",
+              "_nexus_retry_policy",
+              "HUMAN_AUTH_REQUIRED",
+              "NEXUS_BOOTSTRAP_RETRY_SCHEDULED",
               "/v1/system/nexus",
               "/v1/system/nexus/apply",
           ]

@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.4"
+SERVER_VERSION = "0.6.5"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -40,6 +40,9 @@ NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
+NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS = 5 * 60
+NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS = 30 * 60
+NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS = 4
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
 
@@ -824,7 +827,127 @@ def nexus_bootstrap_delivery_status(check_remote: bool = True) -> dict:
     return out
 
 
-def _monitor_nexus_bootstrap(proc: subprocess.Popen, bundle_version: str) -> None:
+def _parse_utc_timestamp(value: str):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        parsed = dt.datetime.fromisoformat(raw)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return parsed.astimezone(dt.timezone.utc)
+    except Exception:
+        return None
+
+
+def _nexus_retry_delay_seconds(bundle_version: str, attempt_count: int) -> int:
+    attempt = max(1, int(attempt_count or 1))
+    base = min(
+        NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS,
+        NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS * (2 ** max(0, attempt - 1)),
+    )
+    # Stable 0-20% jitter prevents synchronized retry bursts without introducing
+    # non-deterministic state or an extra dependency.
+    seed = hashlib.sha256((str(bundle_version) + ":" + str(attempt)).encode("utf-8")).digest()
+    jitter = int(base * 0.20 * (int.from_bytes(seed[:2], "big") / 65535.0))
+    return int(min(NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS, base + jitter))
+
+
+def _nexus_retry_policy(bundle_version: str, prior: dict, now=None) -> dict:
+    now = now or dt.datetime.now(dt.timezone.utc)
+    prior = prior or {}
+    prior_version = str(prior.get("bundle_version") or "")
+    prior_state = str(prior.get("state") or "")
+    try:
+        attempts = max(0, int(prior.get("attempt_count") or 0))
+    except Exception:
+        attempts = 0
+
+    if prior_version != bundle_version:
+        return {"action": "LAUNCH", "next_attempt_count": 1, "reason": "NEW_BUNDLE"}
+
+    if prior_state == "HUMAN_AUTH_REQUIRED":
+        return {
+            "action": "HUMAN_GATE",
+            "attempt_count": attempts,
+            "reason": "CLOUDFLARE_BROWSER_AUTHORIZATION_REQUIRED",
+        }
+    if prior_state == "COMMITTED":
+        return {"action": "ALREADY_CONFIGURED", "attempt_count": attempts}
+
+    retry_states = {"WRANGLER_RUNTIME_REQUIRED", "EXITED_NO_RECEIPT", "LAUNCHED"}
+    if prior_state in retry_states:
+        # Older field state did not persist attempt_count; count it as one prior attempt.
+        attempts = max(1, attempts)
+        if attempts >= NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS:
+            return {
+                "action": "EXHAUSTED",
+                "attempt_count": attempts,
+                "reason": "MAX_AUTO_ATTEMPTS_REACHED",
+            }
+        due = _parse_utc_timestamp(prior.get("next_retry_at"))
+        if due is None:
+            anchor = _parse_utc_timestamp(prior.get("updated_at")) or _parse_utc_timestamp(prior.get("launched_at"))
+            if anchor is not None:
+                due = anchor + dt.timedelta(seconds=_nexus_retry_delay_seconds(bundle_version, attempts))
+        if due is not None and now < due:
+            return {
+                "action": "COOLDOWN",
+                "attempt_count": attempts,
+                "next_attempt_count": attempts + 1,
+                "next_retry_at": due.replace(microsecond=0).isoformat(),
+                "retry_after_seconds": max(1, int((due - now).total_seconds())),
+            }
+        return {
+            "action": "LAUNCH",
+            "next_attempt_count": attempts + 1,
+            "reason": "BOUNDED_RETRY_DUE",
+        }
+
+    return {
+        "action": "LAUNCH",
+        "next_attempt_count": max(1, attempts + 1),
+        "reason": "STAGED_OR_UNSEEN",
+    }
+
+
+def _schedule_nexus_bootstrap_retry(delay_seconds: int, bundle_version: str) -> None:
+    delay = max(1, int(delay_seconds))
+
+    def retry():
+        current = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+        if str(current.get("bundle_version") or "") != bundle_version:
+            return
+        if str(current.get("state") or "") not in ("WRANGLER_RUNTIME_REQUIRED", "EXITED_NO_RECEIPT"):
+            return
+        if bool(current.get("auto_retry_exhausted")):
+            return
+        try:
+            apply_nexus_bootstrap_delivery(auto_launch=True)
+        except Exception as exc:
+            try:
+                mirror_telemetry_status("NEXUS_BOOTSTRAP_RETRY_DISPATCH_FAILED", {
+                    "status": "DEGRADED",
+                    "bundle_version": bundle_version,
+                    "error_class": type(exc).__name__,
+                })
+            except Exception:
+                pass
+
+    timer = threading.Timer(delay, retry)
+    timer.daemon = True
+    timer.name = "BCP-Nexus-Retry"
+    timer.start()
+
+
+def _monitor_nexus_bootstrap(
+    proc: subprocess.Popen,
+    bundle_version: str,
+    attempt_count: int,
+    files_staged: int = 0,
+) -> None:
     def worker():
         try:
             code = int(proc.wait())
@@ -832,43 +955,147 @@ def _monitor_nexus_bootstrap(proc: subprocess.Popen, bundle_version: str) -> Non
             code = -1
         receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
         receipt_status = str(receipt.get("status") or "")
+        error_class = str(receipt.get("error_class") or "")[:240]
         success = receipt_status == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
-        state = "COMMITTED" if success else ("WRANGLER_RUNTIME_REQUIRED" if code == 3 else "EXITED_NO_RECEIPT")
+        human_gate = receipt_status == "HUMAN_AUTH_REQUIRED"
+        if success:
+            state = "COMMITTED"
+        elif human_gate:
+            state = "HUMAN_AUTH_REQUIRED"
+        elif code == 3:
+            state = "WRANGLER_RUNTIME_REQUIRED"
+        else:
+            state = "EXITED_NO_RECEIPT"
+
+        retryable = (not success) and (not human_gate)
+        exhausted = bool(retryable and attempt_count >= NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS)
+        delay = _nexus_retry_delay_seconds(bundle_version, attempt_count) if retryable and not exhausted else 0
+        next_retry_at = ""
+        if delay:
+            next_retry_at = (
+                dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=delay)
+            ).replace(microsecond=0).isoformat()
+
         atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
             "schema": "bcp.nexus_bootstrap_delivery/1",
             "state": state,
             "bundle_version": bundle_version,
             "pid": int(proc.pid),
             "exit_code": code,
+            "attempt_count": int(attempt_count),
+            "max_auto_attempts": NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS,
+            "retryable": bool(retryable),
+            "auto_retry_exhausted": bool(exhausted),
+            "next_retry_at": next_retry_at,
+            "files_staged": int(files_staged),
             "updated_at": utc_now(),
             "receipt_present": bool(receipt),
             "receipt_status": receipt_status,
+            "error_class": error_class,
             "spend_usd": 0.0,
         })
         try:
+            if success:
+                mirror_telemetry_status("NEXUS_BOOTSTRAP_COMMITTED", {
+                    "status": "COMMITTED",
+                    "bundle_version": bundle_version,
+                    "attempt_count": attempt_count,
+                })
+            elif human_gate:
+                mirror_telemetry_status("NEXUS_BOOTSTRAP_HUMAN_AUTH_REQUIRED", {
+                    "status": "HUMAN_AUTH_REQUIRED",
+                    "bundle_version": bundle_version,
+                    "attempt_count": attempt_count,
+                })
+            elif exhausted:
+                mirror_telemetry_status("NEXUS_BOOTSTRAP_AUTO_RETRY_EXHAUSTED", {
+                    "status": "DEGRADED",
+                    "bundle_version": bundle_version,
+                    "attempt_count": attempt_count,
+                })
+            else:
+                mirror_telemetry_status("NEXUS_BOOTSTRAP_RETRY_SCHEDULED", {
+                    "status": "WAITING_RETRY",
+                    "bundle_version": bundle_version,
+                    "attempt_count": attempt_count,
+                    "next_retry_at": next_retry_at,
+                })
             mirror_external_runtime_status("NEXUS_BOOTSTRAP_PROCESS_EXITED")
         except Exception:
             pass
+
+        if delay:
+            _schedule_nexus_bootstrap_retry(delay, bundle_version)
+
     threading.Thread(target=worker, daemon=True, name="bcp-nexus-bootstrap-monitor").start()
 
 
-def _launch_nexus_bootstrap_once(bundle_version: str) -> dict:
+def _launch_nexus_bootstrap_once(
+    bundle_version: str,
+    prior_snapshot: dict | None = None,
+    files_staged: int = 0,
+) -> dict:
     if _nexus_bootstrap_success():
         return {"ok": True, "result": "ALREADY_CONFIGURED", "bundle_version": bundle_version}
     if os.name != "nt":
         return {"ok": True, "result": "STAGED_NON_WINDOWS", "bundle_version": bundle_version}
-    prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+
+    prior = dict(prior_snapshot if prior_snapshot is not None else (read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}))
     prior_pid = int(prior.get("pid") or 0)
     prior_version = str(prior.get("bundle_version") or "")
     prior_state = str(prior.get("state") or "")
     if prior_version == bundle_version and prior_state == "LAUNCHED" and _process_alive(prior_pid):
         return {"ok": True, "result": "ALREADY_RUNNING", "bundle_version": bundle_version, "pid": prior_pid}
-    if prior_version == bundle_version and prior_state in ("WRANGLER_RUNTIME_REQUIRED", "EXITED_NO_RECEIPT"):
-        return {"ok": True, "result": "STAGED_MANUAL_RETRY_REQUIRED", "bundle_version": bundle_version}
+
+    decision = _nexus_retry_policy(bundle_version, prior)
+    action = str(decision.get("action") or "")
+    if action == "HUMAN_GATE":
+        return {
+            "ok": True,
+            "result": "HUMAN_AUTH_REQUIRED",
+            "bundle_version": bundle_version,
+            "attempt_count": int(decision.get("attempt_count") or 0),
+        }
+    if action == "EXHAUSTED":
+        preserved = dict(prior)
+        preserved.update({
+            "schema": "bcp.nexus_bootstrap_delivery/1",
+            "auto_retry_exhausted": True,
+            "max_auto_attempts": NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS,
+            "last_policy_check_at": utc_now(),
+            "files_staged": int(files_staged),
+            "spend_usd": 0.0,
+        })
+        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, preserved)
+        return {
+            "ok": True,
+            "result": "AUTO_RETRY_EXHAUSTED",
+            "bundle_version": bundle_version,
+            "attempt_count": int(decision.get("attempt_count") or 0),
+        }
+    if action == "COOLDOWN":
+        preserved = dict(prior)
+        preserved.update({
+            "schema": "bcp.nexus_bootstrap_delivery/1",
+            "last_policy_check_at": utc_now(),
+            "files_staged": int(files_staged),
+            "spend_usd": 0.0,
+        })
+        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, preserved)
+        return {
+            "ok": True,
+            "result": "RETRY_COOLDOWN",
+            "bundle_version": bundle_version,
+            "next_retry_at": decision.get("next_retry_at"),
+            "retry_after_seconds": decision.get("retry_after_seconds"),
+        }
+    if action == "ALREADY_CONFIGURED":
+        return {"ok": True, "result": "ALREADY_CONFIGURED", "bundle_version": bundle_version}
 
     bootstrap = NEXUS_BOOTSTRAP_ROOT / "windows" / "BOOTSTRAP_BCP_NEXUS.ps1"
     if not bootstrap.is_file():
         raise FileNotFoundError("nexus_bootstrap_script_missing")
+    attempt_count = max(1, int(decision.get("next_attempt_count") or 1))
     flags = int(getattr(subprocess, "CREATE_NEW_CONSOLE", 0)) | int(getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
     proc = subprocess.Popen(
         ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(bootstrap)],
@@ -881,15 +1108,29 @@ def _launch_nexus_bootstrap_once(bundle_version: str) -> dict:
         "state": "LAUNCHED",
         "bundle_version": bundle_version,
         "pid": int(proc.pid),
+        "attempt_count": attempt_count,
+        "max_auto_attempts": NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS,
         "launched_at": utc_now(),
+        "files_staged": int(files_staged),
+        "launch_reason": str(decision.get("reason") or ""),
         "human_gate": "CLOUDFLARE_BROWSER_AUTHORIZATION_IF_REQUIRED",
         "spend_usd": 0.0,
     })
-    _monitor_nexus_bootstrap(proc, bundle_version)
-    return {"ok": True, "result": "LAUNCHED", "bundle_version": bundle_version, "pid": int(proc.pid)}
+    _monitor_nexus_bootstrap(proc, bundle_version, attempt_count, files_staged)
+    return {
+        "ok": True,
+        "result": "LAUNCHED",
+        "bundle_version": bundle_version,
+        "pid": int(proc.pid),
+        "attempt_count": attempt_count,
+    }
 
 
 def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
+    # Read the previous delivery state BEFORE staging. This is important:
+    # overwriting it with STAGED used to erase retry history and could cause
+    # repeated launch attempts after transient failures.
+    prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
     manifest = _fetch_json(NEXUS_BOOTSTRAP_MANIFEST_URL)
     if manifest.get("schema") != "bcp.nexus_bootstrap_release/1":
         raise ValueError("nexus_bootstrap_manifest_schema")
@@ -924,16 +1165,18 @@ def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
         os.replace(candidate, target)
         staged += 1
 
+    if auto_launch and bool(manifest.get("auto_launch_once", True)):
+        return _launch_nexus_bootstrap_once(version, prior_snapshot=prior, files_staged=staged)
+
     atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
         "schema": "bcp.nexus_bootstrap_delivery/1",
         "state": "STAGED",
         "bundle_version": version,
         "files_staged": staged,
+        "attempt_count": int(prior.get("attempt_count") or 0) if str(prior.get("bundle_version") or "") == version else 0,
         "updated_at": utc_now(),
         "spend_usd": 0.0,
     })
-    if auto_launch and bool(manifest.get("auto_launch_once", True)):
-        return _launch_nexus_bootstrap_once(version)
     return {"ok": True, "result": "STAGED", "bundle_version": version, "files_staged": staged}
 
 
@@ -3051,6 +3294,50 @@ def selftest():
         assert "telegram_companion_sha256_mismatch" in source
         assert "telegram_companion_selftest_failed" in source
         assert "BlessingControlPlaneTelegram" in source
+        assert "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS" in source
+        assert "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS" in source
+        assert "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS" in source
+        fixed_now = dt.datetime(2026, 9, 20, 0, 0, tzinfo=dt.timezone.utc)
+        fresh_retry = _nexus_retry_policy("0.1.5", {}, now=fixed_now)
+        assert fresh_retry["action"] == "LAUNCH" and fresh_retry["next_attempt_count"] == 1
+        human_retry = _nexus_retry_policy(
+            "0.1.5",
+            {"bundle_version": "0.1.5", "state": "HUMAN_AUTH_REQUIRED", "attempt_count": 1},
+            now=fixed_now,
+        )
+        assert human_retry["action"] == "HUMAN_GATE"
+        cooldown_retry = _nexus_retry_policy(
+            "0.1.5",
+            {
+                "bundle_version": "0.1.5",
+                "state": "WRANGLER_RUNTIME_REQUIRED",
+                "attempt_count": 1,
+                "next_retry_at": (fixed_now + dt.timedelta(seconds=120)).isoformat(),
+            },
+            now=fixed_now,
+        )
+        assert cooldown_retry["action"] == "COOLDOWN"
+        due_retry = _nexus_retry_policy(
+            "0.1.5",
+            {
+                "bundle_version": "0.1.5",
+                "state": "EXITED_NO_RECEIPT",
+                "attempt_count": 1,
+                "next_retry_at": (fixed_now - dt.timedelta(seconds=1)).isoformat(),
+            },
+            now=fixed_now,
+        )
+        assert due_retry["action"] == "LAUNCH" and due_retry["next_attempt_count"] == 2
+        exhausted_retry = _nexus_retry_policy(
+            "0.1.5",
+            {
+                "bundle_version": "0.1.5",
+                "state": "EXITED_NO_RECEIPT",
+                "attempt_count": NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS,
+            },
+            now=fixed_now,
+        )
+        assert exhausted_retry["action"] == "EXHAUSTED"
 
         edge_dist = Path(td) / "edge-dist"
         edge_dist.mkdir(parents=True, exist_ok=True)
