@@ -1,0 +1,234 @@
+{
+  "schema": "bcp.coordinated_coverage/1",
+  "release_train": "BCP-0.6.0_EDGE-2.0.0-rc1",
+  "requirements_revision": "2026-09-19-R4",
+  "generated_from_branch": "bcp-v2-integrated-final",
+  "status": "PRE_CI_CANDIDATE",
+  "legend": [
+    "IMPLEMENTED",
+    "TESTED_STATIC",
+    "TESTED_CI",
+    "TESTED_DEVICE",
+    "FIELD_VERIFIED",
+    "DEFERRED",
+    "NOT_IMPLEMENTED"
+  ],
+  "capabilities": [
+    {
+      "id": "pc_runtime_0_6",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "server selftest + installer/acceptance gates pending PR CI"
+    },
+    {
+      "id": "android_room_durable_state",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "Room v2 schema + explicit 1->2 migration; no destructive migration"
+    },
+    {
+      "id": "android_process_death_recovery",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "unique WorkManager reconciliation scheduled at launch and on queued work"
+    },
+    {
+      "id": "multi_project_registry",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "dynamic active project + Room project registry; buildhub no longer hard-coded in client"
+    },
+    {
+      "id": "durable_priority_queue_backpressure",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "transactional Room admission; no silent eviction; receipt-aware ACK"
+    },
+    {
+      "id": "job_dependency_dag",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "edge_job_dependencies + BLOCKED/unresolved dependency gating"
+    },
+    {
+      "id": "memory_evidence_provenance",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "evidence_class/source/pinned/TTL; protected USER_MEMORY/POLICY admission"
+    },
+    {
+      "id": "context_pack_v2",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "task relevance, pinned-first scoring, byte budget, revision vector/context hash, Room cache"
+    },
+    {
+      "id": "operating_modes",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "EDGE_ONLY/PC_AVAILABLE/PC_MEMORY_PRESSURE; recovery queue survives outages"
+    },
+    {
+      "id": "resource_governor_android",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "battery/charging/power-save/thermal/RAM/metered-network snapshot and deterministic resource classes"
+    },
+    {
+      "id": "resource_governor_pc",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "4GB-oriented absolute RAM floor + enter/exit hysteresis and cooldown"
+    },
+    {
+      "id": "idempotency_revision_fencing",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "stable idempotency, revision preconditions, coordinator_epoch job field, receipts"
+    },
+    {
+      "id": "nsd_mdns_discovery",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "_bcp._tcp.local advertiser + Android NSD primary; bounded subnet fallback"
+    },
+    {
+      "id": "credential_keystore",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "existing Evergreen Keystore token path preserved"
+    },
+    {
+      "id": "one_confirmation_pairing",
+      "component": "PC+B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "existing stable PC fingerprint pairing preserved"
+    },
+    {
+      "id": "pc_reboot_resume",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "prior 0.4.6/0.4.7 real reboot proved runtime/identity/checkpoint recovery; 0.6 device revalidation pending"
+    },
+    {
+      "id": "cheap_heartbeat_bounded_reconcile",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "heartbeat decoupled from direct full sync; policy cadence + WorkManager"
+    },
+    {
+      "id": "verified_self_update_pc",
+      "component": "PC",
+      "state": [
+        "IMPLEMENTED",
+        "FIELD_VERIFIED"
+      ],
+      "evidence": "managed server update path already field-active; 0.6 promotion pending"
+    },
+    {
+      "id": "verified_self_update_android",
+      "component": "B-EDGE",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "pinned package/cert/SHA, app-owned cache, physical Android confirmation remains OS gate"
+    },
+    {
+      "id": "universal_context_fabric_bcpgO",
+      "component": "FABRIC",
+      "state": [
+        "IMPLEMENTED",
+        "TESTED_STATIC"
+      ],
+      "evidence": "canonical bootstrap architecture + context-pack primitives; remote Nexus adapter remains partial"
+    },
+    {
+      "id": "authenticated_encrypted_lan_transport",
+      "component": "PC+B-EDGE",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "current candidate still uses authenticated local HTTP; TLS authority migration not falsely claimed"
+    },
+    {
+      "id": "edge_authority_migration",
+      "component": "B-EDGE",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "PC remains canonical writer until replication/fencing field qualification; explicit R4 invariant"
+    },
+    {
+      "id": "qr_bootstrap_fallback",
+      "component": "B-EDGE",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "NSD primary and bounded diagnostic scan implemented; QR fallback still pending"
+    },
+    {
+      "id": "telegram_remote_ingress",
+      "component": "NEXUS",
+      "state": [
+        "DEFERRED"
+      ],
+      "evidence": "optional P1 cockpit adapter; not required for local coordinated candidate"
+    }
+  ],
+  "publication_policy": {
+    "drive_current_requires": "all mandatory candidate CI gates green + stable APK signed with pinned Evergreen certificate + byte/hash readback",
+    "field_final_requires": "0.6/2.0 real-device install, reboot/reconnect, process-kill recovery, offline queue reconciliation and telemetry receipt"
+  }
+}
