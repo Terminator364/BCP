@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "FIELD_HOLD_NO_FRESH_EXTERNALIZED_DRIVE_RUNTIME_READBACK",
-  "last_completed_atomic_action": "Searched targeted Google Drive/recovery externalized sources for fresh BCP 0.4.1 heartbeat/diagnostics/recovery receipts; no relevant machine-readable runtime evidence was found",
-  "next_action": "Prepare or identify a machine-readable external telemetry export path that can be read without the isolated ChatGPT-PC interactive channel; do not reinstall or replay COMMITTED work",
+  "status": "BCP_0_4_2_EXTERNAL_TELEMETRY_BRIDGE_PUBLISHED_CI_PARTIAL_PASS_FIELD_UNVERIFIED",
+  "last_completed_atomic_action": "Implemented and published BCP 0.4.2 external Drive runtime heartbeat bridge; managed-update qualification passed; corrected Windows installer version guard",
+  "next_action": "Wait for the current Windows validation/sanity runs to finish, then allow the existing BCP auto-update path to promote 0.4.2 and read BCP_RUNTIME_LATEST.json from Drive; do not reinstall or replay committed work",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -125,9 +125,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-ATOMIC-DRIVE-RUNTIME-EVIDENCE-CHECK-20260919",
-    "status": "PASS_NO_FRESH_EVIDENCE_FOUND",
-    "next_atomic_action": "Establish/read a machine-readable external telemetry export independent of ChatGPT-PC interactive channel",
+    "checkpoint_id": "APIAX07-BCP042-EXTERNAL-TELEMETRY-BRIDGE-PUBLISHED",
+    "status": "MUTATION_COMPLETE_CI_PARTIAL_PASS_FIELD_PENDING",
+    "next_atomic_action": "Resolve current CI if needed, then read the first external BCP_RUNTIME_LATEST.json heartbeat from Drive",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -153,5 +153,22 @@
     "result": "NO_RELEVANT_FRESH_RUNTIME_EVIDENCE_FOUND",
     "false_positive_noise_observed": true,
     "no_replay_performed": true
+  },
+  "bcp_0_4_2": {
+    "server_commit": "9d85002bc073e8a00e4be403c9b5ab71aa26e2d1",
+    "release_commit": "4727f6aee870f6e38859e3a8c9a13fa2cc0d4680",
+    "workflow_sequence_commit": "76bad8a73b25d423b4a8b04100c4acb5ea53fb37",
+    "installer_alignment_commit": "545bd875910c1c406829c5f2b005e9bd88740f67",
+    "server_sha256": "3cc302d367bd3565feb40b455df414e77bceb7cf56df164536c94230f88f3039",
+    "managed_update_run_id": 35412613951,
+    "managed_update_result": "PASS",
+    "external_runtime_file": "CHATGPT_PC_AGENT/03_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "heartbeat_interval_seconds": 45,
+    "contains_secrets": false,
+    "windows_validation_run_id": 35412631205,
+    "windows_validation_state": "IN_PROGRESS",
+    "pc_sanity_run_id": 35412631244,
+    "pc_sanity_state": "IN_PROGRESS",
+    "field_runtime_readback": "PENDING"
   }
 }
