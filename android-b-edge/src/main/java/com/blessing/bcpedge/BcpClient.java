@@ -17,7 +17,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "0.2.4";
+    private static final String EDGE_VERSION = "0.2.5";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -65,6 +65,54 @@ public final class BcpClient {
         return r;
     }
 
+
+    private JSONObject autoPromoteServerIfNeeded(Progress progress) {
+        try {
+            JSONObject st = serverUpdateStatus();
+            String current = st.optString("current_version", "");
+            String target = st.optString("target_version", current);
+            boolean available = st.optBoolean("available", false);
+            if (!available) {
+                telemetry.add("SERVER_UPDATE_NOT_NEEDED", current);
+                return health();
+            }
+
+            progress.onStage("SERVER_UPDATE", "Mise à niveau automatique du serveur PC vers " + target);
+            telemetry.add("SERVER_UPDATE_AUTO_START", current + "->" + target);
+            JSONObject applied = applyServerUpdate();
+            if (!applied.optBoolean("restart_required", false)) {
+                telemetry.add("SERVER_UPDATE_AUTO_NO_RESTART", target);
+                return health();
+            }
+
+            long deadline = System.currentTimeMillis() + 30000;
+            Exception last = null;
+            while (System.currentTimeMillis() < deadline) {
+                try {
+                    Thread.sleep(900);
+                    JSONObject h = health();
+                    String got = h.optString("version", "");
+                    if (h.optBoolean("ok") && (target.isEmpty() || target.equals(got))) {
+                        telemetry.add("SERVER_UPDATE_AUTO_PASS", got);
+                        progress.onStage("SERVER_UPDATED", "Serveur PC " + got + " actif");
+                        flushTelemetry();
+                        return h;
+                    }
+                } catch (Exception ex) {
+                    last = ex;
+                }
+            }
+            telemetry.add("SERVER_UPDATE_AUTO_PENDING", target);
+            progress.onStage("SERVER_UPDATE_PENDING", "Mise à jour appliquée; redémarrage encore en cours");
+            return health();
+        } catch (Exception ex) {
+            // Connection remains usable even if update metadata is temporarily unavailable.
+            telemetry.add("SERVER_UPDATE_AUTO_DEFERRED",
+                    ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
+            return null;
+        }
+    }
+
     public JSONObject connectAutomatically(Progress progress) throws Exception {
         progress.onStage("START", "BCP Edge démarre");
         telemetry.add("START", null);
@@ -80,7 +128,8 @@ public final class BcpClient {
                     progress.onStage("CONNECTED", "PC retrouvé automatiquement");
                     telemetry.add("RECONNECT_PASS", savedServer);
                     heartbeat("RECONNECT_PASS");
-                    return h;
+                    JSONObject promoted = autoPromoteServerIfNeeded(progress);
+                    return promoted != null ? promoted : h;
                 }
             } catch (Exception ignored) {
                 telemetry.add("RECONNECT_FAIL", savedServer);
@@ -118,6 +167,16 @@ public final class BcpClient {
         telemetry.add("PAIRING_PASS", server);
         progress.onStage("CONNECTED", "Appairé à " + pair.optString("pc_name", "BCP PC"));
         heartbeat("PAIRING_PASS");
+        JSONObject promoted = autoPromoteServerIfNeeded(progress);
+        if (promoted != null) {
+            JSONObject safe = new JSONObject();
+            safe.put("paired", true);
+            safe.put("pc_name", promoted.optString("pc_name", pair.optString("pc_name", "BCP PC")));
+            safe.put("version", promoted.optString("version", pair.optString("version", "")));
+            safe.put("project", PROJECT);
+            safe.put("credential", "stored_securely_not_displayed");
+            return safe;
+        }
         return publicPairStatus(pair);
     }
 
