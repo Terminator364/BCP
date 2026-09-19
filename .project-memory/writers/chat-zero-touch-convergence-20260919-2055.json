@@ -1,0 +1,25 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-zero-touch-convergence-20260919-2055",
+  "project_or_mission": "API/BCP zero-touch field convergence + Nexus managed delivery",
+  "base_main_sha": "be9631f8c8aa61bab29326854cf7498789955076",
+  "created_at": "2026-09-19T20:55:00+01:00",
+  "intended_file_scope": [
+    ".project-memory/writers/chat-zero-touch-convergence-20260919-2055.json",
+    "windows/bcp_server.py",
+    "release/server.json",
+    "release/current.json",
+    "release/android.json",
+    "release/nexus_bootstrap.json",
+    ".github/workflows/current-release-contract.yml",
+    "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
+    "project_state.json"
+  ],
+  "expected_ci_gates": [
+    "BCP PC Sanity",
+    "BCP Windows Validation",
+    "BCP Current Release Contract",
+    "BCP Nexus Transport Qualification",
+    "BCP Coordinated Product Qualification"
+  ]
+}
