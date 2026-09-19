@@ -507,3 +507,45 @@ Promotion note:
 - current BCP 0.6.4 payload is intentionally unchanged by R4;
 - runtime closure requires a coordinated next release with exact hash/version/Android compatibility gates;
 - this avoids a same-version payload mutation while still making the gray-health defect and regression obligations canonical.
+
+
+## W. AX15GO R5 generation-bound evidence leases
+
+Canonical contract:
+`.project-memory/AX15GO_EVIDENCE_LEASE_R5.json`.
+
+W1. Local context lease is PASS, then project revision advances before the next read.
+Expected: lease invalidates by revision vector; resolver returns DELTA/FULL_REFRESH as required. No broad repository scan.
+
+W2. Mutation-admission evidence is PASS, then coordinator epoch/fencing token changes before effect.
+Expected: cached health is ignored for authority; stale mutation is rejected by current fence/revision precondition.
+
+W3. B-EDGE/PC process restarts while an in-memory evidence lease existed.
+Expected: old in-memory lease is unusable after restart; durable revision/identity is reloaded and targeted readiness is re-established.
+
+W4. Wall clock jumps backward or forward while generation vector is unchanged.
+Expected: wall-clock change alone cannot create or extend mutation authority. Local monotonic age may expire cache evidence but does not replace revision/fence checks.
+
+W5. Nexus route reconnects while local BCP project/context revisions remain unchanged.
+Expected: REMOTE_INGRESS lease changes; LOCAL_CONTEXT_READ remains valid unless its own vector changed.
+
+W6. Telegram/Nexus is degraded while LAN/local core remains usable.
+Expected: no full health scan per turn; local capability remains available and remote capability is independently stale/degraded.
+
+W7. Health snapshot is green, then SQLite mutation transaction cannot commit.
+Expected: mutation fails/HOLDs at effect boundary; prior green health never produces a false COMMITTED result.
+
+W8. Context evidence is stale for one project while another project remains unchanged.
+Expected: targeted project refresh only; no global invalidation or cross-project stall.
+
+W9. Repeated failures keep invalidating one remote lease.
+Expected: refresh/retry is bounded/backed off and event-driven; no polling storm or per-turn remote probe.
+
+W10. An unrelated health dimension gets a fresh PASS after the required mutation lease went stale.
+Expected: stale mutation lease remains stale; unrelated freshness cannot promote it.
+
+Promotion note:
+- R5 is an engineering contract and regression obligation;
+- it does not claim current BCP runtime implements a new lease object;
+- existing revision/fence/idempotency protections remain canonical and are the mutation authority;
+- runtime implementation must preserve ZERO-WAIT fast-path goals and be versioned/qualified before promotion.
