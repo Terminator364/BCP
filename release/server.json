@@ -1,9 +1,9 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "99db472485b9d961c5d545bc1f5e9a4e6c32ca81c48ed938d075dcefcab29591",
+  "sha256": "45a6a1a860e2bf585e29ea61fb1ff0bb014d5f8b63fdddfe94cb668174bab446",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS"
