@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.6.4",
+      "version": "0.6.5",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "074abe3cb94f91451bd2170746301e69cec22de1a9398e295f680f4c47eaec3e"
+        "sha256": "2014121ad3f034a2b004ff3908d6ea9431aeeda3d605902e5369c414198cf4c2"
       },
-      "notes": "BCP 0.6.4 keeps 0.6.3 behavior and adds machine-readable Nexus bootstrap exit code and secret-free receipt status so failed zero-touch convergence can be diagnosed without screenshots or token re-entry."
+      "notes": "BCP 0.6.5 adds machine-readable Nexus exit/receipt diagnostics and preserves terminal Nexus delivery state across periodic update checks, preventing repeated bootstrap relaunches after the same-version failure."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "7fd1a7db81ad6367071820825cb03b2acb527729dc4c67549652dc653a2aeccc"
+        "sha256": "4577858e49076fb8a01ba08a660fa53465dec487a3b9a155a76820a8cf7b2fc8"
       },
-      "notes": "Nexus bootstrap 0.1.3 preserves the pinned portable runtime and now persists a secret-free failure receipt, including a distinct one-time Cloudflare authorization gate. No Telegram token or manual installation step is reintroduced."
+      "notes": "Nexus 0.1.3 keeps secret-free failure receipts; coordinated BCP 0.6.5 prevents periodic update checks from erasing a failed/terminal state and relaunching the same bootstrap indefinitely."
     }
   }
 }
