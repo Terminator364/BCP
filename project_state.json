@@ -58,7 +58,9 @@
     "bedge_runtime_v2_hardening": "docs/BEDGE_RUNTIME_V2_HARDENING.md",
     "bedge_v2_test_matrix": "docs/BEDGE_V2_TEST_MATRIX.md",
     "spec_evolution_policy": ".project-memory/SPEC_EVOLUTION_POLICY.json",
-    "telegram_mission_cockpit": "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md"
+    "telegram_mission_cockpit": "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md",
+    "git_writer_lease_protocol": "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
+    "git_writer_lease_policy": ".project-memory/GIT_WRITER_LEASE_POLICY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -105,7 +107,9 @@
     "docs/BEDGE_RUNTIME_V2_HARDENING.md",
     "docs/BEDGE_V2_TEST_MATRIX.md",
     ".project-memory/SPEC_EVOLUTION_POLICY.json",
-    "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md"
+    "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md",
+    "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
+    ".project-memory/GIT_WRITER_LEASE_POLICY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -121,7 +125,8 @@
     "P1_three_node_nexus_after_p0": true,
     "P0_cumulative_specification_continuity": true,
     "P1A_telegram_mission_cockpit_after_current_field_acceptance": true,
-    "P1A_observable_micro_action_journal": true
+    "P1A_observable_micro_action_journal": true,
+    "P0_git_single_writer_integration_fence": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -595,5 +600,13 @@
     "default": "MERGE_REFINE_PRESERVE",
     "silent_reset": false,
     "explicit_supersession_required": true
+  },
+  "repository_write_policy": {
+    "autonomous_direct_main_write": false,
+    "work_branch_required": true,
+    "serial_integration_required": true,
+    "moved_main_requires_reconcile": true,
+    "force_update_main_normal_automation": false,
+    "recovery_branch_for_divergent_work": true
   }
 }
