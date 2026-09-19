@@ -270,6 +270,15 @@ async function acceptTelegramWebhook(request, env) {
 
   const text = cleanText(message?.text || "", 1024);
   if (!text.startsWith("/")) return jsonResponse({ ok: true, ignored: "non_command" });
+  const commandName = text.split(/\s+/, 1)[0].split("@", 1)[0].toLowerCase();
+  if (commandName === "/report") {
+    await sendCachedReportPdf(env, "summary");
+    return jsonResponse({ ok: true, report: "summary" });
+  }
+  if (commandName === "/reporttech") {
+    await sendCachedReportPdf(env, "technical");
+    return jsonResponse({ ok: true, report: "technical" });
+  }
 
   await env.DB.prepare(
     "INSERT OR IGNORE INTO commands(telegram_update_id, chat_id, text, state, created_at) VALUES(?1, ?2, ?3, 'QUEUED', ?4)"
