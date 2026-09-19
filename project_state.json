@@ -633,7 +633,7 @@
     "zero_usd": true,
     "token_local_only": true,
     "chat_internal_state_access": false,
-    "next_action": "Implement B-EDGE selective Telegram transport and Progress Presence/Mission Event Journal, then field-qualify /watch,/tail,/where under home-WiFi PC + low-data mobile fallback.",
+    "next_action": "Activate the already-qualified human-first Telegram worker on the PC through the least-manual safe update path, then implement B-EDGE selective Telegram relay and Mission Event Journal /watch /tail /where.",
     "integrated_pr": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
     "integrated_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
@@ -693,6 +693,30 @@
       "proactive_transition_push": true,
       "adaptive_low_data_heartbeat": true,
       "hidden_chain_of_thought_access": false
-    }
+    },
+    "progress_presence_spec_pr": 29,
+    "progress_presence_spec_merged_main_sha": "1af88e38fabf72919cc1f7f2bd60c36a3d91f25d",
+    "human_dashboard_pr": 30,
+    "human_dashboard_merged_main_sha": "d94ac8a737b1b6b48ebd113db7b3a34c63cad432",
+    "human_dashboard_ci": {
+      "telegram_run": 57,
+      "telegram_result": "PASS",
+      "coordinated_run": 247,
+      "coordinated_result": "PASS"
+    },
+    "drive_package": {
+      "file_id": "196faKtzlkgt4q2iEpokfeh38FaZ0qUf9",
+      "name": "BCP_TELEGRAM_OBSERVABILITY_MVP.zip",
+      "sha256": "c50285c421e9188a6b993a67143c2bc1ddcabe147efc6065f6913869d1363f74",
+      "size_bytes": 16826,
+      "flat_zip": true,
+      "contents": [
+        "bcp_telegram_observability.py",
+        "CONFIGURE_BCP_TELEGRAM.ps1",
+        "TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md"
+      ],
+      "modified_at": "2026-09-19T12:51:29.374Z"
+    },
+    "local_runtime_activation": "PENDING_REFRESH_FROM_PUBLISHED_PACKAGE"
   }
 }
