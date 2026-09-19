@@ -6,6 +6,14 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Windows PowerShell 5.1 can inherit legacy TLS defaults on some machines.
+# Force TLS 1.2 for Telegram HTTPS without changing any system-wide setting.
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+} catch {
+    throw "TELEGRAM_TLS12_INITIALIZATION_FAILED"
+}
+
 $AppRoot = Join-Path $env:LOCALAPPDATA "ChatGPT_ManagedApps\bcp"
 $StateDir = Join-Path $AppRoot "state"
 $LogsDir = Join-Path $AppRoot "logs"
@@ -49,11 +57,69 @@ function Convert-SecureToPlain([Security.SecureString]$Secure) {
 
 function Invoke-Telegram([string]$Token, [string]$Method, $Body, [int]$TimeoutSec = 20) {
     $uri = "https://api.telegram.org/bot" + $Token + "/" + $Method
-    try {
-        return Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body ($Body | ConvertTo-Json -Compress -Depth 12) -TimeoutSec $TimeoutSec
-    } catch {
-        $kind = $_.Exception.GetType().Name
-        throw ("TELEGRAM_API_CALL_FAILED method=" + $Method + " class=" + $kind)
+    $attempts = 3
+    for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+        try {
+            return Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body ($Body | ConvertTo-Json -Compress -Depth 12) -TimeoutSec $TimeoutSec
+        } catch [System.Net.WebException] {
+            $ex = $_.Exception
+            $response = $ex.Response
+            if ($response) {
+                $http = $null
+                try { $http = [int]$response.StatusCode } catch {}
+                $apiCode = $null
+                $apiDescription = $null
+                try {
+                    $stream = $response.GetResponseStream()
+                    $reader = New-Object System.IO.StreamReader($stream)
+                    try {
+                        $payload = $reader.ReadToEnd()
+                        if ($payload) {
+                            $parsed = $payload | ConvertFrom-Json -ErrorAction SilentlyContinue
+                            if ($parsed) {
+                                $apiCode = $parsed.error_code
+                                $apiDescription = [string]$parsed.description
+                            }
+                        }
+                    } finally {
+                        if ($reader) { $reader.Dispose() }
+                        if ($stream) { $stream.Dispose() }
+                    }
+                } catch {}
+                $safe = "TELEGRAM_API_HTTP_ERROR method=" + $Method
+                if ($http) { $safe += " http=" + $http }
+                if ($apiCode) { $safe += " api_code=" + $apiCode }
+                if ($apiDescription) { $safe += " description=" + $apiDescription }
+                throw $safe
+            }
+
+            $status = [string]$ex.Status
+            if (-not $status) { $status = "UNKNOWN_WEBEXCEPTION" }
+
+            if ($attempt -lt $attempts -and $status -in @(
+                "ConnectFailure",
+                "ConnectionClosed",
+                "KeepAliveFailure",
+                "NameResolutionFailure",
+                "PipelineFailure",
+                "ProxyNameResolutionFailure",
+                "ReceiveFailure",
+                "SecureChannelFailure",
+                "SendFailure",
+                "Timeout",
+                "TrustFailure",
+                "UnknownError"
+            )) {
+                $delay = 2 * $attempt
+                Write-Host ("Telegram transport retry " + $attempt + "/" + $attempts + " after " + $status + " (" + $delay + "s)")
+                Start-Sleep -Seconds $delay
+                continue
+            }
+            throw ("TELEGRAM_API_TRANSPORT_FAILED method=" + $Method + " status=" + $status + " attempts=" + $attempt)
+        } catch {
+            $kind = $_.Exception.GetType().Name
+            throw ("TELEGRAM_API_CALL_FAILED method=" + $Method + " class=" + $kind)
+        }
     }
 }
 
