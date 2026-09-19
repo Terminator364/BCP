@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_context_pack.schema.json",
+  "title": "BCP Context Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "context_pack_id",
+    "generated_at",
+    "scope",
+    "revisions",
+    "layers",
+    "hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.context_pack/1"
+    },
+    "context_pack_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id"
+      ],
+      "properties": {
+        "project_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "task_class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "conversation_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "revisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "global_revision",
+        "project_revision",
+        "coordinator_epoch"
+      ],
+      "properties": {
+        "global_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "project_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "operating_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coordinator_epoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "global_core",
+        "project_core",
+        "task_delta"
+      ],
+      "properties": {
+        "global_core": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/memoryItem"
+          }
+        },
+        "project_core": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/memoryItem"
+          }
+        },
+        "task_delta": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/memoryItem"
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          }
+        }
+      }
+    },
+    "tool_policy": {
+      "type": "object"
+    },
+    "resource_state": {
+      "type": "object"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "hash": {
+      "type": "string",
+      "minLength": 16
+    }
+  },
+  "$defs": {
+    "memoryItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "scope",
+        "authority_class",
+        "provenance",
+        "llm_exportable",
+        "payload",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "NORMATIVE",
+            "DESCRIPTIVE",
+            "DERIVED",
+            "UNTRUSTED_CONTENT"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "USER_MEMORY",
+            "PROJECT_MEMORY",
+            "TECHNICAL_KNOWLEDGE",
+            "OPERATING_STATE",
+            "HISTORY",
+            "POLICY"
+          ]
+        },
+        "authority_class": {
+          "enum": [
+            "CURRENT_EXPLICIT_USER_OR_SIGNED_POLICY",
+            "MACHINE_VERIFIED_CANONICAL",
+            "SOURCE_VERIFIED_PROJECT_FACT",
+            "VALIDATED_DERIVED_SUMMARY",
+            "MODEL_PROPOSED",
+            "UNTRUSTED_EXTERNAL_CONTENT"
+          ]
+        },
+        "provenance": {
+          "type": "string"
+        },
+        "sensitivity": {
+          "type": "string"
+        },
+        "llm_exportable": {
+          "type": "boolean"
+        },
+        "payload": {},
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "supersedes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflicts_with": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "hash"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "locator": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
