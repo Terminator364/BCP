@@ -234,6 +234,16 @@ try {
         throw "TELEGRAM_WEBHOOK_ALREADY_CONFIGURED_REFUSING_TO_OVERRIDE"
     }
 
+    $existingChatId = [int64]0
+    if (Test-Path -LiteralPath $ConfigPath -PathType Leaf) {
+        try {
+            $existingConfig = Get-Content -Raw -LiteralPath $ConfigPath -Encoding UTF8 | ConvertFrom-Json
+            if ($existingConfig -and $existingConfig.allowed_chat_id) {
+                $existingChatId = [int64]$existingConfig.allowed_chat_id
+            }
+        } catch {}
+    }
+
     Copy-Item -Force -LiteralPath $SourceBot -Destination $InstalledBot
     $utf8 = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($TokenPath, $token + [Environment]::NewLine, $utf8)
@@ -245,50 +255,60 @@ try {
     Write-Host "BCP will detect only a PRIVATE chat. No chat ID copy/paste is needed."
     Write-Host ""
 
-    $nextOffset = 0
-    $candidate = $null
-    $deadline = [DateTime]::UtcNow.AddMinutes(10)
-    while ([DateTime]::UtcNow -lt $deadline -and -not $candidate) {
-        $updates = Invoke-Telegram $token "getUpdates" @{
-            offset = $nextOffset
-            timeout = 20
-            allowed_updates = @("message")
-        } 30
-        foreach ($update in @($updates.result)) {
-            $uid = [int64]$update.update_id
-            if ($uid -ge $nextOffset) { $nextOffset = $uid + 1 }
-            if ($update.message -and $update.message.chat -and [string]$update.message.chat.type -eq "private") {
-                $candidate = $update.message
+    $chatId = [int64]0
+    if ($existingChatId -ne 0) {
+        $chatId = $existingChatId
+        Write-Host "Reusing previously authorized PRIVATE Telegram chat. No new /start, /status, or YES confirmation is needed."
+    } else {
+        # Only one Telegram getUpdates consumer may exist per bot token.
+        # Stop any previously installed local worker before the first-time authorization poll.
+        Stop-ExistingBot
+
+        $nextOffset = 0
+        $candidate = $null
+        $deadline = [DateTime]::UtcNow.AddMinutes(10)
+        while ([DateTime]::UtcNow -lt $deadline -and -not $candidate) {
+            $updates = Invoke-Telegram $token "getUpdates" @{
+                offset = $nextOffset
+                timeout = 20
+                allowed_updates = @("message")
+            } 30
+            foreach ($update in @($updates.result)) {
+                $uid = [int64]$update.update_id
+                if ($uid -ge $nextOffset) { $nextOffset = $uid + 1 }
+                if ($update.message -and $update.message.chat -and [string]$update.message.chat.type -eq "private") {
+                    $candidate = $update.message
+                }
             }
         }
-    }
-    if (-not $candidate) {
-        throw "HUMAN_GATE_NO_PRIVATE_TELEGRAM_MESSAGE_OBSERVED_RESUMABLE"
-    }
+        if (-not $candidate) {
+            throw "HUMAN_GATE_NO_PRIVATE_TELEGRAM_MESSAGE_OBSERVED_RESUMABLE"
+        }
 
-    $chatId = [int64]$candidate.chat.id
-    $firstName = ""
-    $lastName = ""
-    $tgUser = ""
-    if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "first_name")) {
-        $firstName = [string]$candidate.from.first_name
-    }
-    if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "last_name")) {
-        $lastName = [string]$candidate.from.last_name
-    }
-    if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "username")) {
-        $tgUser = [string]$candidate.from.username
-    }
-    $display = ($firstName + " " + $lastName).Trim()
-    if (-not $display) { $display = "(no display name)" }
-    if ($tgUser) {
-        Write-Host ("Detected private Telegram identity: " + $display + " @" + $tgUser)
-    } else {
-        Write-Host ("Detected private Telegram identity: " + $display + " (no username)")
-    }
-    $confirm = Read-Host "Authorize this PRIVATE chat for READ-ONLY BCP observability? Type YES"
-    if ($confirm -ne "YES") {
-        throw "HUMAN_GATE_CHAT_ID_NOT_AUTHORIZED"
+        $chatId = [int64]$candidate.chat.id
+        $firstName = ""
+        $lastName = ""
+        $tgUser = ""
+        if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "first_name")) {
+            $firstName = [string]$candidate.from.first_name
+        }
+        if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "last_name")) {
+            $lastName = [string]$candidate.from.last_name
+        }
+        if ($candidate.from -and ($candidate.from.PSObject.Properties.Name -contains "username")) {
+            $tgUser = [string]$candidate.from.username
+        }
+        $display = ($firstName + " " + $lastName).Trim()
+        if (-not $display) { $display = "(no display name)" }
+        if ($tgUser) {
+            Write-Host ("Detected private Telegram identity: " + $display + " @" + $tgUser)
+        } else {
+            Write-Host ("Detected private Telegram identity: " + $display + " (no username)")
+        }
+        $confirm = Read-Host "Authorize this PRIVATE chat for READ-ONLY BCP observability? Type YES"
+        if ($confirm -ne "YES") {
+            throw "HUMAN_GATE_CHAT_ID_NOT_AUTHORIZED"
+        }
     }
 
     $config = [ordered]@{
