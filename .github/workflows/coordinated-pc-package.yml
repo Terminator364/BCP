@@ -57,8 +57,8 @@ jobs:
           if($release.coordinated_edge_version -ne '1.2.0-evergreen'){throw 'EDGE_VERSION_CONTRACT_DRIFT'}
           if($release.requirements_revision -ne '2026-09-19-R5'){throw 'REQUIREMENTS_REVISION_DRIFT'}
           if($server -notmatch 'SERVER_VERSION = "0.6.0"'){throw 'SOURCE_VERSION_DRIFT'}
-          if($installer -notmatch '\\$InstallerVersion = "0.6.0"'){throw 'INSTALLER_VERSION_DRIFT'}
-          if($acceptance -notmatch '\\$TargetVersion = "0.6.0"'){throw 'ACCEPTANCE_VERSION_DRIFT'}
+          if($installer -notmatch '\$InstallerVersion = "0.6.0"'){throw 'INSTALLER_VERSION_DRIFT'}
+          if($acceptance -notmatch '\$TargetVersion = "0.6.0"'){throw 'ACCEPTANCE_VERSION_DRIFT'}
 
           # Manifest hashes canonical repository bytes (LF); normalize Windows checkout text before hashing.
           $canonical=$server -replace "\r\n","\n"
