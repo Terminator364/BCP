@@ -51,7 +51,7 @@ jobs:
               "schema": 1,
               "package_type": "managed_app_update",
               "target_app": "bcp",
-              "sequence": 202609190404,
+              "sequence": 202609190405,
               "version": version,
               "update_id": "bcp-server-" + version + "-recovery-bridge",
               "files": [{"path": "server.py", "sha256": sha}],
