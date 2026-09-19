@@ -65,7 +65,8 @@
     "telegram_observability_setup": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
     "rdc_network_data_saver": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
     "home_wifi_edge_nexus_autoupdate": "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
-    "nexus_field_gate": "docs/BCP_NEXUS_FIELD_GATE.md"
+    "nexus_field_gate": "docs/BCP_NEXUS_FIELD_GATE.md",
+    "qualified_current_release_manifest": "release/current.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -118,7 +119,8 @@
     "docs/TELEGRAM_OBSERVABILITY_MVP.md",
     "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
     "docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md",
-    "docs/BCP_NEXUS_FIELD_GATE.md"
+    "docs/BCP_NEXUS_FIELD_GATE.md",
+    "release/current.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -171,10 +173,10 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP047-POSTREBOOT-ORACLE-HARDENING",
-    "status": "PATCH_COMMITTED_CI_QUALIFICATION_PENDING",
-    "next_atomic_action": "CI qualify cf83931c then publish CURRENT only if all gates pass",
-    "diagnostic_mode": "MACHINE_READABLE_TELEMETRY_PRIMARY"
+    "checkpoint_id": "BCP-AUTOUPDATE-CURRENT-MANIFEST-20260919",
+    "status": "IMPLEMENTED_BRANCH_CI_PENDING",
+    "next_atomic_action": "Qualify exact branch head; merge only if CURRENT release contract + existing product gates PASS; then stop at true external signing/cloud authorization gates.",
+    "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY"
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -738,7 +740,7 @@
     "offline_behavior": "DURABLE_STORE_AND_FORWARD"
   },
   "automatic_update_target": {
-    "status": "REQUIREMENT_DEFINED_IMPLEMENTATION_PENDING",
+    "status": "UNIFIED_CURRENT_MANIFEST_IMPLEMENTED_CI_PENDING",
     "trigger": "QUALIFIED_RELEASE_EVENT_NOT_CHATGPT_SCHEDULED_AUTOMATION",
     "current_manifest": true,
     "pc_staged_verify_health_rollback": true,
@@ -746,7 +748,15 @@
     "android_final_install_confirmation_may_be_required": true,
     "drive_replace_current_in_place": true,
     "unchanged_version_zero_download": true,
-    "zero_usd": true
+    "zero_usd": true,
+    "manifest": "release/current.json",
+    "schema": "schemas/bcp_current_release.schema.json",
+    "validator": "tools/validate_current_release.py",
+    "ci": ".github/workflows/current-release-contract.yml",
+    "windows_bcp_0_5_0": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_READBACK_PENDING",
+    "android_b_edge_1_1_0": "CI_QUALIFIED_STABLE_SIGNED_DISTRIBUTION_PENDING",
+    "nexus_0_1_0": "CI_QUALIFIED_FIELD_DEPLOYMENT_PENDING",
+    "scheduled_chatgpt_automation": false
   },
   "nexus_transport_mvp": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING_FIELD_UNVERIFIED",
