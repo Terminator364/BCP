@@ -1,0 +1,36 @@
+{
+  "schema": "bcp.nexus_bootstrap_release/1",
+  "channel": "stable",
+  "version": "0.1.1",
+  "minimum_server_version": "0.6.3",
+  "auto_stage": true,
+  "auto_launch_once": true,
+  "zero_usd": true,
+  "requirements_revision": "2026-09-19-R8",
+  "files": [
+    {
+      "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
+      "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
+      "sha256": "90c61e00cd02a2930221e90d95554fb66d472baa98fe64475d3bb9de6add6e01",
+      "max_bytes": 300000
+    },
+    {
+      "path": "windows/CONFIGURE_BCP_NEXUS.ps1",
+      "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/CONFIGURE_BCP_NEXUS.ps1",
+      "sha256": "6fc901acab339cae2df6b7772006bedcf2009779f7fd719bc64a9c7280eb2127",
+      "max_bytes": 300000
+    },
+    {
+      "path": "nexus/cloudflare-worker/src/worker.mjs",
+      "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
+      "sha256": "206cf9d4ec4c524e83e23b1fe6c0969c25e4a190cb6fd1b53da4a0d6eccc0764",
+      "max_bytes": 500000
+    },
+    {
+      "path": "nexus/cloudflare-worker/migrations/0001_init.sql",
+      "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/migrations/0001_init.sql",
+      "sha256": "08ffaa1e03c01ff07c9a7842cd3d31ba0720e98b940602bfdd0b951ca60d8452",
+      "max_bytes": 300000
+    }
+  ]
+}
