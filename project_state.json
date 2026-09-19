@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_1_EDGE_2RC1_CONNECTED_RECOVERY_POINTER_CLASSIFICATION_PENDING",
-  "last_completed_atomic_action": "Fresh machine-readable telemetry proves the dedicated Samsung SM-A217F B-EDGE is connected as edge_version 2.0.0-rc1 to BCP 0.6.1 on MBMPC. The phone heartbeat was accepted and pairing remained intact after the managed server update.",
-  "next_action": "No user reinstall. Classify the remaining ChatGPT-PC ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD and obtain an installed-APK identity/hash attestation before promoting B-EDGE 2.0.0-rc1 to exact artifact FIELD_VERIFIED. In parallel continue the human-first Telegram progress journal/Nexus field gate without scheduled ChatGPT automations.",
+  "status": "BCP_0_6_1_EDGE_2RC1_CONNECTED_CHATGPT_PC_STALE_OBSERVABILITY_HOLD_CLASSIFIED",
+  "last_completed_atomic_action": "Classified the remaining ChatGPT-PC recovery hold from fresh Drive evidence: recovery result targets version 6.0.32/sequence 6032 and reports COMPOSITE_READBACK_TIMEOUT, while the same evidence shows the active runtime identity is already 6.0.32, command plane ALIVE, and a managed agent process launched from the 6.0.32 release path. The hold is therefore scoped to stale/late recovery observability and convergence proof, not to the BCP 0.6.1 managed update itself.",
+  "next_action": "Keep BCP 0.6.1 and B-EDGE 2.0.0-rc1 in place; do not reinstall. Continue the Telegram/Nexus progress-presence field gate and separately repair/verify ChatGPT-PC heartbeat/cycle-lease convergence. For B-EDGE artifact promotion, add installed package version/signing identity attestation; exact APK hash remains unproven.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,13 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-061-EDGE2RC1-FIELD-CONNECTED-20260919-1915",
-    "status": "WINDOWS_061_AND_EDGE_VERSION_CONNECTED_RECOVERY_POINTER_AND_APK_ATTESTATION_PENDING",
-    "last_completed_action": "Captured 2.0.0-rc1 phone heartbeat/connection readback after BCP 0.6.1 update.",
-    "next_atomic_action": "Classify recovery pointer mismatch; then add exact installed APK attestation and continue Nexus/progress-presence field qualification.",
+    "checkpoint_id": "BCP-RECOVERY-CLASSIFICATION-PROGRESS-20260919-1932",
+    "status": "RECOVERY_HOLD_CLASSIFIED_PROGRESS_PRESENCE_PARTIAL_FIELD_GATE_NEXT",
+    "last_completed_action": "Classified ChatGPT-PC COMPOSITE_READBACK_TIMEOUT as a separate recovery-observability convergence hold and reconciled progress-presence implementation status.",
+    "next_atomic_action": "Field-qualify Nexus/progress push path and improve mission event producer coverage; no PC/B-EDGE reinstall.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/edge-field-readback-2rc1-20260919-1915",
-    "base_main_sha": "6a4cf28a98f30e6dff525a18a8a6d4862326273f",
+    "branch": "work/bcp/classify-recovery-progress-20260919-1932",
+    "base_main_sha": "71d3066043c6f2a1c203f536aa3a1bec7610df3f",
     "no_replay": true
   },
   "runtime_verification": {
@@ -860,5 +860,33 @@
     "edge_version_and_connectivity_verified": true,
     "exact_installed_apk_sha256_verified": false,
     "no_manual_reinstall_required": true
+  },
+  "chatgpt_pc_recovery_classification": {
+    "observed_result_modified_at_utc": "2026-09-19T18:28:25Z",
+    "source": "CHATGPT_PC_AGENT/RECOVERY/RECOVERY_BOOTSTRAP_RESULT.json plus external command-plane/device telemetry",
+    "evidence_status": "MACHINE_READBACK",
+    "target_version": "6.0.32",
+    "target_sequence": 6032,
+    "status": "ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
+    "reason": "COMPOSITE_READBACK_TIMEOUT",
+    "stop_status": "NOT_NEEDED",
+    "old_version": "6.0.32",
+    "launch_rc": 0,
+    "last_composite": {
+      "heartbeat_version": "6.0.32",
+      "heartbeat_age_seconds": 1580,
+      "command_plane": "ALIVE",
+      "command_plane_runtime_version": "6.0.32",
+      "cycle_lease_status": "CYCLE_LEASE_NOT_VALID"
+    },
+    "fresh_external_device": {
+      "agent_version": "6.0.32",
+      "last_seen_utc": "2026-09-19T18:24:17Z",
+      "product": "Tunnel PC G6"
+    },
+    "classification": "STALE_OR_LATE_RECOVERY_OBSERVABILITY_CONVERGENCE_HOLD",
+    "bcp_managed_update_0_6_1_impacted": false,
+    "chatgpt_pc_integration_fully_healthy": false,
+    "remediation_scope": "CHATGPT_PC_HEARTBEAT_AND_CYCLE_LEASE_CONVERGENCE"
   }
 }
