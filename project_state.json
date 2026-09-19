@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_2_CI_QUALIFIED_FIELD_HEARTBEAT_PENDING",
-  "last_completed_atomic_action": "BCP 0.4.2 external telemetry bridge qualified: managed-update PASS, PC Sanity PASS, Windows bootstrap validation PASS, Windows 2022/latest E2E PASS",
-  "next_action": "Observe first live BCP_RUNTIME_LATEST.json from synced Drive; if absent, use the already-built BCP-native recovery/update path rather than reinstalling",
+  "status": "BCP_0_4_2_CI_QUALIFIED_BEDGE_0_2_5_BUILDING_FIELD_HEARTBEAT_PENDING",
+  "last_completed_atomic_action": "Consolidated canonical project requirements; qualified BCP 0.4.2 on Windows; implemented B-EDGE 0.2.5 automatic BCP server promotion",
+  "next_action": "Finish B-EDGE 0.2.5 CI; then obtain field heartbeat via current B-EDGE 0.2.4 one-time server-update control or automatic 0.2.5 path when deployed",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -127,9 +127,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP042-CI-QUALIFIED-FIELD-HEARTBEAT-PENDING",
-    "status": "CI_QUALIFIED",
-    "next_atomic_action": "Obtain first live external heartbeat or trigger bounded BCP-native recovery/update path",
+    "checkpoint_id": "APIAX07-WINDOWS-GREEN-BEDGE-AUTO-PROMOTION-BUILDING",
+    "status": "ADVANCING",
+    "next_atomic_action": "Complete B-EDGE CI and drive first field BCP 0.4.2 heartbeat",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -173,5 +173,16 @@
     "pc_sanity_state": "PASS",
     "field_runtime_readback": "PENDING_NO_DRIVE_HEARTBEAT_YET",
     "cahier_des_charges_commit": "24a9a99e75c2d546d5fa623810c0989779dd5e5a"
+  },
+  "b_edge_0_2_5": {
+    "purpose": "Automatically check/promote BCP server after reconnect or pairing and verify service return",
+    "client_commit": "4d3606ed2fbfef036af8a7c23e35e2c2b3458e7b",
+    "telemetry_commit": "14e8533e93f241b576018634d69fa52768e06170",
+    "version_commit": "0546cde85029fb2bf2b0913d7c7768f8f0729428",
+    "ci_guard_commit": "ef877b4fc0721effc6caf4b9695cca87305aaa1c",
+    "release_metadata_commit": "f1c0eab7bc242fccbd11001ff33a07b1065f3aac",
+    "ci_run_id": 35413252285,
+    "ci_state": "IN_PROGRESS",
+    "signed_self_update_distribution": "PENDING_FIXED_SIGNING_IDENTITY"
   }
 }
