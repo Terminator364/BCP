@@ -41,7 +41,7 @@
     "STATUS_RESPONSE_PASS",
     "NORMAL_KINSHASA_NETWORK_NO_VPN"
   ],
-  "next_safe_action": "Human gate: create bot with official @BotFather, then run the local configurator; token remains local. Complete Kinshasa getMe/getUpdates/sendMessage/status smoke.",
+  "next_safe_action": "Human gate only: create bot with official @BotFather if not already created, then run the local configurator from the qualified Telegram package; token stays local. Complete Kinshasa getMe/getUpdates/sendMessage/status smoke.",
   "integration": {
     "pr_number": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
@@ -50,6 +50,18 @@
     "telegram_ci": "success",
     "coordinated_ci_run_id": 35435634595,
     "coordinated_ci": "success",
-    "package_sha256": "303337e1d32f0d38b2dfac3112b6201ff7659c16057f0667ba2294783845db4d"
+    "package_sha256": "303337e1d32f0d38b2dfac3112b6201ff7659c16057f0667ba2294783845db4d",
+    "followup_fix_pr": 16,
+    "followup_fix_commit": "1d4f1ba7f745602034a06ec1f9a617a3b47f66c7",
+    "followup_merge_sha": "117801e49f83ced93397905b695f2c54104ddb8c",
+    "followup_telegram_ci_run_id": 35435910072,
+    "followup_telegram_ci": "success",
+    "followup_coordinated_ci_run_id": 35435910071,
+    "followup_coordinated_ci": "success",
+    "drive_package_file_id": "196faKtzlkgt4q2iEpokfeh38FaZ0qUf9",
+    "drive_package_file_name": "BCP_TELEGRAM_OBSERVABILITY_MVP.zip",
+    "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk",
+    "artifact_id": 10581144182,
+    "artifact_digest": "sha256:8af53ce3af16d06dcd9d6f0394b28b9bff006aa11a4c1b12b19d8f4de5fb33fe"
   }
 }
