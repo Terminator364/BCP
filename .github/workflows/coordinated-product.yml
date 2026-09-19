@@ -5,11 +5,11 @@ on:
   pull_request:
   push:
     paths:
-      - "windows/bcp_server.py"
+      - "windows/**"
       - "android-b-edge/**"
-      - "release/server.json"
-      - "release/android.json"
-      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - "release/**"
+      - "docs/**"
+      - ".project-memory/**"
       - ".github/workflows/coordinated-product.yml"
 
 permissions:
@@ -24,19 +24,47 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Server release contract
+      - name: Server candidate contract
         shell: powershell
         run: |
           $release=Get-Content -Raw '.\release\server.json' -Encoding UTF8|ConvertFrom-Json
           $server=Get-Content -Raw '.\windows\bcp_server.py' -Encoding UTF8
-          if($release.version -ne '0.5.0'){throw 'server release version drift'}
-          if($release.coordinated_edge_version -ne '1.1.0-evergreen'){throw 'server/edge coordination drift'}
-          if($server -notmatch 'SERVER_VERSION = "0.5.0"'){throw 'server source version drift'}
-          if($server -notmatch '/v1/orchestrator/status'){throw 'orchestrator status missing'}
-          if($server -notmatch 'memory_records'){throw 'memory schema missing'}
-          if($server -notmatch 'WAITING_FOR_PC'){throw 'resource-aware job queue missing'}
+          if($release.version -ne '0.6.0'){throw 'server release version drift'}
+          if($release.coordinated_edge_version -ne '2.0.0-rc1-evergreen'){throw 'server/edge coordination drift'}
+          if($server -notmatch 'SERVER_VERSION = "0.6.0"'){throw 'server source version drift'}
+          foreach($needle in @(
+            '/v1/orchestrator/status',
+            'bcp.context_pack/2',
+            'evidence_class',
+            'coordinator_epoch',
+            'job_dependencies',
+            '_bcp._tcp.local',
+            'PC_MEMORY_PRESSURE',
+            '384 * 1024 * 1024',
+            '640 * 1024 * 1024',
+            'memory_admission_rejected_protected_layer'
+          )) { if($server -notmatch [regex]::Escape($needle)){throw "server contract missing $needle"} }
       - name: Server self-test
         run: python .\windows\bcp_server.py --selftest
+      - name: Installer self-test
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\INSTALL_BCP_FINAL.ps1' -SelfTest
+      - name: Acceptance self-test
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\windows\BCP_FINAL_ACCEPTANCE_CURRENT.ps1' -SelfTest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcp-pc-0.6.0
+          path: |
+            windows/bcp_server.py
+            windows/INSTALL_BCP_FINAL.ps1
+            windows/INSTALL_BCP_FINAL.cmd
+            windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1
+            windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd
+            release/server.json
+            release/android.json
+            release/COORDINATED_COVERAGE_CURRENT.json
+          if-no-files-found: error
 
   android:
     runs-on: ubuntu-latest
@@ -49,25 +77,47 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Coordinated Android contract
+      - name: Android V2 contract
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'versionCode 110' android-b-edge/build.gradle
-          grep -F 'versionName "1.1.0-evergreen"' android-b-edge/build.gradle
-          grep -F 'private static final String EDGE_VERSION = "1.1.0";' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
-          grep -F 'EdgeOrchestrator' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
-          grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F 'PC_MEMORY_PRESSURE' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
-          grep -F '"minimum_server_version": "0.5.0"' release/android.json
+          GRADLE=android-b-edge/build.gradle
+          CLIENT=android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
+          ORCH=android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java
+          DB=android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java
+          DAO=android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDao.java
+          POLICY=android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
+          GOV=android-b-edge/src/main/java/com/blessing/bcpedge/EdgeResourceGovernor.java
+          NSD=android-b-edge/src/main/java/com/blessing/bcpedge/NsdDiscovery.java
+          WORK=android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeReconcileWorker.java
+          SCHED=android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeWorkScheduler.java
+
+          grep -F 'versionCode 200' "$GRADLE" >/dev/null
+          grep -F 'versionName "2.0.0-rc1-evergreen"' "$GRADLE" >/dev/null
+          grep -F 'EDGE_VERSION = "2.0.0-rc1"' "$CLIENT" >/dev/null
+          grep -F 'active_project' "$CLIENT" >/dev/null
+          grep -F 'setProject' "$CLIENT" >/dev/null
+          grep -F 'EdgeDatabase.get' "$ORCH" >/dev/null
+          grep -F 'DURABLE_QUEUE_CAPACITY_REACHED' "$ORCH" >/dev/null
+          grep -F 'unresolvedDependencies' "$DAO" >/dev/null
+          grep -F 'EdgeDependencyEntity.class' "$DB" >/dev/null
+          ! grep -F 'fallbackToDestructiveMigration' "$DB"
+          grep -F 'EDGE_R2' "$POLICY" >/dev/null
+          grep -F 'REMOTE_AI' "$POLICY" >/dev/null
+          grep -F 'getCurrentThermalStatus' "$GOV" >/dev/null
+          grep -F '_bcp._tcp.' "$NSD" >/dev/null
+          grep -F 'syncOrchestrationState' "$WORK" >/dev/null
+          grep -F 'PeriodicWorkRequest' "$SCHED" >/dev/null
+          grep -F 'known_hash' "$CLIENT" >/dev/null
+          grep -F 'expected_revision' "$CLIENT" >/dev/null
+          grep -F '"minimum_server_version": "0.6.0"' release/android.json >/dev/null
       - name: Unit tests
         run: gradle :android-b-edge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
       - name: Lint
         run: gradle :android-b-edge:lintDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
       - name: Build APKs
         run: gradle :android-b-edge:assembleDebug :android-b-edge:assembleRelease --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
-      - name: Package contract
+      - name: APK contract
         shell: bash
         run: |
           set -euo pipefail
@@ -77,31 +127,83 @@ jobs:
           test -s "$RELEASE"
           sha256sum "$DEBUG" > android-b-edge-debug.apk.sha256
           sha256sum "$RELEASE" > android-b-edge-release-unsigned.apk.sha256
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          "$AAPT" dump badging "$RELEASE" | tee android-b-edge-release.badging.txt
+          grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='200'" android-b-edge-release.badging.txt >/dev/null
       - uses: actions/upload-artifact@v4
         with:
-          name: bcp-edge-1.1.0-coordinated
+          name: bcp-edge-2.0.0-rc1-unsigned
           path: |
             android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk
             android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
             android-b-edge-debug.apk.sha256
             android-b-edge-release-unsigned.apk.sha256
+            android-b-edge-release.badging.txt
+          if-no-files-found: error
 
   compatibility:
     runs-on: ubuntu-latest
     needs: [server, android]
     steps:
       - uses: actions/checkout@v4
-      - name: Cross-component release contract
+      - name: Cross-component compatibility and coverage
         shell: python
         run: |
-          import json, pathlib, re, hashlib
+          import json,pathlib,hashlib
           sr=json.loads(pathlib.Path("release/server.json").read_text())
           ar=json.loads(pathlib.Path("release/android.json").read_text())
+          cov=json.loads(pathlib.Path("release/COORDINATED_COVERAGE_CURRENT.json").read_text())
           server=pathlib.Path("windows/bcp_server.py").read_bytes()
-          client=pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text()
-          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"] == "0.5.0"
-          assert sr["coordinated_edge_version"] == ar["version_name"] == "1.1.0-evergreen"
+          assert sr["version"] == ar["minimum_server_version"] == ar["coordinated_server_version"] == "0.6.0"
+          assert sr["coordinated_edge_version"] == ar["version_name"] == "2.0.0-rc1-evergreen"
+          assert sr["release_train"] == ar["release_train"] == cov["release_train"]
           assert hashlib.sha256(server).hexdigest() == sr["sha256"]
-          for endpoint in ["/v1/orchestrator/status", "/context", "/jobs"]:
-              assert endpoint in client or endpoint in server.decode()
+          ids={x["id"]:x for x in cov["capabilities"]}
+          for required in [
+              "durable_edge_memory_jobs","process_death_recovery","multi_project",
+              "queue_backpressure_and_receipts","dependency_dag","android_resource_governor",
+              "pc_ram_hysteresis","memory_admission_provenance","context_pack_v2",
+              "job_fencing","nsd_mdns_discovery","verified_update_rollback","bcpgO_context_fabric"
+          ]:
+              assert "IMPLEMENTED" in ids[required]["state"], required
+          assert "DEFERRED" in ids["encrypted_lan_transport"]["state"]
+          assert "DEFERRED" in ids["edge_canonical_writer_migration"]["state"]
           print("BCP_COORDINATED_COMPATIBILITY=PASS")
+
+  package:
+    runs-on: ubuntu-latest
+    needs: [server, android, compatibility]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: bcp-pc-0.6.0
+          path: stage/pc
+      - uses: actions/download-artifact@v4
+        with:
+          name: bcp-edge-2.0.0-rc1-unsigned
+          path: stage/phone
+      - name: Assemble one coordinated candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p product/01_PC product/02_PHONE_UNSIGNED product/03_EVIDENCE
+          cp stage/pc/windows/bcp_server.py product/01_PC/
+          cp stage/pc/windows/INSTALL_BCP_FINAL.ps1 product/01_PC/
+          cp stage/pc/windows/INSTALL_BCP_FINAL.cmd product/01_PC/
+          cp stage/pc/windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1 product/01_PC/
+          cp stage/pc/windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd product/01_PC/
+          cp stage/phone/android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk product/02_PHONE_UNSIGNED/
+          cp stage/phone/android-b-edge-release-unsigned.apk.sha256 product/03_EVIDENCE/
+          cp release/server.json release/android.json release/COORDINATED_COVERAGE_CURRENT.json product/03_EVIDENCE/
+          cat > product/README_NEXT_GATE.txt <<'EOF'
+          Coordinated candidate BCP 0.6.0 + B-EDGE 2.0.0-rc1.
+          Public CI has qualified both components and their compatibility.
+          The APK under 02_PHONE_UNSIGNED is intentionally not user-installable until private signing with the pinned Evergreen identity.
+          EOF
+          (cd product && find . -type f -print0 | sort -z | xargs -0 sha256sum) > product/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BCP_COORDINATED_0.6.0_EDGE_2.0.0-rc1_CI
+          path: product
+          if-no-files-found: error
