@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.5",
-  "minimum_server_version": "0.6.4",
+  "version": "0.1.6",
+  "minimum_server_version": "0.6.7",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-19-R10",
+  "requirements_revision": "2026-09-20-R11",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "67a67ff43ac6878ac3382696d5682466f0609c552d3d99a36b40b5de4031af04",
+      "sha256": "8ec2d3469fe88ed28c91965ff74cfd56f8125d375ccd90facc3de511fdb5b8e7",
       "max_bytes": 300000
     },
     {
