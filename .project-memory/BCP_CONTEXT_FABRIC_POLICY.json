@@ -149,5 +149,27 @@
     "MEMORY_POISONING_TEST_PASS",
     "THREE_NODE_PARTITION_TEST_PASS",
     "ZERO_USD_REMOTE_GATEWAY_FIELD_PASS_IF_ENABLED"
-  ]
+  ],
+  "spec_evolution": {
+    "scope": "GLOBAL_ALL_PROJECTS",
+    "default_update_semantics": "MERGE_REFINE_PRESERVE",
+    "policy_ref": ".project-memory/SPEC_EVOLUTION_POLICY.json",
+    "silent_replacement_forbidden": true,
+    "explicit_supersession_required": true,
+    "ambiguous_conflict_state": "SPEC_CONFLICT_HOLD"
+  },
+  "mission_control": {
+    "preferred_lightweight_cockpit": "TELEGRAM_BCP",
+    "canonical_design": "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md",
+    "mission_envelope_required": true,
+    "append_only_event_log_required": true,
+    "short_job_code_is_locator_not_auth": true,
+    "observable_progress_not_hidden_reasoning": true,
+    "provider_wait_states": [
+      "WAITING_EXTERNAL_CHAT_RESULT",
+      "PROVIDER_PENDING_UNKNOWN",
+      "PROVIDER_TIMEOUT"
+    ],
+    "deep_jobs_are_bounded_micro_sprints": true
+  }
 }
