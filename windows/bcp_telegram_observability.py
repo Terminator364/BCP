@@ -1416,6 +1416,14 @@ class Nexus:
             "text": safe_text,
         }, timeout=25)
 
+    def publish_reports(self) -> None:
+        summary = TOKEN_RE.sub("[REDACTED_TOKEN]", self.service.report_summary())[:18000]
+        technical = TOKEN_RE.sub("[REDACTED_TOKEN]", self.service.report_technical())[:26000]
+        self.api("/v1/device/report", method="POST", payload={
+            "summary": summary,
+            "technical": technical,
+        }, timeout=30)
+
     def _push_presence(self) -> None:
         if not self.auto_push:
             return
@@ -1480,6 +1488,7 @@ class Nexus:
         prior = read_json(path, {}) or {}
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
+        self.publish_reports()
         self.live_card(str(snap["text"]), "mission:" + self.service.project_id)
         atomic_json(path, {
             "schema": "bcp.telegram_system_presence/2",
@@ -1507,6 +1516,12 @@ class Nexus:
                     if command_id <= cursor:
                         continue
                     response = self.service.dispatch(str(command.get("text") or ""))
+                    if response == "REPORT_PDF_SUMMARY":
+                        self.publish_reports()
+                        response = "📄 Rapport de suivi actualisé. Utilisez le bouton « PDF suivi »."
+                    elif response == "REPORT_PDF_TECHNICAL":
+                        self.publish_reports()
+                        response = "📚 Rapport technique actualisé. Utilisez le bouton « PDF technique »."
                     self.reply(command_id, response)
                     cursor = command_id
                     atomic_json(NEXUS_CURSOR_PATH, {
