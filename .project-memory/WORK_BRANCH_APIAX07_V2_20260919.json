@@ -1,0 +1,27 @@
+{
+  "schema": "bcp.work_branch_metadata/1",
+  "writer_or_session_id": "chatgpt-apiax07-20260919-v2-coordinated",
+  "project_or_mission": "APIAX07 synchronized PC+B-EDGE substantial product increment",
+  "base_main_sha": "bcfb648dfbc533ee5b4b07a3659bda5bef33644f",
+  "created_at": "2026-09-19",
+  "intended_file_scope": [
+    "windows/bcp_server.py",
+    "windows/INSTALL_BCP_FINAL.ps1",
+    "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1",
+    "android-b-edge/**",
+    "release/**",
+    ".github/workflows/coordinated-product.yml"
+  ],
+  "expected_ci_gates": [
+    "server selftest",
+    "Windows installer selftest",
+    "reboot acceptance selftest",
+    "Android unit",
+    "Android lint",
+    "Android assemble",
+    "cross-component compatibility",
+    "coordinated artifact packaging",
+    "private APK signature verification"
+  ],
+  "integration_policy": "serial branch writes; reread main before merge; requalify if main moves"
+}
