@@ -69,12 +69,14 @@ jobs:
           grep -F 'PHONE_HEARTBEAT' "$CLIENT" >/dev/null
           grep -F 'serverUpdateStatus' "$CLIENT" >/dev/null
           grep -F 'applyServerUpdate' "$CLIENT" >/dev/null
+          grep -F 'SERVER_UPDATE_AUTO_START' "$CLIENT" >/dev/null
+          grep -F 'autoPromoteServerIfNeeded' "$CLIENT" >/dev/null
           grep -F 'chatgptPcStatus' "$CLIENT" >/dev/null
           grep -F 'recoverChatgptPc' "$CLIENT" >/dev/null
           grep -F 'Réparer ChatGPT-PC' "$MAIN" >/dev/null
           grep -F 'PARAMÈTRES / MISES À JOUR' "$MAIN" >/dev/null
           grep -F 'Identifiants: masqués' "$MAIN" >/dev/null
-          grep -F '0.2.4' "$TELE" >/dev/null
+          grep -F '0.2.5' "$TELE" >/dev/null
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
             echo "Credential rendering regression detected"
             exit 1
