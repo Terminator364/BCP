@@ -195,7 +195,11 @@ def edge_distribution_roots() -> list[Path]:
     roots: list[Path] = []
     override = os.environ.get("BCP_EDGE_DISTRIBUTION_DIR", "").strip()
     if override:
-        roots.append(Path(override))
+        # An explicit override is authoritative. Do not silently fall back to
+        # another Drive root if the override is invalid/tampered; this keeps
+        # field behavior deterministic and makes candidate self-tests isolated
+        # from whatever real Drive mounts happen to exist on the PC.
+        return [Path(override)]
     candidates = [
         Path(r"G:\\Mon Drive\\API_BCP\\00_A_INSTALLER"),
         Path(r"G:\\My Drive\\API_BCP\\00_A_INSTALLER"),
@@ -2625,6 +2629,7 @@ def selftest():
         old_edge_dist = os.environ.get("BCP_EDGE_DISTRIBUTION_DIR")
         os.environ["BCP_EDGE_DISTRIBUTION_DIR"] = str(edge_dist)
         try:
+            assert edge_distribution_roots() == [edge_dist]
             bundle = edge_update_bundle()
             assert bundle["manifest"]["version_code"] == 100
             assert bundle["manifest"]["apk_sha256"] == edge_sha
