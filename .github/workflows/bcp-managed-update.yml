@@ -33,23 +33,44 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import hashlib, json, pathlib
+          import hashlib, json, os, pathlib, re
           root = pathlib.Path(".")
           server = root / "windows" / "bcp_server.py"
           release = json.loads((root / "release" / "server.json").read_text(encoding="utf-8"))
           raw = server.read_bytes()
+          text = raw.decode("utf-8")
           sha = hashlib.sha256(raw).hexdigest()
-          if sha != release["sha256"]:
-              raise SystemExit(f"release hash mismatch: {sha} != {release['sha256']}")
-          version = str(release["version"])
-          if f'SERVER_VERSION = "{version}"' not in raw.decode("utf-8"):
-              raise SystemExit("server source version mismatch")
+          m = re.search(r'^SERVER_VERSION\s*=\s*"([^"]+)"', text, re.M)
+          if not m:
+              raise SystemExit("server source version missing")
+          source_version = m.group(1)
+          ref = os.environ.get("GITHUB_REF", "")
+          stable_ref = ref == "refs/heads/main"
+          if stable_ref:
+              if sha != release["sha256"]:
+                  raise SystemExit(f"stable release hash mismatch: {sha} != {release['sha256']}")
+              if source_version != str(release["version"]):
+                  raise SystemExit(f"stable release version mismatch: {source_version} != {release['version']}")
+              version = str(release["version"])
+              qualification = "STABLE_MAIN"
+          else:
+              version = source_version
+              qualification = "CANDIDATE_BRANCH"
+              print(json.dumps({
+                  "candidate_ref": ref,
+                  "candidate_version": version,
+                  "candidate_sha256": sha,
+                  "stable_release_version": release.get("version"),
+                  "note": "branch qualification does not promote release/server.json"
+              }))
           pkg = root / "package"
           (pkg / "payload").mkdir(parents=True, exist_ok=True)
           (pkg / "payload" / "server.py").write_bytes(raw)
           manifest = {
               "schema": 1,
               "package_type": "managed_app_update",
+              "qualification": qualification,
+              "source_ref": ref,
               "target_app": "bcp",
               "sequence": 202609190500,
               "version": version,
