@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.6"
+SERVER_VERSION = "0.4.7"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -180,6 +180,81 @@ def ensure_lifecycle_registration() -> dict:
         }
     except Exception as e:
         return {"supported": True, "registered": False, "error": str(e)[:240]}
+
+
+def edge_distribution_roots() -> list[Path]:
+    """Return candidate Drive-synced installer folders for B-EDGE releases."""
+    roots: list[Path] = []
+    override = os.environ.get("BCP_EDGE_DISTRIBUTION_DIR", "").strip()
+    if override:
+        roots.append(Path(override))
+    candidates = [
+        Path(r"G:\\Mon Drive\\API_BCP\\00_A_INSTALLER"),
+        Path(r"G:\\My Drive\\API_BCP\\00_A_INSTALLER"),
+        Path.home() / "My Drive" / "API_BCP" / "00_A_INSTALLER",
+        Path.home() / "Mon Drive" / "API_BCP" / "00_A_INSTALLER",
+    ]
+    for p in candidates:
+        try:
+            if p.exists() and p.is_dir():
+                roots.append(p)
+        except Exception:
+            pass
+    dedup: list[Path] = []
+    seen = set()
+    for p in roots:
+        key = str(p).lower()
+        if key not in seen:
+            seen.add(key)
+            dedup.append(p)
+    return dedup
+
+
+def edge_update_bundle() -> dict:
+    """Read and verify the private Drive-backed B-EDGE CURRENT bundle.
+
+    The APK is never trusted from metadata alone: its SHA-256 is recomputed
+    before any manifest is exposed to the paired phone.
+    """
+    last_error = "edge_update_bundle_not_found"
+    for root in edge_distribution_roots():
+        manifest_path = root / "BCP_EDGE_CURRENT.json"
+        apk_path = root / "BCP_EDGE_CURRENT.apk"
+        try:
+            if not manifest_path.is_file() or not apk_path.is_file():
+                continue
+            manifest = read_json(manifest_path, {}) or {}
+            required = [
+                "package_id", "version_code", "version_name",
+                "apk_sha256", "signing_cert_sha256"
+            ]
+            if any(not manifest.get(k) for k in required):
+                raise ValueError("edge_manifest_incomplete")
+            expected = str(manifest["apk_sha256"]).lower()
+            if len(expected) != 64:
+                raise ValueError("edge_manifest_sha256_invalid")
+            actual = hashlib.sha256(apk_path.read_bytes()).hexdigest()
+            if not hmac.compare_digest(actual, expected):
+                raise ValueError("edge_apk_sha256_mismatch")
+            size = apk_path.stat().st_size
+            if size <= 0 or size > 50 * 1024 * 1024:
+                raise ValueError("edge_apk_size_invalid")
+            public = {
+                "ok": True,
+                "channel": str(manifest.get("channel") or "stable")[:40],
+                "package_id": str(manifest["package_id"])[:160],
+                "version_code": int(manifest["version_code"]),
+                "version_name": str(manifest["version_name"])[:80],
+                "apk_sha256": actual,
+                "signing_cert_sha256": str(manifest["signing_cert_sha256"]).lower()[:64],
+                "size_bytes": size,
+                "published_at": str(manifest.get("published_at") or "")[:80],
+                "transport": "BCP_LOCAL_AUTHENTICATED",
+            }
+            return {"manifest": public, "apk_path": apk_path, "root": root}
+        except Exception as e:
+            last_error = str(e)
+    raise FileNotFoundError(last_error)
 
 
 def external_telemetry_roots() -> list[Path]:
@@ -895,6 +970,21 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(raw)
 
+    def send_file(self, status, path: Path, content_type: str):
+        size = path.stat().st_size
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(size))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        with path.open("rb") as src:
+            while True:
+                chunk = src.read(64 * 1024)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+
     def read_json(self):
         n = int(self.headers.get("Content-Length", "0") or "0")
         if n <= 0 or n > 256_000:
@@ -942,6 +1032,22 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, server_update_status(check_remote=True))
             except Exception as e:
                 self.send_json(503, {"ok": False, "error": "update_check_failed", "detail": str(e)[:500], "current_version": SERVER_VERSION})
+            return
+
+        if path == "/v1/edge/update":
+            try:
+                bundle = edge_update_bundle()
+                self.send_json(200, bundle["manifest"])
+            except Exception as e:
+                self.send_json(404, {"ok": False, "error": "edge_update_unavailable", "detail": str(e)[:240]})
+            return
+
+        if path == "/v1/edge/update/apk":
+            try:
+                bundle = edge_update_bundle()
+                self.send_file(200, bundle["apk_path"], "application/vnd.android.package-archive")
+            except Exception as e:
+                self.send_json(404, {"ok": False, "error": "edge_update_unavailable", "detail": str(e)[:240]})
             return
 
         if path == "/v1/diagnostics":
@@ -1179,11 +1285,14 @@ def selftest():
             stale_rejected = str(e).startswith("stale_revision:")
         assert stale_rejected
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.6") > _version_tuple("0.4.5")
-        assert _version_tuple("0.4.6") == (0, 4, 6)
+        assert _version_tuple("0.4.7") > _version_tuple("0.4.6")
+        assert _version_tuple("0.4.7") == (0, 4, 7)
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert '"server_pid": os.getpid()' in source
         assert '"server_sha256": hashlib.sha256' in source
+        assert "/v1/edge/update" in source
+        assert "BCP_EDGE_CURRENT.apk" in source
+        assert "edge_apk_sha256_mismatch" in source
         assert "API_BCP" in source and "02_TELEMETRY" in source
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
