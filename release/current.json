@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-19-R9",
+  "requirements_revision": "2026-09-19-R10",
   "zero_usd": true,
   "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -41,7 +41,7 @@
       "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
     },
     "nexus": {
-      "version": "0.1.4",
+      "version": "0.1.5",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,23 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "01da639569aea490e9a7b506bcf77e5dd6f6996654e31ed50cc01686c020e6eb"
+        "sha256": "f22dc9e77a01676fc381723c5365761d5a8cc2fb5d03191fd34fe13b6a50e88f"
       },
-      "notes": "Nexus 0.1.4 adds a persistent editable Telegram live-card path so routine mission progress updates replace one status message instead of producing duplicate spam. It preserves the zero-cost webhook/device relay, durable idempotency, and field-pending status."
+      "notes": "Nexus 0.1.5 extends the persistent editable live-card path with allowlisted inline callback controls, cached sanitized summary/technical reports, and Telegram PDF delivery so the cockpit can remain useful when direct PC-to-Telegram egress is degraded. Candidate only until exact-head CI and Kinshasa field round-trip."
     }
+  },
+  "telegram_cockpit": {
+    "version": "2026.09.19-human-cockpit-v4",
+    "source_manifest": "release/telegram_observability.json",
+    "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
+    "field_verified": false,
+    "features": [
+      "editable live mission card",
+      "inline refresh/current-step/missions/details controls",
+      "compact human PDF export",
+      "technical PDF export",
+      "truthful finite-plan progress only",
+      "no ChatGPT scheduled automation"
+    ]
   }
 }
