@@ -353,6 +353,56 @@ Machine-readable provider plan: `.project-memory/AI_PROVIDER_PLAN_RDC.json`.
 
 These extensions must not displace the P0 field bring-up.
 
+## P1 — Universal Context Fabric / three-node BCP
+
+BCP MUST present one logical personal control/data plane across:
+- **B-EDGE** — dedicated Android memory/coordinator node;
+- **PC-WORKER** — heavy execution + verified replica;
+- **BCP NEXUS** — remotely reachable thin bootstrap/context/witness/ingress facade.
+
+The user-facing universal bootstrap command is:
+`BCPGO`
+
+`BCPGO` is a semantic trigger, not an authentication credential.
+
+A fresh authorized ChatGPT conversation SHOULD use `BCPGO` to:
+1. read a tiny current bootstrap manifest;
+2. load GLOBAL_CORE;
+3. infer or accept an explicit project scope;
+4. load only that PROJECT_CORE;
+5. load a bounded TASK_DELTA;
+6. continue from current durable state without asking the user to restate already-persisted preferences/architecture.
+
+Normal bootstrap MUST be precomputed and MUST NOT broad-scan the full memory corpus or repositories.
+
+Per-turn context refresh SHOULD use revision-aware results:
+- `UNCHANGED`;
+- `DELTA`;
+- `FULL_REFRESH`;
+- `CONFLICT`;
+- `DEGRADED`;
+- `HOLD`.
+
+This permits BCP consultation before each answer/action without repeatedly injecting the full memory corpus.
+
+Memory MUST distinguish:
+- normative instructions/preferences/policies;
+- descriptive machine/source facts;
+- derived summaries;
+- untrusted external content.
+
+External/web/retrieved/model-generated content MUST NOT directly promote itself into USER_MEMORY, POLICY or pinned project decisions.
+
+Target connected-store baseline for current ChatGPT workflow:
+- `API_BCP/00_CONTEXT/BCP_BOOTSTRAP_CURRENT.json`
+- `API_BCP/00_CONTEXT/GLOBAL_CONTEXT_CURRENT.json`
+- `API_BCP/00_CONTEXT/projects/<project_id>/PROJECT_CONTEXT_CURRENT.json`
+
+A future remote MCP/plugin/app adapter is optional and must be field/product qualified. Current architecture MUST NOT assume that the user's present ChatGPT Plus plan provides writable custom MCP access.
+
+Canonical detailed architecture:
+`docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md`.
+
 ## Acceptance sequence
 
 The project is not considered operationally complete until this sequence passes:
