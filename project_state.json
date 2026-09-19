@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_1_FIELD_RUNNING_0_6_2_RELEASED_NEXUS_BOOTSTRAP_MERGED_FIELD_GATE_PENDING",
-  "last_completed_atomic_action": "Merged PR #48 at main ffe9332db48a67a107b5624d160815f624a6f7ad after exact-head Nexus and coordinated-product CI passed. The one-time Nexus zero-touch bootstrap is now canonical, reuses the existing local Telegram token/chat authorization, generates provider/device secrets locally, and preserves rollback. Fresh Drive machine telemetry still shows the field PC running BCP 0.6.1; BCP 0.6.2 is released/CI-qualified but not yet field-readback-proven.",
-  "next_action": "Do not reinstall PC BCP or B-EDGE. Preserve home-WiFi topology. Get the canonical Nexus bootstrap onto the PC through the managed update/delivery path without token/file shuttling, then stop only at the true one-time Cloudflare account authorization gate; after authorization deploy Nexus and verify one /status round trip while the PC remains on home Wi-Fi. Keep scheduled ChatGPT monitoring disabled.",
+  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_MANAGED_RUNTIME_CANDIDATE",
+  "last_completed_atomic_action": "Fresh Drive runtime readback at 2026-09-19T20:11:54Z proves BCP 0.6.3 is running on MBMPC, paired, UP_TO_DATE and lifecycle-registered. The actual Nexus blocker is WRANGLER_RUNTIME_REQUIRED. Candidate Nexus bootstrap 0.1.2 now removes the manual Node/Wrangler prerequisite with a pinned portable Node.js 24.21.0 + exact Wrangler 4.135.0 acquisition path.",
+  "next_action": "Qualify the exact PR head. If green, merge serially; resident BCP 0.6.3 should fetch Nexus bootstrap 0.1.2 on its normal convergence window and stage/launch it automatically. Stop only at the one-time Cloudflare browser authorization gate if it appears, then verify machine-readable Nexus COMMITTED state and one Telegram /status round-trip on home Wi-Fi. No PC/B-EDGE reinstall, Telegram token re-entry or manual file shuttle.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,13 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-ZERO-TOUCH-MERGED-FIELD-GATE-20260919-2032",
-    "status": "NEXUS_BOOTSTRAP_MERGED_FIELD_DELIVERY_AND_CLOUD_AUTH_GATE_NEXT",
-    "last_completed_action": "PR48 merged with exact-head CI PASS; fresh machine runtime readback remains BCP 0.6.1.",
-    "next_atomic_action": "Deliver/bootstrap Nexus to the resident PC with no manual secret/file shuttle, then one-time Cloudflare authorization and home-WiFi Telegram roundtrip.",
+    "checkpoint_id": "BCP-NEXUS-MANAGED-RUNTIME-CANDIDATE-20260919-2115",
+    "status": "FIELD_BCP_0_6_3_PROVEN_WRANGLER_RUNTIME_AUTO_BOOTSTRAP_CANDIDATE",
+    "last_completed_action": "Drive readback proved BCP 0.6.3 live; blocker classified as WRANGLER_RUNTIME_REQUIRED; candidate implements pinned portable runtime acquisition.",
+    "next_atomic_action": "CI exact-head -> serialized merge -> resident manifest convergence -> machine readback of nexus_bootstrap_state; human only for Cloudflare browser authorization if requested.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/nexus-bootstrap-checkpoint-20260919-2032",
-    "base_main_sha": "ffe9332db48a67a107b5624d160815f624a6f7ad",
+    "branch": "work/bcp/nexus-runtime-r52",
+    "base_main_sha": "c5257018575fff57e15ee2aad2be9033be13599a",
     "no_replay": true
   },
   "runtime_verification": {
@@ -938,5 +938,21 @@
     "chatgpt_pc_command_plane": "ALIVE",
     "recovery_phase": "BOOTSTRAP_FALLBACK",
     "conclusion": "BCP 0.6.2 IS RELEASED BUT FIELD UPDATE HAS NOT YET BEEN OBSERVED; DO NOT CLAIM 0.6.2 INSTALLED."
+  },
+  "latest_field_runtime": {
+    "observed_at": "2026-09-19T20:11:54+00:00",
+    "source": "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.6.3",
+    "server_pid": 9748,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "server_sha256": "ac9da44abb0c6506df0be9c01529e777b3b4f73daa8f50a952754f9fac1c5c43",
+    "update_state": "UP_TO_DATE",
+    "nexus_bootstrap_state": "WRANGLER_RUNTIME_REQUIRED",
+    "nexus_bootstrap_bundle_version": "0.1.1",
+    "chatgpt_pc_active_version": "6.0.32",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "lifecycle_registered": true
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minimum_server_version": "0.6.3",
   "auto_stage": true,
   "auto_launch_once": true,
@@ -11,7 +11,7 @@
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "90c61e00cd02a2930221e90d95554fb66d472baa98fe64475d3bb9de6add6e01",
+      "sha256": "aef9ed7ee9a38d395a974557de0aeddcd763d6bbf57e2809c554994a62d49ef3",
       "max_bytes": 300000
     },
     {
@@ -32,5 +32,15 @@
       "sha256": "08ffaa1e03c01ff07c9a7842cd3d31ba0720e98b940602bfdd0b951ca60d8452",
       "max_bytes": 300000
     }
-  ]
+  ],
+  "runtime": {
+    "strategy": "PINNED_PORTABLE_NODE_NPX",
+    "node_version": "24.21.0",
+    "node_win_x64_zip_sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+    "wrangler_version": "4.135.0",
+    "admin_required": false,
+    "manual_install_required": false,
+    "npm_cache_persistent": true,
+    "network_retries": true
+  }
 }
