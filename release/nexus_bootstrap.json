@@ -1,12 +1,12 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-19-R9",
+  "requirements_revision": "2026-09-19-R10",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -23,13 +23,13 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "c6a9a3702198231b81f7581e7a8161f60048fbcd8db616f6c89dd6cf877ca096",
+      "sha256": "1a19981aae763539a7688937f74ca36f9eafaee55de871faa855e7b499f0655c",
       "max_bytes": 500000
     },
     {
       "path": "nexus/cloudflare-worker/migrations/0001_init.sql",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/migrations/0001_init.sql",
-      "sha256": "3721297c009dbe0de552c6c8541c5671930482145780429c071d85f9f7a07bb1",
+      "sha256": "3be2d2ba521131415ef2178544e4668cddf367f5e8cb1867659e807565f1d743",
       "max_bytes": 300000
     }
   ],
@@ -50,6 +50,22 @@
     "endpoint": "/v1/device/live-card",
     "telegram_edit": true,
     "persistent_d1_state": true,
-    "fallback_send_on_edit_failure": true
+    "fallback_send_on_edit_failure": true,
+    "inline_keyboard": true,
+    "callback_acknowledgement": true
+  },
+  "report_exports": {
+    "enabled": true,
+    "cache_endpoint": "/v1/device/report",
+    "cached_reports": [
+      "summary",
+      "technical"
+    ],
+    "telegram_pdf_buttons": true,
+    "direct_typed_commands": [
+      "/report",
+      "/reporttech"
+    ],
+    "field_verified": false
   }
 }
