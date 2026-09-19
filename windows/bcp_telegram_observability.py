@@ -137,14 +137,21 @@ def telegram_telemetry_roots() -> list[Path]:
     override = os.environ.get("BCP_EXTERNAL_TELEMETRY_DIR", "").strip()
     if override:
         p = Path(override)
-        roots.append(p.parent / "TELEGRAM")
+        if p.parent.exists():
+            roots.append(p.parent / "TELEGRAM")
     home = Path.home()
-    roots += [
-        Path(r"G:\Mon Drive\API_BCP\02_TELEMETRY\TELEGRAM"),
-        Path(r"G:\My Drive\API_BCP\02_TELEMETRY\TELEGRAM"),
-        home / "Mon Drive" / "API_BCP" / "02_TELEMETRY" / "TELEGRAM",
-        home / "My Drive" / "API_BCP" / "02_TELEMETRY" / "TELEGRAM",
+    api_roots = [
+        Path(r"G:\Mon Drive\API_BCP"),
+        Path(r"G:\My Drive\API_BCP"),
+        home / "Mon Drive" / "API_BCP",
+        home / "My Drive" / "API_BCP",
     ]
+    for api_root in api_roots:
+        try:
+            if api_root.exists() and api_root.is_dir():
+                roots.append(api_root / "02_TELEMETRY" / "TELEGRAM")
+        except Exception:
+            continue
     out: list[Path] = []
     seen = set()
     for root in roots:
