@@ -24,6 +24,32 @@ The target is the recurring fragmentation/manual-handoff problem: conversation l
 4. Recover latest field/runtime state from Library/GitHub/ChatGPT-PC without asking the user to restate known context.
 5. Keep the sealed architecture unless measured evidence reveals a security defect, implementation impossibility or acceptance failure.
 
+
+## Universal BCP bootstrap command
+
+Canonical cross-project bootstrap command: `BCPGO`.
+
+Purpose:
+- usable as the common semantic entry point across fresh ChatGPT conversations and project scopes;
+- recover GLOBAL_CORE first, then the inferred/explicit PROJECT_CORE and current TASK_DELTA;
+- avoid broad recovery scans when a precomputed context projection exists;
+- use revision-aware UNCHANGED/DELTA refreshes on subsequent turns;
+- never treat the command text itself as authentication.
+
+Compatibility:
+- `APIAX07` remains the API/BCP scoped recovery alias and retains its deliver-first semantics where applicable;
+- `CONTINUE ATOMIC` remains the next-action resume phrase when state is already known;
+- project-specific recovery commands remain valid aliases;
+- `BCPGO <project>` may explicitly select a project when auto-detection is ambiguous.
+
+Integration reality:
+- a typed code cannot create connectivity by itself;
+- BCPGO requires an authorized connected read path such as the BCP Drive context projection, or a future qualified BCP app/plugin/MCP adapter;
+- until such a direct adapter is field-proven on the user's current plan, Google Drive-connected bootstrap is the preferred universal read path;
+- no public exposure of private B-EDGE memory is required.
+
+Canonical architecture: `docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md`.
+
 ## Mandatory DELIVER-FIRST first mission
 When the user types only `APIAX07` in a fresh conversation, do not start with a recap or a question. Recover latest state and **provide the newest qualified downloadable artifact needed to unblock the current field step first**.
 
