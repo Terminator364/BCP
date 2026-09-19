@@ -16,7 +16,7 @@ public final class BcpClient {
     public interface Progress { void onStage(String stage, String detail); }
 
     private static final String PREFS = "bcp";
-    private static final String EDGE_VERSION = "1.1.0";
+    private static final String EDGE_VERSION = "2.0.0-rc1";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
