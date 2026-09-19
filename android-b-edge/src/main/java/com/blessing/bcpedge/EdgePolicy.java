@@ -19,6 +19,12 @@ public final class EdgePolicy {
         return "COLD";
     }
 
+    public static boolean shouldRunSync(long nowMs, long lastAttemptMs, long minIntervalMs) {
+        long bounded = Math.max(30_000L, minIntervalMs);
+        if (lastAttemptMs <= 0L || nowMs < lastAttemptMs) return true;
+        return (nowMs - lastAttemptMs) >= bounded;
+    }
+
     public static int boundedQueueLimit() { return 128; }
     public static int boundedMemoryEntries() { return 96; }
 }
