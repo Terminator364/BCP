@@ -1938,6 +1938,32 @@ def selftest():
             protected_rejected = "memory_admission_rejected" in str(e)
         assert protected_rejected
 
+        memory_put(
+            "buildhub", "PROJECT_MEMORY", "machine_fact", {"value": 7}, "selftest",
+            evidence_class="MACHINE_READBACK", source_id="selftest:machine", pinned=True
+        )
+        downgrade_rejected = False
+        try:
+            memory_put(
+                "buildhub", "PROJECT_MEMORY", "machine_fact", {"value": 8}, "model",
+                evidence_class="MODEL_DERIVED", source_id="selftest:model", pinned=False
+            )
+        except ValueError as e:
+            downgrade_rejected = "memory_admission_rejected_precedence" in str(e)
+        assert downgrade_rejected
+        memory_put(
+            "buildhub", "PROJECT_MEMORY", "machine_fact", {"value": 9}, "selftest",
+            evidence_class="MACHINE_READBACK", source_id="selftest:machine2", pinned=False
+        )
+        with db_connection() as cx:
+            row = cx.execute(
+                """SELECT evidence_class,pinned FROM memory_records
+                   WHERE project_id=? AND layer=? AND key=?""",
+                ("buildhub", "PROJECT_MEMORY", "machine_fact"),
+            ).fetchone()
+            assert row and str(row["evidence_class"]) == "MACHINE_READBACK"
+            assert int(row["pinned"] or 0) == 1
+
         pack = build_context_pack("buildhub", task="final product orchestration", byte_budget=12000)
         assert pack["schema"] == "bcp.context_pack/2"
         assert pack["memory"]["PROJECT_MEMORY"][0]["key"] == "goal"
