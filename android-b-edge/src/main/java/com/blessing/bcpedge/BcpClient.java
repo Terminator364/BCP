@@ -16,7 +16,6 @@ public final class BcpClient {
     public interface Progress { void onStage(String stage, String detail); }
 
     private static final String PREFS = "bcp";
-    private static final String PROJECT = "buildhub";
     private static final String EDGE_VERSION = "1.1.0";
     private final Context context;
     private final SharedPreferences prefs;
@@ -34,7 +33,9 @@ public final class BcpClient {
 
     public String getServer() { return prefs.getString("server", ""); }
     public String getToken() { return credentials.getToken(); }
-    public String getProject() { return PROJECT; }
+    public String getProject() { return orchestrator.getActiveProject(); }
+    public void setActiveProject(String projectId) { orchestrator.setActiveProject(projectId); }
+    public JSONArray projects() { return orchestrator.projects(); }
     public String getEdgeVersion() { return EDGE_VERSION; }
 
     public void recordEvent(String type, String detail) {
@@ -207,7 +208,7 @@ public final class BcpClient {
         JSONObject pairBody = new JSONObject();
         pairBody.put("device_name", Build.MANUFACTURER + " " + Build.MODEL);
         pairBody.put("edge_version", EDGE_VERSION);
-        pairBody.put("project", PROJECT);
+        pairBody.put("project", getProject());
         if (fingerprint != null && !fingerprint.isEmpty()) {
             pairBody.put("identity_fingerprint", fingerprint);
         }
@@ -247,7 +248,7 @@ public final class BcpClient {
             safe.put("paired", true);
             safe.put("pc_name", promoted.optString("pc_name", pair.optString("pc_name", "BCP PC")));
             safe.put("version", promoted.optString("version", pair.optString("version", "")));
-            safe.put("project", PROJECT);
+            safe.put("project", getProject());
             safe.put("credential", "stored_securely_not_displayed");
             return safe;
         }
@@ -323,7 +324,7 @@ public final class BcpClient {
         ensureConnected();
 
         JSONObject current = requestJson("GET",
-                getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                getServer() + "/v1/projects/" + enc(getProject()) + "/resume",
                 null, getToken(), null, 2500, 5000);
         cacheResume(current);
         JSONObject head = current.optJSONObject("head");
@@ -368,7 +369,7 @@ public final class BcpClient {
 
     private JSONObject postPendingCheckpoint(JSONObject body, String idem) throws Exception {
         return requestJson("POST",
-                getServer() + "/v1/projects/" + enc(PROJECT) + "/events",
+                getServer() + "/v1/projects/" + enc(getProject()) + "/events",
                 body.toString(), getToken(), idem, 2500, 5000);
     }
 
@@ -381,7 +382,7 @@ public final class BcpClient {
                     .remove("pending_checkpoint_body")
                     .apply();
             JSONObject resumed = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                    getServer() + "/v1/projects/" + enc(getProject()) + "/resume",
                     null, getToken(), null, 2500, 5000);
             cacheResume(resumed);
         }
@@ -411,7 +412,7 @@ public final class BcpClient {
         try {
             ensureConnected();
             JSONObject r = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                    getServer() + "/v1/projects/" + enc(getProject()) + "/resume",
                     null, getToken(), null, 2500, 5000);
             cacheResume(r);
             telemetry.add("RESUME_PASS", "revision=" + r.optJSONObject("head"));
@@ -452,7 +453,7 @@ public final class BcpClient {
         try {
             ensureConnected();
             JSONObject r = requestJson("GET",
-                    getServer() + "/v1/projects/" + enc(PROJECT) + "/context",
+                    getServer() + "/v1/projects/" + enc(getProject()) + "/context",
                     null, getToken(), null, 2200, 5000);
             orchestrator.cacheContext(r);
             return r;
@@ -466,22 +467,28 @@ public final class BcpClient {
 
     public JSONObject queueJob(String kind, JSONObject payload, boolean requiresPc) throws Exception {
         JSONObject local = orchestrator.queueJob(kind, payload, requiresPc);
+        String localId = local.optString("local_id", "");
         try {
             ensureConnected();
             JSONObject body = new JSONObject();
             body.put("kind", kind);
-            body.put("payload", payload);
+            body.put("payload", payload == null ? new JSONObject() : payload);
             body.put("requires_pc", requiresPc);
-            String idem = "edge-job-" + local.optString("local_id", UUID.randomUUID().toString());
+            body.put("priority", local.optInt("priority", 50));
+            body.put("resource_class", local.optString("resource_class", requiresPc ? "PC_R3" : "EDGE_R1"));
+            body.put("local_job_id", localId);
+            String idem = local.optString("idempotency_key", "edge-job-" + localId);
             JSONObject r = requestJson("POST",
-                    getServer() + "/v1/projects/" + enc(PROJECT) + "/jobs",
+                    getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
                     body.toString(), getToken(), idem, 2200, 5000);
-            flushQueuedJobs();
+            orchestrator.acknowledgeJob(localId, r);
+            EdgeReconcileWorker.requestNow(context);
             return r;
         } catch (Exception ex) {
             orchestrator.setMode("EDGE_ONLY");
             local.put("offline", true);
             local.put("queued_locally", true);
+            EdgeReconcileWorker.requestNow(context);
             return local;
         }
     }
@@ -490,26 +497,34 @@ public final class BcpClient {
         if (getServer().isEmpty() || getToken().isEmpty()) return;
         try {
             JSONArray q = orchestrator.pendingJobs();
-            JSONArray keep = new JSONArray();
-            for (int i = 0; i < q.length(); i++) {
+            int attempted = 0;
+            for (int i = 0; i < q.length() && attempted < 24; i++) {
                 JSONObject job = q.optJSONObject(i);
                 if (job == null) continue;
-                if (i >= 24) { keep.put(job); continue; }
+                String localId = job.optString("local_id", "");
+                if (localId.isEmpty()) continue;
+                if ("BLOCKED".equals(job.optString("state", "")) &&
+                        orchestrator.unresolvedDependencies(localId) > 0) continue;
+                attempted++;
                 try {
                     JSONObject body = new JSONObject();
                     body.put("kind", job.optString("kind", "generic"));
                     body.put("payload", job.optJSONObject("payload") == null ? new JSONObject() : job.optJSONObject("payload"));
                     body.put("requires_pc", job.optBoolean("requires_pc", true));
-                    requestJson("POST",
-                            getServer() + "/v1/projects/" + enc(PROJECT) + "/jobs",
+                    body.put("priority", job.optInt("priority", 50));
+                    body.put("resource_class", job.optString("resource_class", "PC_R3"));
+                    body.put("local_job_id", localId);
+                    JSONObject receipt = requestJson("POST",
+                            getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
                             body.toString(), getToken(),
-                            "edge-job-" + job.optString("local_id", UUID.randomUUID().toString()),
+                            job.optString("idempotency_key", "edge-job-" + localId),
                             1800, 4000);
+                    orchestrator.acknowledgeJob(localId, receipt);
                 } catch (Exception ex) {
-                    keep.put(job);
+                    orchestrator.markJobState(localId,
+                            job.optBoolean("requires_pc", true) ? "WAITING_FOR_PC" : "HOLD");
                 }
             }
-            orchestrator.replaceJobs(keep);
         } catch (Exception ignored) {}
     }
 
@@ -522,7 +537,10 @@ public final class BcpClient {
             out.put("context_cached", ctx.length() > 0);
             flushQueuedJobs();
             out.put("queued_jobs_remaining", orchestrator.pendingJobs().length());
-            orchestrator.putMemory("OPERATING_STATE", "last_sync", out);
+            orchestrator.putMemory("OPERATING_STATE", "last_sync", out,
+                    "MACHINE_READBACK", "B-EDGE", false,
+                    System.currentTimeMillis() + 24L * 60L * 60L * 1000L);
+            orchestrator.housekeeping();
             telemetry.add("ORCHESTRATOR_SYNC_PASS", orchestrator.getMode());
         } catch (Exception ex) {
             orchestrator.setMode("EDGE_ONLY");
@@ -553,7 +571,7 @@ public final class BcpClient {
         if (!h.optBoolean("ok", false)) throw new IOException("SERVER_UNHEALTHY");
 
         JSONObject r = requestJson("GET",
-                getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                getServer() + "/v1/projects/" + enc(getProject()) + "/resume",
                 null, getToken(), null, 2500, 5000);
         JSONObject head = r.optJSONObject("head");
         out.put("project_head_reachable", true);
@@ -587,8 +605,8 @@ public final class BcpClient {
 
     public void heartbeat(String reason) {
         telemetry.add("PHONE_HEARTBEAT", reason == null ? "FOREGROUND" : reason);
-        if (orchestrator.shouldRunPeriodicSync(5L * 60L * 1000L)) {
-            syncOrchestrationState();
+        if (orchestrator.shouldRunPeriodicSync(EdgePolicy.defaultReconcileIntervalMs())) {
+            EdgeReconcileWorker.requestNow(context);
         }
         flushTelemetry();
     }
@@ -598,7 +616,7 @@ public final class BcpClient {
         safe.put("paired", pair.optBoolean("paired", true));
         safe.put("pc_name", pair.optString("pc_name", "BCP PC"));
         safe.put("version", pair.optString("version", ""));
-        safe.put("project", PROJECT);
+        safe.put("project", getProject());
         safe.put("credential", "stored_securely_not_displayed");
         return safe;
     }
