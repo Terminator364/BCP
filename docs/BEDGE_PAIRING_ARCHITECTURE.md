@@ -79,3 +79,56 @@ If a stage fails, BCP Edge must identify the failing stage without requiring scr
 - reconnect works after DHCP/IP change;
 - diagnostics identify the failing stage automatically;
 - manual fallback remains available but is not the normal path.
+
+
+## Dedicated-node orchestration role
+
+B-EDGE is the always-on lightweight coordinator of BCP when the old Android phone is dedicated to the architecture.
+
+It MUST be able to retain and operate:
+- active job graph and dependency state;
+- project HEAD/checkpoint pointers;
+- recent project context and user-policy cache;
+- ERROR_LEDGER / known-recipe index;
+- provider/quota/health state;
+- PC online/offline/resource-pressure state;
+- local outbox and delayed-work queue;
+- lightweight deterministic scheduler.
+
+B-EDGE SHOULD do the maximum safe pre-agent work locally. It MUST NOT call an LLM merely to decide which already-known task follows another already-known task.
+
+### Operating modes
+
+- `EDGE_ONLY`: PC offline; B-EDGE keeps memory, scheduler, queues, control interface and permitted remote-API access alive.
+- `PC_AVAILABLE`: PC healthy; B-EDGE dispatches compute-heavy work to PC.
+- `PC_MEMORY_PRESSURE`: PC resource pressure high; heavy work is deferred/queued and light orchestration remains on B-EDGE.
+- `PC_UNAVAILABLE_RECOVERY`: preserve committed state and checkpoints, detect PC recovery, reconcile state, and resume from the next uncommitted action.
+
+Mode transitions MUST be evidence-driven from heartbeats/resource telemetry, not inferred from stale state.
+
+### Memory tiers
+
+B-EDGE SHOULD use HOT/WARM/COLD project-memory tiers:
+- HOT = active projects cached aggressively in RAM;
+- WARM = recent projects with partial in-memory cache;
+- COLD = durable SQLite/storage only until requested.
+
+On Android memory pressure, eviction order is HOT cache -> WARM cache -> persistent storage while durable canonical state remains intact.
+
+### Context-pack service
+
+Before an agent or ChatGPT task starts, B-EDGE/BCP SHOULD construct a compact context pack from structured memory:
+- stable user/project preferences relevant to the task;
+- current project revision/checkpoint;
+- validated architectural decisions;
+- known errors/recipes;
+- current node/provider constraints;
+- current objective and next valid actions.
+
+Only relevant context is injected. The entire historical corpus MUST NOT be sent by default.
+
+### Thermal and battery discipline
+
+Dedicated-phone mode permits larger RAM residency, but B-EDGE remains event-driven. Persistent busy loops, aggressive polling, large local LLMs and sustained heavy compute are prohibited by default.
+
+The node should exploit RAM for cache/index/state while keeping CPU/network wakeups bounded and reducing activity automatically on thermal or battery pressure.
