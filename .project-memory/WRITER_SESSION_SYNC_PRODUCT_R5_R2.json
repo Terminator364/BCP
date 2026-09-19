@@ -1,0 +1,29 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-api-sync-product-r5-20260919-r2",
+  "project_or_mission": "API_BCP coordinated BCP 0.6.0 + B-EDGE 1.2.0 release candidate",
+  "base_main_sha": "bcfb648dfbc533ee5b4b07a3659bda5bef33644f",
+  "created_at": "2026-09-19T09:15:00Z",
+  "intended_file_scope": [
+    "windows/bcp_server.py",
+    "windows/INSTALL_BCP_FINAL.ps1",
+    "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1",
+    "android-b-edge/**",
+    "release/**",
+    ".github/workflows/coordinated-product.yml",
+    ".github/workflows/android-build.yml",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+  ],
+  "expected_ci_gates": [
+    "server_syntax",
+    "server_selftest",
+    "windows_installer_selftest",
+    "acceptance_selftest",
+    "android_unit",
+    "android_lint",
+    "android_build",
+    "manifest_compatibility",
+    "unified_artifact"
+  ],
+  "status": "ACTIVE_RECONCILED"
+}
