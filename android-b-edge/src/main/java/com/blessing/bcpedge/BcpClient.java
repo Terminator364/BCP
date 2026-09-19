@@ -522,13 +522,69 @@ public final class BcpClient {
         }
     }
 
+    private Map<String, JSONObject> remoteJobsByIdempotency() throws Exception {
+        JSONObject snapshot = requestJson("GET",
+                getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
+                null, getToken(), null, 1800, 4000);
+        Map<String, JSONObject> out = new HashMap<>();
+        JSONArray jobs = snapshot.optJSONArray("jobs");
+        if (jobs == null) return out;
+        for (int i = 0; i < jobs.length(); i++) {
+            JSONObject row = jobs.optJSONObject(i);
+            if (row == null) continue;
+            String idem = row.optString("idempotency_key", "");
+            if (!idem.isEmpty()) out.put(idem, row);
+        }
+        return out;
+    }
+
+    private JSONObject reconcileLocalState() {
+        JSONObject out = new JSONObject();
+        try {
+            JSONArray pending = orchestrator.pendingJobs(getProject());
+            out.put("local_jobs_considered", pending.length());
+            out.put("expired_memory_compacted", orchestrator.compactExpiredMemory());
+            out.put("queued_jobs_remaining", orchestrator.pendingCount());
+            out.put("local_reconcile", true);
+        } catch (Exception ex) {
+            try {
+                out.put("local_reconcile", false);
+                out.put("local_reconcile_error", ex.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
     public void flushQueuedJobs() {
         if (getServer().isEmpty() || getToken().isEmpty()) return;
         try {
+            Map<String, JSONObject> remote = new HashMap<>();
+            try {
+                remote = remoteJobsByIdempotency();
+            } catch (Exception ignored) {
+                // Snapshot failure does not destroy at-least-once behavior. A POST
+                // with the same idempotency key is still safe when connectivity returns.
+            }
+
             JSONArray q = orchestrator.pendingJobs(getProject());
             for (int i = 0; i < q.length() && i < 24; i++) {
                 JSONObject job = q.optJSONObject(i);
-                if (job == null || "BLOCKED".equals(job.optString("state", ""))) continue;
+                if (job == null) continue;
+
+                String localState = job.optString("state", "");
+                String idem = job.optString("idempotency_key", "");
+                JSONObject observedRemote = remote.get(idem);
+                if (observedRemote != null) {
+                    try {
+                        JSONObject observation = new JSONObject(observedRemote.toString());
+                        String remoteState = observedRemote.optString("state", "QUEUED").trim().toUpperCase();
+                        observation.put("result",
+                                EdgePolicy.isCompletionResult(remoteState) ? remoteState : "ALREADY_QUEUED");
+                        orchestrator.acknowledgeRemoteJob(getProject(), job, observation);
+                    } catch (Exception ignored) {}
+                }
+
+                if (!EdgePolicy.shouldPostJob(localState, observedRemote != null)) continue;
                 try {
                     JSONObject body = new JSONObject();
                     body.put("kind", job.optString("kind", "generic"));
@@ -537,22 +593,22 @@ public final class BcpClient {
                     body.put("resource_class", job.optString("resource_class", ""));
                     JSONObject receipt = requestJson("POST",
                             getServer() + "/v1/projects/" + enc(getProject()) + "/jobs",
-                            body.toString(), getToken(),
-                            job.optString("idempotency_key", ""),
+                            body.toString(), getToken(), idem,
                             1800, 4000);
                     orchestrator.acknowledgeRemoteJob(getProject(), job, receipt);
                 } catch (Exception ex) {
-                    // At-least-once: keep durable row until a positive receipt exists.
+                    // At-least-once: keep durable row until queue/completion evidence exists.
                 }
             }
         } catch (Exception ignored) {}
     }
 
     public JSONObject syncOrchestrationState() {
-        JSONObject out = new JSONObject();
+        JSONObject out = reconcileLocalState();
         try {
             JSONObject st = orchestratorStatus();
             out.put("mode", orchestrator.getMode());
+            out.put("remote_orchestrator_reachable", st.length() > 0);
             JSONObject ctx = contextPack();
             out.put("context_cached", ctx.length() > 0);
             flushQueuedJobs();
