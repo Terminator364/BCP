@@ -1,12 +1,13 @@
 {
   "schema": "bcp.server_release/1",
-  "channel": "stable",
-  "version": "0.5.0",
-  "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "419968cbf57c44d2a2dac35e030ac5a3b15ba9dfe4c52ec1bf072a4728ee8fee",
-  "auto_update": true,
+  "channel": "candidate",
+  "version": "0.6.0",
+  "url": "https://raw.githubusercontent.com/Terminator364/BCP/work/api-bcp/sync-product-r5-20260919-r2/windows/bcp_server.py",
+  "sha256": "525d40d5446bef5e0af6d5df8f67788832924928d822cbc27964dbdb13828b12",
+  "auto_update": false,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
-  "coordinated_edge_version": "1.1.0-evergreen",
-  "requirements_revision": "2026-09-19-R4"
+  "coordinated_edge_version": "1.2.0-evergreen",
+  "requirements_revision": "2026-09-19-R5",
+  "promotion_policy": "CI_GREEN_PLUS_SIGNED_ANDROID_PLUS_FIELD_RECEIPT"
 }
