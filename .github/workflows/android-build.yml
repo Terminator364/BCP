@@ -108,6 +108,14 @@ jobs:
           grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='100'" android-b-edge-release.badging.txt >/dev/null
           echo "EDGE_UNSIGNED_RELEASE_CONTRACT=PASS"
 
+      - name: Export Android signing verifier tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar ./apksigner.jar
+          test -s ./apksigner.jar
+          sha256sum ./apksigner.jar | tee apksigner.jar.sha256
+
       - uses: actions/upload-artifact@v4
         with:
           name: android-b-edge-evergreen-unsigned
@@ -115,4 +123,6 @@ jobs:
             android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
             android-b-edge-release-unsigned.apk.sha256
             android-b-edge-release.badging.txt
+            apksigner.jar
+            apksigner.jar.sha256
           if-no-files-found: error
