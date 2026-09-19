@@ -1,4 +1,5 @@
 name: BCP Qualified CURRENT Release Contract
+# Companion release is qualified against the exact branch head.
 
 on:
   workflow_dispatch:
@@ -7,6 +8,7 @@ on:
       - "release/current.json"
       - "release/server.json"
       - "release/android.json"
+      - "release/telegram_observability.json"
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
       - "windows/bcp_server.py"
@@ -18,6 +20,7 @@ on:
       - "release/current.json"
       - "release/server.json"
       - "release/android.json"
+      - "release/telegram_observability.json"
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
       - "windows/bcp_server.py"
@@ -46,6 +49,7 @@ jobs:
           python -m json.tool release/current.json > /dev/null
           python -m json.tool release/server.json > /dev/null
           python -m json.tool release/android.json > /dev/null
+          python -m json.tool release/telegram_observability.json > /dev/null
           python -m json.tool schemas/bcp_current_release.schema.json > /dev/null
 
       - name: Validate CURRENT truth contract
@@ -70,6 +74,11 @@ jobs:
               "/v1/edge/update",
               "/v1/edge/update/apk",
               "edge_apk_sha256_mismatch",
+              "TELEGRAM_COMPANION_MANIFEST_URL",
+              "telegram_companion_update_status",
+              "apply_telegram_companion_update",
+              "telegram_companion_sha256_mismatch",
+              "telegram_companion_selftest_failed",
           ]
           required_edge = [
               "updates",
@@ -82,6 +91,13 @@ jobs:
               assert item in server, item
           for item in required_edge:
               assert item in edge, item
+          companion = __import__("json").loads(pathlib.Path("release/telegram_observability.json").read_text(encoding="utf-8"))
+          worker_bytes = pathlib.Path("windows/bcp_telegram_observability.py").read_bytes()
+          import hashlib
+          assert companion["schema"] == "bcp.telegram_companion_release/1"
+          assert companion["minimum_server_version"] == "0.6.2"
+          assert companion["sha256"] == hashlib.sha256(worker_bytes).hexdigest()
+          assert companion["url"].startswith("https://raw.githubusercontent.com/Terminator364/BCP/")
           assert "autoPromoteServerIfNeeded" in client
           assert "updates.check()" in pathlib.Path(
               "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
