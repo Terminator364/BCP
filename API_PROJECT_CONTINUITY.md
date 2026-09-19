@@ -222,3 +222,15 @@ Semantics:
 - if no durable copy of the inaccessible response exists, say so explicitly and reconstruct only from durable evidence, without inventing missing content.
 
 `CONTINUE ATOMIC` remains the execution-resume command after state is already known. `APIAX07 RESYNC` is specifically for state/result resynchronization across conversations/devices.
+## Active diagnostic mode — ChatGPT-PC channel isolated
+
+Current temporary diagnostic state: ACTIVE.
+
+Until explicitly ended with `END ISOLATION CHATGPT-PC`:
+- continue API/BCP work without using ChatGPT-PC as the interactive execution/control/recovery/installation/LAN bridge;
+- telemetry remains mandatory, but prefer already externalized BCP/GitHub/Drive/receipt evidence or BCP-native lightweight observability;
+- do not ask the user to relay logs, commands, IPs, tokens, or screenshots when durable machine-readable evidence is available;
+- `APIAX07 RESYNC` and `CONTINUE ATOMIC` must preserve this isolation mode automatically;
+- do not regress or replay already COMMITTED work.
+
+This is an A/B diagnostic isolation, not a conclusion that ChatGPT-PC causes platform checks.
