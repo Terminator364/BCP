@@ -64,6 +64,26 @@ public final class TelemetryStore {
         rewrite(keep);
     }
 
+    public synchronized JSONArray readLatest(int max) {
+        JSONArray out = new JSONArray();
+        if (!file.exists() || max <= 0) return out;
+        try {
+            List<String> all = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if (!line.trim().isEmpty()) all.add(line);
+                }
+            }
+            int start = Math.max(0, all.size() - max);
+            for (int i = start; i < all.size(); i++) {
+                out.put(new JSONObject(all.get(i)));
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
     public synchronized int count() {
         if (!file.exists()) return 0;
         int n = 0;
