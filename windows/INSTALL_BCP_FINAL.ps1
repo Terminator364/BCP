@@ -7,7 +7,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$InstallerVersion = "0.5.0"
+$InstallerVersion = "0.5.1"
 $RuleName = "BCP Local LAN 8765"
 $Port = 8765
 $ScriptRoot = Split-Path -Parent $PSCommandPath
