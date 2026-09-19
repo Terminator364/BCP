@@ -24,6 +24,7 @@ $NodeArchiveName = "node-v24.21.0-win-x64.zip"
 $NodeArchiveUrl = "https://nodejs.org/download/release/v24.21.0/node-v24.21.0-win-x64.zip"
 $NodeArchiveSha256 = "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541"
 $WranglerVersion = "4.135.0"
+$script:ManagedRuntimeFailure = ""
 
 function UtcNow { [DateTime]::UtcNow.ToString("o") }
 
@@ -44,6 +45,31 @@ function Protect-LocalFile([string]$Path) {
     $user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
     & icacls.exe $Path /inheritance:r /grant:r ($user + ":(R,W)") /c | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "LOCAL_SECRET_ACL_HARDENING_FAILED" }
+}
+
+function Get-SafeFailureDetail([string]$Value) {
+    $safe = ([string]$Value -replace '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b', '<REDACTED_TELEGRAM_TOKEN>')
+    $safe = ($safe -replace '(?i)(Bearer\s+)[A-Za-z0-9._~+/-]{12,}', '$1<REDACTED>')
+    $safe = ($safe -replace '[\r\n\t]+', ' ')
+    $safe = ($safe -replace '[^A-Za-z0-9_: .\\/()\[\]-]', '_')
+    if ($safe.Length -gt 240) { $safe = $safe.Substring(0, 240) }
+    return $safe
+}
+
+function Write-RuntimePrepReceipt([string]$Status, [string]$ErrorClass, [string]$Stage, [string]$Detail) {
+    $receipt = [ordered]@{
+        schema = "bcp.nexus_bootstrap_receipt/1"
+        status = $Status
+        error_class = (Get-SafeFailureDetail $ErrorClass)
+        error_detail = (Get-SafeFailureDetail $Detail)
+        stage = (Get-SafeFailureDetail $Stage)
+        retryable = $true
+        failed_at = UtcNow
+        spend_policy = "ZERO_USD"
+        spend_usd = 0.0
+    }
+    Write-JsonAtomic $receipt $ReceiptPath
+    Protect-LocalFile $ReceiptPath
 }
 
 function New-Base64UrlSecret([int]$Bytes = 32) {
@@ -161,7 +187,8 @@ function Find-WranglerLauncher {
     try {
         return Ensure-ManagedWranglerLauncher
     } catch {
-        Write-Host ("BCP_NEXUS_MANAGED_RUNTIME_DEFERRED=" + $_.Exception.Message)
+        $script:ManagedRuntimeFailure = Get-SafeFailureDetail ([string]$_.Exception.Message)
+        Write-Host ("BCP_NEXUS_MANAGED_RUNTIME_DEFERRED=" + $script:ManagedRuntimeFailure)
         return $null
     }
 }
@@ -237,7 +264,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
@@ -282,7 +309,11 @@ if ($chatId -eq 0) { throw "LOCAL_TELEGRAM_CHAT_NOT_AUTHORIZED" }
 
 $launcher = Find-WranglerLauncher
 if (-not $launcher) {
+    $detail = $script:ManagedRuntimeFailure
+    if (-not $detail) { $detail = "Managed Node/Wrangler launcher unavailable after bounded preparation." }
+    try { Write-RuntimePrepReceipt "RUNTIME_PREP_DEFERRED" "WRANGLER_RUNTIME_REQUIRED" "MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT" $detail } catch {}
     Write-Host "BCP_NEXUS_HUMAN_GATE=WRANGLER_RUNTIME_REQUIRED"
+    Write-Host ("BCP_NEXUS_RUNTIME_DETAIL=" + (Get-SafeFailureDetail $detail))
     Write-Host "Managed portable Node/Wrangler could not finish yet. BCP will re-stage on the next qualified bundle revision; no manual Node/Wrangler install or Telegram token copy is required."
     exit 3
 }
@@ -297,7 +328,9 @@ for ($attempt = 1; $attempt -le 3; $attempt++) {
     if ($attempt -lt 3) { Start-Sleep -Seconds ([Math]::Min(20, [Math]::Pow(2, $attempt + 1))) }
 }
 if (-not $runtimeReady) {
+    try { Write-RuntimePrepReceipt "RUNTIME_PROBE_FAILED" "WRANGLER_RUNTIME_PROBE_FAILED" "WRANGLER_VERSION_PROBE" "Pinned Wrangler could not complete --version after three bounded attempts." } catch {}
     Write-Host "BCP_NEXUS_HUMAN_GATE=WRANGLER_RUNTIME_REQUIRED"
+    Write-Host "BCP_NEXUS_RUNTIME_DETAIL=WRANGLER_VERSION_PROBE_FAILED"
     Write-Host "Pinned Wrangler download/cache is not ready yet. No manual install is required; preserve the durable state and retry only through the managed BCP update path."
     exit 3
 }
