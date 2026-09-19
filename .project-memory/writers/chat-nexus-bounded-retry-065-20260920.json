@@ -1,0 +1,26 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-nexus-bounded-retry-065-20260920",
+  "project_or_mission": "API/BCP Nexus bounded retry and zero-touch convergence",
+  "base_main_sha": "6ae0a2df004fe83ac09c6715e0136ab7105adef7",
+  "created_at": "2026-09-20T00:00:00+01:00",
+  "intended_file_scope": [
+    "windows/bcp_server.py",
+    "tools/validate_current_release.py",
+    "release/server.json",
+    "release/current.json",
+    "release/android.json",
+    ".github/workflows/current-release-contract.yml",
+    ".project-memory/writers/chat-nexus-bounded-retry-065-20260920.json"
+  ],
+  "expected_ci_gates": [
+    "BCP PC Sanity",
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Nexus Transport Qualification if path filters require it",
+    "exact PR head CI binding"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_reread": true,
+  "moved_main_behavior": "REBASE_OR_RECONCILE_REQUIRED",
+  "status": "WORK_BRANCH_ACTIVE"
+}
