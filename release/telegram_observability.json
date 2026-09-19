@@ -3,11 +3,11 @@
   "channel": "stable",
   "version": "2026.09.19-human-cockpit-v4",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "aa1d8a9166f76d6a1fd3a81244d13ec6ab9bac7b687d495b8033ca803d3cb2aa",
+  "sha256": "340fbb5a57d57f4aa9f9176f1afc384d1482678df8c665d0ca0f52da5d6765c2",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first interactive cockpit V4: V3 truthful live-card progress plus stable inline buttons for refresh/current-step/missions/details and explicit low-data PDF summary/technical exports. Direct Telegram callbacks are acknowledged promptly; reports use a dependency-free PDF path. No hidden ChatGPT reasoning is claimed.",
+  "notes": "Human-first interactive cockpit V4: V3 truthful live-card progress plus stable inline buttons for refresh/current-step/missions/details and explicit low-data PDF summary/technical exports. Direct Telegram callbacks are acknowledged promptly; reports use a dependency-free PDF path and redact common credential patterns before export. No hidden ChatGPT reasoning is claimed.",
   "requirements_revision": "2026-09-19-R10"
 }
