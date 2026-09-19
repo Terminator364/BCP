@@ -36,3 +36,10 @@ CREATE TABLE IF NOT EXISTS live_cards (
   body_hash TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS reports (
+  report_key TEXT PRIMARY KEY,
+  body_text TEXT NOT NULL,
+  body_hash TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
