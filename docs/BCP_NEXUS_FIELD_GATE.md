@@ -23,6 +23,7 @@ Repository components:
 - `nexus/cloudflare-worker/wrangler.toml.example`
 - `windows/bcp_telegram_observability.py` transport mode `NEXUS`
 - `windows/CONFIGURE_BCP_NEXUS.ps1`
+- `windows/BOOTSTRAP_BCP_NEXUS.ps1` — one-time deployment/bootstrap helper that reuses the already-local Telegram token/chat authorization, generates Nexus secrets locally, provisions them directly to the provider, migrates receiver ownership to webhook mode, configures the local worker and writes a machine-readable receipt.
 
 Nexus routes:
 - `GET /health`
@@ -79,6 +80,27 @@ Preferred bootstrap:
 - upload secrets directly to the provider over TLS;
 - write the same device secret into BCP local state;
 - never expose the values in logs, GitHub, Drive or chat.
+
+## One-time zero-touch bootstrap contract
+
+The preferred live-deployment path is now a single bounded bootstrap action, not a sequence of manual token/file transfers.
+
+`windows/BOOTSTRAP_BCP_NEXUS.ps1` MUST:
+- reuse the already-authorized local Telegram token and private chat identity; never ask the user to paste them into ChatGPT, GitHub or Drive;
+- use the provider's authenticated CLI session as the only unavoidable cloud-account gate;
+- create or reuse the D1 database;
+- generate webhook/device secrets locally with a cryptographic RNG;
+- send provider secrets directly over TLS and never print them;
+- deploy and health-check the Nexus worker;
+- stop the direct long-poll receiver before setting the webhook;
+- configure the local BCP worker in NEXUS mode and restart it;
+- emit one Telegram bootstrap confirmation through Nexus;
+- persist a local receipt with URL/version/state but no secrets;
+- roll receiver ownership back toward DIRECT_TELEGRAM if migration fails after webhook activation.
+
+A missing Cloudflare/Wrangler login is a true human gate. It is not a reason to ask for the Telegram token again.
+
+The helper is idempotent at the resource/configuration level: rerunning it may refresh generated secrets and deployment state, but it MUST NOT create competing Telegram receivers or duplicate canonical BCP state.
 
 ## Field acceptance
 
