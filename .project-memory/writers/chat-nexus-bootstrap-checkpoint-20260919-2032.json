@@ -1,0 +1,18 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-nexus-bootstrap-checkpoint-20260919-2032",
+  "project_or_mission": "API/BCP Nexus bootstrap post-merge durable checkpoint",
+  "base_main_sha": "ffe9332db48a67a107b5624d160815f624a6f7ad",
+  "created_at": "2026-09-19T20:32:00+01:00",
+  "intended_file_scope": [
+    ".project-memory/writers/chat-nexus-bootstrap-checkpoint-20260919-2032.json",
+    "project_state.json"
+  ],
+  "expected_ci_gates": [],
+  "validation": [
+    "JSON_PARSE",
+    "MAIN_HEAD_RECHECK",
+    "POST_MERGE_READBACK"
+  ],
+  "status": "ACTIVE_WRITER_BRANCH"
+}
