@@ -618,7 +618,7 @@
   },
   "telegram_observability_mvp": {
     "mode": "READ_ONLY",
-    "status": "IMPLEMENTED_BRANCH_CI_PENDING",
+    "status": "INTEGRATED_MAIN_FIELD_GATE_PENDING",
     "field_status": "DOC_OK_ZERO_USD_OK_KINSHASA_FIELD_SMOKE_PENDING",
     "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
     "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
@@ -629,6 +629,12 @@
     "zero_usd": true,
     "token_local_only": true,
     "chat_internal_state_access": false,
-    "next_action": "CI -> PR review -> main HEAD recheck -> serialized integration -> BotFather/local field gate"
+    "next_action": "BotFather -> local secret configurator -> Kinshasa live getMe/getUpdates/sendMessage/status field gate",
+    "integrated_pr": 14,
+    "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
+    "integrated_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
+    "telegram_ci_run_id": 35435634588,
+    "coordinated_ci_run_id": 35435634595,
+    "package_sha256": "303337e1d32f0d38b2dfac3112b6201ff7659c16057f0667ba2294783845db4d"
   }
 }
