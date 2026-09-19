@@ -618,8 +618,8 @@
   },
   "telegram_observability_mvp": {
     "mode": "READ_ONLY",
-    "status": "INTEGRATED_MAIN_FIELD_GATE_PENDING",
-    "field_status": "DOC_OK_ZERO_USD_OK_KINSHASA_FIELD_SMOKE_PENDING",
+    "status": "FIELD_RETRY_PENDING_AFTER_TRANSPORT_HARDENING",
+    "field_status": "KINSHASA_GETME_TRANSPORT_FAIL_R1_R2_READY",
     "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
     "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
     "state_file": ".project-memory/TELEGRAM_OBSERVABILITY_IMPLEMENTATION_STATE.json",
@@ -629,7 +629,7 @@
     "zero_usd": true,
     "token_local_only": true,
     "chat_internal_state_access": false,
-    "next_action": "Human field gate: BotFather/create bot if needed -> run qualified local configurator -> approve detected private chat -> verify /status over normal Kinshasa network",
+    "next_action": "Use R2 package locally; rerun configurator with secret token; record safe diagnostic (HTTP auth vs transport status) and continue only from exact result.",
     "integrated_pr": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
     "integrated_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
@@ -643,6 +643,32 @@
     "coordinated_ci_result": "PASS",
     "drive_package_file_id": "196faKtzlkgt4q2iEpokfeh38FaZ0qUf9",
     "drive_package_file_name": "BCP_TELEGRAM_OBSERVABILITY_MVP.zip",
-    "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk"
+    "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk",
+    "last_field_failure": {
+      "observed_at_local": "2026-09-19T11:24:00+01:00",
+      "stage": "LOCAL_CONFIGURATOR_GETME",
+      "symptom": "TELEGRAM_API_CALL_FAILED method=getMe class=WebException",
+      "interpretation": "TRANSPORT_OR_HTTP_DETAIL_HIDDEN_BY_R1; TOKEN_VALIDITY_NOT_CONCLUDED",
+      "user_network": "NORMAL_KINSHASA_CONNECTION_REPORTED"
+    },
+    "transport_hardening": {
+      "merged_main_sha": "0b207d25a88ee0db7c4322b572d76fdef0ee57bd",
+      "patch_commit": "5531d6e96c30bff5e5ee0383f26bc9c76f64a7c2",
+      "telegram_ci_run_id": 35437374566,
+      "telegram_ci_result": "PASS",
+      "coordinated_ci_run_id": 35437374499,
+      "coordinated_ci_result": "PASS",
+      "behavior": [
+        "FORCE_TLS12_PROCESS_LOCAL",
+        "DISTINGUISH_HTTP_AUTH_FROM_TRANSPORT",
+        "BOUNDED_TRANSIENT_RETRIES",
+        "NO_TOKEN_OR_URI_LOGGING"
+      ]
+    },
+    "current_field_package": {
+      "drive_file_id": "1aWeDHNMgtaeyNEdvJhz0iEfMEFiseY3o",
+      "drive_file_name": "BCP_TELEGRAM_OBSERVABILITY_CURRENT_R2.zip",
+      "sha256": "979918eeeb518b95e19447aa05311a4f8ae136967b88fab220264d92d5172337"
+    }
   }
 }
