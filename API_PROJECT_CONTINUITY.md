@@ -234,3 +234,20 @@ Until explicitly ended with `END ISOLATION CHATGPT-PC`:
 - do not regress or replay already COMMITTED work.
 
 This is an A/B diagnostic isolation, not a conclusion that ChatGPT-PC causes platform checks.
+
+## Strategic free-API / Model Broker / lightweight-cockpit extension
+
+On every API recovery, also load:
+- `docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md`
+
+This preserves the prior project discussion about:
+- a provider-neutral Model Broker;
+- legitimate free/zero-cost/BYOK model APIs such as Gemini/Flash-class and Groq-backed providers as replaceable examples;
+- explicit quota/capacity/cost handling with DEFAULT_PAID_SPEND=0;
+- bounded autonomous agent loops with deterministic verification and receipts;
+- GitHub + BuildHub + B-EDGE execution/result loops;
+- Telegram or an equivalent lightweight phone cockpit;
+- no manual prompt/result/log shuttle by the user;
+- using alternate legitimate adapters to reduce the operational impact of ChatGPT/browser/provider interruptions without bypassing safeguards.
+
+Priority: preserve this direction now, but do not displace P0 field bring-up and continuity verification.
