@@ -1,0 +1,12 @@
+{
+  "schema": "bcp.telegram_companion_release/1",
+  "channel": "stable",
+  "version": "2026.09.19-progress-presence-1",
+  "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
+  "sha256": "bf9cce84c1dc9fa5051ba27175a801ba997dfb64a42396281a0c58ccda32b376",
+  "minimum_server_version": "0.6.2",
+  "auto_update": true,
+  "rollback_on_launch_failure": true,
+  "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
+  "notes": "Human-first automatic progress presence. Pushes only when durable externally observable evidence changes; does not expose hidden ChatGPT reasoning."
+}
