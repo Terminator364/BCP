@@ -171,5 +171,13 @@
       "PROVIDER_TIMEOUT"
     ],
     "deep_jobs_are_bounded_micro_sprints": true
+  },
+  "repository_write_fence": {
+    "required": true,
+    "applies_to_all_clients_and_conversations": true,
+    "policy_ref": ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+    "protocol_ref": "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
+    "parallel_reasoning_allowed": true,
+    "parallel_direct_main_writes": false
   }
 }
