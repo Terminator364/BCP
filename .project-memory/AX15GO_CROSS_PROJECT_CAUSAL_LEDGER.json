@@ -1,0 +1,53 @@
+{
+  "schema": "bcp.ax15go_cross_project_causal_ledger/1",
+  "adopted_at": "2026-09-19",
+  "status": "EVIDENCE_BACKED_ENGINEERING_KNOWLEDGE_NOT_FIELD_CERTIFICATION",
+  "rules": {
+    "causal_dedup_required": true,
+    "lexical_variants_do_not_count": true,
+    "known_incident_lookup_before_novel_reasoning": true,
+    "source_project_state_not_mutated_by_import": true
+  },
+  "mechanisms": [
+    {
+      "id": "AXC-DEADLINE-BLOCKING-WAIT-001",
+      "source_project": "P2PCR95",
+      "evidence": "PR #6 merged after source readback",
+      "mechanism": "an outer deadline does not bound an inner blocking wait such as CompletionService.take()",
+      "permanent_rule": "every blocking primitive in a bounded operation derives its timeout from remaining monotonic deadline",
+      "regression_obligation": "inject a never-completing worker and prove discovery/control returns within the declared deadline plus scheduler tolerance"
+    },
+    {
+      "id": "AXC-RECONSTRUCTION-ORDER-001",
+      "source_project": "PhoneMouse",
+      "evidence": "BETA07 Play Protect incident plus AX15GO PR #6",
+      "mechanism": "a correct invariant applied before later reconstruction/version patches can be silently reintroduced afterward",
+      "permanent_rule": "stable invariants are re-applied or revalidated after all version-specific transforms; final artifact is the oracle",
+      "regression_obligation": "apply a synthetic late patch that reintroduces stale identity and prove final gate repairs/rejects it"
+    },
+    {
+      "id": "AXC-ACK-BEFORE-DURABLE-FLUSH-001",
+      "source_project": "BuildHub",
+      "evidence": "AX15GO PR #10; Linux passed first candidate while Windows exposed descriptor-semantics failure",
+      "mechanism": "hash/readback can succeed from OS cache before acknowledged bytes are explicitly flushed; durability primitive may also differ by OS",
+      "permanent_rule": "critical acknowledged artifacts/secrets require platform-qualified durable flush before COMMITTED; noncritical telemetry must not inherit blanket fsync cost",
+      "regression_obligation": "Windows+Linux fault-injection test around stage/replace/receipt boundaries; COMMITTED forbidden before durable flush"
+    },
+    {
+      "id": "AXC-SEALED-RUNTIME-HONESTY-001",
+      "source_project": "ChatGPT-PC",
+      "evidence": "G6.0.22 DPAPI secure_store flush gap recorded as NEXT_RELEASE_HARDENING_RUNTIME_UNCHANGED",
+      "mechanism": "repairing documentation/adapters while silently implying a sealed deployed runtime changed creates false safety evidence",
+      "permanent_rule": "sealed/runtime artifact remains unchanged unless rebuilt/rehashed/requalified; planned hardening must be labeled pending",
+      "regression_obligation": "state/reporting test rejects FIELD_VERIFIED/FIXED claims when only next-release engineering files changed"
+    },
+    {
+      "id": "AXC-SOURCE-AUTHORITY-PLACEHOLDER-001",
+      "source_project": "BROWSER4G/PROJECT-DRAFTS",
+      "evidence": "dedicated BROWSER4G repository existed empty while PROJECT-DRAFTS remained canonical",
+      "mechanism": "a newly created dedicated repository can be mistaken for authority and cause design/source reconstruction from an empty or stale tree",
+      "permanent_rule": "repository promotion requires explicit authority migration manifest, source SHA/readback and single-writer authority handoff",
+      "regression_obligation": "bootstrap resolver must reject placeholder repository as canonical while authority fence says NOT_AUTHORITY"
+    }
+  ]
+}
