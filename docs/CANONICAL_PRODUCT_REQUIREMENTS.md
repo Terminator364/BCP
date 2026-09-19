@@ -533,3 +533,41 @@ Requirements:
 - update failures never destroy pairing or canonical project state;
 - the first transition from the legacy debug-signed 0.2.5 line may use a one-time side-by-side Evergreen package because the old ephemeral signing key cannot be recovered safely;
 - subsequent Evergreen versions MUST update in place without uninstall/reinstall cycles.
+
+
+## P0 — Cumulative specification continuity
+
+For every project, the phrase **“mise à jour du cahier des charges”** means **MERGE + REFINE + PRESERVE**.
+
+The new user input is a delta against the current active requirement set, never a replacement specification.
+
+Required behavior:
+- load prior active requirements first;
+- classify the new delta as ADD, REFINE, SUPERSEDE_EXPLICIT, DEPRECATE_EXPLICIT or CONFLICT_HOLD;
+- preserve every prior active requirement not explicitly superseded;
+- preserve history/provenance for superseded requirements;
+- never delete an old principle merely because it was omitted from a newer message;
+- keep acceptance tests, error-ledger obligations and regressions attached to all still-active requirements;
+- if a contradiction is ambiguous, hold the conflicting requirement and ask only the minimum clarification needed;
+- materialize a current canonical view from the active requirement graph after every accepted update.
+
+Canonical machine-readable policy:
+`.project-memory/SPEC_EVOLUTION_POLICY.json`.
+
+## P1A — Telegram mission cockpit and observable long-running work
+
+After the currently active BCP 0.4.7 field-acceptance campaign, accelerate the Telegram/BCP cockpit from a notification-only concept into a mission-control surface.
+
+Target:
+`Telegram -> BCP Mission Intake -> durable MISSION_ENVELOPE -> deterministic engine / Model Broker / workers -> append-only MISSION_EVENT_LOG -> receipts/checkpoints -> Telegram status`.
+
+The user must be able to submit a normal-language request, confirm a deep execution with a compact action such as `1`, receive a short job reference, and see the exact durable progress without depending on a ChatGPT conversation remaining responsive.
+
+Long work must be decomposed into bounded micro-sprints and checkpointed after every committed mutation. Persist observable decisions/actions/receipts, not hidden model chain-of-thought.
+
+A short code such as `48273195` is a mission locator, not the mission content and not an authorization credential. Preferred explicit handoff syntax is `BCPGO <job_code>`. Resolution is available only on clients with a qualified BCP integration.
+
+When a chat/provider is delayed, BCP must expose the exact last confirmed checkpoint and a durable waiting state such as `WAITING_EXTERNAL_CHAT_RESULT` or `PROVIDER_PENDING_UNKNOWN`; it must never fabricate hidden progress.
+
+Canonical detailed design:
+`docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md`.
