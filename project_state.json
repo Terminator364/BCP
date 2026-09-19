@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_4_6_CI_QUALIFIED_FINAL_ACCEPTANCE_V2_READY",
-  "last_completed_atomic_action": "Diagnosed final acceptance pre-reboot false negative: lifecycle PASS but Windows CIM returned empty listener command line. Replaced fragile command-line oracle with BCP-native diagnostics PID/path/SHA proof, added explicit legacy Downloads cleanup, qualified BCP 0.4.6 and replaced final acceptance CURRENT in Drive.",
-  "next_action": "Run refreshed API_BCP/00_A_INSTALLER/BCP_FINAL_ACCEPTANCE_CURRENT.zip once. It will clean known legacy BCP downloads, auto-update to 0.4.6, run all pre-reboot gates, reboot automatically, resume via RunOnce, run post-reboot/resource/network gates, and publish one final report.",
+  "status": "BCP_0_4_6_FINAL_ACCEPTANCE_PACKAGE_CI_GREEN_DRIVE_PUBLISHED",
+  "last_completed_atomic_action": "Strengthened public GitHub qualification: parse, self-test, AST internal object contract, version/stale-writer cross-check, server self-test and packaging all PASS before Drive publication. Fixed stale listener.pid consumer, removed duplicated stale runner tail, replaced fragile cleanup regex with prefix allowlists, and published only the green artifact.",
+  "next_action": "Run the refreshed Drive CURRENT final-acceptance package once. Do not use any older local copy. The campaign should complete pre-reboot gates, auto-reboot, RunOnce resume, post-reboot/resource/connectivity gates, and publish the final machine-readable report.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -130,9 +130,9 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "APIAX07-BCP046-FINAL-ACCEPTANCE-V2-READY",
-    "status": "WAITING_SINGLE_BATCH_RELAUNCH",
-    "next_atomic_action": "Run refreshed final acceptance CURRENT once; then read final report instead of requesting screenshots",
+    "checkpoint_id": "APIAX07-BCP046-FINAL-PACKAGE-CI-GREEN",
+    "status": "WAITING_SINGLE_FINAL_CAMPAIGN_RUN",
+    "next_atomic_action": "Run green CURRENT package once; then read BCP_FINAL_ACCEPTANCE_LATEST.json",
     "diagnostic_mode": "CHATGPT_PC_ISOLATION_ACTIVE"
   },
   "runtime_verification": {
@@ -469,5 +469,25 @@
       "lifecycle_registration"
     ],
     "requirements_commit": "65135c6c282570ba2de3d222b1cdcf6b7fc0b08f"
+  },
+  "final_acceptance_quality_gate": {
+    "policy": "NO_DRIVE_CURRENT_PUBLICATION_UNTIL_ALL_PACKAGE_CI_GATES_PASS",
+    "ci_run_id": 35417127394,
+    "ci_result": "PASS",
+    "gates": {
+      "powershell_parse": "PASS",
+      "acceptance_selftest": "PASS",
+      "internal_object_contract_ast": "PASS",
+      "target_version_and_stale_writer_crosscheck": "PASS",
+      "server_selftest": "PASS",
+      "package_upload": "PASS"
+    },
+    "artifact_id": 10575878856,
+    "artifact_digest": "sha256:61548d2b432a3b5901752407fd8f3957f47df5641bd5ee9d60dcdc780ac35cac",
+    "drive_file_id": "1XgHpGzO_SWJabwUu6hOVc8qOD0NCgVj4",
+    "drive_modified_at": "2026-09-19T02:57:04.896Z",
+    "drive_size": 7359,
+    "failed_builds_published_to_drive": false,
+    "requirements_commit": "d827aa9c7a69edc806002e1129418bc15171f15f"
   }
 }
