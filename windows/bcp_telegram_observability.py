@@ -1259,10 +1259,10 @@ def selftest() -> int:
         assert "Ancien téléphone" in status
         assert "ChatGPT: ⏳ réponse en attente" in status
         assert "💰 Coût: $0.00" in status
-        assert "Tests: ✅ tests réussis" in status
+        assert "🧪 ✅ tests réussis" in status
         presence = svc.presence_snapshot()
         assert len(presence["fingerprint"]) == 64
-        assert "🤖 BCP — suivi automatique" in presence["text"]
+        assert "🤖 BCP — suivi" in presence["text"]
         assert "Ancien téléphone" in presence["text"]
         details = svc.details()
         assert "État global: EN_COURS" in details
@@ -1270,7 +1270,7 @@ def selftest() -> int:
         assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
         assert "48273195" in svc.job("48273195")
         assert "CI patch persisted" in svc.tail("48273195")
-        assert "COMMITTED" in svc.where("48273195")
+        assert "étape enregistrée" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Lecture seule" in svc.dispatch("/run")
         assert "chaîne de pensée" in svc.help()
