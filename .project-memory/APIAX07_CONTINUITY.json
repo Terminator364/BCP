@@ -28,5 +28,11 @@
     "supersession": "deliver newer qualified artifact if one exists"
   },
   "reality_probe_count": 9,
-  "bookkeeping_issue": "package_state empirical_gates_open=8, adapter reality probes=9"
+  "bookkeeping_issue": "package_state empirical_gates_open=8, adapter reality probes=9",
+  "repository_integration": {
+    "policy": "BRANCH_PR_SERIALIZED_SINGLE_WRITER",
+    "direct_main_autonomous": false,
+    "canonical_protocol": "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
+    "machine_policy": ".project-memory/GIT_WRITER_LEASE_POLICY.json"
+  }
 }
