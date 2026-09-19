@@ -66,10 +66,15 @@ public class EdgePolicyTest {
         assertTrue(EdgePolicy.isCompletionResult("ALREADY_COMMITTED"));
         assertTrue(EdgePolicy.isCompletionResult("SUCCESS"));
         assertTrue(EdgePolicy.isCompletionResult("SUCCEEDED"));
+        assertTrue(EdgePolicy.isTerminalResult("SUCCEEDED"));
+        assertTrue(EdgePolicy.isTerminalResult("FAILED"));
+        assertTrue(EdgePolicy.isTerminalResult("CANCELLED"));
+        assertFalse(EdgePolicy.isCompletionResult("FAILED"));
     }
 
     @Test public void durableRemotePresenceSuppressesBlindRedispatch() {
         assertFalse(EdgePolicy.shouldPostJob("BLOCKED", false));
+        assertFalse(EdgePolicy.shouldPostJob("HOLD", false));
         assertTrue(EdgePolicy.shouldPostJob("READY", false));
         assertTrue(EdgePolicy.shouldPostJob("REMOTE_QUEUED", false));
         assertFalse(EdgePolicy.shouldPostJob("READY", true));
