@@ -1,0 +1,106 @@
+{
+  "schema": "bcp.ax15go_cross_project_causal_ledger/2",
+  "adopted_at": "2026-09-19",
+  "base_main_sha": "1f57f0e5b0472543ff51aaf4a519e987064d4fcc",
+  "status": "EVIDENCE_BACKED_ENGINEERING_KNOWLEDGE_NOT_FIELD_CERTIFICATION",
+  "rules": {
+    "causal_dedup_required": true,
+    "lexical_variants_do_not_count": true,
+    "known_incident_lookup_before_novel_reasoning": true,
+    "source_project_state_not_mutated_by_import": true,
+    "candidate_source_cannot_be_relabelled_field_proven": true,
+    "correction_must_be_counter_audited": true
+  },
+  "mechanisms": [
+    {
+      "id": "AXC-DEADLINE-BLOCKING-WAIT-001",
+      "source_project": "P2PCR95",
+      "evidence_status": "MERGED_ENGINEERING",
+      "evidence": "PR #6 merged before this ledger",
+      "mechanism": "an outer deadline does not bound an inner blocking wait such as CompletionService.take()",
+      "permanent_rule": "every blocking primitive in a bounded operation derives its timeout from remaining monotonic deadline",
+      "regression_obligation": "inject a never-completing worker and prove operation returns within declared deadline plus scheduler tolerance"
+    },
+    {
+      "id": "AXC-RECONSTRUCTION-ORDER-001",
+      "source_project": "PhoneMouse",
+      "evidence_status": "MERGED_ENGINEERING_PLUS_FIELD_INCIDENT",
+      "evidence": "BETA07 identity incident plus AX15GO PR #6",
+      "mechanism": "a stable invariant applied before later reconstruction/version transforms can be silently reintroduced afterward",
+      "permanent_rule": "stable invariants are applied/revalidated after all version-specific transforms and final artifact is the oracle",
+      "regression_obligation": "late patch reintroduces stale identity; final gate must repair or reject it"
+    },
+    {
+      "id": "AXC-ACK-BEFORE-DURABLE-FLUSH-001",
+      "source_project": "BuildHub",
+      "evidence_status": "MERGED_ENGINEERING",
+      "evidence": "BuildHub PR #10/#11 line exposed cross-platform fsync semantics",
+      "mechanism": "hash/readback can succeed from OS cache before acknowledged bytes or final publication metadata are durably flushed",
+      "permanent_rule": "critical acknowledged artifacts/secrets require platform-qualified durability boundary before COMMITTED; noncritical telemetry remains outside blanket fsync",
+      "regression_obligation": "Linux+Windows fault injection around temp flush, replace, final-name flush and acknowledgement"
+    },
+    {
+      "id": "AXC-SEALED-RUNTIME-HONESTY-001",
+      "source_project": "ChatGPT-PC",
+      "evidence_status": "CURRENT_AUDIT_FINDING",
+      "evidence": "G6.0.22 DPAPI flush gap remains runtime-unchanged while vNext PR #10 adds a candidate primitive",
+      "mechanism": "engineering/spec improvements can be mistaken for a deployed runtime fix",
+      "permanent_rule": "sealed runtime status changes only after rebuilt/rehashed/requalified artifact and matching field evidence",
+      "regression_obligation": "reporting must reject FIXED/FIELD_VERIFIED when only vNext/design files changed"
+    },
+    {
+      "id": "AXC-SOURCE-AUTHORITY-PLACEHOLDER-001",
+      "source_project": "BROWSER4G/PROJECT-DRAFTS",
+      "evidence_status": "MERGED_FENCE_PLUS_CANDIDATE_MACHINE_GATE",
+      "evidence": "PROJECT-DRAFTS fence merged; dedicated BROWSER4G PR #1 adds machine-verifiable placeholder gate",
+      "mechanism": "a dedicated repository can be mistaken for canonical authority while source remains elsewhere",
+      "permanent_rule": "promotion requires explicit authority manifest, exact source SHA/hash inventory, destination readback and one writable authority",
+      "regression_obligation": "bootstrap must reject placeholder repo while authority fence says NOT_CANONICAL"
+    },
+    {
+      "id": "AXC-DEADLINE-WITH-UNBOUNDED-QUEUED-WORK-001",
+      "source_project": "P2PCR95",
+      "evidence_status": "CANDIDATE_PR",
+      "evidence": "P2PCR95 PR #7",
+      "mechanism": "overall elapsed time can be bounded while hundreds of queued probe tasks still inflate allocation/cancellation tail on a low-resource device",
+      "permanent_rule": "bounded operations also bound queued/in-flight work, not only wall-clock wait",
+      "regression_obligation": "large candidate set must keep submitted/in-flight probes below fixed window while preserving deadline"
+    },
+    {
+      "id": "AXC-SIGNING-IDENTITY-CACHE-EXPIRY-001",
+      "source_project": "PhoneMouse",
+      "evidence_status": "CANDIDATE_PR_FIELD_RECOVERY_UNVERIFIED",
+      "evidence": "PhoneMouse PR #7",
+      "mechanism": "temporary CI artifact retention can silently become the only copy of an Android signing identity; expiry then destroys in-place update continuity",
+      "permanent_rule": "signing cache is never sole recovery authority; cache miss fails closed and separately verified encrypted recovery copy is a field gate",
+      "regression_obligation": "simulate expired CI artifact and prove no new signing key is generated/substituted"
+    },
+    {
+      "id": "AXC-RECEIPT-ARTIFACT-SPLIT-COMMIT-001",
+      "source_project": "BuildHub",
+      "evidence_status": "CANDIDATE_PR",
+      "evidence": "BuildHub PR #12 AX15GO counter-audit",
+      "mechanism": "artifact publication and COMMITTED receipt are two durable objects; failure after receipt replace can make blind artifact rollback contradict a surviving receipt",
+      "permanent_rule": "once matching COMMITTED receipt may have crossed replace boundary, state is reconciled/read back or COMMIT_OUTCOME_UNKNOWN; no blind rollback/replay",
+      "regression_obligation": "inject error after receipt materialization and prove artifact is not blindly rolled back"
+    },
+    {
+      "id": "AXC-POST-REBOOT-RECONCILIATION-ORACLE-001",
+      "source_project": "BuildHub",
+      "evidence_status": "CANDIDATE_PR",
+      "evidence": "BuildHub PR #12 reconciliation extension",
+      "mechanism": "after interruption, source/artifact/receipt can survive in different combinations; generic retry cannot distinguish safe replay from conflict",
+      "permanent_rule": "recovery classifies exact identities before replay: COMMITTED, NOT_COMMITTED, ARTIFACT_PRESENT_RECEIPT_MISSING, RECEIPT_PRESENT_ARTIFACT_MISMATCH or CONFLICT",
+      "regression_obligation": "enumerate post-crash source/artifact/receipt combinations and verify side-effect-free classification"
+    },
+    {
+      "id": "AXC-DEDICATED-REPO-POLICY-INHERITANCE-001",
+      "source_project": "BROWSER4G/PROJECT-DRAFTS",
+      "evidence_status": "CANDIDATE_PR",
+      "evidence": "BROWSER4G PR #1 follow-up",
+      "mechanism": "new dedicated repository can inherit source code later but omit global agent/CI-budget constraints during placeholder/bootstrap stage",
+      "permanent_rule": "dedicated repository inherits mandatory agent and CI-budget policy before any product authority migration",
+      "regression_obligation": "placeholder verifier allows only declared bootstrap files and requires inherited AGENTS/CI budget policy"
+    }
+  ]
+}
