@@ -21,15 +21,17 @@ public final class BcpClient {
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
+    private final CredentialStore credentials;
 
     public BcpClient(Context context) {
         this.context = context.getApplicationContext();
         this.prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         this.telemetry = new TelemetryStore(context);
+        this.credentials = new CredentialStore(context);
     }
 
     public String getServer() { return prefs.getString("server", ""); }
-    public String getToken() { return prefs.getString("token", ""); }
+    public String getToken() { return credentials.getToken(); }
     public String getProject() { return PROJECT; }
     public String getEdgeVersion() { return EDGE_VERSION; }
 
@@ -122,7 +124,6 @@ public final class BcpClient {
         telemetry.add("START", null);
 
         String savedServer = getServer();
-        String savedToken = getToken();
         if (!savedServer.isEmpty()) {
             progress.onStage("RECONNECT", "Vérification du PC déjà appairé");
             telemetry.add("RECONNECT_TRY", savedServer);
@@ -132,6 +133,7 @@ public final class BcpClient {
                     progress.onStage("CONNECTED", "PC retrouvé automatiquement");
                     telemetry.add("RECONNECT_PASS", savedServer);
                     heartbeat("RECONNECT_PASS");
+                    flushPendingCheckpoint();
                     JSONObject promoted = autoPromoteServerIfNeeded(progress);
                     return promoted != null ? promoted : h;
                 }
@@ -167,7 +169,8 @@ public final class BcpClient {
             throw new IOException("PAIRING_FAILED");
         }
 
-        prefs.edit().putString("server", server).putString("token", token).apply();
+        credentials.putToken(token);
+        prefs.edit().putString("server", server).apply();
         telemetry.add("PAIRING_PASS", server);
         progress.onStage("CONNECTED", "Appairé à " + pair.optString("pc_name", "BCP PC"));
         heartbeat("PAIRING_PASS");
@@ -248,6 +251,7 @@ public final class BcpClient {
         JSONObject current = requestJson("GET",
                 getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
                 null, getToken(), null, 2500, 5000);
+        cacheResume(current);
         JSONObject head = current.optJSONObject("head");
         int expectedRevision = head == null ? 0 : head.optInt("revision", 0);
 
@@ -267,39 +271,98 @@ public final class BcpClient {
         String idem = prefs.getString("pending_checkpoint_idem", "");
         if (idem.isEmpty() || !fingerprint.equals(savedFingerprint)) {
             idem = "edge-" + UUID.randomUUID();
-            prefs.edit()
-                    .putString("pending_checkpoint_idem", idem)
-                    .putString("pending_checkpoint_fingerprint", fingerprint)
-                    .apply();
         }
 
+        prefs.edit()
+                .putString("pending_checkpoint_idem", idem)
+                .putString("pending_checkpoint_fingerprint", fingerprint)
+                .putString("pending_checkpoint_body", body.toString())
+                .apply();
+
         telemetry.add("CHECKPOINT_START", "expected_revision=" + expectedRevision);
-        JSONObject r = requestJson("POST",
+        try {
+            JSONObject r = postPendingCheckpoint(body, idem);
+            onCheckpointReceipt(r);
+            return r;
+        } catch (Exception ex) {
+            telemetry.add("CHECKPOINT_QUEUED",
+                    ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
+            flushTelemetry();
+            throw ex;
+        }
+    }
+
+    private JSONObject postPendingCheckpoint(JSONObject body, String idem) throws Exception {
+        return requestJson("POST",
                 getServer() + "/v1/projects/" + enc(PROJECT) + "/events",
                 body.toString(), getToken(), idem, 2500, 5000);
+    }
 
+    private void onCheckpointReceipt(JSONObject r) throws Exception {
         String result = r.optString("result", "");
         if ("COMMITTED".equals(result) || "ALREADY_COMMITTED".equals(result)) {
             prefs.edit()
                     .remove("pending_checkpoint_idem")
                     .remove("pending_checkpoint_fingerprint")
+                    .remove("pending_checkpoint_body")
                     .apply();
+            JSONObject resumed = requestJson("GET",
+                    getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                    null, getToken(), null, 2500, 5000);
+            cacheResume(resumed);
         }
         telemetry.add("CHECKPOINT_PASS",
                 "revision=" + r.optInt("revision", -1) + ",result=" + result);
         flushTelemetry();
-        return r;
+    }
+
+    public void flushPendingCheckpoint() {
+        String bodyRaw = prefs.getString("pending_checkpoint_body", "");
+        String idem = prefs.getString("pending_checkpoint_idem", "");
+        if (bodyRaw.isEmpty() || idem.isEmpty() || getToken().isEmpty()) return;
+        try {
+            telemetry.add("CHECKPOINT_RETRY_START", null);
+            JSONObject r = postPendingCheckpoint(new JSONObject(bodyRaw), idem);
+            onCheckpointReceipt(r);
+            telemetry.add("CHECKPOINT_RETRY_PASS", r.optString("result", ""));
+        } catch (Exception ex) {
+            String msg = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+            telemetry.add(msg.contains("HTTP_409") ?
+                    "CHECKPOINT_RETRY_CONFLICT" : "CHECKPOINT_RETRY_DEFERRED", msg);
+        }
     }
 
     public JSONObject resume() throws Exception {
-        ensureConnected();
         telemetry.add("RESUME_START", null);
-        JSONObject r = requestJson("GET",
-                getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
-                null, getToken(), null, 2500, 5000);
-        telemetry.add("RESUME_PASS", "revision=" + r.optJSONObject("head"));
-        flushTelemetry();
-        return r;
+        try {
+            ensureConnected();
+            JSONObject r = requestJson("GET",
+                    getServer() + "/v1/projects/" + enc(PROJECT) + "/resume",
+                    null, getToken(), null, 2500, 5000);
+            cacheResume(r);
+            telemetry.add("RESUME_PASS", "revision=" + r.optJSONObject("head"));
+            flushTelemetry();
+            return r;
+        } catch (Exception ex) {
+            String cached = prefs.getString("cached_resume_json", "");
+            if (!cached.isEmpty()) {
+                JSONObject r = new JSONObject(cached);
+                r.put("source", "LOCAL_CACHE");
+                r.put("offline", true);
+                telemetry.add("RESUME_CACHE_FALLBACK", ex.getClass().getSimpleName());
+                return r;
+            }
+            throw ex;
+        }
+    }
+
+    private void cacheResume(JSONObject r) {
+        try {
+            prefs.edit()
+                    .putString("cached_resume_json", r.toString())
+                    .putLong("cached_resume_at", System.currentTimeMillis())
+                    .apply();
+        } catch (Exception ignored) {}
     }
 
     public JSONObject health() throws Exception {
@@ -369,13 +432,20 @@ public final class BcpClient {
     public void flushTelemetry() {
         if (getServer().isEmpty() || getToken().isEmpty()) return;
         try {
-            JSONArray events = telemetry.readAll();
-            if (events.length() == 0) return;
-            JSONObject body = new JSONObject();
-            body.put("events", events);
-            requestJson("POST", getServer() + "/v1/telemetry", body.toString(),
-                    getToken(), "telemetry-" + UUID.randomUUID(), 1500, 3000);
-            telemetry.clear();
+            // Bound one flush to at most 3 x 100 events to protect battery/network.
+            for (int batch = 0; batch < 3; batch++) {
+                JSONArray events = telemetry.readBatch(100);
+                if (events.length() == 0) return;
+                JSONObject body = new JSONObject();
+                body.put("events", events);
+                JSONObject receipt = requestJson("POST",
+                        getServer() + "/v1/telemetry", body.toString(),
+                        getToken(), "telemetry-" + UUID.randomUUID(), 1500, 3000);
+                int accepted = receipt.optInt("accepted", 0);
+                if (accepted <= 0) return;
+                telemetry.acknowledge(accepted);
+                if (accepted < events.length()) return;
+            }
         } catch (Exception ignored) {}
     }
 
