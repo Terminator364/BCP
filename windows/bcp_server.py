@@ -1181,9 +1181,9 @@ def selftest():
         assert get_head("buildhub")["revision"] == 1
         assert _version_tuple("0.4.6") > _version_tuple("0.4.5")
         assert _version_tuple("0.4.6") == (0, 4, 6)
+        source = SERVER_FILE.read_text(encoding="utf-8")
         assert '"server_pid": os.getpid()' in source
         assert '"server_sha256": hashlib.sha256' in source
-        source = SERVER_FILE.read_text(encoding="utf-8")
         assert "API_BCP" in source and "02_TELEMETRY" in source
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
