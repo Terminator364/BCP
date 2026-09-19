@@ -31,10 +31,11 @@ public final class EdgeReconcileWorker extends Worker {
                     .putBoolean("offline",offline)
                     .putBoolean("durable_reconcile_executed",true)
                     .build();
-            if(offline && getRunAttemptCount()<3) return Result.retry();
+            // EDGE_ONLY/offline is a normal operating mode. Local reconciliation
+            // has already run, so do not create a battery-hungry retry burst.
             return Result.success(out);
         } catch (Throwable t) {
-            return getRunAttemptCount()<3 ? Result.retry() : Result.failure();
+            return getRunAttemptCount()<2 ? Result.retry() : Result.failure();
         }
     }
 }
