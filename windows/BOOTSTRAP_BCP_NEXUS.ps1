@@ -68,7 +68,7 @@ function Find-WranglerLauncher {
     }
     foreach ($name in @("npx.cmd","npx.exe","npx")) {
         $cmd = Get-Command $name -ErrorAction SilentlyContinue
-        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @("wrangler") } }
+        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @("--yes","wrangler") } }
     }
     return $null
 }
