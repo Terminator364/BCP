@@ -25,7 +25,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.4.4"
+SERVER_VERSION = "0.4.5"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 6 * 60 * 60
@@ -767,7 +767,7 @@ def recent_events(project_id: str, limit: int = 10):
     return out
 
 
-def commit_event(project_id: str, event_type: str, payload: dict, idem: str):
+def commit_event(project_id: str, event_type: str, payload: dict, idem: str, expected_revision: int | None = None):
     if not project_id or len(project_id) > 128:
         raise ValueError("invalid_project_id")
     if not idem or len(idem) > 200:
@@ -794,7 +794,11 @@ def commit_event(project_id: str, event_type: str, payload: dict, idem: str):
                 }
 
             head = cx.execute("SELECT * FROM heads WHERE project_id=?", (project_id,)).fetchone()
-            revision = (head["revision"] + 1) if head else 1
+            actual_revision = int(head["revision"]) if head else 0
+            if expected_revision is not None and int(expected_revision) != actual_revision:
+                cx.execute("ROLLBACK")
+                raise ValueError(f"stale_revision:expected={int(expected_revision)}:actual={actual_revision}")
+            revision = actual_revision + 1
             prev_hash = head["last_event_hash"] if head else "GENESIS"
             envelope = {
                 "project_id": project_id,
@@ -1079,13 +1083,30 @@ class Handler(BaseHTTPRequestHandler):
                 idem = self.headers.get("Idempotency-Key") or body.get("idempotency_key")
                 if not idem:
                     raise ValueError("Idempotency-Key required")
+                expected_raw = self.headers.get("X-BCP-Expected-Revision")
+                if expected_raw in (None, ""):
+                    expected_raw = body.get("expected_revision")
+                expected_revision = None if expected_raw in (None, "") else int(expected_raw)
                 receipt = commit_event(
                     parts[2],
                     str(body.get("type", "checkpoint")),
                     payload,
                     str(idem),
+                    expected_revision=expected_revision,
                 )
+                receipt["revision_precondition"] = expected_revision
                 self.send_json(200, receipt)
+            except ValueError as e:
+                detail = str(e)
+                if detail.startswith("stale_revision:"):
+                    self.send_json(409, {
+                        "error": "stale_revision",
+                        "detail": detail,
+                        "project_id": parts[2],
+                        "head": get_head(parts[2]),
+                    })
+                else:
+                    self.send_json(400, {"error": "bad_request", "detail": detail})
             except Exception as e:
                 self.send_json(400, {"error": "bad_request", "detail": str(e)})
             return
@@ -1121,6 +1142,7 @@ def selftest():
                 "next_action": "B",
             },
             "same-key",
+            expected_revision=0,
         )
         r2 = commit_event(
             "buildhub",
@@ -1131,12 +1153,30 @@ def selftest():
                 "next_action": "B",
             },
             "same-key",
+            expected_revision=0,
         )
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
-        assert _version_tuple("0.4.4") > _version_tuple("0.4.3")
-        assert _version_tuple("0.4.4") == (0, 4, 4)
+        stale_rejected = False
+        try:
+            commit_event(
+                "buildhub",
+                "checkpoint",
+                {
+                    "status": "ACTIVE",
+                    "last_completed_action": "STALE",
+                    "next_action": "MUST_REJECT",
+                },
+                "stale-key",
+                expected_revision=0,
+            )
+        except ValueError as e:
+            stale_rejected = str(e).startswith("stale_revision:")
+        assert stale_rejected
+        assert get_head("buildhub")["revision"] == 1
+        assert _version_tuple("0.4.5") > _version_tuple("0.4.4")
+        assert _version_tuple("0.4.5") == (0, 4, 5)
         source = SERVER_FILE.read_text(encoding="utf-8")
         assert "API_BCP" in source and "02_TELEMETRY" in source
         assert "/v1/system/chatgpt-pc/recover" in source
