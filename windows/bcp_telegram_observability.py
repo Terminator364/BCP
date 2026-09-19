@@ -56,6 +56,21 @@ READ_ONLY_COMMANDS = {
     "/tail", "/where", "/missions", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
+SECRET_PATTERNS = (
+    re.compile(r"(?i)\b(?:authorization\s*:\s*)?bearer\s+[A-Za-z0-9._~+/=-]{12,}"),
+    re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+    re.compile(r"\bAIza[0-9A-Za-z_-]{20,}\b"),
+    re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|password|secret)\s*[:=]\s*['\"]?[^\s,'\"]{8,}"),
+)
+
+
+def redact_text(value: Any) -> str:
+    text = str("" if value is None else value)
+    text = redact_text(text)
+    for pattern in SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED_SECRET]", text)
+    return text
 
 
 def utc_now() -> str:
@@ -77,8 +92,7 @@ def atomic_json(path: Path, obj: Any) -> None:
 
 
 def clean(value: Any, limit: int = 240) -> str:
-    s = str("" if value is None else value)
-    s = TOKEN_RE.sub("[REDACTED_TOKEN]", s)
+    s = redact_text(value)
     return s.replace("\r", " ").replace("\n", " ").strip()[:limit]
 
 
@@ -1104,7 +1118,7 @@ class Telegram:
     def send(self, text: str, with_keyboard: bool = True) -> int | None:
         payload = {
             "chat_id": self.chat_id,
-            "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
+            "text": redact_text(text)[:3900],
             "disable_web_page_preview": True,
         }
         if with_keyboard:
@@ -1121,7 +1135,7 @@ class Telegram:
             payload = {
                 "chat_id": self.chat_id,
                 "message_id": int(message_id),
-                "text": TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900],
+                "text": redact_text(text)[:3900],
                 "disable_web_page_preview": True,
             }
             if with_keyboard:
@@ -1390,7 +1404,7 @@ class Nexus:
         return obj
 
     def reply(self, command_id: int, text: str) -> None:
-        safe_text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900]
+        safe_text = redact_text(text)[:3900]
         idem = hashlib.sha256(
             ("reply:" + str(command_id) + ":" + safe_text).encode("utf-8")
         ).hexdigest()
@@ -1401,7 +1415,7 @@ class Nexus:
         }, timeout=25)
 
     def push(self, text: str, idem_seed: str) -> None:
-        safe_text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900]
+        safe_text = redact_text(text)[:3900]
         idem = hashlib.sha256(("push:" + idem_seed).encode("utf-8")).hexdigest()
         self.api("/v1/device/push", method="POST", payload={
             "kind": "MISSION_PROGRESS",
@@ -1410,15 +1424,15 @@ class Nexus:
         }, timeout=25)
 
     def live_card(self, text: str, card_key: str = "mission-status") -> None:
-        safe_text = TOKEN_RE.sub("[REDACTED_TOKEN]", text)[:3900]
+        safe_text = redact_text(text)[:3900]
         self.api("/v1/device/live-card", method="POST", payload={
             "card_key": clean(card_key, 96),
             "text": safe_text,
         }, timeout=25)
 
     def publish_reports(self) -> None:
-        summary = TOKEN_RE.sub("[REDACTED_TOKEN]", self.service.report_summary())[:18000]
-        technical = TOKEN_RE.sub("[REDACTED_TOKEN]", self.service.report_technical())[:26000]
+        summary = redact_text(self.service.report_summary())[:18000]
+        technical = redact_text(self.service.report_technical())[:26000]
         self.api("/v1/device/report", method="POST", payload={
             "summary": summary,
             "technical": technical,
@@ -1686,6 +1700,9 @@ def selftest() -> int:
         assert technical_pdf.startswith(b"%PDF-1.4")
         assert summary_pdf.rstrip().endswith(b"%%EOF")
         assert technical_pdf.rstrip().endswith(b"%%EOF")
+        assert "sk-" not in redact_text("key=sk-abcdefghijklmnopqrstuv")
+        assert "ghp_" not in redact_text("ghp_123456789012345678901234567890")
+        assert "Bearer abcdefghijklmnop" not in redact_text("Authorization: Bearer abcdefghijklmnop")
         keyboard = Telegram.keyboard()
         callback_values = {
             button.get("callback_data")
