@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-19-R4
+Revision: 2026-09-19-R5
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -225,6 +225,30 @@ Canonical hardening documents:
 - `docs/BEDGE_RUNTIME_V2_HARDENING.md`
 - `docs/BEDGE_V2_TEST_MATRIX.md`
 - `.project-memory/BEDGE_RUNTIME_V2_POLICY.json`
+
+
+## P0 — Repository single-writer / Git integration fence
+
+The repository is canonical project state and follows the same single-writer/fencing discipline as BCP runtime state.
+
+Autonomous conversations, agents and tools MUST NOT write product changes directly to `main`.
+
+Normal path:
+`READ_MAIN_HEAD -> UNIQUE_WORK_BRANCH -> SERIAL_MUTATIONS -> CI -> PR -> MAIN_HEAD_RECHECK -> RECONCILE_IF_MOVED -> SERIALIZED_MERGE -> READBACK`.
+
+Requirements:
+- each writer records the exact `base_main_sha` used to create its work branch;
+- file-content blob SHA is not treated as a repository-wide writer lease;
+- concurrent file writes on the same branch are forbidden;
+- a green CI result belongs only to the exact commit SHA it tested;
+- if `main` moves after qualification, the candidate is re-evaluated/requalified before merge;
+- normal automation never force-moves `main`;
+- orphaned/divergent useful work is preserved on `recovery/*` branches and reconciled through draft PRs;
+- release/Drive CURRENT publication is pinned to the exact qualified merged source SHA.
+
+Canonical protocol:
+- `docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md`
+- `.project-memory/GIT_WRITER_LEASE_POLICY.json`
 
 ## P0 — Synchronized product release train
 
