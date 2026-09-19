@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_MANAGED_RUNTIME_CANDIDATE",
-  "last_completed_atomic_action": "Fresh Drive runtime readback at 2026-09-19T20:11:54Z proves BCP 0.6.3 is running on MBMPC, paired, UP_TO_DATE and lifecycle-registered. The actual Nexus blocker is WRANGLER_RUNTIME_REQUIRED. Candidate Nexus bootstrap 0.1.2 now removes the manual Node/Wrangler prerequisite with a pinned portable Node.js 24.21.0 + exact Wrangler 4.135.0 acquisition path.",
-  "next_action": "Qualify the exact PR head. If green, merge serially; resident BCP 0.6.3 should fetch Nexus bootstrap 0.1.2 on its normal convergence window and stage/launch it automatically. Stop only at the one-time Cloudflare browser authorization gate if it appears, then verify machine-readable Nexus COMMITTED state and one Telegram /status round-trip on home Wi-Fi. No PC/B-EDGE reinstall, Telegram token re-entry or manual file shuttle.",
+  "status": "BCP_0_6_3_FIELD_RUNNING_NEXUS_0_1_2_MERGED_AWAITING_RESIDENT_CONVERGENCE",
+  "last_completed_atomic_action": "PR #52 merged to main at 88e1844129d0f0c031eb2a29eddb83857487e42b after all exact-head CI gates passed. Main now publishes Nexus bootstrap 0.1.2 with pinned portable Node.js 24.21.0 and Wrangler 4.135.0 so WRANGLER_RUNTIME_REQUIRED is no longer a manual installation requirement. Latest machine heartbeat after merge still reports bundle 0.1.1/WRANGLER_RUNTIME_REQUIRED, which is expected until the resident updater observes the new manifest.",
+  "next_action": "No user reinstall or token/file copy. Wait for the resident BCP 0.6.3 updater to observe Nexus manifest 0.1.2, then verify external runtime telemetry. If it reaches LAUNCHED/CLOUDFLARE_LOGIN_REQUIRED, the only human gate is one-time Cloudflare browser authorization. If it reaches COMMITTED, verify Nexus receipt and one Telegram /status round trip on home Wi-Fi. If it remains on 0.1.1 beyond a full convergence window, diagnose manifest/update evidence rather than replaying installation.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,13 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-MANAGED-RUNTIME-CANDIDATE-20260919-2115",
-    "status": "FIELD_BCP_0_6_3_PROVEN_WRANGLER_RUNTIME_AUTO_BOOTSTRAP_CANDIDATE",
-    "last_completed_action": "Drive readback proved BCP 0.6.3 live; blocker classified as WRANGLER_RUNTIME_REQUIRED; candidate implements pinned portable runtime acquisition.",
-    "next_atomic_action": "CI exact-head -> serialized merge -> resident manifest convergence -> machine readback of nexus_bootstrap_state; human only for Cloudflare browser authorization if requested.",
+    "checkpoint_id": "BCP-PR52-MERGED-AWAITING-NEXUS-012-CONVERGENCE-20260919",
+    "status": "PR52_MERGED_FIELD_CONVERGENCE_PENDING",
+    "last_completed_action": "Merged PR #52 after Nexus Transport, CURRENT Release Contract, and Coordinated Product Qualification all passed exact-head.",
+    "next_atomic_action": "Read external BCP runtime after resident convergence; act only on new durable evidence.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/nexus-runtime-r52",
-    "base_main_sha": "c5257018575fff57e15ee2aad2be9033be13599a",
+    "branch": "main",
+    "base_main_sha": "88e1844129d0f0c031eb2a29eddb83857487e42b",
     "no_replay": true
   },
   "runtime_verification": {
@@ -954,5 +954,21 @@
     "chatgpt_pc_active_version": "6.0.32",
     "chatgpt_pc_command_plane": "ALIVE",
     "lifecycle_registered": true
+  },
+  "nexus_0_1_2": {
+    "pr": 52,
+    "merged_main_sha": "88e1844129d0f0c031eb2a29eddb83857487e42b",
+    "ci": {
+      "nexus_transport": "PASS",
+      "qualified_current_release_contract": "PASS",
+      "coordinated_product_qualification": "PASS"
+    },
+    "runtime_strategy": "PINNED_PORTABLE_NODE_NPX",
+    "node_version": "24.21.0",
+    "wrangler_version": "4.135.0",
+    "manual_runtime_install_required": false,
+    "admin_required": false,
+    "telegram_secret_reentry_required": false,
+    "field_state": "AWAITING_RESIDENT_MANIFEST_CONVERGENCE"
   }
 }
