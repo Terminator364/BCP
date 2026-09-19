@@ -1,0 +1,55 @@
+{
+  "schema": "bcp.ax15go_gray_health/1",
+  "project": "BCP",
+  "status": "ENGINEERING_GATE_OPEN_RUNTIME_GAP",
+  "adopted_at": "2026-09-19",
+  "runtime_release_unchanged": true,
+  "rationale": "Current /health proves HTTP/liveness only. It must not certify authenticated command, SQLite authority, coordinator fence, project freshness, Nexus or Telegram.",
+  "required_dimensions": [
+    "SERVER_PROCESS_AND_HTTP_LIVENESS",
+    "LAN_TRANSPORT_REACHABLE",
+    "AUTHENTICATED_COMMAND_PATH_USABLE",
+    "SQLITE_AUTHORITY_WRITABLE",
+    "COORDINATOR_FENCE_VALID",
+    "PROJECT_REVISION_FRESH",
+    "B_EDGE_PAIRING_IDENTITY_VALID",
+    "NEXUS_REMOTE_INGRESS_INDEPENDENT",
+    "TELEGRAM_COCKPIT_INDEPENDENT"
+  ],
+  "rules": {
+    "health_endpoint_is_liveness_only": true,
+    "single_signal_cannot_promote_end_to_end_healthy": true,
+    "unknown_is_not_healthy": true,
+    "stale_is_not_healthy": true,
+    "local_core_health_independent_of_nexus": true,
+    "local_core_health_independent_of_telegram": true,
+    "remote_ingress_health_cannot_authorize_mutation": true,
+    "revision_and_fence_beat_wall_clock_for_authority": true,
+    "probes_bounded_and_side_effect_free_where_possible": true
+  },
+  "current_gap": {
+    "id": "BCP-R4-GRAY-HEALTH-RUNTIME-GAP",
+    "evidence": "windows/bcp_server.py /health currently returns ok=true for process/HTTP liveness; Android BcpClient.quick acceptance reads this before deeper authenticated checks.",
+    "severity": "P0_BEFORE_NEXT_COORDINATED_RELEASE",
+    "reason_not_hotpatched": "Changing windows/bcp_server.py would change the qualified 0.6.4 payload hash without a coordinated version/release update and could violate anti-downgrade/release identity invariants.",
+    "required_next_release_patch": [
+      "Label /health response health_class=LIVENESS_ONLY and promotes_end_to_end_health=false.",
+      "Expose authenticated bounded health vector at diagnostics/acceptance boundary.",
+      "Prove SQLite authority writer availability without persistent health-test mutation.",
+      "Require command path + authority + revision/fence + identity freshness before END_TO_END_HEALTHY.",
+      "Keep Nexus/Telegram failures as independent degraded dimensions; never demote functioning local core to dead.",
+      "Add Android acceptance regression and coordinated server/edge compatibility test."
+    ]
+  },
+  "gray_failures": [
+    "http_health_ok_but_authenticated_command_rejected_or_stalled",
+    "lan_reachable_but_sqlite_authority_read_only_or_locked",
+    "telegram_cockpit_green_but_coordinator_fence_stale",
+    "nexus_health_green_but_b_edge_offline",
+    "fresh_heartbeat_with_stale_project_revision",
+    "process_alive_but_pair_identity_or_server_generation_mismatch",
+    "internet_offline_while_local_lan_core_is_healthy",
+    "dns_success_but_specific_https_route_blackholed"
+  ],
+  "promotion_rule": "BCP END_TO_END_HEALTHY is a vector-derived state. /health alone can only prove SERVER_PROCESS_AND_HTTP_LIVENESS."
+}
