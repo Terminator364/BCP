@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_1_RUNTIME_ACTIVE_EDGE_2RC1_FIELD_VERIFY_PENDING",
-  "last_completed_atomic_action": "Machine-readable Drive telemetry after the B-EDGE initiated managed update proves BCP server 0.6.1 is now running on MBMPC with the release-pinned SHA-256 c97b8c66d9ba0d27428af6f59d7d53987cc6efaa306229688ae388f89f53c82e, lifecycle registration present, pairing preserved and update_state=UP_TO_DATE. The update transitioned through SELFTEST -> SERVER_START -> APPLIED_RESTART_PENDING -> UP_TO_DATE without replaying the install.",
-  "next_action": "Do not reinstall the Windows server. Verify exact B-EDGE 2.0.0-rc1 Evergreen identity/readback on the dedicated old phone and investigate the remaining ChatGPT-PC recovery_result_status ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD before promoting the coordinated release train to FIELD_VERIFIED. Then continue the Telegram progress-presence/Nexus field gate.",
+  "status": "BCP_0_6_1_EDGE_2RC1_CONNECTED_RECOVERY_POINTER_CLASSIFICATION_PENDING",
+  "last_completed_atomic_action": "Fresh machine-readable telemetry proves the dedicated Samsung SM-A217F B-EDGE is connected as edge_version 2.0.0-rc1 to BCP 0.6.1 on MBMPC. The phone heartbeat was accepted and pairing remained intact after the managed server update.",
+  "next_action": "No user reinstall. Classify the remaining ChatGPT-PC ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD and obtain an installed-APK identity/hash attestation before promoting B-EDGE 2.0.0-rc1 to exact artifact FIELD_VERIFIED. In parallel continue the human-first Telegram progress journal/Nexus field gate without scheduled ChatGPT automations.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -174,13 +174,13 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-061-FIELD-RUNTIME-READBACK-20260919-1916",
-    "status": "WINDOWS_RUNTIME_VERIFIED_EDGE_AND_RECOVERY_GATES_PENDING",
-    "last_completed_action": "Captured post-update 0.6.1 machine-readable heartbeat and update transition from Drive.",
-    "next_atomic_action": "Verify exact B-EDGE 2.0.0-rc1 identity/readback and classify the remaining recovery pointer mismatch hold; no reinstall/replay.",
+    "checkpoint_id": "BCP-061-EDGE2RC1-FIELD-CONNECTED-20260919-1915",
+    "status": "WINDOWS_061_AND_EDGE_VERSION_CONNECTED_RECOVERY_POINTER_AND_APK_ATTESTATION_PENDING",
+    "last_completed_action": "Captured 2.0.0-rc1 phone heartbeat/connection readback after BCP 0.6.1 update.",
+    "next_atomic_action": "Classify recovery pointer mismatch; then add exact installed APK attestation and continue Nexus/progress-presence field qualification.",
     "diagnostic_mode": "MACHINE_READABLE_EVIDENCE_PRIMARY",
-    "branch": "work/bcp/field-readback-061-20260919-1916",
-    "base_main_sha": "a9064a43f9cf7f7d67bf86e86e0f204873236ea7",
+    "branch": "work/bcp/edge-field-readback-2rc1-20260919-1915",
+    "base_main_sha": "6a4cf28a98f30e6dff525a18a8a6d4862326273f",
     "no_replay": true
   },
   "runtime_verification": {
@@ -841,5 +841,24 @@
       "resolve or classify ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
       "coordinated PC<->B-EDGE final field acceptance"
     ]
+  },
+  "latest_edge_field_evidence_2_0_0_rc1": {
+    "observed_at_utc": "2026-09-19T18:15:29+00:00",
+    "observed_at_kinshasa": "2026-09-19T19:15:29+01:00",
+    "source": "legacy compatibility projection CHATGPT_PC_AGENT/03_TELEMETRY/BCP/BCP_LATEST.json mirrored after server update",
+    "evidence_status": "MACHINE_READBACK",
+    "event_type": "TELEMETRY_RECEIVED",
+    "server_version": "0.6.1",
+    "pc_name": "MBMPC",
+    "paired": true,
+    "device_name": "samsung SM-A217F",
+    "edge_version": "2.0.0-rc1",
+    "project": "buildhub",
+    "status": "CONNECTED",
+    "last_event_type": "PHONE_HEARTBEAT",
+    "accepted": 5,
+    "edge_version_and_connectivity_verified": true,
+    "exact_installed_apk_sha256_verified": false,
+    "no_manual_reinstall_required": true
   }
 }

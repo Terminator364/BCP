@@ -1,0 +1,33 @@
+{
+  "schema": "bcp.field_evidence/1",
+  "writer_or_session_id": "chat-bcp-edge-2rc1-20260919-1915",
+  "project_or_mission": "API/BCP field convergence 0.6.1 + B-EDGE 2.0.0-rc1",
+  "base_main_sha": "6a4cf28a98f30e6dff525a18a8a6d4862326273f",
+  "created_at": "2026-09-19T18:15:29Z",
+  "intended_file_scope": [
+    "project_state.json",
+    "release/current.json",
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_0_0_RC1_20260919T181529Z.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Coordinated Product Qualification"
+  ],
+  "machine_readback": {
+    "event_type": "TELEMETRY_RECEIVED",
+    "server_version": "0.6.1",
+    "pc_name": "MBMPC",
+    "paired": true,
+    "device_name": "samsung SM-A217F",
+    "edge_version": "2.0.0-rc1",
+    "project": "buildhub",
+    "status": "CONNECTED",
+    "last_event_type": "PHONE_HEARTBEAT",
+    "accepted": 5
+  },
+  "interpretation": {
+    "edge_version_and_connectivity": "VERIFIED",
+    "exact_installed_apk_hash": "PENDING",
+    "windows_bcp_0_6_1_exact_hash_runtime": "VERIFIED_FROM_PREVIOUS_FIELD_EVIDENCE",
+    "coordinated_train": "PARTIAL_FIELD_VERIFICATION"
+  }
+}

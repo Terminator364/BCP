@@ -15,16 +15,16 @@
     "windows_bcp": {
       "version": "0.6.1",
       "source_manifest": "release/server.json",
-      "qualification": "CI_QUALIFIED",
+      "qualification": "FIELD_VERIFIED",
       "distribution_ready": true,
-      "field_verified": false,
+      "field_verified": true,
       "auto_update_eligible": true,
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
         "sha256": "c97b8c66d9ba0d27428af6f59d7d53987cc6efaa306229688ae388f89f53c82e"
       },
-      "notes": "Field telemetry proves BCP 0.6.0 is currently running. BCP 0.6.1 reconciles that field line with R7 durable mission continuity and is CI-qualified for managed auto-update; fresh 0.6.1 field readback is still required."
+      "notes": "Fresh machine-readable Drive telemetry at 2026-09-19T18:16:05Z proves BCP 0.6.1 is running on MBMPC with the release-pinned SHA-256, pairing preserved, lifecycle registration present and update_state=UP_TO_DATE. ChatGPT-PC separately still reports ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD and remains a recovery-plane classification gate."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -38,7 +38,7 @@
         "url": "/v1/edge/update/apk",
         "sha256": "c1640260cbaafdd92bb69c98f6780b5b03d26ad4bf1553bce393dbaf33c8c389"
       },
-      "notes": "Drive CURRENT contains the privately signed B-EDGE 2.0.0-rc1 APK and its file SHA-256 matches the signed manifest. Exact installation/readback on the dedicated phone remains required before FIELD_VERIFIED."
+      "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
     },
     "nexus": {
       "version": "0.1.0",
