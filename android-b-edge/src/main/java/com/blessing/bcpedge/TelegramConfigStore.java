@@ -87,7 +87,7 @@ public final class TelegramConfigStore {
         long existingChat = prefs.getLong("pending_chat_id", 0L);
         long existingUser = prefs.getLong("pending_user_id", 0L);
         if (existingChat != 0L || existingUser != 0L) {
-            return existingChat == chatId && existingUser == userId;
+            return false;
         }
         return prefs.edit()
                 .putLong("pending_chat_id", chatId)
@@ -130,6 +130,16 @@ public final class TelegramConfigStore {
     public synchronized boolean hasAuthorizedIdentity() {
         return prefs.getLong("allowed_chat_id", 0L) != 0L &&
                 prefs.getLong("allowed_user_id", 0L) != 0L;
+    }
+
+    public synchronized void markServicePoll() {
+        prefs.edit().putLong("service_poll_at", System.currentTimeMillis()).apply();
+    }
+
+    public synchronized boolean servicePollFresh(long maxAgeMs) {
+        long at = prefs.getLong("service_poll_at", 0L);
+        long now = System.currentTimeMillis();
+        return at > 0L && now >= at && (now - at) <= Math.max(5_000L, maxAgeMs);
     }
 
     public synchronized long getLastUpdateId() {
