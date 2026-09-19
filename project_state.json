@@ -635,7 +635,7 @@
     "integrated_main_sha": "5ed85e844f6baf99b8feb14f5dfa909a1465f2b5",
     "telegram_ci_run_id": 35435910072,
     "coordinated_ci_run_id": 35435910071,
-    "package_sha256": "303337e1d32f0d38b2dfac3112b6201ff7659c16057f0667ba2294783845db4d",
+    "package_sha256": "dc452da1f7b8e293c161f334cfd88733754ba5dfb9a00d253b734c410ca123eb",
     "configurator_fix_pr": 16,
     "configurator_fix_commit": "1d4f1ba7f745602034a06ec1f9a617a3b47f66c7",
     "configurator_fix_merged_main_sha": "117801e49f83ced93397905b695f2c54104ddb8c",
@@ -643,6 +643,9 @@
     "coordinated_ci_result": "PASS",
     "drive_package_file_id": "196faKtzlkgt4q2iEpokfeh38FaZ0qUf9",
     "drive_package_file_name": "BCP_TELEGRAM_OBSERVABILITY_MVP.zip",
-    "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk"
+    "drive_package_url": "https://drive.google.com/file/d/196faKtzlkgt4q2iEpokfeh38FaZ0qUf9/view?usp=drivesdk",
+    "superseded_baseline_package_sha256": "303337e1d32f0d38b2dfac3112b6201ff7659c16057f0667ba2294783845db4d",
+    "package_hash_basis": "CURRENT_DRIVE_BYTES_AFTER_POWERSHELL_FIX",
+    "drive_package_verified_contains_powershell_fix": true
   }
 }
