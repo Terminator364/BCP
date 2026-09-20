@@ -3548,7 +3548,7 @@ class Handler(BaseHTTPRequestHandler):
 def selftest():
     import tempfile
 
-    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH
+    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG
     with tempfile.TemporaryDirectory() as td:
         APP_ROOT = Path(td)
         STATE_DIR = APP_ROOT / "state"
@@ -3556,6 +3556,9 @@ def selftest():
         DB_PATH = STATE_DIR / "bcp.sqlite3"
         TOKEN_PATH = STATE_DIR / "bcp_token.txt"
         PAIR_PATH = STATE_DIR / "paired_edge.json"
+        MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
+        MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
+        MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
         token = ensure_state()
         assert token
         r1 = commit_event(
@@ -3736,7 +3739,43 @@ def selftest():
         )
         assert hold["mission"]["next_step"] == "validate"
         assert mission_next_action(mission_id)["next_action"]["id"] == "validate"
-        assert len(mission_tail(mission_id, 50)) >= 4
+        assert request_mission_resume(mission_id, "SELFTEST").get("result") == "HUMAN_GATE"
+        resumed = append_mission_event(
+            mission_id,
+            "STARTED",
+            "mission-selftest-resume-started",
+            step_id="validate",
+            worker_component="LOCAL",
+            summary="Resume path is again machine-runnable.",
+            status="STARTED",
+            failure_hold_reason="",
+            payload={"next_step": "validate"},
+        )
+        assert resumed["result"] == "RECORDED"
+        # Force only the non-watchdog evidence anchor stale. The watchdog retry
+        # event itself must never be allowed to masquerade as real task progress.
+        old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=20)).replace(microsecond=0).isoformat()
+        with db_connection() as cx:
+            cx.execute(
+                "UPDATE mission_events SET created_at=? WHERE mission_id=? AND idempotency_key=?",
+                (old, mission_id, "mission-selftest-resume-started"),
+            )
+            cx.execute(
+                "UPDATE missions SET last_progress_at=?,updated_at=? WHERE mission_id=?",
+                (old, old, mission_id),
+            )
+        wd1 = mission_watchdog_tick()
+        assert wd1["state"] == "RESUME_REQUESTED"
+        assert wd1["attempt_count"] == 1
+        req1 = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
+        assert req1.get("state") == "QUEUED"
+        assert req1.get("mission_id") == mission_id
+        ack = consume_mission_resume_request()
+        assert ack["result"] == "ACKNOWLEDGED"
+        # Same anchor + cooldown => no duplicate automatic retry.
+        wd2 = mission_watchdog_tick()
+        assert wd2["attempt_count"] == 1
+        assert len(mission_tail(mission_id, 50)) >= 5
         assert provider_call_allowed(0.0, "ACTIVE_FREE_PROVIDER") == (True, "ALLOW")
         assert provider_call_allowed(0.01, "ACTIVE_FREE_PROVIDER") == (False, "COST_HOLD")
         assert provider_call_allowed(0.0, "FIELD_UNVERIFIED") == (False, "FREE_MODEL_CAPACITY_HOLD")
