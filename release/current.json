@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "882fd914f703d7826df3466c0e6bd75566aadd7a41b15314ab8c8e6430a547cc"
+        "sha256": "619f2de9d04c673f1252879e3411c82ccc5513b89476d7e6b5a7d580d1013f96"
       },
       "notes": "Nexus 0.1.8 automatically falls back from failing system npx/wrangler to a pinned portable Node runtime using direct node.exe -> npx-cli.js invocation. No manual runtime install, secret re-entry, PowerShell, or ZIP shuttle."
     }
