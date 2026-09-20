@@ -1175,6 +1175,7 @@ The human cockpit MUST expose a **J’ai vu** acknowledgement for the current at
 - suppresses repeat interruption for that exact unchanged signal;
 - MUST NOT mark the underlying incident resolved;
 - MUST NOT suppress a new root cause, worsened severity, or a new human-action gate;
+- is cleared after stable observable recovery, so a later recurrence of the same root cause can notify as a new incident;
 - remains local/durable and secret-free.
 
 ### Anti-flapping
