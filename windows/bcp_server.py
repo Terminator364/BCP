@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.5"
+SERVER_VERSION = "0.7.6"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -3082,6 +3082,62 @@ def conversation_messages(conversation_id: str, limit: int = 8) -> list[dict]:
         ).fetchall()
     return [dict(r) for r in reversed(rows)]
 
+def _elapsed_seconds_between(start_value: str, end_value: str) -> int | None:
+    try:
+        start = dt.datetime.fromisoformat(str(start_value or "").replace("Z", "+00:00"))
+        end = dt.datetime.fromisoformat(str(end_value or "").replace("Z", "+00:00"))
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=dt.timezone.utc)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=dt.timezone.utc)
+        return max(0, int((end.astimezone(dt.timezone.utc) - start.astimezone(dt.timezone.utc)).total_seconds()))
+    except Exception:
+        return None
+
+def conversation_latency_summary(conversation_id: str) -> dict:
+    cid = str(conversation_id or "")[:64]
+    messages = conversation_messages(cid, 20)
+    assistant = None
+    user = None
+    for msg in reversed(messages):
+        if assistant is None and str(msg.get("role") or "").upper() == "ASSISTANT":
+            assistant = msg
+            continue
+        if assistant is not None and str(msg.get("role") or "").upper() == "USER":
+            user = msg
+            break
+    out = {
+        "schema": "bcp.conversation_latency/1",
+        "conversation_id": cid,
+        "producer_response_seconds": None,
+        "producer_to_bcp_mirror_seconds": None,
+        "bcp_mirror_to_seen_seconds": None,
+        "user_to_seen_seconds": None,
+        "seen_evidence": False,
+        "truth_boundary": "MEASURED_FROM_DURABLE_RECEIPT_TIMESTAMPS_ONLY",
+    }
+    if not assistant:
+        return out
+    if user:
+        out["producer_response_seconds"] = _elapsed_seconds_between(
+            user.get("generated_at"), assistant.get("generated_at")
+        )
+    out["producer_to_bcp_mirror_seconds"] = _elapsed_seconds_between(
+        assistant.get("generated_at"), assistant.get("mirrored_at")
+    )
+    if assistant.get("seen_at"):
+        out["seen_evidence"] = True
+        out["bcp_mirror_to_seen_seconds"] = _elapsed_seconds_between(
+            assistant.get("mirrored_at"), assistant.get("seen_at")
+        )
+        if user:
+            out["user_to_seen_seconds"] = _elapsed_seconds_between(
+                user.get("generated_at"), assistant.get("seen_at")
+            )
+    out["assistant_sequence"] = int(assistant.get("sequence") or 0)
+    out["assistant_delivery_state"] = str(assistant.get("delivery_state") or "")
+    return out
+
 def conversation_mark_seen(conversation_id: str, sequence: int = 0) -> dict:
     cid = str(conversation_id or "")[:64]
     now = utc_now()
@@ -3975,6 +4031,12 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.send_json(400, {"error": "conversation_producer_heartbeat_failed", "detail": str(e)[:240]})
             return
+        if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "latency":
+            self.send_json(200, {
+                "ok": True,
+                "latency": conversation_latency_summary(parts[2]),
+            })
+            return
         if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "messages":
             query = parse_qs(urlparse(self.path).query)
             try:
@@ -4592,6 +4654,8 @@ def selftest():
         assert "/v1/conversations" in source
         assert "conversation_delivery_gaps" in source
         assert "sync_chatgpt_pc_flow_ledger" in source
+        assert "conversation_latency_summary" in source
+        assert "MEASURED_FROM_DURABLE_RECEIPT_TIMESTAMPS_ONLY" in source
         assert "mode=ro" in source
         assert "CHATGPT_PC_FLOW_LEDGER" in source
         assert "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE" in source
