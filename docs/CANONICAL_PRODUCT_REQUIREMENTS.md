@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R31
+Revision: 2026-09-20-R34
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1415,3 +1415,23 @@ The watcher MUST:
 - preserve zero-dollar, secret hygiene, idempotence, and single-receiver semantics.
 
 This is an optimization of update detection, not a bypass of Cloudflare authorization.
+
+
+## P0 — Independent Outbound Update Lanes / R34
+
+This requirement is additive and preserves R31.
+
+Fresh field telemetry from the resident Windows node showed that one outbound transport failure could leave the server update check in `CHECK_FAILED` while Telegram/Nexus convergence remained pending. Resident update orchestration MUST therefore isolate transport lanes so a failure in one remote endpoint does not suppress reconciliation attempts for the others.
+
+BCP MUST:
+- treat SERVER, TELEGRAM_COMPANION and NEXUS as independent update/reconciliation lanes;
+- preserve hash verification, allowlists, rollback and zero-dollar policy in every lane;
+- classify bounded outbound failures into machine-readable transport classes, including timeout, DNS resolution, TLS/certificate failure and connection refusal where observable;
+- persist a bounded sanitized error detail and next retry delay without secrets;
+- use bounded retry/backoff under weak connectivity rather than tight loops;
+- preserve the normal low-data cadence when healthy;
+- keep companion reconciliation eligible even when the server manifest check fails;
+- never infer that a provider human-auth gate is resolved merely because transport recovers;
+- never replay a completed install merely because convergence telemetry is delayed.
+
+The target BCP release for this requirement is 0.7.8. Windows installer, acceptance runner, server manifest and CURRENT metadata MUST remain version-aligned to prevent recurrence of the R32 drift class.

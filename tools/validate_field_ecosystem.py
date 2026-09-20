@@ -52,6 +52,11 @@ def main() -> int:
     require(
         server,
         "AUTO_UPDATE_INTERVAL_SECONDS",
+        "UPDATE_NETWORK_BACKOFF_SECONDS",
+        "_transport_error_detail",
+        '"transport_lane": "SERVER"',
+        '"transport_lane": "TELEGRAM_COMPANION"',
+        '"transport_lane": "NEXUS"',
         "NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS",
         "NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS",
         "start_nexus_human_gate_manifest_watcher",
