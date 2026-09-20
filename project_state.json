@@ -3,8 +3,8 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R54_HUMAN_PRESENTATION_DEEP_AUDIT_IMPLEMENTED_CI_PENDING",
-  "last_completed_atomic_action": "R54 deep human-presentation audit implemented across Telegram direct and Nexus: user-visible Kinshasa time, human-first reports 1-3, structured technical report, hierarchical dependency-free PDFs, French WinAnsi glyphs, anti-double-title, Page X/Y, Nexus caption localization, and Nexus worker health version reconciliation to 0.2.6. Representative PDF render inspected visually; field-generated PDFs remain unverified. R54 CI counter-audit caught a case-sensitive selftest oracle; it now verifies the required Kinshasa/UTC semantics rather than exact sentence casing. Telegram V18 hash refreshed. R54 selftest now preserves missing-time truth: no Kinshasa timestamp is invented when last-visit time is absent; when a timestamp is present it is localized. Telegram V18 release hash/notes reconciled. Final Telegram V18 source byte hash pinned to e18c4d3e... after the concurrent last-visit truth-test commit.",
-  "next_action": "Qualify the exact R54 PR head through Telegram, Nexus, CURRENT, Field Ecosystem and coordinated product CI; repair any exact failure. If all required gates are green and main is unchanged, merge serialized. Then observe PC convergence to Telegram V18/Nexus 0.2.6 and render/read all four field PDFs before FIELD_VERIFIED.",
+  "last_completed_atomic_action": "R54 deep human-presentation audit implemented across Telegram direct and Nexus: user-visible Kinshasa time, human-first reports 1-3, structured technical report, hierarchical dependency-free PDFs, French WinAnsi glyphs, anti-double-title, Page X/Y, Nexus caption localization, and Nexus worker health version reconciliation to 0.2.6. Representative PDF render inspected visually; field-generated PDFs remain unverified. R54 CI counter-audit caught a case-sensitive selftest oracle; it now verifies the required Kinshasa/UTC semantics rather than exact sentence casing. Telegram V18 hash refreshed. R54 selftest now preserves missing-time truth: no Kinshasa timestamp is invented when last-visit time is absent; when a timestamp is present it is localized. Telegram V18 release hash/notes reconciled. Final Telegram V18 source byte hash pinned to e18c4d3e... after the concurrent last-visit truth-test commit. H54-11 closed: normal Messages récents no longer exposes caught up/CHATGPT_UI/COMPLETE as primary human text. Telegram V18 SHA pinned to 04b35117...",
+  "next_action": "Run exact-head R54 CI after final human-state translation; merge only if CURRENT, Telegram, Nexus, Field Ecosystem and Coordinated Product are green on the same head; then field-converge and inspect all four real PDFs.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1923,7 +1923,7 @@
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
     "requirements_revision": "2026-09-20-R54",
     "telegram_target_version": "2026.09.20-cadence-telemetry-v18",
-    "telegram_sha256": "e18c4d3e592e480581b529e7033d160e4db98517abbb44a717d982741d2ab77b",
+    "telegram_sha256": "04b35117dcc049ce1426627ccec5af6c5c796a01f95f53d77e6a342514fc39b5",
     "nexus_target_version": "0.2.6",
     "nexus_worker_sha256": "cee0c442efad084bf888418dd641e63acfaace0e40efce770405fe3cf5b4cadd",
     "nexus_manifest_sha256": "ea3cb82755ddcfb3642f123c45d9e5e11debc10dc4b44ed8531ded53daccb5ae",
@@ -1959,7 +1959,8 @@
       "H54-07_FRENCH_GLYPH_ENCODING",
       "H54-08_DUAL_PDF_RENDERER_DRIFT",
       "H54-09_NEXUS_PDF_CAPTION_UTC",
-      "H54-10_NEXUS_HEALTH_VERSION_DRIFT"
+      "H54-10_NEXUS_HEALTH_VERSION_DRIFT",
+      "H54-11_HUMAN_VIEW_INTERNAL_ENGLISH_STATES"
     ],
     "docs": [
       "docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md",
