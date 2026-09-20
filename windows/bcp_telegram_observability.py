@@ -39,6 +39,9 @@ WATCHDOG_NOTIFY_STATE_PATH = STATE_DIR / "telegram_watchdog_notify_state.json"
 USER_SEEN_STATE_PATH = STATE_DIR / "telegram_user_seen.json"
 NOTIFICATION_POLICY_PATH = STATE_DIR / "telegram_notification_policy.json"
 ATTENTION_NOTIFY_STATE_PATH = STATE_DIR / "telegram_attention_notify_state.json"
+ATTENTION_ACK_STATE_PATH = STATE_DIR / "telegram_attention_ack.json"
+ATTENTION_PENDING_STATE_PATH = STATE_DIR / "telegram_attention_pending.json"
+NOTIFICATION_BUDGET_STATE_PATH = STATE_DIR / "telegram_notification_budget.json"
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -62,7 +65,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/report", "/reporttech",
+    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/ack", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -1133,6 +1136,7 @@ class Service:
             "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Activité</tg-button>"
             "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Continuer</tg-button>"
             "</tg-button-row>"
+            + ("<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:ack\">✅ J’ai vu</tg-button></tg-button-row>" if level in {"CRITICAL","ACTION","WATCH"} else "") +
             "<footer>Fallback V9 texte actif si Rich Messages n’est pas disponible.</footer>"
         )
 
@@ -1789,6 +1793,123 @@ class Service:
                 lines.append(icon + " " + level + " · " + area + "\n   " + text_value)
         return "\n".join(lines)
 
+    def _attention_key(self, snapshot: dict | None = None) -> tuple[str, str, str]:
+        snap = snapshot or (self.presence_snapshot().get("snapshot") or {})
+        level = str(snap.get("attention_level") or "NORMAL")
+        reasons = list(snap.get("attention_reasons") or [])
+        root = clean(reasons[0] if reasons else level, 180)
+        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        return key, level, root
+
+    def acknowledge_attention(self) -> str:
+        snap = self.presence_snapshot().get("snapshot") or {}
+        key, level, root = self._attention_key(snap)
+        if level not in {"CRITICAL", "ACTION", "WATCH"}:
+            return "ℹ️ Aucun signal prioritaire n’a besoin d’être acquitté pour le moment."
+        atomic_json(ATTENTION_ACK_STATE_PATH, {
+            "schema": "bcp.telegram_attention_ack/1",
+            "key": key,
+            "level": level,
+            "root": root,
+            "acknowledged_at": utc_now(),
+        })
+        return (
+            "✅ Pris en compte.\n"
+            + self._attention_label(level)
+            + ("\n" + root if root else "")
+            + "\nJe n’interromprai plus pour ce même signal inchangé; une aggravation ou un nouveau motif reste prioritaire."
+        )
+
+    def attention_is_acknowledged(self, key: str) -> bool:
+        state = read_json(ATTENTION_ACK_STATE_PATH, {}) or {}
+        return bool(key) and str(state.get("key") or "") == str(key)
+
+    def clear_attention_ack(self) -> None:
+        try:
+            ATTENTION_ACK_STATE_PATH.unlink(missing_ok=True)
+        except Exception:
+            try:
+                atomic_json(ATTENTION_ACK_STATE_PATH, {
+                    "schema": "bcp.telegram_attention_ack/1",
+                    "key": "",
+                    "cleared_at": utc_now(),
+                })
+            except Exception:
+                pass
+
+    def recovery_transition_stable(self, key: str, level: str) -> bool:
+        """Damp recovery flapping: require two observations or 60 seconds."""
+        now = int(time.time())
+        state = read_json(ATTENTION_PENDING_STATE_PATH, {}) or {}
+        if str(state.get("key") or "") != key or str(state.get("level") or "") != level:
+            atomic_json(ATTENTION_PENDING_STATE_PATH, {
+                "schema": "bcp.telegram_attention_pending/1",
+                "key": key,
+                "level": level,
+                "first_seen_epoch": now,
+                "count": 1,
+                "updated_at": utc_now(),
+            })
+            return False
+        count = int(state.get("count") or 0) + 1
+        first = int(state.get("first_seen_epoch") or now)
+        atomic_json(ATTENTION_PENDING_STATE_PATH, {
+            "schema": "bcp.telegram_attention_pending/1",
+            "key": key,
+            "level": level,
+            "first_seen_epoch": first,
+            "count": count,
+            "updated_at": utc_now(),
+        })
+        return count >= 2 or (now - first) >= 60
+
+    def _notification_budget_window(self) -> tuple[list[int], int, int]:
+        now = int(time.time())
+        window = 30 * 60
+        limit = 3
+        state = read_json(NOTIFICATION_BUDGET_STATE_PATH, {}) or {}
+        stamps = []
+        for value in state.get("sent_epochs") or []:
+            try:
+                value = int(value)
+            except Exception:
+                continue
+            if now - value < window:
+                stamps.append(value)
+        return stamps, window, limit
+
+    def notification_budget_available(self, category: str, critical: bool = False) -> bool:
+        """Check interruption budget without consuming it. Delivery is charged only after success."""
+        if critical:
+            return True
+        stamps, window, limit = self._notification_budget_window()
+        if len(stamps) < limit:
+            return True
+        atomic_json(NOTIFICATION_BUDGET_STATE_PATH, {
+            "schema": "bcp.telegram_notification_budget/2",
+            "sent_epochs": stamps,
+            "window_seconds": window,
+            "limit": limit,
+            "suppressed_category": clean(category, 80),
+            "updated_at": utc_now(),
+        })
+        return False
+
+    def record_notification_delivery(self, category: str, critical: bool = False) -> None:
+        """Count only a positively delivered routine interruption."""
+        if critical:
+            return
+        stamps, window, limit = self._notification_budget_window()
+        stamps.append(int(time.time()))
+        atomic_json(NOTIFICATION_BUDGET_STATE_PATH, {
+            "schema": "bcp.telegram_notification_budget/2",
+            "sent_epochs": stamps[-limit:],
+            "window_seconds": window,
+            "limit": limit,
+            "last_delivered_category": clean(category, 80),
+            "updated_at": utc_now(),
+        })
+
     def quiet_mode(self, minutes: int) -> str:
         if minutes <= 0:
             atomic_json(NOTIFICATION_POLICY_PATH, {
@@ -1853,7 +1974,7 @@ class Service:
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
-            "/continue — demander une reprise durable\n/status — situation actuelle\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "/continue — demander une reprise durable\n/status — situation actuelle\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/ack — confirmer que vous avez vu le signal courant\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -1870,6 +1991,8 @@ class Service:
         arg = rest[0].strip() if rest else ""
         if cmd == "/continue":
             return self.request_continue("TELEGRAM_COMMAND")
+        if cmd == "/ack":
+            return self.acknowledge_attention()
         if cmd == "/quiet":
             try:
                 minutes = 0 if arg.lower() in {"off","normal","0"} else int(arg or "120")
@@ -1877,7 +2000,7 @@ class Service:
                 return "Usage: /quiet 120 · /quiet off"
             return self.quiet_mode(minutes)
         if cmd not in READ_ONLY_COMMANDS:
-            return "Commandes: /continue /status /since /why /risks /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Commandes: /continue /status /since /why /risks /ack /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -1949,6 +2072,7 @@ class Telegram:
                     {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
                 ],
                 [
+                    {"text": "✅ J’ai vu", "callback_data": "bcp:ack"},
                     {"text": "🔕 Discret 2h", "callback_data": "bcp:quiet:120"},
                     {"text": "🔔 Normal", "callback_data": "bcp:quiet:off"},
                 ],
@@ -2098,6 +2222,7 @@ class Telegram:
             "bcp:since": ("/since", "Résumé depuis votre visite"),
             "bcp:why": ("/why", "Explication"),
             "bcp:risks": ("/risks", "Radar des risques"),
+            "bcp:ack": ("/ack", "Signal pris en compte"),
             "bcp:where": ("/where", "Étape actuelle"),
             "bcp:tail": ("/tail", "Activité fine"),
             "bcp:missions": ("/objective", "Objectif"),
@@ -2237,33 +2362,70 @@ class Telegram:
     def _push_attention_transition(self) -> None:
         snap = self.service.presence_snapshot()
         state = snap.get("snapshot") or {}
-        level = str(state.get("attention_level") or "NORMAL")
-        reasons = list(state.get("attention_reasons") or [])
-        root = clean(reasons[0] if reasons else level, 180)
-        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        key, level, root = self.service._attention_key(state)
         prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
         prior_level = str(prior.get("level") or "")
         prior_key = str(prior.get("key") or "")
-        if prior_key == key:
-            return
+        prior_open = bool(prior.get("incident_open")) or prior_level in {"CRITICAL", "ACTION"}
+        already_ack = self.service.attention_is_acknowledged(key)
 
-        text = ""
+        # Same incident already delivered/acknowledged does not interrupt again.
+        # A failed delivery is never marked done, so it remains retryable.
+        if prior_key == key:
+            if level not in {"CRITICAL", "ACTION"} or bool(prior.get("notified")) or already_ack:
+                return
+
         critical = level in {"CRITICAL", "ACTION"}
-        if level in {"CRITICAL", "ACTION"}:
+        recovery = prior_open and level in {"ACTIVE", "NORMAL"}
+        if recovery and not self.service.recovery_transition_stable(key, level):
+            return
+        if recovery:
+            self.service.clear_attention_ack()
+
+        acknowledged = self.service.attention_is_acknowledged(key)
+        text = ""
+        if critical:
             text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
-        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+        elif recovery:
             text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
-        # WATCH remains visible in the live card/Radar but is deliberately not
-        # pushed as a page-like alert while automation can still handle it.
-        if text and self.service.notifications_allowed(critical):
-            self.send(text, silent=(level in {"ACTIVE", "NORMAL"}))
+        category = "attention:" + ("critical" if critical else "recovery")
+        budget_ok = self.service.notification_budget_available(category, critical=critical)
+        allowed = bool(text) and not acknowledged and self.service.notifications_allowed(critical) and budget_ok
+        delivered = False
+        if allowed:
+            try:
+                delivered = self.send(text, silent=recovery) is not None
+            except Exception as e:
+                append_log("ATTENTION_DELIVERY_DEFERRED", transport="DIRECT_TELEGRAM",
+                           error_class=type(e).__name__, detail=clean(e, 140))
+                delivered = False
+            if delivered:
+                self.service.record_notification_delivery(category, critical=critical)
+            else:
+                # Keep the previous incident state authoritative so reconnect can retry.
+                return
+
+        if critical:
+            incident_open = True
+        elif recovery:
+            incident_open = False
+        elif level == "WATCH":
+            incident_open = prior_open
+        else:
+            incident_open = False
+
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
-            "schema": "bcp.telegram_attention_notice/1",
+            "schema": "bcp.telegram_attention_notice/3",
             "key": key,
             "level": level,
             "root": root,
+            "incident_open": incident_open,
+            "acknowledged": acknowledged,
+            "notified": bool(delivered),
+            "notification_suppressed": bool(text) and not allowed,
             "updated_at": utc_now(),
+            "transport": "DIRECT_TELEGRAM",
         })
 
     def _push_system_presence(self) -> None:
@@ -2553,30 +2715,66 @@ class Nexus:
     def _push_attention_transition(self) -> None:
         snap = self.service.presence_snapshot()
         state = snap.get("snapshot") or {}
-        level = str(state.get("attention_level") or "NORMAL")
-        reasons = list(state.get("attention_reasons") or [])
-        root = clean(reasons[0] if reasons else level, 180)
-        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        key, level, root = self.service._attention_key(state)
         prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
         prior_level = str(prior.get("level") or "")
         prior_key = str(prior.get("key") or "")
-        if prior_key == key:
-            return
+        prior_open = bool(prior.get("incident_open")) or prior_level in {"CRITICAL", "ACTION"}
+        already_ack = self.service.attention_is_acknowledged(key)
 
-        text = ""
+        if prior_key == key:
+            if level not in {"CRITICAL", "ACTION"} or bool(prior.get("notified")) or already_ack:
+                return
+
         critical = level in {"CRITICAL", "ACTION"}
-        if level in {"CRITICAL", "ACTION"}:
+        recovery = prior_open and level in {"ACTIVE", "NORMAL"}
+        if recovery and not self.service.recovery_transition_stable(key, level):
+            return
+        if recovery:
+            self.service.clear_attention_ack()
+
+        acknowledged = self.service.attention_is_acknowledged(key)
+        text = ""
+        if critical:
             text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
-        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+        elif recovery:
             text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
-        if text and self.service.notifications_allowed(critical):
-            self.push(text, "attention:" + key, silent=(level in {"ACTIVE", "NORMAL"}))
+        category = "attention:" + ("critical" if critical else "recovery")
+        budget_ok = self.service.notification_budget_available(category, critical=critical)
+        allowed = bool(text) and not acknowledged and self.service.notifications_allowed(critical) and budget_ok
+        delivered = False
+        if allowed:
+            try:
+                self.push(text, "attention:" + key, silent=recovery)
+                delivered = True
+            except Exception as e:
+                append_log("ATTENTION_DELIVERY_DEFERRED", transport="NEXUS",
+                           error_class=type(e).__name__, detail=clean(e, 140))
+                delivered = False
+            if delivered:
+                self.service.record_notification_delivery(category, critical=critical)
+            else:
+                return
+
+        if critical:
+            incident_open = True
+        elif recovery:
+            incident_open = False
+        elif level == "WATCH":
+            incident_open = prior_open
+        else:
+            incident_open = False
+
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
-            "schema": "bcp.telegram_attention_notice/1",
+            "schema": "bcp.telegram_attention_notice/3",
             "key": key,
             "level": level,
             "root": root,
+            "incident_open": incident_open,
+            "acknowledged": acknowledged,
+            "notified": bool(delivered),
+            "notification_suppressed": bool(text) and not allowed,
             "updated_at": utc_now(),
             "transport": "NEXUS",
         })
@@ -2866,7 +3064,7 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:where", "bcp:tail", "bcp:missions",
+            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack", "bcp:where", "bcp:tail", "bcp:missions",
             "bcp:quiet:120", "bcp:quiet:off", "bcp:details",
             "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
@@ -2874,6 +3072,8 @@ def selftest() -> int:
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
+        ack_text = svc.acknowledge_attention()
+        assert "Pris en compte" in ack_text or "Aucun signal prioritaire" in ack_text
         rich = svc.rich_status_html()
         assert "<table bordered striped compact>" in rich
         assert 'style="success"' in rich or 'style="primary"' in rich or 'style="danger"' in rich

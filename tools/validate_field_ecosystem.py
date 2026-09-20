@@ -162,7 +162,7 @@ def main() -> int:
         "bcp:quiet:120",
         "bcp:pdf:devices",
         "bcp:pdf:mission",
-        'version: "0.2.1"',
+        'version: "0.2.2"',
     )
     assert "allow_paid_broadcast" not in telegram
     assert "allow_paid_broadcast" not in nexus_worker

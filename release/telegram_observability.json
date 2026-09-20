@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-rich-cockpit-v10",
+  "version": "2026.09.20-attention-lifecycle-v11",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "04217df121ab51d5bff58278adb17487d164e1af275aa8310cb5b0f9da835c7b",
+  "sha256": "0ab488dbf41e6a2eef877b602cfa605d71631d765f160296c0730fdbd3479c78",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Rich Cockpit V10: Bot API 10.3 rich tables/details/styled callbacks with mandatory V9 fallback; action-required alerts are normal, auto-resume notices are silent, WATCH remains dashboard-only. Preserves V9 Since/Why/Radar/quiet/recovery, V8 durable Continue/watchdog and four reports.",
-  "requirements_revision": "2026-09-20-R21"
+  "notes": "Attention Lifecycle V11: preserves Rich V10/V9 fallback and adds incident-episode-scoped `J’ai vu` acknowledgement, recovery anti-flapping (2 observations or 60 s), and a bounded routine-notification budget (3 per 30 min) with critical/human-action bypass. Acknowledgement is cleared only after stable recovery so a later recurrence of the same root cause can alert again.",
+  "requirements_revision": "2026-09-20-R22"
 }

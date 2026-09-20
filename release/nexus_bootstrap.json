@@ -1,12 +1,12 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R21",
+  "requirements_revision": "2026-09-20-R22",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "ad51af572e48456ccd099be714decdd4f359ba1a1425dcb46f6328eae022d2cf",
+      "sha256": "3c293d9e76c69dea7f78fdd2055dcec46ec0fdd73cd2c75f3b1abdaf03bb5866",
       "max_bytes": 500000
     },
     {
@@ -73,6 +73,16 @@
       "actionable": "AUDIBLE",
       "automatic_recovery": "SILENT",
       "watch": "DASHBOARD_ONLY"
+    },
+    "attention_acknowledgement": true,
+    "notification_budget": {
+      "window_minutes": 30,
+      "routine_limit": 3,
+      "critical_bypass": true
+    },
+    "recovery_flap_damping": {
+      "minimum_observations": 2,
+      "minimum_seconds": 60
     }
   },
   "report_exports": {
@@ -92,5 +102,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.1 preserves the proven 0.2.0 portable runtime and adds Rich Cockpit V10 edge parity: rich-first live cards with mandatory V9 fallback, all four reports, and tiered notifications (human-action audible, auto-recovery silent, WATCH dashboard-only). No paid broadcast or media-heavy live card."
+  "notes": "Nexus 0.2.2 preserves Rich Cockpit V10 and adds R22 attention lifecycle parity: `J’ai vu` acknowledgement callback, recovery anti-flapping, and bounded routine notification budget. Critical/human-action signals bypass the routine budget; WATCH remains dashboard-only. No paid broadcast or duplicate receiver."
 }

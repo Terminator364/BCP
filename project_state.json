@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_NEXUS_AUTH_PENDING_BEDGE_INSTALL_PENDING_TELEGRAM_V10_NEXUS_0_2_1_R21_CANDIDATE",
-  "last_completed_atomic_action": "Telegram Rich Cockpit V10 / Nexus 0.2.1 R21 final candidate persisted: rich-first structured card, mandatory V9 fallback, Direct/Nexus four-report parity, exact Telegram release hash validation, field-shaped fallback guards, and actionability-aware notification tiers (human-action normal, auto-resume silent, WATCH dashboard-only).",
-  "next_action": "Open exact-head PR and run all qualification workflows. Merge only after CURRENT, Telegram Windows+Ubuntu, Nexus, coordinated Android/server, and field ecosystem preflight all pass on the same head SHA; then re-read main and merge under writer fence. User action remains unnecessary while away.",
+  "status": "BCP_0_7_0_NEXUS_0_2_2_TELEGRAM_V11_R22_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R22/V11 notification-budget bug fixed so budget is charged only after successful delivery; Telegram release hash realigned to the exact source.",
+  "next_action": "Re-run exact-head CI for PR #87. Merge only after CURRENT, Telegram, Nexus, coordinated product and field ecosystem preflight all pass on the same head SHA; then start R23 conversation-delivery mirror work.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -73,7 +73,8 @@
     "telegram_human_cockpit_v7": "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
     "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
     "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
-    "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md"
+    "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
+    "telegram_attention_lifecycle_v11": "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -133,7 +134,8 @@
     "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
     "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
     "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
-    "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md"
+    "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
+    "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -170,7 +172,10 @@
     "P0_predictive_risk_radar": true,
     "P0_rich_cockpit_with_plain_fallback": true,
     "P0_direct_nexus_ui_parity": true,
-    "P0_nexus_four_report_parity": true
+    "P0_nexus_four_report_parity": true,
+    "P0_attention_acknowledgement": true,
+    "P0_notification_flap_damping": true,
+    "P0_notification_budget": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -200,12 +205,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-RICH-V10-NEXUS-021-R21-QUALIFICATION-20260920",
-    "status": "PR_AND_CI_PENDING",
-    "last_completed_action": "Final code/manifests/spec/CI guards aligned; source and manifest hashes updated.",
-    "next_atomic_action": "Open exact-head PR and qualify.",
-    "branch": "work/bcp/r21-telegram-rich-cockpit-v10-20260920",
-    "base_main_sha": "1a19a78fe05ea3403c85e4d8cdf53163b2a86e48",
+    "checkpoint_id": "BCP-TELEGRAM-V11-R22-ATTENTION-LIFECYCLE-20260920",
+    "status": "CI_PENDING",
+    "last_completed_action": "R22 code, Nexus parity, release manifests and canonical requirement persisted.",
+    "next_atomic_action": "Exact-head CI then serialized merge if green.",
+    "branch": "work/bcp/r22-attention-ack-flap-budget-20260920",
+    "base_main_sha": "eac7db76711877031def7dee82e5493a98c54e5c",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1480,5 +1485,25 @@
     },
     "telegram_source_sha256": "04217df121ab51d5bff58278adb17487d164e1af275aa8310cb5b0f9da835c7b",
     "nexus_manifest_sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
+  },
+  "telegram_attention_lifecycle_v11": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "version": "2026.09.20-attention-lifecycle-v11",
+    "requirements_revision": "2026-09-20-R22",
+    "acknowledgement": true,
+    "recovery_flap_damping": {
+      "minimum_observations": 2,
+      "minimum_seconds": 60
+    },
+    "routine_notification_budget": {
+      "window_minutes": 30,
+      "limit": 3,
+      "critical_bypass": true
+    },
+    "nexus_callback_parity": true,
+    "field_verified": false,
+    "episode_scoped_acknowledgement": true,
+    "recurrence_after_recovery_notifies": true,
+    "telegram_source_sha256": "0ab488dbf41e6a2eef877b602cfa605d71631d765f160296c0730fdbd3479c78"
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R21",
+  "requirements_revision": "2026-09-20-R22",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -41,7 +41,7 @@
       "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
     },
     "nexus": {
-      "version": "0.2.1",
+      "version": "0.2.2",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,13 +50,13 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
+        "sha256": "a9786968f613a1ec996afc65c0dec376271292a74e8698e94bf0748f2f0036af"
       },
-      "notes": "Nexus 0.2.1 preserves the field-shaped portable runtime and adds Rich Cockpit V10 parity: rich-first live cards with mandatory V9 fallback, four reports, human-action audible alerts, silent auto-recovery notices and WATCH dashboard-only behavior."
+      "notes": "Nexus 0.2.2 preserves Rich V10 parity and adds attention acknowledgement callback parity plus bounded notification/anti-flap semantics."
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-rich-cockpit-v10",
+    "version": "2026.09.20-attention-lifecycle-v11",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -94,7 +94,12 @@
       "Direct Telegram and Nexus rich/fallback transport parity",
       "four-report parity through Nexus: summary, devices, mission, technical",
       "bounded rich payload with no default media and no paid broadcast",
-      "actionability-aware notification tiers: human-action normal, auto-recovery silent, WATCH dashboard-only"
+      "actionability-aware notification tiers: human-action normal, auto-recovery silent, WATCH dashboard-only",
+      "explicit J’ai vu acknowledgement for current attention signal",
+      "recovery anti-flapping: two observations or 60 seconds before recovery notification",
+      "bounded routine notification budget: max 3 per 30 minutes",
+      "critical and genuine human-action alerts bypass routine notification budget",
+      "acknowledgement suppresses only the unchanged current signal, never a new/worsened cause"
     ]
   }
 }
