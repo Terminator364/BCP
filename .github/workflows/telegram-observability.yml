@@ -111,6 +111,8 @@ jobs:
           assert "announced_sequence" in py
           assert "chatgpt_pc_flow_bridge" in py
           assert "Bridge ChatGPT-PC" in py
+          assert "conversation_latency_summary" in py
+          assert "Décomposition temporelle" in py
           assert "MISSION_RESUME_REQUESTS.jsonl" in py
           assert "watchdog_notice" in py
           assert "WATCHDOG_NOTIFY_STATE_PATH" in py
