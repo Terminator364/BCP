@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "f963fd1008fb3564343660b4fb656982e67d90bf94e8f627f9f77019ab4fad07",
+  "sha256": "ec969c162d8a2f5ea3444f23657bee5bb286a94cb545e4fb56cbd829998e288b",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R27",
-  "release_train": "BCP-0.7.5_EDGE-2.1.0-rc1-sentinel",
-  "notes": "BCP 0.7.5 adds a bounded read-only bridge from ChatGPT-PC's local flow_ledger.sqlite3 into the BCP conversation ledger with source hash verification, idempotent event mapping and fail-open source availability."
+  "requirements_revision": "2026-09-20-R28",
+  "release_train": "BCP-0.7.6_EDGE-2.1.0-rc1-sentinel",
+  "notes": "BCP 0.7.6 preserves R27 and adds evidence-based conversation latency decomposition: producer response, producer-to-BCP mirror, mirror-to-seen, and request-to-seen where durable timestamps exist."
 }

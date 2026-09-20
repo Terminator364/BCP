@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-chatgptpc-flow-bridge-v16",
+  "version": "2026.09.20-cadence-telemetry-v17",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "97812c063b6b9c9301d2a0b99972f6a7b6566146dc62715b4d152a7cb2965832",
+  "sha256": "5304aec7460bc7995ad8afcc2a775c991ff5ad008c86da46c35ba5415f925739",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V16 preserves V15 producer-sync UX and shows ChatGPT-PC local flow bridge state/backlog in Conversations.",
-  "requirements_revision": "2026-09-20-R27"
+  "notes": "Telegram V17 preserves V16 and shows evidence-based time decomposition in conversation detail without treating ChatGPT thinking duration as end-to-end latency.",
+  "requirements_revision": "2026-09-20-R28"
 }

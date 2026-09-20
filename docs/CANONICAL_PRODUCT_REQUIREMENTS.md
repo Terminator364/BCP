@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R27
+Revision: 2026-09-20-R28
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1358,3 +1358,24 @@ The bridge MUST:
 
 Canonical detail:
 - `docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md`
+
+## P0 — Evidence-Based End-to-End Cadence Telemetry / R28
+
+This requirement is additive and preserves R27.
+
+Interactive technical work MUST target at least about five minutes of useful work per normal tranche, with a practical internal window around 5–6.5 minutes unless a genuine human gate, safety/tool failure, or completed atomic action justifies earlier return.
+
+BCP MUST NOT equate ChatGPT's displayed “thinking” duration with end-to-end user-visible latency.
+
+Where durable timestamps exist, BCP MUST decompose latency into distinct evidence classes:
+- user/request event -> assistant/product event;
+- assistant/product event -> BCP mirror;
+- BCP mirror -> explicit user seen acknowledgement;
+- request -> explicit user seen acknowledgement.
+
+Missing evidence MUST remain missing. An unsynchronized manual stopwatch is useful context but MUST NOT be used as an authoritative calibration sample.
+
+Telegram conversation detail SHOULD expose the measured decomposition with an explicit “not measured” state when seen evidence is absent.
+
+Canonical cadence policy:
+- `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`

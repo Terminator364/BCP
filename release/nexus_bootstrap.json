@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R27",
+  "requirements_revision": "2026-09-20-R28",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -102,5 +102,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.3 remains R27-compatible. ChatGPT-PC flow-ledger ingestion and canonical conversation bodies stay local on BCP."
+  "notes": "Nexus 0.2.3 remains R28-compatible. Cadence timing decomposition is computed from local durable BCP/ChatGPT-PC receipts; Nexus is not treated as a canonical transcript or UI-delivery oracle."
 }
