@@ -315,12 +315,18 @@ def main() -> int:
         "Synchronisation incomplète",
         "sequence_gap_count",
         "conversation_producer_sync",
-        "Sync producteur complète",
+        "Synchronisation complète jusqu’au message",
         "announced_sequence",
         "chatgpt_pc_flow_bridge",
-        "Bridge ChatGPT-PC",
+        "Connexion ChatGPT-PC",
         "conversation_latency_summary",
         "Décomposition temporelle",
+        "human_timestamp",
+        "KINSHASA_TZ",
+        "/Encoding /WinAnsiEncoding",
+        "/BaseFont /Helvetica-Bold",
+        "ACTION POUR VOUS",
+        "Heure affichée : Kinshasa",
     )
 
     # R53 delivery/cadence policy must remain explicit and machine-checkable.
