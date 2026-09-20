@@ -3,11 +3,11 @@
   "channel": "stable",
   "version": "2026.09.20-cadence-telemetry-v18",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "7b71f17362d2714906266d6014c3393786c855b2cdae11f0248685fdd0d5677a",
+  "sha256": "8d0a4429b72efbe9efed03c4db27e1e98ee32c2238a343f7b88cb4f00a584add",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V17 R54 preserves the human-first compact cockpit and mail-first guidance, renders normal human time in Kinshasa, and produces structured WinAnsi/Bold/paginated human PDFs while retaining UTC machine evidence.",
+  "notes": "Telegram V18 R54 preserves the human-first compact cockpit and mail-first guidance, renders normal human time in Kinshasa when a timestamp exists, and produces structured WinAnsi/Bold/paginated human PDFs while retaining UTC machine evidence.",
   "requirements_revision": "2026-09-20-R54"
 }
