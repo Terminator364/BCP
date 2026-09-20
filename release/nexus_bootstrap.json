@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "8ec8153cfb90d7ee049a425ec2693e639b9a6a6919662cce62561ecfa032437a",
+      "sha256": "f4941c4a102817656eb263f6d7f177ab79fd8e7c3b2f1bc11723fd51758f88b1",
       "max_bytes": 500000
     },
     {
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 preserves the device-flow-only auth path and R53 human-first controls. R54 keeps remote presentation aligned with Kinshasa-time human reports generated/cached by BCP Telegram V18."
+  "notes": "Nexus 0.2.5 R54 remains device-flow-only and now preserves progressive cockpit disclosure plus a dependency-free WinAnsi/Bold/paginated PDF fallback with Kinshasa footer parity."
 }
