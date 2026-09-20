@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "NEXUS_0_2_0_R18_PORTABLE_CHILD_RUNTIME_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "Implemented Nexus 0.2.0 / R18 candidate: pinned portable Node is placed first in PATH, child-shell node resolution is verified before npm lifecycle scripts, Wrangler install captures foreground lifecycle output, and field preflight removes hosted global Node so esbuild cannot accidentally pass through CI-only tooling.",
-  "next_action": "Run exact-head CURRENT/Nexus/Field-Ecosystem/Coordinated CI. If green, re-read main under the writer fence, merge serially, then wait for resident Nexus 0.2.0 convergence and Drive readback. If runtime reaches Cloudflare authorization, that becomes the first true human gate. Continue B-EDGE independent Nexus egress only after the Nexus transport itself is field-live.",
+  "status": "BCP_0_7_0_V8_RESIDENT_NEXUS_0_2_0_HUMAN_AUTH_REQUIRED_BEDGE_2_1_0_SIGNED_INSTALL_PENDING",
+  "last_completed_atomic_action": "Field readback at 2026-09-20T09:58:24Z proves Nexus 0.2.0 passed managed runtime preparation and reached the genuine Cloudflare browser authorization gate. B-EDGE 2.1.0 same-identity signed CURRENT is also published and readback-verified.",
+  "next_action": "Two genuine human field gates remain: authorize Cloudflare when the Nexus browser login is presented on the PC, and install the same-signature BCP_EDGE_CURRENT.apk over the existing B-EDGE app without uninstalling. Meanwhile code/CI may continue preparing B-EDGE independent Nexus egress without secrets.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -189,12 +189,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-020-R18-PORTABLE-CHILD-RUNTIME-20260920",
-    "status": "CI_PENDING",
-    "last_completed_action": "R18 runtime fix, field-shaped CI guard, release manifest and canonical spec persisted.",
-    "next_atomic_action": "Exact-head qualification then serialized merge if green.",
-    "branch": "work/bcp/r18-portable-node-edge-egress-20260920",
-    "base_main_sha": "4e27466ea2a03182ae51ff6cf42f37ee09c1db8b",
+    "checkpoint_id": "BCP-BEDGE-210-SIGNED-CURRENT-20260920",
+    "status": "HUMAN_FIELD_GATES_PENDING",
+    "last_completed_action": "Nexus 0.2.0 reached HUMAN_AUTH_REQUIRED; signed B-EDGE 2.1.0 CURRENT is ready.",
+    "next_atomic_action": "Prepare B-EDGE independent Nexus egress in CI; field activation waits for Cloudflare authorization and B-EDGE 2.1.0 install.",
+    "branch": "work/bcp/state-edge210-signed-current-20260920",
+    "base_main_sha": "c2dc08c21bc9b038387c568c3e455ae65448182b",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1371,5 +1371,38 @@
     "ci_global_node_removed": true,
     "user_manual_node_install_required": false,
     "field_verified": false
+  },
+  "b_edge_2_1_0_signed_current": {
+    "status": "SIGNED_DISTRIBUTED_FIELD_INSTALL_PENDING",
+    "version_code": 210,
+    "version_name": "2.1.0-rc1-sentinel-evergreen",
+    "drive_file_id": "1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR",
+    "apk_sha256": "83133d2786e210e4b4b7594b39b45f216ca0122c3df7c92abf0bef92f65ddfb1",
+    "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+    "signature_schemes_verified": [
+      "v2",
+      "v3"
+    ],
+    "resources_arsc_aligned_4_bytes": true,
+    "previous_drive_revision_preserved": true,
+    "uninstall_required": false,
+    "re_pair_required": false,
+    "field_verified": false
+  },
+  "latest_field_evidence_nexus_0_2_0": {
+    "observed_at_utc": "2026-09-20T09:58:24+00:00",
+    "server_version": "0.7.0",
+    "pc_name": "MBMPC",
+    "paired": true,
+    "nexus_bootstrap_bundle_version": "0.2.0",
+    "nexus_bootstrap_state": "HUMAN_AUTH_REQUIRED",
+    "nexus_bootstrap_exit_code": 4,
+    "nexus_bootstrap_receipt_status": "HUMAN_AUTH_REQUIRED",
+    "nexus_bootstrap_error_class": "CLOUDFLARE_BROWSER_AUTHORIZATION_FAILED_OR_CANCELLED",
+    "telegram_cockpit_version": "2026.09.20-human-cockpit-v8",
+    "direct_telegram_state": "DEGRADED_RETRY",
+    "pc_memory_load_percent": 79,
+    "pc_power_source": "AC",
+    "pc_battery_percent": 40
   }
 }

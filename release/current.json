@@ -3,7 +3,7 @@
   "channel": "CURRENT",
   "requirements_revision": "2026-09-20-R18",
   "zero_usd": true,
-  "overall_state": "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
+  "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
     "unchanged_version_zero_download": true,
     "metered_large_download_default": false,
@@ -29,16 +29,16 @@
     "android_b_edge": {
       "version": "2.1.0-rc1-sentinel-evergreen",
       "source_manifest": "release/android.json",
-      "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
-      "distribution_ready": false,
+      "qualification": "CI_SIGNED_DISTRIBUTED_FIELD_UNVERIFIED",
+      "distribution_ready": true,
       "field_verified": false,
-      "auto_update_eligible": false,
+      "auto_update_eligible": true,
       "artifact": {
-        "transport": "SIGNED_APK_PENDING",
-        "url": "",
-        "sha256": ""
+        "transport": "PRIVATE_DRIVE_STABLE_CURRENT",
+        "url": "https://drive.google.com/file/d/1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR/view?usp=drivesdk",
+        "sha256": "83133d2786e210e4b4b7594b39b45f216ca0122c3df7c92abf0bef92f65ddfb1"
       },
-      "notes": "B-EDGE 2.1.0 secondary-sentinel source candidate. Distribution remains intentionally disabled until a same-identity signed APK is produced and verified; installed 2.0.0-rc1 remains authoritative on the old phone."
+      "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
     },
     "nexus": {
       "version": "0.2.0",
