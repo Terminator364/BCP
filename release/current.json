@@ -22,7 +22,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "8eb1cb124b9703f1b3db62aabe5b14b72278f7098b49dbd14d8d6c013353efa7"
+        "sha256": "2d9df519f53fef94326f417e371ee8f1c54cf2f4c37b5c26940073b11e4c4b83"
       },
       "notes": "BCP 0.7.12 adds explicit fresh Nexus device-flow retry after HUMAN_AUTH_REQUIRED; stale receipts are archived and a new attempt nonce is required before relaunch."
     },
