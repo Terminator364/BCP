@@ -7,7 +7,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$InstallerVersion = "0.7.9"
+$InstallerVersion = "0.7.10"
 # Keep this target synchronized with release/server.json.
 $RuleName = "BCP Local LAN 8765"
 $Port = 8765
