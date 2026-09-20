@@ -55,6 +55,8 @@ Budget exhaustion suppresses delivery only. It never suppresses:
 - Drive/Nexus telemetry;
 - the live Telegram card.
 
+A routine notification consumes budget only after a positive delivery receipt. A network failure does not spend the budget and does not mark the alert as delivered. Critical/action-required alerts that fail in transport remain retryable after reconnect.
+
 ## 4. Human incident semantics
 
 The interface distinguishes:
