@@ -1550,83 +1550,118 @@ class Service:
 
     def report_summary(self) -> str:
         snap = self.presence_snapshot()
+        s = snap.get("snapshot") or {}
+        action = clean(s.get("human_gate") or "AUCUNE", 220)
+        action_text = (
+            "Aucune action nécessaire pour le moment."
+            if action == "AUCUNE"
+            else action.replace("REQUISE — ", "")
+        )
+        forecast = s.get("forecast") or [0, 1, 0]
+        try:
+            done, total, pct = int(forecast[0]), int(forecast[1]), int(forecast[2])
+        except Exception:
+            done, total, pct = 0, 1, 0
         return "\n".join([
-            "BCP — RAPPORT 1/4 — SITUATION HUMAINE COMPLÈTE",
-            "Généré: " + utc_now(),
+            "Créé le : " + human_timestamp(seconds=True),
             "",
-            snap["text"],
+            "À RETENIR",
+            "État : " + self._attention_label(str(s.get("attention_level") or "NORMAL")),
+            clean(s.get("activity") or "Suivi automatique actif.", 240),
             "",
-            "OBJECTIF ET TRAJECTOIRE",
-            self.plan_view(),
+            "OBJECTIF",
+            clean(s.get("objective") or "Faire avancer le projet API/BCP.", 300),
             "",
-            "ACTIVITÉ RÉCENTE",
+            "CE QUI EST DÉJÀ CONFIRMÉ",
+            clean(s.get("last_completed") or "Le dernier point de reprise durable est conservé.", 320),
+            "",
+            "MAINTENANT",
+            clean(s.get("mission_action") or "Synchronisation de la prochaine étape vérifiable.", 320),
+            "",
+            "ENSUITE",
+            clean(s.get("mission_next") or "La prochaine étape sera déterminée à partir des preuves durables.", 320),
+            "",
+            "ACTION POUR VOUS",
+            action_text,
+            "",
+            "SYSTÈME EN BREF",
+            clean(s.get("pc_text") or "PC : état non observé.", 260),
+            clean(s.get("edge_text") or "B-EDGE : état non observé.", 260),
+            clean(s.get("drive_text") or "Drive : état non observé.", 260),
+            "Nexus : ~" + str(int(s.get("nexus_pct") or 0)) + "% - " + clean(s.get("nexus_stage") or "état non observé", 220),
+            "Tests : " + clean(s.get("ci_text") or "état non observé", 260),
+            "",
+            "PROGRESSION",
+            "~" + str(pct) + "% - environ " + str(done) + "/" + str(total) + " micro-actions.",
+            "Cette progression est une estimation de planification. Une étape n'est considérée terminée que lorsqu'une preuve durable la confirme.",
+            "",
+            "TRAVAIL RÉCENT",
             self.tail(),
             "",
-            "MISSIONS",
-            self.missions(),
-            "",
-            "COMMENT LIRE LES POURCENTAGES",
-            "- Le compteur de micro-actions marqué ≈ est une prévision dynamique, pas un nombre promis.",
-            "- Une micro-action est atomique: lire/ouvrir un fichier, vérifier un workflow, lire un log, modifier un fichier, calculer un hash, lancer un test, créer un commit, faire un readback, etc.",
-            "- L'estimation se recalcule quand la mission se précise; elle peut donc augmenter ou diminuer.",
-            "- Les actions confirmées restent distinguées des actions seulement prévues.",
+            "COMMENT LIRE CE RAPPORT",
+            "- Commencez par À RETENIR.",
+            "- Si ACTION POUR VOUS dit qu'aucune action n'est nécessaire, vous pouvez laisser le système continuer.",
+            "- Les détails techniques, IDs, hashes et noms internes sont volontairement placés dans le rapport 4/4.",
         ])
 
     def report_devices(self) -> str:
         runtime = self.local.runtime()
         edge = self.local.edge()
         drive = self.local.drive()
-        gh = self.github.snapshot()
-        keys = [
-            "server_version", "server_pid", "pc_name", "updated_at", "paired",
-            "update_state", "update_target_version", "nexus_bootstrap_state",
-            "nexus_bootstrap_bundle_version", "nexus_bootstrap_exit_code",
-            "nexus_bootstrap_receipt_status", "nexus_bootstrap_error_class",
-            "nexus_bootstrap_error_detail", "nexus_bootstrap_stage",
-            "telegram_companion_state", "telegram_companion_mode",
-            "telegram_companion_pid", "telegram_companion_health_age_seconds",
-            "telegram_companion_last_poll_at", "telegram_companion_last_callback_data",
-            "telegram_companion_last_callback_received_at",
-            "telegram_companion_last_callback_handled_at",
-            "telegram_companion_error_class", "telegram_companion_error_detail",
-            "chatgpt_pc_active_version", "chatgpt_pc_heartbeat_age_seconds",
-            "chatgpt_pc_command_plane", "chatgpt_pc_command_plane_age_seconds",
-            "recovery_phase", "recovery_result_status",
-        ]
-        lines = [
-            "BCP — RAPPORT 2/4 — APPAREILS, RÉSEAU ET TRANSPORTS",
-            "Généré: " + utc_now(),
+        snap = self.presence_snapshot().get("snapshot") or {}
+        telegram_state = str(runtime.get("telegram_companion_state") or "NON OBSERVÉ").replace("_", " ")
+        telegram_mode = str(runtime.get("telegram_companion_mode") or "").replace("_", " ")
+        callback_at = runtime.get("telegram_companion_last_callback_handled_at") or runtime.get("telegram_companion_last_callback_received_at")
+        return "\n".join([
+            "Créé le : " + human_timestamp(seconds=True),
             "",
-            "VUE HUMAINE",
-            self.status(),
+            "À RETENIR",
+            clean(snap.get("pc_text") or "PC : état non observé.", 280),
+            clean(snap.get("edge_text") or "B-EDGE : état non observé.", 280),
+            clean(snap.get("drive_text") or "Drive : état non observé.", 280),
+            "Nexus : ~" + str(int(snap.get("nexus_pct") or 0)) + "% - " + clean(snap.get("nexus_stage") or "état non observé", 220),
+            "Tests : " + clean(snap.get("ci_text") or "état non observé", 260),
             "",
-            "TÉLÉMÉTRIE PC / BCP",
-        ]
-        for key in keys:
-            if key in runtime:
-                lines.append(key + ": " + clean(runtime.get(key), 260))
-        lines += [
+            "PC",
+            "Nom : " + clean(runtime.get("pc_name") or "non observé", 80),
+            "BCP : version " + clean(runtime.get("server_version") or "non observée", 60),
+            "ChatGPT-PC : version " + clean(runtime.get("chatgpt_pc_active_version") or "non observée", 60),
+            "Dernière preuve BCP : " + self._age_label(runtime.get("_age_seconds") if isinstance(runtime.get("_age_seconds"), int) else None),
+            (
+                "Mémoire RAM : " + str(runtime.get("pc_memory_load_percent")) + "% utilisée."
+                if isinstance(runtime.get("pc_memory_load_percent"), int)
+                else "Mémoire RAM : mesure non disponible."
+            ),
+            (
+                "Alimentation : " + ("secteur" if str(runtime.get("pc_power_source") or "").upper() == "AC" else "batterie")
+                + ((" - " + str(runtime.get("pc_battery_percent")) + "%") if isinstance(runtime.get("pc_battery_percent"), int) else "")
+                + "."
+                if str(runtime.get("pc_power_source") or "").upper() in {"AC", "BATTERY"}
+                else "Alimentation : état non observé."
+            ),
             "",
-            "B-EDGE / ANCIEN TÉLÉPHONE",
-            "paired: " + str(bool(edge.get("paired"))),
-            "edge_version: " + clean(edge.get("edge_version") or "", 80),
-            "last_event: " + clean(edge.get("last_event") or "", 120),
-            "event_age_seconds: " + str(edge.get("_age_seconds")),
+            "ANCIEN TÉLÉPHONE B-EDGE",
+            "Appairage : " + ("oui" if edge.get("paired") else "non"),
+            "Version : " + clean(edge.get("edge_version") or "non observée", 80),
+            "Dernière preuve : " + self._age_label(edge.get("_age_seconds") if isinstance(edge.get("_age_seconds"), int) else None),
+            "",
+            "MESSAGES TELEGRAM",
+            "État : " + telegram_state.lower() + ((" - mode " + telegram_mode.lower()) if telegram_mode else ""),
+            (
+                "Dernière action reçue : " + human_timestamp(callback_at, seconds=True)
+                if callback_at else "Dernière action reçue : non observée."
+            ),
             "",
             "DRIVE",
-            "status: " + clean(drive.get("status") or "", 80),
-            "age_seconds: " + str(drive.get("age_seconds")),
+            "Synchronisation : " + ("visible" if str(drive.get("status") or "").upper() == "OBSERVED" else "non confirmée"),
+            "Fraîcheur de la preuve : " + self._age_label(drive.get("age_seconds") if isinstance(drive.get("age_seconds"), int) else None),
             "",
-            "GITHUB / QUALIFICATION",
-            self.ci(),
-            "",
-            "INTERPRÉTATION",
-            "- Direct PC→Telegram est opportuniste; une coupure TCP/443 ne doit pas arrêter BCP.",
-            "- Nexus est le relais distant robuste quand le chemin direct est indisponible.",
-            "- Le mode hors-ligne conserve l'état local; la synchronisation reprend quand une liaison revient.",
-            "- Un poller Telegram unique est obligatoire pour éviter HTTP 409 getUpdates.",
-        ]
-        return "\n".join(lines)
+            "CE QUE CELA SIGNIFIE",
+            "- Une coupure Internet ne doit pas effacer l'état du projet.",
+            "- Si Telegram direct fonctionne mal, Nexus doit devenir le relais distant.",
+            "- Si le PC chauffe ou manque de RAM, les tâches lourdes doivent ralentir ou attendre, pas faire planter Windows.",
+            "- Une donnée ancienne est signalée comme ancienne au lieu d'être présentée comme fraîche.",
+        ])
 
     def report_mission(self) -> str:
         ctx = self._mission_context()
@@ -1635,76 +1670,91 @@ class Service:
             e for e in self.local.mission_events(160)
             if not e.get("project_id") or str(e.get("project_id")) == self.project_id
         ]
+        snap = self.presence_snapshot().get("snapshot") or {}
         forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        action = clean(snap.get("human_gate") or "AUCUNE", 220)
+        action_text = "Aucune action nécessaire." if action == "AUCUNE" else action.replace("REQUISE — ", "")
+        last_progress = mission.get("last_progress_at") or mission.get("updated_at")
         return "\n".join([
-            "BCP — RAPPORT 3/4 — OBJECTIF, ÉTAPES ET MICRO-ACTIONS",
-            "Généré: " + utc_now(),
+            "Créé le : " + human_timestamp(seconds=True),
             "",
-            "MISSION COURANTE",
-            "mission_id: " + clean(mission.get("mission_id") or "synthèse depuis preuves externes", 120),
-            "status: " + clean(mission.get("status") or "suivi actif", 80),
-            "current_step: " + clean(mission.get("current_step") or "", 160),
-            "last_committed_step: " + clean(mission.get("last_committed_step") or "", 160),
-            "next_step: " + clean(mission.get("next_step") or "", 160),
-            "last_progress_at: " + clean(mission.get("last_progress_at") or "", 80),
+            "OBJECTIF",
+            clean(snap.get("objective") or "Faire avancer la mission API/BCP.", 320),
             "",
-            "PRÉVISION DYNAMIQUE DE MICRO-ACTIONS",
-            forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
-            "Le total est volontairement estimatif et peut être recalculé quand de nouvelles sous-actions apparaissent.",
+            "PROGRESSION",
+            "~" + str(forecast["pct"]) + "% - environ " + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions.",
+            "Confiance : " + clean(snap.get("forecast_confidence") or "faible", 60).lower() + ".",
+            (
+                "Dernière progression confirmée : " + human_timestamp(last_progress, seconds=True)
+                if last_progress else "Dernière progression confirmée : heure non observée."
+            ),
             "",
+            "CE QUI EST DÉJÀ CONFIRMÉ",
+            clean(snap.get("last_completed") or "Le dernier checkpoint durable est conservé.", 340),
+            "",
+            "MAINTENANT",
+            clean(snap.get("mission_action") or "Synchronisation de l'étape courante.", 340),
+            "",
+            "ENSUITE",
+            clean(snap.get("mission_next") or "La prochaine étape sera déterminée depuis l'état durable.", 340),
+            "",
+            "ACTION POUR VOUS",
+            action_text,
+            "",
+            "PLAN SIMPLIFIÉ",
             self.plan_view(),
             "",
-            "JOURNAL FIN",
+            "TRAVAIL RÉCENT",
             self.tail(),
             "",
-            "BLOCAGES / ATTENTES",
-            self.holds(),
-            "",
-            "MISSIONS RÉCENTES",
-            self.missions(),
+            "POINTS À SURVEILLER",
+            self.why(),
         ])
 
     def report_technical(self) -> str:
         ctx = self._mission_context()
         mission = (ctx or {}).get("mission") or {}
         head = self._head() or {}
-        gh = self.github.snapshot()
+        runtime = self.local.runtime()
         return "\n".join([
-            "BCP — RAPPORT 4/4 — DOSSIER TECHNIQUE ET AUDIT",
-            "Généré: " + utc_now(),
+            "Créé le : " + human_timestamp(seconds=True),
+            "Note : les heures de cette présentation sont en heure de Kinshasa. Les reçus machine restent conservés en UTC.",
             "",
             "ÉTAT TECHNIQUE",
             self.details(),
             "",
+            "VERSIONS OBSERVÉES",
+            "BCP : " + clean(runtime.get("server_version") or "NOT_OBSERVED", 80),
+            "ChatGPT-PC : " + clean(runtime.get("chatgpt_pc_active_version") or "NOT_OBSERVED", 80),
+            "B-EDGE : " + clean((self.local.edge() or {}).get("edge_version") or "NOT_OBSERVED", 80),
+            "Nexus : " + clean(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED", 120),
+            "Telegram : " + clean(runtime.get("telegram_companion_state") or "NOT_OBSERVED", 120),
+            "",
             "HEAD / CHECKPOINT",
             "revision: " + str(head.get("revision") or ""),
             "status: " + clean(head.get("status") or "", 120),
-            "last_completed_action: " + clean(head.get("last_completed_action") or "", 500),
-            "next_action: " + clean(head.get("next_action") or "", 500),
+            "last_completed_action: " + clean(head.get("last_completed_action") or "", 700),
+            "next_action: " + clean(head.get("next_action") or "", 700),
             "",
-            "MISSION",
+            "MISSION TECHNIQUE",
             "mission_id: " + clean(mission.get("mission_id") or "", 120),
             "worker_component: " + clean(mission.get("worker_component") or "", 120),
-            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "", 500),
-            "hold_reason: " + clean(mission.get("hold_reason") or "", 240),
+            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "", 700),
+            "hold_reason: " + clean(mission.get("hold_reason") or "", 300),
             "",
             "CI / WORKFLOWS",
             self.ci(),
             "",
-            "PLAN ET JOURNAL",
-            self.plan_view(),
+            "DERNIÈRES PREUVES",
             self.tail(),
             "",
             "CONTRAT DE VÉRITÉ",
-            "- micro-actions confirmées = preuves externes/durables;",
-            "- total ≈ = estimation de planification, explicitement non exacte;",
-            "- état des appareils = heartbeat/télémétrie, jamais supposition silencieuse;",
-            "- pas d'accès à la chaîne de pensée privée de ChatGPT;",
-            "- absence de preuve ≠ travail inventé;",
-            "- mutations: writer fence, idempotence, hash/readback avant COMMITTED.",
-            "",
-            "SNAPSHOT GITHUB",
-            clean(json.dumps(gh, ensure_ascii=False, sort_keys=True), 5000),
+            "- Une étape confirmée exige une preuve externe ou durable.",
+            "- Le total ~ est une estimation de planification, jamais une preuve de progression.",
+            "- L'état des appareils vient de la télémétrie; une absence de preuve reste une absence de preuve.",
+            "- Aucun accès à la chaîne de pensée privée de ChatGPT n'est revendiqué.",
+            "- Les mutations utilisent fencing, idempotence et readback avant COMMITTED.",
+            "- Les IDs, hashes et codes ci-dessus sont destinés au diagnostic; les rapports 1 à 3 les masquent volontairement.",
         ])
 
     def report_pdf(self, kind: Any = "summary") -> bytes:
@@ -1807,28 +1857,28 @@ class Service:
             )
         return "\n".join([
             "MISSION " + clean(code, 20),
-            "Project: " + clean(rec.get("project_id") or rec.get("project"), 80),
-            "State: " + clean(rec.get("state") or "OBSERVED", 80),
-            "Step: " + clean(rec.get("step_id") or rec.get("kind"), 80),
+            "Projet : " + clean(rec.get("project_id") or rec.get("project"), 80),
+            "État : " + clean(rec.get("state") or "OBSERVED", 80).replace("_", " ").lower(),
+            "Étape : " + clean(rec.get("step_id") or rec.get("kind"), 80).replace("_", " "),
             "Last event: " + clean(
                 rec.get("timestamp") or rec.get("updated_at") or rec.get("created_at"), 80
             ),
-            "Next safe action: " + clean(
+            "Prochaine action sûre : " + clean(
                 rec.get("next_safe_action") or "read durable mission journal", 160
             ),
-            "Spend: $0.00",
+            "Coût : $0.00",
         ])
 
     def last(self) -> str:
         events = self.local.mission_events(8) or self.local.events(self.project_id, 8)
         if not events:
             return "LAST EVENTS\nAucun événement durable observé."
-        lines = ["LAST EVENTS"]
+        lines = ["DERNIERS ÉVÉNEMENTS"]
         for ev in events[-8:]:
             state = ev.get("state") or ev.get("event_type") or "EVENT"
             ts = ev.get("timestamp") or ev.get("created_at") or ev.get("ts") or ""
             summary = ev.get("action_summary") or ev.get("step_id") or ""
-            lines.append("- " + clean(ts, 35) + " " + clean(state, 45) + " " + clean(summary, 90))
+            lines.append("- " + human_timestamp(ts, seconds=True) + " - " + clean(state, 45).replace("_", " ").lower() + " - " + clean(summary, 90))
         return "\n".join(lines)
 
     def ci(self) -> str:
@@ -1927,7 +1977,7 @@ class Service:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
         forecast = self._micro_forecast(ctx, events, self.github.snapshot())
         lines = [
-            "⚙️ ACTIVITÉ FINE",
+            "⚙️ TRAVAIL RÉCENT",
             "Compteur prévisionnel : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
             "",
             "Micro-actions confirmées récemment :",
@@ -2076,7 +2126,7 @@ class Service:
             recent = events[-12:]
         lines = ["🕘 DEPUIS VOTRE DERNIÈRE VISITE"]
         if since:
-            lines.append("Depuis : " + clean(since, 40))
+            lines.append("Depuis : " + human_timestamp(since, seconds=True))
         if not recent:
             lines += ["", "Aucune nouvelle micro-action durable observée."]
         else:
@@ -2391,7 +2441,7 @@ class Service:
             state = str(thread.get("last_delivery_state") or "")
             gap = gap_by_thread.get(cid)
             lines += ["", str(pos) + ". " + alias + " · " + source,
-                      "   " + self._delivery_label(state) + " · " + clean(thread.get("last_activity_at"), 40)]
+                      "   " + self._delivery_label(state) + " · " + human_timestamp(thread.get("last_activity_at"), seconds=True)]
             if gap:
                 lines.append("   ⚠️ Réponse sauvegardée mais lecture non confirmée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " · mail miroir d’abord, puis Messages récents")
             seq_gap = seq_gap_by_thread.get(cid)
