@@ -1,12 +1,12 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R18",
+  "requirements_revision": "2026-09-20-R21",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "1a19981aae763539a7688937f74ca36f9eafaee55de871faa855e7b499f0655c",
+      "sha256": "fbe7eed59379c3be3895b25f6cd3ab4f4203bc8f6e0c750c5afd17ad3478f066",
       "max_bytes": 500000
     },
     {
@@ -61,13 +61,22 @@
     "persistent_d1_state": true,
     "fallback_send_on_edit_failure": true,
     "inline_keyboard": true,
-    "callback_acknowledgement": true
+    "callback_acknowledgement": true,
+    "rich_message_preferred": true,
+    "rich_html_payload": true,
+    "bot_api_min_feature": "10.3",
+    "styled_callback_buttons": true,
+    "v9_plain_fallback": true,
+    "fallback_on_rich_send_failure": true,
+    "fallback_on_rich_edit_failure": true
   },
   "report_exports": {
     "enabled": true,
     "cache_endpoint": "/v1/device/report",
     "cached_reports": [
       "summary",
+      "devices",
+      "mission",
       "technical"
     ],
     "telegram_pdf_buttons": true,
@@ -75,7 +84,8 @@
       "/report",
       "/reporttech"
     ],
-    "field_verified": false
+    "field_verified": false,
+    "transport_parity": true
   },
-  "notes": "Nexus 0.2.0 fixes the field-only managed Wrangler install failure where npm lifecycle scripts such as esbuild postinstall searched for `node` by command name. The pinned portable Node 24.21.0 directory is now explicitly placed first in process PATH and a child-process `node --version` probe must pass before npm install. CI removes hosted system Node from PATH and proves Wrangler 4.135.0 installation and direct JS invocation using only the pinned portable runtime. Zero-dollar, no manual Node/Wrangler install, no secret re-entry, no ZIP shuttle."
+  "notes": "Nexus 0.2.1 preserves the proven 0.2.0 portable Node/Wrangler runtime and adds Telegram Rich Cockpit V10 edge rendering: rich live-card send/edit is preferred, V9 plain text + InlineKeyboard is mandatory fallback, callback controls match the PC surface, and all four report caches are available through Nexus. No paid broadcast, no media-heavy live card, no new local runtime."
 }
