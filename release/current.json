@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "ea3cb82755ddcfb3642f123c45d9e5e11debc10dc4b44ed8531ded53daccb5ae"
+        "sha256": "ddb4ccc9f458eb25633b51fbf5bc8030e457d4dd7ca119377d9afdbf0a11e1db"
       },
-      "notes": "Nexus 0.2.6 aligns Worker health version with its bundle and delivers the same R54 human-readable cached PDFs with Kinshasa-time captions."
+      "notes": "Nexus 0.2.5 R54 remains device-flow-only and mirrors the compact human cockpit plus dependency-free WinAnsi/Bold/paginated PDF fallback with Kinshasa footer."
     }
   },
   "telegram_cockpit": {
@@ -144,7 +144,10 @@
       "human-first PDF reports 1-3 hide raw internal field names and technical identifiers",
       "dependency-free PDF hierarchy with Helvetica Bold, WinAnsi French glyphs, margins and page numbers",
       "PDF report 4 keeps engineering evidence structured without raw multi-kilobyte GitHub JSON dumps",
-      "rendered-PDF visual smoke inspection and duplicate-title regression protection"
+      "rendered-PDF visual smoke inspection and duplicate-title regression protection",
+      "R54 human timestamps: Africa/Kinshasa for normal user-facing views while machine evidence stays UTC",
+      "R54 PDF quality: title hierarchy, WinAnsi French accents, pagination and page footer",
+      "R54 Nexus PDF fallback parity with local Telegram renderer"
     ]
   }
 }
