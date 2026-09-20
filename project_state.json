@@ -3,7 +3,7 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R47_BCP_0_7_11_TARGET_BUNDLED_RECOVERY_RUNNER_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R46 merged after field readback proved BCP 0.7.10 active. Pre-Recovery counter-audit found bootstrap-runner skew: BCP 0.7.10 verified the 6.0.34 target ZIP but would launch the older installed recovery runner for the initial transition. R47 implements BCP 0.7.11: after target package SHA verification, it extracts/stages payload/tools/recovery_update_runner.py from that exact target ZIP, enforces exact member/size/UTF-8/syntax and sequence-6034 DriveFS fail-open contracts, performs byte readback/SHA receipt, and launches only the staged target-bundled runner. CURRENT second-pass CI exposed a missing zipfile import in the new staging self-test; import wiring was fixed and the server SHA refreshed.",
+  "last_completed_atomic_action": "R46 merged after field readback proved BCP 0.7.10 active. Pre-Recovery counter-audit found bootstrap-runner skew: BCP 0.7.10 verified the 6.0.34 target ZIP but would launch the older installed recovery runner for the initial transition. R47 implements BCP 0.7.11: after target package SHA verification, it extracts/stages payload/tools/recovery_update_runner.py from that exact target ZIP, enforces exact member/size/UTF-8/syntax and sequence-6034 DriveFS fail-open contracts, performs byte readback/SHA receipt, and launches only the staged target-bundled runner. CURRENT second-pass CI exposed a missing zipfile import in the new staging self-test; import wiring was fixed and the server SHA refreshed. R50 codified the 5–6 minute execution-slice cadence, exact response/email mirroring, manual-first one-shot field rule, and CURRENT folder hygiene as durable project policy.",
   "next_action": "Qualify exact R47 head across CURRENT, Windows, Android, Nexus, Telegram and Field Ecosystem. If green, serialized merge and post-merge readback. Then field-update BCP once from 0.7.10 to 0.7.11, prove active readback, and invoke Recovery 6.0.34 exactly once.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
@@ -1873,5 +1873,18 @@
     "sha256": "8eb1cb124b9703f1b3db62aabe5b14b72278f7098b49dbd14d8d6c013353efa7",
     "target_bundled_recovery_runner": true,
     "field_verified": false
+  },
+  "operational_cadence_policy": {
+    "status": "CANONICAL",
+    "revision": "2026-09-20-R50",
+    "work_slice_minutes": "5-6",
+    "checkpoint_each_slice": true,
+    "email_body_must_equal_chat_response": true,
+    "manual_first_one_shot_field_rule": true,
+    "blind_retry_loops": false,
+    "current_install_folder": "API_BCP/00_INSTALL_CURRENT",
+    "replace_current_in_place": true,
+    "cleanup_temporary_uploads": true,
+    "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH"
   }
 }
