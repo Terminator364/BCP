@@ -363,20 +363,22 @@ def main() -> int:
         "Heure affichée : Kinshasa",
     )
 
-    # R53 delivery/cadence policy must remain explicit and machine-checkable.
+    # R55 delivery/cadence policy must remain explicit and machine-checkable.
     cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     assert cadence_policy["acceptable_window_minutes"] == [8, 10]
     assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [8, 10]
     assert delivery_policy["cadence"]["work_slice_minutes"] == "8-10"
-    assert delivery_policy["channels"]["email"]["body_must_equal_chat_checkpoint_exactly"] is True
-    assert delivery_policy["channels"]["email"]["send_before_chat_checkpoint"] is True
+    assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
+    assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
+    assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT"
+    assert delivery_policy["channels"]["chatgpt"]["detailed_checkpoint_body_forbidden_after_successful_email"] is True
     assert delivery_policy["checkpoint_delivery_order"] == [
-        "EMAIL_EXACT_MIRROR", "CHATGPT_FINAL", "TELEGRAM_WITNESS_OPTIONAL"
+        "EMAIL_FULL_CHECKPOINT", "CHATGPT_POINTER_ONLY", "TELEGRAM_WITNESS_OPTIONAL"
     ]
     assert delivery_policy["ui_policy"]["progressive_disclosure_required"] is True
     guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md")
-    require(guide, "mail miroir exact", "message final ChatGPT", "Telegram comme témoin", "📚 Rapports & technique", "heure de Kinshasa", "Page X/Y", "UTC+1")
+    require(guide, "mail détaillé complet", "pointeur ChatGPT", "Telegram comme témoin", "📚 Rapports & technique", "heure de Kinshasa", "Page X/Y", "UTC+1")
     assert delivery_policy["packaging"]["nested_zip_for_user_action_forbidden"] is True
 
     # Release coordination remains explicit.
