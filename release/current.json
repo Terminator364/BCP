@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "94f90907da7cfceed3dd598ffce81ec3dd5a14c56ef09db191f2d30fe951da78"
+        "sha256": "da40f3b8febfd84b572119a408cc867c384d943ea91e64380225801e22713c73"
       },
       "notes": "Nexus 0.2.4 remains the device-flow bundle; BCP 0.7.7 detects newer human-gate bundles without waiting for the normal 30-minute resident cycle."
     }
