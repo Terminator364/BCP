@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.1"
+SERVER_VERSION = "0.7.2"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -2543,6 +2543,47 @@ def conversation_append_message(conversation_id: str, *, alias: str, source_kind
     return {"result": "RECORDED", "conversation_id": cid, "sequence": seq,
             "content_hash": digest, "delivery_state": state}
 
+def _iso_age_seconds(value: str) -> int | None:
+    try:
+        parsed = dt.datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return max(0, int((dt.datetime.now(dt.timezone.utc) - parsed.astimezone(dt.timezone.utc)).total_seconds()))
+    except Exception:
+        return None
+
+def conversation_delivery_gaps(threshold_seconds: int = 5 * 60, limit: int = 20) -> list[dict]:
+    """Derive unanswered delivery risk without inventing hidden ChatGPT/UI state."""
+    threshold_seconds = max(60, min(int(threshold_seconds), 24 * 60 * 60))
+    limit = max(1, min(int(limit), 50))
+    with db_connection() as cx:
+        rows = cx.execute(
+            """SELECT m.conversation_id,m.sequence,m.role,m.text,m.generated_at,m.mirrored_at,
+                      m.delivery_state,m.evidence_class,m.linked_mission_id,m.content_hash,m.seen_at,
+                      t.alias,t.source_kind,t.last_activity_at
+               FROM conversation_messages m
+               JOIN conversation_threads t ON t.conversation_id=m.conversation_id
+               WHERE m.role='ASSISTANT'
+                 AND m.delivery_state IN ('GENERATED','MIRRORED_BCP','CHATGPT_UI_DELIVERY_UNKNOWN','DELIVERY_GAP_DETECTED')
+                 AND COALESCE(m.seen_at,'')=''
+               ORDER BY m.mirrored_at ASC LIMIT ?""",
+            (max(limit * 4, 20),),
+        ).fetchall()
+    out = []
+    for row in rows:
+        item = dict(row)
+        age = _iso_age_seconds(item.get("mirrored_at") or item.get("generated_at"))
+        if age is None or age < threshold_seconds:
+            continue
+        item["age_seconds"] = age
+        item["derived_state"] = "DELIVERY_GAP_DETECTED"
+        item["reason"] = "assistant_message_without_positive_downstream_seen_evidence"
+        item["text"] = _conversation_safe_text(item.get("text"))[:700]
+        out.append(item)
+        if len(out) >= limit:
+            break
+    return out
+
 def conversation_list(limit: int = 8) -> list[dict]:
     limit = max(1, min(int(limit), 20))
     with db_connection() as cx:
@@ -3396,6 +3437,23 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
+        if parts == ["v1", "conversations", "gaps"]:
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                threshold = int((query.get("threshold_seconds") or ["300"])[0])
+                limit = int((query.get("limit") or ["20"])[0])
+            except Exception:
+                threshold, limit = 300, 20
+            gaps = conversation_delivery_gaps(threshold, limit)
+            self.send_json(200, {
+                "ok": True,
+                "schema": "bcp.conversation_delivery_gaps/1",
+                "threshold_seconds": max(60, min(threshold, 86400)),
+                "gap_count": len(gaps),
+                "gaps": gaps,
+                "truth_boundary": "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE",
+            })
+            return
         if parts == ["v1", "conversations"]:
             query = parse_qs(urlparse(self.path).query)
             try:
@@ -4004,6 +4062,8 @@ def selftest():
         assert "conversation_threads" in source
         assert "conversation_messages" in source
         assert "/v1/conversations" in source
+        assert "conversation_delivery_gaps" in source
+        assert "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE" in source
         mirrored = conversation_append_message(
             "chat-main", alias="Conversation principale", source_kind="CHATGPT_UI",
             source_ref="local-test", message_key="turn-1", role="ASSISTANT",
@@ -4012,8 +4072,16 @@ def selftest():
         assert mirrored["result"] == "RECORDED"
         assert conversation_list(3)[0]["conversation_id"] == "chat-main"
         assert conversation_messages("chat-main", 3)[0]["delivery_state"] == "CHATGPT_UI_DELIVERY_UNKNOWN"
+        # Fresh message must not be called a gap; aging it beyond the threshold must.
+        assert conversation_delivery_gaps(300, 10) == []
+        with db_connection() as cx:
+            old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
+            cx.execute("UPDATE conversation_messages SET mirrored_at=?,generated_at=? WHERE conversation_id='chat-main'", (old, old))
+        gaps = conversation_delivery_gaps(300, 10)
+        assert len(gaps) == 1 and gaps[0]["derived_state"] == "DELIVERY_GAP_DETECTED"
         seen = conversation_mark_seen("chat-main")
         assert seen["updated"] == 1
+        assert conversation_delivery_gaps(300, 10) == []
         assert "TELEGRAM_COMPANION_MANIFEST_URL" in source
         assert "telegram_companion_update_status" in source
         assert "apply_telegram_companion_update" in source

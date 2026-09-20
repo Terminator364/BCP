@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_1_TELEGRAM_V12_NEXUS_0_2_3_R23_CONVERSATION_LEDGER_CANDIDATE",
-  "last_completed_atomic_action": "R23 candidate implemented: BCP 0.7.1 local Conversation Delivery Ledger, authenticated conversation receipt/list/seen endpoints, Telegram V12 Conversations inbox with X/Y/Z bounded previews and explicit ChatGPT UI delivery-unknown state, Nexus 0.2.3 callback parity, canonical R23 spec and CI guards.",
-  "next_action": "Open exact-head PR and run CURRENT, server/Android coordinated, Telegram, Nexus and field-ecosystem qualification. Fix only evidence-backed failures. Merge under writer fence only after all required exact-head CI passes. Cloudflare authorization and B-EDGE field install remain deferred genuine human gates while user is away.",
+  "status": "BCP_0_7_2_TELEGRAM_V13_R24_DELIVERY_GAP_CANDIDATE",
+  "last_completed_atomic_action": "R24 implemented: BCP 0.7.2 derives conversation delivery gaps from durable assistant-message receipts after a 5-minute threshold; Telegram V13 surfaces potentially missed responses as WATCH attention and clears the gap after USER_SEEN evidence.",
+  "next_action": "Add exact CI guards for R24, open a PR, qualify exact head, then merge only if main is unchanged and all required workflows pass. After merge, wait for resident self-update and verify via Drive; do not claim field convergence before machine readback.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -211,12 +211,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R23-CONVERSATION-DELIVERY-LEDGER-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_PR_PENDING",
-    "last_completed_action": "R23 code/spec/releases/CI guards persisted.",
-    "next_atomic_action": "Open PR and exact-head qualification.",
-    "branch": "work/bcp/r23-conversation-delivery-ledger-20260920",
-    "base_main_sha": "888f4c73565cc325b27ec3c62593d61d72aeaf17",
+    "checkpoint_id": "BCP-R24-DELIVERY-GAP-DETECTOR-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_PENDING",
+    "last_completed_action": "R24 server/Telegram/spec/release manifests persisted.",
+    "next_atomic_action": "CI guards + PR + exact-head qualification.",
+    "branch": "work/bcp/r24-delivery-gap-detector-20260920",
+    "base_main_sha": "7bfd8cdfcc2aa680a0af45758948d4cc65a8c908",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1562,6 +1562,18 @@
     "full_text_local_by_default": true,
     "telegram_conversations_button": true,
     "arbitrary_chatgpt_ui_history_access": false,
+    "field_verified": false
+  },
+  "delivery_gap_detector_r24": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.2",
+    "telegram_version": "2026.09.20-delivery-gap-v13",
+    "requirements_revision": "2026-09-20-R24",
+    "threshold_seconds": 300,
+    "derived_only_from_durable_receipts": true,
+    "watch_attention": true,
+    "clears_on_user_seen": true,
+    "hidden_chatgpt_state_inference": false,
     "field_verified": false
   }
 }
