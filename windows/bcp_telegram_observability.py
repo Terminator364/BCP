@@ -86,7 +86,37 @@ def redact_text(value: Any) -> str:
 
 
 def utc_now() -> str:
+    # Canonical machine timestamp. Durable receipts remain UTC.
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+
+
+KINSHASA_TZ = dt.timezone(dt.timedelta(hours=1), name="Africa/Kinshasa")
+
+
+def _parse_timestamp(value: Any) -> dt.datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return parsed
+    except Exception:
+        return None
+
+
+def human_timestamp(value: Any = None, *, seconds: bool = False) -> str:
+    """Render a timestamp for the human cockpit in Africa/Kinshasa (UTC+1).
+
+    Machine state stays UTC through utc_now(); only presentation is localized.
+    """
+    parsed = _parse_timestamp(value) if value not in (None, "") else dt.datetime.now(dt.timezone.utc)
+    if parsed is None:
+        return clean(value, 80) if "clean" in globals() else str(value or "")
+    local = parsed.astimezone(KINSHASA_TZ)
+    fmt = "%d/%m/%Y à %H:%M:%S" if seconds else "%d/%m/%Y à %H:%M"
+    return local.strftime(fmt) + " (Kinshasa)"
 
 
 def read_json(path: Path, default=None):
@@ -177,67 +207,177 @@ def _pdf_escape(text: str) -> str:
 
 def _pdf_ascii(text: str) -> str:
     replacements = {
-        "—": "-", "–": "-", "→": "->", "←": "<-", "•": "*",
+        "—": "-", "–": "-", "→": "->", "←": "<-", "•": "*", "≈": "~",
         "✅": "[OK]", "⚠️": "[!]", "⚠": "[!]", "🟢": "[OK]", "🟡": "[~]", "🟠": "[~]",
-        "🔴": "[X]", "⚪": "[ ]", "🤖": "BCP", "🎯": "NOW", "📊": "PROGRESS",
-        "➡️": "NEXT", "➡": "NEXT", "👤": "YOU", "🕒": "TIME", "⏱️": "AGE",
-        "📨": "SENT", "🌐": "NEXUS", "🧪": "TESTS", "🔧": "DETAILS", "ℹ️": "INFO",
-        "💾": "CHECKPOINT", "🏁": "DONE", "📌": "MISSION", "🧭": "PLAN",
-        "▶️": "START", "📤": "DISPATCH", "📥": "RESULT", "🔎": "VERIFY",
-        "🔁": "RETRY", "🛑": "BLOCKED", "⏹️": "STOP",
+        "🔴": "[X]", "⚪": "[ ]", "🤖": "BCP", "🎯": "OBJECTIF", "📊": "PROGRESSION",
+        "➡️": "ENSUITE", "➡": "ENSUITE", "👤": "VOUS", "🕒": "HEURE", "⏱️": "AGE",
+        "📨": "ENVOI", "🌐": "RESEAU", "🧪": "TESTS", "🔧": "DETAILS", "ℹ️": "INFO",
+        "💾": "CHECKPOINT", "🏁": "TERMINE", "📌": "MISSION", "🧭": "PLAN",
+        "▶️": "DEMARRER", "📤": "ENVOYE", "📥": "RECU", "🔎": "VERIFIER",
+        "🔁": "REESSAI", "🛑": "BLOQUE", "⏹️": "ARRET", "🛰️": "BCP",
+        "💬": "MESSAGES", "❓": "POURQUOI", "📍": "ETAPE", "⚙️": "TRAVAIL",
+        "🔭": "RISQUES", "🔕": "PAUSE", "🔔": "ALERTES", "📄": "RAPPORT",
+        "🖥️": "APPAREILS", "📚": "AUDIT", "🧰": "TECHNIQUE", "🕘": "NOUVEAUTES",
+        "📈": "PROGRESSION", "🎚️": "CONFIANCE", "🔵": "[i]", "🟣": "[ACTION]",
     }
     for src, dst in replacements.items():
         text = text.replace(src, dst)
     return text.encode("cp1252", errors="replace").decode("cp1252")
 
 
+def _pdf_wrap(text: str, width: int) -> list[str]:
+    value = _pdf_ascii(text).strip()
+    if not value:
+        return [""]
+    out: list[str] = []
+    while len(value) > width:
+        cut = value.rfind(" ", 0, width + 1)
+        if cut < max(18, width // 3):
+            cut = width
+        out.append(value[:cut].rstrip())
+        value = value[cut:].lstrip()
+    out.append(value)
+    return out
+
+
+def _pdf_style(raw: str) -> tuple[str, str]:
+    line = str(raw or "").strip()
+    if not line:
+        return "blank", ""
+    if line.startswith("- ") or line.startswith("* "):
+        return "bullet", line[2:].strip()
+    if (
+        len(line) <= 76
+        and any(ch.isalpha() for ch in line)
+        and line.upper() == line
+        and not line.startswith(("HTTP", "SHA", "ID:"))
+    ):
+        return "section", line
+    if line.startswith(("À RETENIR", "ACTION POUR VOUS", "CE QUI BLOQUE", "CE QUI VA")):
+        return "section", line
+    return "body", line
+
+
 def text_pdf_bytes(title: str, body: str) -> bytes:
-    # Tiny dependency-free PDF for low-data status exports.
-    lines: list[str] = []
-    for raw in (title + "\n\n" + body).splitlines():
-        raw = _pdf_ascii(raw)
-        if not raw:
-            lines.append("")
+    """Dependency-free, low-footprint but human-readable PDF renderer.
+
+    It is intentionally lightweight for the 4 GB Windows target, while adding
+    hierarchy, margins, pagination and Kinshasa-labelled page footers.
+    """
+    doc_title = _pdf_ascii(clean(title, 140))
+    raw_lines = str(body or "").splitlines()
+
+    # Prevent the historical double-title defect when a report body repeats its title.
+    if raw_lines and raw_lines[0].strip().upper().startswith("BCP") and "RAPPORT" in raw_lines[0].upper():
+        raw_lines = raw_lines[1:]
+        if raw_lines and not raw_lines[0].strip():
+            raw_lines = raw_lines[1:]
+
+    specs = {
+        "title": {"font": "F2", "size": 16, "leading": 21, "width": 56, "indent": 0},
+        "section": {"font": "F2", "size": 11.5, "leading": 17, "width": 70, "indent": 0},
+        "body": {"font": "F1", "size": 9.5, "leading": 13, "width": 82, "indent": 0},
+        "bullet": {"font": "F1", "size": 9.5, "leading": 13, "width": 78, "indent": 12},
+        "small": {"font": "F1", "size": 8, "leading": 11, "width": 94, "indent": 0},
+        "blank": {"font": "F1", "size": 9.5, "leading": 8, "width": 82, "indent": 0},
+    }
+
+    entries: list[tuple[str, str]] = [("title", doc_title), ("blank", "")]
+    for raw in raw_lines:
+        style, value = _pdf_style(raw)
+        if style == "blank":
+            entries.append((style, ""))
             continue
-        while len(raw) > 92:
-            cut = raw.rfind(" ", 0, 92)
-            if cut < 24:
-                cut = 92
-            lines.append(raw[:cut].rstrip())
-            raw = raw[cut:].lstrip()
-        lines.append(raw)
-    per_page = 46
-    pages = [lines[i:i + per_page] for i in range(0, max(1, len(lines)), per_page)] or [[]]
+        width = int(specs[style]["width"])
+        wrapped = _pdf_wrap(value, width)
+        for pos, line in enumerate(wrapped):
+            if style == "bullet":
+                entries.append(("bullet", ("• " if pos == 0 else "  ") + line))
+            else:
+                entries.append((style, line))
+
+    page_width, page_height = 595, 842
+    left, top, bottom = 48, 792, 58
+    pages: list[list[tuple[str, str, float]]] = []
+    page: list[tuple[str, str, float]] = []
+    y = float(top)
+
+    for style, line in entries:
+        spec = specs[style]
+        leading = float(spec["leading"])
+        # Avoid section headings stranded at the bottom.
+        required = leading + (13 if style == "section" else 0)
+        if y - required < bottom:
+            pages.append(page)
+            page = []
+            y = float(top - 18)
+        page.append((style, line, y))
+        y -= leading
+    if page or not pages:
+        pages.append(page)
 
     objects: list[bytes] = []
-    # 1 Catalog, 2 Pages, 3 Helvetica font.
     objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
     objects.append(b"")
     objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>")
+
     page_refs: list[int] = []
-    next_obj = 4
-    for page_lines in pages:
+    next_obj = 5
+    total_pages = len(pages)
+    generated_footer = "Heure affichée : Kinshasa (UTC+1)"
+
+    for page_no, page_lines in enumerate(pages, 1):
         page_obj = next_obj
         stream_obj = next_obj + 1
         next_obj += 2
         page_refs.append(page_obj)
-        content = ["BT", "/F1 10 Tf", "48 790 Td", "12 TL"]
-        for idx, line in enumerate(page_lines):
-            if idx:
-                content.append("T*")
-            content.append("(" + _pdf_escape(line) + ") Tj")
-        content.append("ET")
+
+        content: list[str] = ["BT"]
+        if page_no > 1:
+            content += [
+                "/F2 8 Tf",
+                f"1 0 0 1 {left} 814 Tm",
+                "(" + _pdf_escape(doc_title) + ") Tj",
+            ]
+        for style, line, line_y in page_lines:
+            spec = specs[style]
+            font = str(spec["font"])
+            size = float(spec["size"])
+            indent = float(spec["indent"])
+            text_value = _pdf_ascii(line)
+            content += [
+                f"/{font} {size:g} Tf",
+                f"1 0 0 1 {left + indent:g} {line_y:g} Tm",
+                "(" + _pdf_escape(text_value) + ") Tj",
+            ]
+        footer = f"Page {page_no}/{total_pages} - {generated_footer}"
+        content += [
+            "/F1 7.5 Tf",
+            f"1 0 0 1 {left} 28 Tm",
+            "(" + _pdf_escape(_pdf_ascii(footer)) + ") Tj",
+            "ET",
+        ]
         stream = "\n".join(content).encode("cp1252", errors="replace")
         objects.append(
-            ("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] "
-             "/Resources << /Font << /F1 3 0 R >> >> /Contents " +
-             str(stream_obj) + " 0 R >>").encode("ascii")
+            (
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
+                + str(page_width) + " " + str(page_height)
+                + "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "
+                + str(stream_obj) + " 0 R >>"
+            ).encode("ascii")
         )
-        objects.append(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")
-    kids = " ".join(str(x) + " 0 R" for x in page_refs)
-    objects[1] = ("<< /Type /Pages /Kids [" + kids + "] /Count " + str(len(page_refs)) + " >>").encode("ascii")
+        objects.append(
+            b"<< /Length " + str(len(stream)).encode("ascii")
+            + b" >>\nstream\n" + stream + b"\nendstream"
+        )
 
-    out = bytearray(b"%PDF-1.4\n%BCP\n")
+    kids = " ".join(str(x) + " 0 R" for x in page_refs)
+    objects[1] = (
+        "<< /Type /Pages /Kids [" + kids + "] /Count " + str(len(page_refs)) + " >>"
+    ).encode("ascii")
+
+    out = bytearray(b"%PDF-1.4\n%BCP-HUMAN-PDF\n")
     offsets = [0]
     for i, obj in enumerate(objects, start=1):
         offsets.append(len(out))
@@ -248,8 +388,10 @@ def text_pdf_bytes(title: str, body: str) -> bytes:
     for off in offsets[1:]:
         out.extend(f"{off:010d} 00000 n \n".encode("ascii"))
     out.extend(
-        ("trailer\n<< /Size " + str(len(objects) + 1) + " /Root 1 0 R >>\n"
-         "startxref\n" + str(xref) + "\n%%EOF\n").encode("ascii")
+        (
+            "trailer\n<< /Size " + str(len(objects) + 1) + " /Root 1 0 R >>\n"
+            "startxref\n" + str(xref) + "\n%%EOF\n"
+        ).encode("ascii")
     )
     return bytes(out)
 
