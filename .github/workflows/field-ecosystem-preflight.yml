@@ -1,0 +1,88 @@
+name: BCP Field Ecosystem Preflight
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "windows/**"
+      - "android-b-edge/**"
+      - "release/**"
+      - "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - "tools/validate_field_ecosystem.py"
+      - ".github/workflows/field-ecosystem-preflight.yml"
+  push:
+    paths:
+      - "windows/**"
+      - "android-b-edge/**"
+      - "release/**"
+      - "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - "tools/validate_field_ecosystem.py"
+      - ".github/workflows/field-ecosystem-preflight.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-field-ecosystem-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deterministic-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate real field ecosystem invariants
+        run: python tools/validate_field_ecosystem.py
+
+  windows-field-shaped:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and run Nexus self-test
+        shell: powershell
+        run: |
+          $null = [scriptblock]::Create((Get-Content -Raw '.\windows\BOOTSTRAP_BCP_NEXUS.ps1'))
+          & '.\windows\BOOTSTRAP_BCP_NEXUS.ps1' -SelfTest
+      - name: Exercise silent system-launcher failure and direct node-to-JS invocation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP ('bcp-field-' + [guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          try {
+            $bad = Join-Path $root 'npx.cmd'
+            [IO.File]::WriteAllText($bad, "@echo off`r`nexit /b 1`r`n")
+            $null = & $bad --version 2>&1
+            if ($LASTEXITCODE -ne 1) { throw 'EXPECTED_SILENT_NPX_EXIT_1' }
+
+            $node = (Get-Command node.exe -ErrorAction Stop).Source
+            $fake = Join-Path $root 'npx-cli.js'
+            [IO.File]::WriteAllText($fake, "if (!process.argv.includes('--version')) process.exit(9); console.log('wrangler 4.135.0');")
+            $out = & $node $fake --yes wrangler@4.135.0 --version 2>&1
+            if ($LASTEXITCODE -ne 0) { throw 'NODE_DIRECT_NPX_CLI_FAILED' }
+            if (($out -join "`n") -notmatch '4\.135\.0') { throw 'NODE_DIRECT_NPX_CLI_OUTPUT_MISSING' }
+            Write-Host 'BCP_FIELD_WRANGLER_FALLBACK_SHAPE=PASS'
+          } finally {
+            Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+          }
+
+  low-resource-build-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard serialized Android build profile and pressure policy
+        shell: python
+        run: |
+          import pathlib
+          wf = pathlib.Path(".github/workflows/coordinated-product.yml").read_text(encoding="utf-8")
+          edge = pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java").read_text(encoding="utf-8")
+          assert "--max-workers=1" in wf
+          assert "-Xmx1536m" in wf
+          assert "PC_MEMORY_PRESSURE" in edge
+          assert "WAITING_FOR_PC" in edge
+          print("BCP_LOW_RESOURCE_BUILD_PROFILE=PASS")
