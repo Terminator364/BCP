@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "5e2e772b4f64db2193508c5a856b657e00034ed53ac23525f0e8fbd2a8f1f6de"
+        "sha256": "44d360b77a8602edbad3c3078b666624338c63bcf3e43650ed7d0b8f07885252"
       },
       "notes": "Nexus 0.1.6 persists a bounded secret-free failure receipt when managed Node/Wrangler preparation or the Wrangler version probe cannot complete. BCP 0.6.7 mirrors the failure stage/detail externally. No manual Node/Wrangler installation is the normal path."
     }
