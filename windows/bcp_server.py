@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.6"
+SERVER_VERSION = "0.6.7"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -351,6 +351,9 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "nexus_bootstrap_bundle_version": str(nexus.get("bundle_version") or "")[:40],
         "nexus_bootstrap_exit_code": nexus.get("exit_code"),
         "nexus_bootstrap_receipt_status": str(nexus.get("receipt_status") or "")[:80],
+        "nexus_bootstrap_error_class": str(nexus.get("error_class") or "")[:120],
+        "nexus_bootstrap_error_detail": str(nexus.get("error_detail") or "")[:240],
+        "nexus_bootstrap_stage": str(nexus.get("stage") or "")[:120],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
@@ -991,6 +994,8 @@ def _monitor_nexus_bootstrap(
         receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
         receipt_status = str(receipt.get("status") or "")
         error_class = str(receipt.get("error_class") or "")[:240]
+        error_detail = str(receipt.get("error_detail") or "")[:240]
+        failure_stage = str(receipt.get("stage") or "")[:120]
         if timed_out and not error_class:
             error_class = "BOOTSTRAP_PROCESS_TIMEOUT"
         success = receipt_status == "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"
@@ -1031,6 +1036,8 @@ def _monitor_nexus_bootstrap(
             "receipt_present": bool(receipt),
             "receipt_status": receipt_status,
             "error_class": error_class,
+            "error_detail": error_detail,
+            "stage": failure_stage,
             "spend_usd": 0.0,
         })
         try:

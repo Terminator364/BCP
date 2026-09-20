@@ -1,13 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "5ca88f51f9ad27a3a17da912243c0d7e28f792790e8e87438adaea0540248b9e",
+  "sha256": "9ac158600e898c0ac5653ce484827c832c279c4269e678ad2423f377ddc9ad63",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.0.0-rc1-evergreen",
-  "requirements_revision": "2026-09-19-R8",
-  "release_train": "BCP-0.6.6_EDGE-2.0.0-rc1"
+  "requirements_revision": "2026-09-20-R11",
+  "release_train": "BCP-0.6.7_EDGE-2.0.0-rc1",
+  "notes": "Adds secret-free Nexus managed-runtime failure class/detail/stage to durable external telemetry so home-WiFi field failures can be diagnosed without user log shuttling."
 }

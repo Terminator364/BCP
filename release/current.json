@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.6.6",
+      "version": "0.6.7",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "5ca88f51f9ad27a3a17da912243c0d7e28f792790e8e87438adaea0540248b9e"
+        "sha256": "9ac158600e898c0ac5653ce484827c832c279c4269e678ad2423f377ddc9ad63"
       },
-      "notes": "BCP 0.6.6 includes the 0.6.5 bounded Nexus retry contract and adds a 45-minute bootstrap watchdog, process-tree termination, orphan LAUNCHED recovery after server restart, and a serialized Nexus delivery lock. This prevents an alive-but-stalled bootstrap from blocking convergence indefinitely."
+      "notes": "BCP 0.6.7 preserves 0.6.6 watchdog/recovery and adds secret-free Nexus runtime-preparation failure class/detail/stage to the external machine-readable heartbeat so field failures can be diagnosed without user log shuttling."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -41,7 +41,7 @@
       "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
     },
     "nexus": {
-      "version": "0.1.5",
+      "version": "0.1.6",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "f22dc9e77a01676fc381723c5365761d5a8cc2fb5d03191fd34fe13b6a50e88f"
+        "sha256": "44d360b77a8602edbad3c3078b666624338c63bcf3e43650ed7d0b8f07885252"
       },
-      "notes": "Nexus 0.1.5 extends the persistent editable live-card path with allowlisted inline callback controls, cached sanitized summary/technical reports, and Telegram PDF delivery so the cockpit can remain useful when direct PC-to-Telegram egress is degraded. Candidate only until exact-head CI and Kinshasa field round-trip."
+      "notes": "Nexus 0.1.6 persists a bounded secret-free failure receipt when managed Node/Wrangler preparation or the Wrangler version probe cannot complete. BCP 0.6.7 mirrors the failure stage/detail externally. No manual Node/Wrangler installation is the normal path."
     }
   },
   "telegram_cockpit": {
