@@ -2366,45 +2366,64 @@ class Telegram:
         prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
         prior_level = str(prior.get("level") or "")
         prior_key = str(prior.get("key") or "")
+        prior_open = bool(prior.get("incident_open")) or prior_level in {"CRITICAL", "ACTION"}
+        already_ack = self.service.attention_is_acknowledged(key)
+
+        # Same incident already delivered/acknowledged does not interrupt again.
+        # A failed delivery is never marked done, so it remains retryable.
         if prior_key == key:
-            return
+            if level not in {"CRITICAL", "ACTION"} or bool(prior.get("notified")) or already_ack:
+                return
 
-        text = ""
         critical = level in {"CRITICAL", "ACTION"}
-        recovery = prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}
-
-        # Human-action/critical transitions are immediate. Recovery must be seen
-        # twice (or remain stable for 60s) before notifying, which damps flapping.
+        recovery = prior_open and level in {"ACTIVE", "NORMAL"}
         if recovery and not self.service.recovery_transition_stable(key, level):
             return
         if recovery:
             self.service.clear_attention_ack()
 
         acknowledged = self.service.attention_is_acknowledged(key)
-        if level in {"CRITICAL", "ACTION"}:
+        text = ""
+        if critical:
             text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
         elif recovery:
             text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
-        allowed = (
-            bool(text)
-            and not acknowledged
-            and self.service.notifications_allowed(critical)
-            and self.service.consume_notification_budget(
-                "attention:" + ("critical" if critical else "recovery"),
-                critical=critical,
-            )
-        )
-        # WATCH remains dashboard/Radar-only while safe automation is available.
+        category = "attention:" + ("critical" if critical else "recovery")
+        budget_ok = self.service.notification_budget_available(category, critical=critical)
+        allowed = bool(text) and not acknowledged and self.service.notifications_allowed(critical) and budget_ok
+        delivered = False
         if allowed:
-            self.send(text, silent=recovery)
+            try:
+                delivered = self.send(text, silent=recovery) is not None
+            except Exception as e:
+                append_log("ATTENTION_DELIVERY_DEFERRED", transport="DIRECT_TELEGRAM",
+                           error_class=type(e).__name__, detail=clean(e, 140))
+                delivered = False
+            if delivered:
+                self.service.record_notification_delivery(category, critical=critical)
+            else:
+                # Keep the previous incident state authoritative so reconnect can retry.
+                return
+
+        if critical:
+            incident_open = True
+        elif recovery:
+            incident_open = False
+        elif level == "WATCH":
+            incident_open = prior_open
+        else:
+            incident_open = False
+
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
-            "schema": "bcp.telegram_attention_notice/2",
+            "schema": "bcp.telegram_attention_notice/3",
             "key": key,
             "level": level,
             "root": root,
+            "incident_open": incident_open,
             "acknowledged": acknowledged,
-            "notified": bool(allowed),
+            "notified": bool(delivered),
+            "notification_suppressed": bool(text) and not allowed,
             "updated_at": utc_now(),
             "transport": "DIRECT_TELEGRAM",
         })
@@ -2700,41 +2719,62 @@ class Nexus:
         prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
         prior_level = str(prior.get("level") or "")
         prior_key = str(prior.get("key") or "")
-        if prior_key == key:
-            return
+        prior_open = bool(prior.get("incident_open")) or prior_level in {"CRITICAL", "ACTION"}
+        already_ack = self.service.attention_is_acknowledged(key)
 
-        text = ""
+        if prior_key == key:
+            if level not in {"CRITICAL", "ACTION"} or bool(prior.get("notified")) or already_ack:
+                return
+
         critical = level in {"CRITICAL", "ACTION"}
-        recovery = prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}
+        recovery = prior_open and level in {"ACTIVE", "NORMAL"}
         if recovery and not self.service.recovery_transition_stable(key, level):
             return
         if recovery:
             self.service.clear_attention_ack()
 
         acknowledged = self.service.attention_is_acknowledged(key)
-        if level in {"CRITICAL", "ACTION"}:
+        text = ""
+        if critical:
             text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
         elif recovery:
             text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
-        allowed = (
-            bool(text)
-            and not acknowledged
-            and self.service.notifications_allowed(critical)
-            and self.service.consume_notification_budget(
-                "attention:" + ("critical" if critical else "recovery"),
-                critical=critical,
-            )
-        )
+        category = "attention:" + ("critical" if critical else "recovery")
+        budget_ok = self.service.notification_budget_available(category, critical=critical)
+        allowed = bool(text) and not acknowledged and self.service.notifications_allowed(critical) and budget_ok
+        delivered = False
         if allowed:
-            self.push(text, "attention:" + key, silent=recovery)
+            try:
+                self.push(text, "attention:" + key, silent=recovery)
+                delivered = True
+            except Exception as e:
+                append_log("ATTENTION_DELIVERY_DEFERRED", transport="NEXUS",
+                           error_class=type(e).__name__, detail=clean(e, 140))
+                delivered = False
+            if delivered:
+                self.service.record_notification_delivery(category, critical=critical)
+            else:
+                return
+
+        if critical:
+            incident_open = True
+        elif recovery:
+            incident_open = False
+        elif level == "WATCH":
+            incident_open = prior_open
+        else:
+            incident_open = False
+
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
-            "schema": "bcp.telegram_attention_notice/2",
+            "schema": "bcp.telegram_attention_notice/3",
             "key": key,
             "level": level,
             "root": root,
+            "incident_open": incident_open,
             "acknowledged": acknowledged,
-            "notified": bool(allowed),
+            "notified": bool(delivered),
+            "notification_suppressed": bool(text) and not allowed,
             "updated_at": utc_now(),
             "transport": "NEXUS",
         })
