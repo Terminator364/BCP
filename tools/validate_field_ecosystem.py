@@ -189,6 +189,11 @@ def main() -> int:
         "process_conversation_receipt_inbox",
         "conversation_sequence_gaps",
         '["v1", "conversations", "sequence-gaps"]',
+        "conversation_producers",
+        "conversation_register_producer",
+        "conversation_receipt_ack.json",
+        '["v1", "conversations", "producers"]',
+        '"producer-heartbeat"',
     )
     require(
         telegram,
@@ -199,6 +204,9 @@ def main() -> int:
         "delivery_gap_count",
         "Synchronisation incomplète",
         "sequence_gap_count",
+        "conversation_producer_sync",
+        "Sync producteur complète",
+        "announced_sequence",
     )
 
     # Release coordination remains explicit.
