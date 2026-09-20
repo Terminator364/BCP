@@ -43,6 +43,8 @@ NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
+NEXUS_DEVICE_TOKEN_PATH = STATE_DIR / "nexus_device_token.txt"
+TELEGRAM_OBSERVABILITY_CONFIG_PATH = STATE_DIR / "telegram_observability.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 MISSION_STALE_SECONDS = 10 * 60
@@ -72,6 +74,40 @@ def sha256_text(value: str) -> str:
 def public_identity_fingerprint(token: str) -> str:
     """Stable non-secret PC identity hint for one-time user confirmation."""
     return hashlib.sha256(("BCP-PC-IDENTITY:" + token).encode("utf-8")).hexdigest()[:20]
+
+
+def edge_nexus_credential() -> dict:
+    """Return a B-EDGE-specific derived Nexus credential; never expose the PC root token."""
+    pair = read_json(PAIR_PATH, {}) or {}
+    if not pair:
+        return {"ok": False, "ready": False, "reason": "EDGE_NOT_PAIRED"}
+    cfg = read_json(TELEGRAM_OBSERVABILITY_CONFIG_PATH, {}) or {}
+    transport = cfg.get("transport") or {}
+    base_url = str(transport.get("nexus_url") or "").strip().rstrip("/")
+    root_token = ""
+    try:
+        root_token = NEXUS_DEVICE_TOKEN_PATH.read_text(encoding="utf-8").strip()
+    except Exception:
+        root_token = ""
+    if not base_url.startswith("https://") or len(root_token) < 24:
+        return {"ok": True, "ready": False, "reason": "NEXUS_NOT_FIELD_PROVISIONED"}
+
+    device_name = str(pair.get("device_name") or "B-EDGE")[:120]
+    edge_id = "edge-" + sha256_text(
+        device_name + "\n" + public_identity_fingerprint(root_token)
+    )[:24]
+    msg = ("B-EDGE-DERIVED/1\n" + edge_id).encode("utf-8")
+    token = hmac.new(root_token.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+    return {
+        "ok": True,
+        "ready": True,
+        "schema": "bcp.edge_nexus_credential/1",
+        "nexus_url": base_url,
+        "device_id": edge_id,
+        "device_token": token,
+        "credential_scope": "EDGE_SENTINEL_PUSH",
+        "derived": True,
+    }
 
 
 def private_or_loopback(addr: str) -> bool:
@@ -3175,6 +3211,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, nexus_bootstrap_delivery_status(check_remote=True))
             except Exception as e:
                 self.send_json(503, {"ok": False, "error": "nexus_bootstrap_status_failed", "detail": str(e)[:500]})
+            return
+
+        if path == "/v1/nexus/edge-credential":
+            try:
+                result = edge_nexus_credential()
+                self.send_json(200 if result.get("ok") else 409, result)
+            except Exception as e:
+                self.send_json(503, {"ok": False, "ready": False, "error": "edge_nexus_credential_failed", "detail": type(e).__name__})
             return
 
         if path == "/v1/edge/update":
