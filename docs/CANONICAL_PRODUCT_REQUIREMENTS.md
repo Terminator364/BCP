@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R21
+Revision: 2026-09-20-R22
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1164,3 +1164,43 @@ Rich formatting changes presentation only. Approximate progress, prediction conf
 
 Canonical detailed requirement:
 - `docs/TELEGRAM_RICH_COCKPIT_V10_R21.md`
+
+## P0 — Telegram Attention Lifecycle V11 / R22
+
+This requirement is additive and preserves R21 Rich Cockpit behavior.
+
+### Acknowledge without hiding reality
+The human cockpit MUST expose a **J’ai vu** acknowledgement for the current attention signal. Acknowledgement:
+- records only that the user has seen the current signal/root reason;
+- suppresses repeat interruption for that exact unchanged signal;
+- MUST NOT mark the underlying incident resolved;
+- MUST NOT suppress a new root cause, worsened severity, or a new human-action gate;
+- remains local/durable and secret-free.
+
+### Anti-flapping
+Recovery notifications MUST be damped so transient oscillations do not produce repeated “incident/recovery” chatter.
+Default recovery stability gate:
+- at least 2 consecutive observations, OR
+- at least 60 seconds continuously in the recovered state.
+
+CRITICAL and genuine ACTION REQUISE transitions remain immediate.
+
+### Notification budget
+Routine noncritical notifications MUST be rate-bounded independently of monitoring:
+- default rolling window: 30 minutes;
+- default routine interruption budget: 3;
+- CRITICAL and genuine human-action gates bypass this budget;
+- WATCH remains dashboard/Radar-first and does not page while safe automation exists;
+- budget exhaustion suppresses notification delivery only, never evaluation, watchdogs, state persistence, or recovery.
+
+### Operational semantics
+The cockpit MUST distinguish:
+- detected;
+- acknowledged by the human;
+- being handled automatically;
+- recovered/resolved by observable evidence.
+
+Acknowledgement is never evidence of recovery.
+
+### External basis
+This design intentionally follows established incident-management practice: alerts should be actionable, deduplicated/grouped, and resistant to flapping/noise. The implementation remains zero-dollar and does not depend on paid alerting services.
