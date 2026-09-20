@@ -8,7 +8,7 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R28",
+  "requirements_revision": "2026-09-20-R29",
   "release_train": "BCP-0.7.6_EDGE-2.1.0-rc1-sentinel",
   "notes": "BCP 0.7.6 preserves R27 and adds evidence-based conversation latency decomposition: producer response, producer-to-BCP mirror, mirror-to-seen, and request-to-seen where durable timestamps exist."
 }
