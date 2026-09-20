@@ -75,7 +75,7 @@ jobs:
           for rich_guard in [
               "sendRichMessage", "rich_message", "RICH_V10", "V9_PLAIN_FALLBACK",
               "bcp:since", "bcp:why", "bcp:risks", "bcp:continue",
-              "bcp:pdf:devices", "bcp:pdf:mission",
+              "bcp:pdf:devices", "bcp:pdf:mission", "disable_notification",
           ]:
               assert rich_guard in joined, rich_guard
           for report_key in ["summary", "devices", "mission", "technical"]:
