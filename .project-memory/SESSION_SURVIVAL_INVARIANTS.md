@@ -59,3 +59,16 @@ Subsequent turns use revision-aware `UNCHANGED/DELTA` refresh rather than full m
 The bootstrap code is not an authentication token. An authorized connected BCP/Drive/app path must exist.
 
 Canonical design: `docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md`.
+
+
+## Universal code registry and tranche cadence — 2026-09-20
+
+Every fresh recovery MUST load:
+- `.project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json`;
+- `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`.
+
+`BCPGO` remains the universal cold bootstrap. Project-specific short codes are durable pointers/aliases, never summaries and never authentication credentials.
+
+For current and future technical projects, the default interactive cadence is a useful-work tranche of about 5–7 minutes with a durable visible checkpoint before optional overrun. A real human gate/tool failure may return earlier. Past conversations are not retroactively rewritten; their projects recover through durable state plus `BCPGO <project>`.
+
+Plain `Continue` is valid only when the active project/mission is unambiguous. A fresh or ambiguous conversation should use `BCPGO` or `BCPGO <project>`.
