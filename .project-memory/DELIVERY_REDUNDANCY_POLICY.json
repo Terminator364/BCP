@@ -4,11 +4,11 @@
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
-      "role": "PRIMARY_INTERACTIVE_WORK_SURFACE",
+      "role": "PRIMARY_INTERACTIVE_WORK_SURFACE_SECOND_CHECKPOINT_COPY",
       "delivery_is_not_assumed_reliable": true
     },
     "email": {
-      "role": "PRIMARY_CHECKPOINT_FALLBACK",
+      "role": "PRIMARY_CHECKPOINT_DELIVERY",
       "body_must_equal_chat_checkpoint_exactly": true,
       "subject_must_include_checkpoint_id": true,
       "action_instruction_supersession_required": true,
@@ -16,7 +16,7 @@
       "failure_behavior": "IF_EMAIL_SEND_FAILS_DO_NOT_CLAIM_SENT; SURFACE_EMAIL_DELIVERY_HOLD_IN_CHAT"
     },
     "telegram": {
-      "role": "SECONDARY_WITNESS_AND_ALERT_CHANNEL",
+      "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",
       "must_not_replace_email_exact_mirror": true,
       "stale_seen_alerts_are_not_runtime_failures": true
     }
@@ -41,5 +41,15 @@
     "cleanup_superseded_current_artifacts": true,
     "single_extraction_required_for_user_current": true
   },
-  "propagation": "PORT_ON_NEXT_TOUCH_TO_OTHER_PROJECTS"
+  "propagation": "PORT_ON_NEXT_TOUCH_TO_OTHER_PROJECTS",
+  "checkpoint_delivery_order": [
+    "EMAIL_EXACT_MIRROR",
+    "CHATGPT_FINAL",
+    "TELEGRAM_WITNESS_OPTIONAL"
+  ],
+  "ui_policy": {
+    "primary_surface": "ORIENTATION_AND_HUMAN_ACTION_ONLY",
+    "advanced_surface": "REPORTS_AND_TECHNICAL_EVIDENCE",
+    "progressive_disclosure_required": true
+  }
 }
