@@ -815,9 +815,10 @@ class Service:
         mission_state = str(mission.get("status") or ev.get("state") or "UNKNOWN").upper()
 
         if ctx:
+            plan_for_objective = ctx.get("plan") or []
             objective = clean(
                 mission.get("objective") or mission.get("title") or
-                (ctx.get("plan") or [{}])[0].get("label") if (ctx.get("plan") or []) else
+                ((plan_for_objective[0].get("label") if isinstance(plan_for_objective[0], dict) else "") if plan_for_objective else "") or
                 "Faire avancer la mission API/BCP",
                 180,
             )
@@ -1358,13 +1359,13 @@ class Service:
 
     def help(self) -> str:
         return (
-            "BCP Cockpit — lecture simple\n"
-            "/status — mission actuelle\n/missions — missions récentes\n/details — vue technique\n"
-            "/report — PDF de suivi\n/reporttech — PDF technique\n"
+            "Automate de suivi BCP — lecture simple\n"
+            "/status — situation actuelle\n/missions — objectifs/missions\n/details — vue technique\n"
+            "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
-            "Les boutons du cockpit donnent accès aux vues utiles sans retaper les commandes. "
-            "Les pourcentages portent seulement sur des plans finis et vérifiables. "
-            "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
+            "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
+            "Le compteur marqué ≈ est une estimation dynamique de micro-actions atomiques; les actions confirmées restent fondées sur des preuves durables. "
+            "Aucun état interne ni chaîne de pensée ChatGPT n’est lu."
         )
 
     def dispatch(self, text: str) -> str:
@@ -2114,21 +2115,21 @@ def selftest() -> int:
             local=LocalTruth(root), github=FakeGitHub()
         )
         status = svc.status()
-        assert "🤖 BCP Cockpit" in status
-        assert "🎯 Micro-action actuelle: Lancer le test Windows Bootstrap" in status
-        assert "📊 Progression: █████░░░░░ 50% — 2/4 micro-actions vérifiées" in status
-        assert "✅ Dernière micro-action terminée: Vérifier le commit de la PR" in status
-        assert "➡️ Prochaine micro-action: Lire le journal du test Windows" in status
+        assert "🛰️ Automate de suivi BCP" in status
+        assert "🧭 Étape en cours : Lancer le test Windows Bootstrap" in status
+        assert "📈 Avancement estimé :" in status and "micro-actions" in status
+        assert "✅ Dernière action confirmée : Vérifier le commit de la PR" in status
+        assert "➡️ Ensuite : Lire le journal du test Windows" in status
         assert "Ancien téléphone" in status
         assert "💰 Coût: $0.00" not in status
-        assert "👤 Action pour vous: AUCUNE" in status
+        assert "Votre intervention" not in status
         assert "🕒 Dernière preuve:" in status
-        assert "🧪 ✅ tests réussis" in status
+        assert "🧪 Tests terminés avec succès" in status
         assert "1. ✅ Lire le cahier des charges courant" in svc.plan_view()
         assert "3. ▶️ Lancer le test Windows Bootstrap" in svc.plan_view()
         presence = svc.presence_snapshot()
         assert len(presence["fingerprint"]) == 64
-        assert "🤖 BCP Cockpit" in presence["text"]
+        assert "🛰️ Automate de suivi BCP" in presence["text"]
         assert "Ancien téléphone" in presence["text"]
         details = svc.details()
         assert "État global: EN_COURS" in details
@@ -2163,7 +2164,7 @@ def selftest() -> int:
             "bcp:status", "bcp:where", "bcp:tail", "bcp:missions", "bcp:details",
             "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
-        assert "chaîne de pensée" in svc.help()
+        assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
