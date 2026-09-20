@@ -3717,7 +3717,7 @@ def selftest() -> int:
         assert "Bridge ChatGPT-PC: CAUGHT_UP" in inbox
         assert "Conversation principale" in inbox
         assert "affichage ChatGPT non confirmé" in inbox
-        assert "Réponse potentiellement manquée" in inbox
+        assert "Réponse sauvegardée mais lecture non confirmée" in inbox
         assert svc.presence_snapshot()["snapshot"]["delivery_gap_count"] == 1
         cx = sqlite3.connect(db)
         cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at,producer_sequence,producer_session_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (
