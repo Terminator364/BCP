@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "B_EDGE_2_1_0_SECONDARY_SENTINEL_R17_CANDIDATE_CI_PENDING_SIGNED_ARTIFACT_GATE",
-  "last_completed_atomic_action": "Implemented B-EDGE 2.1.0 secondary sentinel source candidate: Room schema v2 with explicit migration, persisted PC reachability/recovery state, bounded alert identity, resume-pending ID, 15-minute WorkManager reconcile, and offline-as-valid-state semantics.",
-  "next_action": "Run exact-head coordinated Android/unit/lint/build tests. If source candidate passes, inspect APK artifacts and signing path. Do not mark distribution_ready or replace installed B-EDGE 2.0.0 until a same-identity signed APK exists and passes signature/hash gates. Separately wait for BCP 0.7.0/Telegram V8 resident convergence.",
+  "status": "NEXUS_0_2_0_R18_PORTABLE_CHILD_RUNTIME_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "Implemented Nexus 0.2.0 / R18 candidate: pinned portable Node is placed first in PATH, child-shell node resolution is verified before npm lifecycle scripts, Wrangler install captures foreground lifecycle output, and field preflight removes hosted global Node so esbuild cannot accidentally pass through CI-only tooling.",
+  "next_action": "Run exact-head CURRENT/Nexus/Field-Ecosystem/Coordinated CI. If green, re-read main under the writer fence, merge serially, then wait for resident Nexus 0.2.0 convergence and Drive readback. If runtime reaches Cloudflare authorization, that becomes the first true human gate. Continue B-EDGE independent Nexus egress only after the Nexus transport itself is field-live.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -189,12 +189,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-OFFLINE-MISSION-WATCHDOG-R16-CANDIDATE-20260920",
+    "checkpoint_id": "BCP-NEXUS-020-R18-PORTABLE-CHILD-RUNTIME-20260920",
     "status": "CI_PENDING",
-    "last_completed_action": "R16 code/spec/manifests persisted on fenced branch.",
-    "next_atomic_action": "Exact-head qualification before merge.",
-    "branch": "work/bcp/mission-watchdog-offline-resume-070-20260920",
-    "base_main_sha": "7b92653fc630d47d8ce3a44dec6ef25969746286",
+    "last_completed_action": "R18 runtime fix, field-shaped CI guard, release manifest and canonical spec persisted.",
+    "next_atomic_action": "Exact-head qualification then serialized merge if green.",
+    "branch": "work/bcp/r18-portable-node-edge-egress-20260920",
+    "base_main_sha": "4e27466ea2a03182ae51ff6cf42f37ee09c1db8b",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1358,5 +1358,18 @@
     "pc_offline_is_valid_state": true,
     "remote_notification_path": "NEXUS_DEVICE_AUTH_REQUIRED_FIELD_GATE",
     "signed_apk_ready": false
+  },
+  "nexus_0_2_0": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "version": "0.2.0",
+    "requirements_revision": "2026-09-20-R18",
+    "bootstrap_sha256": "daeeed68d26a096a0d8953ae79181d715d06c8a45cd26daa12be1c4ca9d3d711",
+    "manifest_sha256": "0f428dfc802eb67ffe0bb8762e347cac83974db16d1eb273dd1909078dabbc27",
+    "root_cause_hypothesis": "npm lifecycle child process did not resolve pinned portable node because CI global Node masked missing PATH binding",
+    "portable_node_path_binding": true,
+    "child_process_node_probe": true,
+    "ci_global_node_removed": true,
+    "user_manual_node_install_required": false,
+    "field_verified": false
   }
 }
