@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R13
+Revision: 2026-09-20-R14
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -901,4 +901,26 @@ Canonical implementation:
 - `.github/workflows/field-ecosystem-preflight.yml`
 
 Promotion evidence is bound to the exact tested commit SHA and remains subject to the Git writer lease/integration fence.
+
+## P0 — Telegram cockpit field liveness and remote-operability (R14)
+
+This requirement is additive and preserves all prior Telegram/BCP/Nexus requirements.
+
+The Telegram cockpit MUST NOT rely on the user to detect a dead or disconnected poller by repeatedly tapping buttons. The resident stack MUST externalize machine-readable Telegram worker health and make that health observable through the existing BCP external heartbeat/Drive path.
+
+Required invariants:
+- every active Telegram transport worker publishes a small secret-free health record containing mode, process id, state, latest successful poll time, bounded failure count and the most recent callback receipt/handling timestamps;
+- button callbacks such as **Actualiser** produce a machine-readable callback receipt before/after dispatch so a silent user-visible failure can be distinguished from an unreceived update;
+- BCP mirrors Telegram worker health into `BCP_RUNTIME_LATEST.json`; the user is not the telemetry bus;
+- a resident watchdog may restart the companion only when health is genuinely stale, with a restart cooldown to prevent loops;
+- ordinary network timeout/backoff is NOT treated as a dead process, because the worker continues updating health while degraded;
+- single-receiver discipline remains mandatory; duplicate pollers must be suppressed and HTTP 409 conflicts must never be normalized as healthy;
+- direct PC -> Telegram remains opportunistic on the Kinshasa home-Wi-Fi path; Nexus remains the durable remote transport when direct TCP/443 is unavailable;
+- remote work must continue while the user is away from home whenever BCP/Nexus/Drive evidence and bounded jobs are sufficient; only a genuine human authorization gate may require user presence.
+
+Canonical implementation line:
+- BCP server 0.6.8 or later;
+- Telegram cockpit V6 or later;
+- external heartbeat fields `telegram_companion_*`;
+- resident stale-health watchdog with bounded restart cooldown.
 
