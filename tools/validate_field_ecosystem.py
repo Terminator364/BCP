@@ -185,6 +185,10 @@ def main() -> int:
         "conversation_delivery_gaps",
         '["v1", "conversations", "gaps"]',
         "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE",
+        "CONVERSATION_RECEIPTS.jsonl",
+        "process_conversation_receipt_inbox",
+        "conversation_sequence_gaps",
+        '["v1", "conversations", "sequence-gaps"]',
     )
     require(
         telegram,
@@ -193,6 +197,8 @@ def main() -> int:
         "/conversation <ID>",
         "Réponse potentiellement manquée",
         "delivery_gap_count",
+        "Synchronisation incomplète",
+        "sequence_gap_count",
     )
 
     # Release coordination remains explicit.
