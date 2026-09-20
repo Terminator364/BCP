@@ -306,6 +306,16 @@ def main() -> int:
         "Décomposition temporelle",
     )
 
+    # R53 delivery/cadence policy must remain explicit and machine-checkable.
+    cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
+    delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
+    assert cadence_policy["acceptable_window_minutes"] == [8, 10]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [8, 10]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "8-10"
+    assert delivery_policy["channels"]["email"]["body_must_equal_chat_checkpoint_exactly"] is True
+    assert delivery_policy["channels"]["email"]["send_before_chat_checkpoint"] is True
+    assert delivery_policy["packaging"]["nested_zip_for_user_action_forbidden"] is True
+
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
     assert current["components"]["nexus"]["version"] == nexus_release["version"]
