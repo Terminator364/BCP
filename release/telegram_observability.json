@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-human-cockpit-v7",
+  "version": "2026.09.20-human-cockpit-v8",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "8505c7d274dcff9a2a4aaa6e37c8da94c9e40b3945a6a3736df680c56e4e3bd9",
+  "sha256": "0fb5f984b18b2dd0af430a7c1633dbf147bf6623d3de9dfee80d15d6f7cd95eb",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first cockpit V7: Automate de suivi card, explicit ≈ fine-grained micro-action forecast, separate ecosystem health, adaptive automatic refresh, objective/activity views, four complementary PDFs, human PC/B-EDGE/Drive/Nexus/CI explanations, and PC power/RAM display when BCP 0.6.9 telemetry is available. Preserves V6 liveness/callback receipts and single-poller safeguards.",
-  "requirements_revision": "2026-09-20-R15"
+  "notes": "Cockpit V8 preserves V7 human progress/reports and adds a real Continue control plus proactive deduplicated notifications when the resident BCP mission watchdog detects stalled observable progress, requests bounded recovery, escalates, or reaches a human gate.",
+  "requirements_revision": "2026-09-20-R16"
 }
