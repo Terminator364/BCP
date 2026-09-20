@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_7_R32_MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
-  "last_completed_atomic_action": "R32 merged to main at a8cfd9281c324c249ed4814317b377fd5736437a after exact-head PR qualification passed: Coordinated Product Qualification run 35521579808 and Field Ecosystem Preflight run 35521579768.",
-  "next_action": "Finish post-R32 main CI readback, then harden/diagnose resident outbound update transport from BCP 0.7.6 without replaying installation. Treat Cloudflare HUMAN_AUTH_REQUIRED as downstream; first restore qualified BCP/Nexus/Telegram convergence.",
+  "status": "BCP_0_7_8_R34_OUTBOUND_UPDATE_TRANSPORT_HARDENING_CANDIDATE",
+  "last_completed_atomic_action": "R34 candidate implemented BCP 0.7.8 with independent SERVER/TELEGRAM_COMPANION/NEXUS update lanes, bounded outbound backoff, and machine-readable network error classification. Windows installer and final acceptance targets were aligned to 0.7.8 to prevent recurrence of R32 version drift.",
+  "next_action": "Run exact-head R34 CI. Merge only if release-contract, Windows bootstrap/final acceptance, coordinated product, and field ecosystem gates pass. Then read fresh resident telemetry for 0.7.8 convergence without reinstall replay.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,20 +229,28 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R33-POST-R32-STATE-RECONCILE-20260920",
-    "status": "FIELD_TRANSPORT_DIAGNOSIS_IN_PROGRESS",
-    "last_completed_action": "R32 integrated through serialized PR #98; main readback confirms a8cfd9281c324c249ed4814317b377fd5736437a.",
-    "next_atomic_action": "Complete post-merge CI readback and persist transport/convergence diagnosis.",
-    "branch": "work/bcp/r33-post-r32-state-reconcile-20260920",
-    "base_main_sha": "a8cfd9281c324c249ed4814317b377fd5736437a",
-    "r32_pr": 98,
-    "r32_exact_head": "38745ec11cf6f6e7c372421e2f98181e70a7dc2c",
-    "r32_merge_sha": "a8cfd9281c324c249ed4814317b377fd5736437a",
-    "r32_ci": {
-      "coordinated_product_qualification": 35521579808,
-      "field_ecosystem_preflight": 35521579768,
-      "result": "PASS"
+    "checkpoint_id": "BCP-R34-OUTBOUND-UPDATE-TRANSPORT-HARDENING-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/r34-outbound-update-transport-hardening-20260920",
+    "base_main_sha": "d0dad7d8acce150ed021dfc977ca1fc99c8710b7",
+    "target_server_version": "0.7.8",
+    "server_sha256": "976d536e322a44518c472997a0646432b19f3d944a72430a802b4c1923e6f691",
+    "field_trigger": {
+      "resident_server_version": "0.7.6",
+      "resident_update_state": "CHECK_FAILED",
+      "telegram_error": "WinError 10060 outbound timeout",
+      "telegram_consecutive_failures": 152,
+      "nexus_version": "0.2.3",
+      "nexus_state": "HUMAN_AUTH_REQUIRED"
     },
+    "behavior": [
+      "INDEPENDENT_SERVER_TELEGRAM_NEXUS_UPDATE_LANES",
+      "BOUNDED_NETWORK_BACKOFF_2_5_15_30_MIN",
+      "MACHINE_READABLE_OUTBOUND_TIMEOUT_DNS_TLS_CLASSIFICATION",
+      "SERVER_MANIFEST_FAILURE_DOES_NOT_SUPPRESS_COMPANION_RECONCILIATION",
+      "NO_INSTALL_REPLAY"
+    ],
+    "next_atomic_action": "Exact-head CI qualification and serialized merge if green.",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1733,5 +1741,19 @@
       "run_id": 35521786514,
       "result": "IN_PROGRESS"
     }
+  },
+  "bcp_0_7_8_r34": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R34",
+    "server_version": "0.7.8",
+    "server_sha256": "976d536e322a44518c472997a0646432b19f3d944a72430a802b4c1923e6f691",
+    "independent_update_lanes": true,
+    "network_backoff_seconds": [
+      120,
+      300,
+      900,
+      1800
+    ],
+    "field_verified": false
   }
 }
