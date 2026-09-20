@@ -934,6 +934,35 @@ class Service:
             edge_text = "🔴 Ancien téléphone : serveur non appairé"
 
         human_gate = self._human_gate(ev, next_action)
+        forecast_confidence, forecast_confidence_reason = self._forecast_confidence(ctx, events, gh)
+        telegram_state = str(runtime.get("telegram_companion_state") or "").upper()
+        attention_reasons = []
+        if human_gate != "AUCUNE":
+            attention_reasons.append("Une intervention humaine est explicitement requise par la mission.")
+        if nexus == "HUMAN_AUTH_REQUIRED":
+            attention_reasons.append("Nexus est prêt mais attend l’autorisation Cloudflare dans le navigateur du PC.")
+        if battery_critical:
+            attention_reasons.append("La batterie du PC est critique.")
+        if not heartbeat_ok and isinstance(hb, int) and hb > 600:
+            attention_reasons.append("Le PC/BCP n’a pas fourni de heartbeat récent.")
+        if mission_state in HOLD_STATES or hold_reason:
+            attention_reasons.append("La mission est en attente sur un blocage identifié.")
+        if isinstance(age, int) and age >= 900:
+            attention_reasons.append("Aucune nouvelle preuve de progression depuis " + age_label + ".")
+        if telegram_state in {"DEGRADED_RETRY", "HOLD"} and nexus not in {"COMMITTED", "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"}:
+            attention_reasons.append("Le canal Telegram direct est dégradé et le relais Nexus n’est pas encore totalement opérationnel.")
+
+        if battery_critical or (not heartbeat_ok and isinstance(hb, int) and hb > 600):
+            attention_level = "CRITICAL"
+        elif human_gate != "AUCUNE" or nexus == "HUMAN_AUTH_REQUIRED":
+            attention_level = "ACTION"
+        elif mission_state in HOLD_STATES or hold_reason or (isinstance(age, int) and age >= 900):
+            attention_level = "WATCH"
+        elif isinstance(age, int) and age < 900 and mission_state not in {"DONE", "CANCELLED"}:
+            attention_level = "ACTIVE"
+        else:
+            attention_level = "NORMAL"
+
         chat_state = self.local.chat(self.project_id).get("state")
         ci_active = ci_state in {"in_progress", "queued", "requested"}
         if chat_state == "CHAT_PLATFORM_HOLD_REPORTED":
@@ -962,19 +991,36 @@ class Service:
             "forecast": [forecast["done"], forecast["total"], forecast["pct"]],
             "health_pct": health_pct,
             "human_gate": human_gate,
+            "attention_level": attention_level,
+            "attention_reasons": attention_reasons,
+            "forecast_confidence": forecast_confidence,
+            "forecast_confidence_reason": forecast_confidence_reason,
+            "evidence_age_label": age_label,
+            "evidence_time": evidence_time,
             "refresh_bucket": refresh_bucket,
         }
         digest = hashlib.sha256(
             json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
 
+        headline = self._attention_label(attention_level)
+        headline_detail = {
+            "CRITICAL": "Le système nécessite une vérification prioritaire.",
+            "ACTION": "Une étape précise attend votre intervention; le reste est conservé.",
+            "WATCH": "Le système reste suivi mais un signal mérite attention.",
+            "ACTIVE": "Des preuves récentes indiquent que le travail avance.",
+            "NORMAL": "Aucun signal prioritaire détecté.",
+        }.get(attention_level, "Suivi automatique actif.")
+
         lines = [
-            "🛰️ Automate de suivi BCP — " + self.project_id,
+            "🛰️ BCP · " + headline,
+            headline_detail,
             activity,
             "",
-            "🎯 Objectif actuel : " + objective,
-            "📈 Avancement estimé : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
-            "🧭 Étape en cours : " + action,
+            "🎯 " + objective,
+            "📈 Progression ≈ " + forecast["bar"] + " " + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
+            "🎚️ Confiance : " + forecast_confidence.lower() + " · " + forecast_confidence_reason,
+            "🧭 Maintenant : " + action,
             execution_text,
         ]
         if last_completed and "Aucune étape" not in last_completed:
@@ -996,7 +1042,7 @@ class Service:
             "🔄 Actualisation automatique : " + str(refresh_seconds) + " s quand la liaison est disponible · reprise automatique après coupure",
             ("🕒 Dernière preuve : " + (evidence_time or "horodatage en cours de synchronisation") + " · " + age_label if age is not None else "🕒 Dernière preuve : synchronisation en cours"),
             "",
-            "Boutons : situation · objectif · activité fine · rapports · technique",
+            "Boutons : situation · depuis ma visite · pourquoi · étape · activité · rapports",
         ]
         return {
             "fingerprint": digest,
