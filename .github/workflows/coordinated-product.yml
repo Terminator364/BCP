@@ -96,6 +96,18 @@ jobs:
           test -s "$RELEASE"
           sha256sum "$DEBUG" > android-b-edge-debug.apk.sha256
           sha256sum "$RELEASE" > android-b-edge-release-unsigned.apk.sha256
+      - name: Export public Android signing tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          test -x "$latest/apksigner"
+          test -f "$latest/lib/apksigner.jar"
+          mkdir -p android-signing-tooling/lib
+          cp "$latest/apksigner" android-signing-tooling/apksigner
+          cp "$latest/lib/apksigner.jar" android-signing-tooling/lib/apksigner.jar
+          if test -x "$latest/zipalign"; then cp "$latest/zipalign" android-signing-tooling/zipalign; fi
+          printf '%s\n' "$latest" > android-signing-tooling/source-build-tools.txt
       - uses: actions/upload-artifact@v4
         with:
           name: bcp-edge-coordinated
@@ -104,6 +116,7 @@ jobs:
             android-b-edge/build/outputs/apk/release/android-b-edge-release-unsigned.apk
             android-b-edge-debug.apk.sha256
             android-b-edge-release-unsigned.apk.sha256
+            android-signing-tooling/**
 
   compatibility:
     runs-on: ubuntu-latest
