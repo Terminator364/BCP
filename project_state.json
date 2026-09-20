@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_NEXUS_0_2_2_TELEGRAM_V11_R22_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R22/V11 notification-budget bug fixed so budget is charged only after successful delivery; Telegram release hash realigned to the exact source.",
-  "next_action": "Re-run exact-head CI for PR #87. Merge only after CURRENT, Telegram, Nexus, coordinated product and field ecosystem preflight all pass on the same head SHA; then start R23 conversation-delivery mirror work.",
+  "status": "BCP_0_7_1_TELEGRAM_V12_NEXUS_0_2_3_R23_CONVERSATION_LEDGER_CANDIDATE",
+  "last_completed_atomic_action": "R23 candidate implemented: BCP 0.7.1 local Conversation Delivery Ledger, authenticated conversation receipt/list/seen endpoints, Telegram V12 Conversations inbox with X/Y/Z bounded previews and explicit ChatGPT UI delivery-unknown state, Nexus 0.2.3 callback parity, canonical R23 spec and CI guards.",
+  "next_action": "Open exact-head PR and run CURRENT, server/Android coordinated, Telegram, Nexus and field-ecosystem qualification. Fix only evidence-backed failures. Merge under writer fence only after all required exact-head CI passes. Cloudflare authorization and B-EDGE field install remain deferred genuine human gates while user is away.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -74,7 +74,8 @@
     "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
     "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
     "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
-    "telegram_attention_lifecycle_v11": "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md"
+    "telegram_attention_lifecycle_v11": "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md",
+    "conversation_delivery_ledger": "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -135,7 +136,8 @@
     "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
     "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
     "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
-    "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md"
+    "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md",
+    "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -175,7 +177,11 @@
     "P0_nexus_four_report_parity": true,
     "P0_attention_acknowledgement": true,
     "P0_notification_flap_damping": true,
-    "P0_notification_budget": true
+    "P0_notification_budget": true,
+    "P0_conversation_delivery_ledger": true,
+    "P0_chatgpt_ui_delivery_uncertainty": true,
+    "P0_telegram_conversation_inbox": true,
+    "P0_bounded_interactive_checkpoint_cadence": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -205,12 +211,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-TELEGRAM-V11-R22-ATTENTION-LIFECYCLE-20260920",
-    "status": "CI_PENDING",
-    "last_completed_action": "R22 code, Nexus parity, release manifests and canonical requirement persisted.",
-    "next_atomic_action": "Exact-head CI then serialized merge if green.",
-    "branch": "work/bcp/r22-attention-ack-flap-budget-20260920",
-    "base_main_sha": "eac7db76711877031def7dee82e5493a98c54e5c",
+    "checkpoint_id": "BCP-R23-CONVERSATION-DELIVERY-LEDGER-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_PR_PENDING",
+    "last_completed_action": "R23 code/spec/releases/CI guards persisted.",
+    "next_atomic_action": "Open PR and exact-head qualification.",
+    "branch": "work/bcp/r23-conversation-delivery-ledger-20260920",
+    "base_main_sha": "888f4c73565cc325b27ec3c62593d61d72aeaf17",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1505,5 +1511,24 @@
     "episode_scoped_acknowledgement": true,
     "recurrence_after_recovery_notifies": true,
     "telegram_source_sha256": "0ab488dbf41e6a2eef877b602cfa605d71631d765f160296c0730fdbd3479c78"
+  },
+  "conversation_delivery_ledger_r23": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.1",
+    "telegram_version": "2026.09.20-conversation-inbox-v12",
+    "nexus_version": "0.2.3",
+    "requirements_revision": "2026-09-20-R23",
+    "states": [
+      "GENERATED",
+      "MIRRORED_BCP",
+      "TELEGRAM_SENT",
+      "USER_SEEN",
+      "CHATGPT_UI_DELIVERY_UNKNOWN",
+      "DELIVERY_GAP_DETECTED"
+    ],
+    "full_text_local_by_default": true,
+    "telegram_conversations_button": true,
+    "arbitrary_chatgpt_ui_history_access": false,
+    "field_verified": false
   }
 }
