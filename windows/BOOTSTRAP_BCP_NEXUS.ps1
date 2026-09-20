@@ -180,8 +180,17 @@ function Ensure-ManagedWranglerLauncher {
         $installed = $false
         $lastInstallText = ""
         for ($attempt = 1; $attempt -le 4; $attempt++) {
-            $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" 2>&1
-            $code = $LASTEXITCODE
+            $oldEap = $ErrorActionPreference
+            try {
+                # Windows PowerShell 5.1 can turn ordinary native stderr warnings
+                # into NativeCommandError when the script-wide preference is Stop.
+                # Capture native exit/output explicitly instead.
+                $ErrorActionPreference = "Continue"
+                $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" 2>&1
+                $code = $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $oldEap
+            }
             $lastInstallText = (($out | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
             if ($code -eq 0 -and (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
                 $installed = $true
@@ -233,8 +242,16 @@ function Invoke-Wrangler($Launcher, [string[]]$Arguments, [switch]$AllowFailure)
     $all = @()
     foreach ($p in @($Launcher.Prefix)) { $all += [string]$p }
     foreach ($a in @($Arguments)) { $all += [string]$a }
-    $out = & $Launcher.File @all 2>&1
-    $code = $LASTEXITCODE
+    $oldEap = $ErrorActionPreference
+    try {
+        # Treat native stderr as data. Windows PowerShell 5.1 otherwise promotes
+        # harmless npm/Wrangler warnings to terminating NativeCommandError under Stop.
+        $ErrorActionPreference = "Continue"
+        $out = & $Launcher.File @all 2>&1
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldEap
+    }
     $text = (($out | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
     if ($code -ne 0 -and -not $AllowFailure) { throw ("WRANGLER_FAILED exit=" + $code) }
     return [pscustomobject]@{ ExitCode = $code; Text = $text }
@@ -270,8 +287,15 @@ function Invoke-WranglerSecret($Launcher, [string]$ConfigPath, [string]$Name, [s
     $all = @()
     foreach ($p in @($Launcher.Prefix)) { $all += [string]$p }
     $all += @("secret","put",$Name,"--config",$ConfigPath)
-    $Value | & $Launcher.File @all 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw ("WRANGLER_SECRET_PUT_FAILED name=" + $Name) }
+    $oldEap = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $Value | & $Launcher.File @all 2>&1 | Out-Null
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldEap
+    }
+    if ($code -ne 0) { throw ("WRANGLER_SECRET_PUT_FAILED name=" + $Name) }
 }
 
 function Get-D1Database($Launcher, [string]$Name) {
