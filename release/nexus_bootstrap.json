@@ -1,12 +1,12 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R22",
+  "requirements_revision": "2026-09-20-R23",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "3c293d9e76c69dea7f78fdd2055dcec46ec0fdd73cd2c75f3b1abdaf03bb5866",
+      "sha256": "73ba5afa81a50d439a22121bf7c89ae70040c69e5535a3d800e4728cf9d5949f",
       "max_bytes": 500000
     },
     {
@@ -102,5 +102,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.2 preserves Rich Cockpit V10 and adds R22 attention lifecycle parity: `J’ai vu` acknowledgement callback, recovery anti-flapping, and bounded routine notification budget. Critical/human-action signals bypass the routine budget; WATCH remains dashboard-only. No paid broadcast or duplicate receiver."
+  "notes": "Nexus 0.2.3 preserves V11 attention semantics and adds Telegram callback/keyboard parity for the R23 Conversations inbox. Conversation bodies remain on the BCP PC; Nexus carries commands/responses, not a canonical public transcript."
 }

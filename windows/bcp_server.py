@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import shutil
@@ -28,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.0"
+SERVER_VERSION = "0.7.1"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -1940,6 +1941,41 @@ def ensure_state() -> str:
             )"""
         )
         cx.execute("CREATE INDEX IF NOT EXISTS idx_mission_events_mid_seq ON mission_events(mission_id,seq)")
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS conversation_threads(
+                conversation_id TEXT PRIMARY KEY,
+                alias TEXT NOT NULL,
+                source_kind TEXT NOT NULL,
+                source_ref TEXT NOT NULL,
+                last_sequence INTEGER NOT NULL DEFAULT 0,
+                last_activity_at TEXT NOT NULL,
+                last_delivery_state TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )"""
+        )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS conversation_messages(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id TEXT NOT NULL,
+                sequence INTEGER NOT NULL,
+                message_key TEXT NOT NULL,
+                role TEXT NOT NULL,
+                text TEXT NOT NULL,
+                generated_at TEXT NOT NULL,
+                mirrored_at TEXT NOT NULL,
+                delivery_state TEXT NOT NULL,
+                evidence_class TEXT NOT NULL,
+                linked_mission_id TEXT NOT NULL DEFAULT '',
+                content_hash TEXT NOT NULL,
+                seen_at TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                UNIQUE(conversation_id,sequence),
+                UNIQUE(conversation_id,message_key)
+            )"""
+        )
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_threads_activity ON conversation_threads(last_activity_at DESC)")
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_messages_thread_seq ON conversation_messages(conversation_id,sequence DESC)")
         cx.execute("CREATE INDEX IF NOT EXISTS idx_missions_project_updated ON missions(project_id,updated_at)")
         for col, ddl in (
             ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'UNCLASSIFIED'"),
@@ -2422,6 +2458,142 @@ def mission_get(mission_id: str, include_request: bool = False) -> dict | None:
         out["request_text"] = row["request_text"]
     out["progress"] = _mission_progress(out["plan"])
     return out
+
+
+CONVERSATION_SOURCE_KINDS = {"CHATGPT_UI", "OPENAI_API", "BCP_AGENT", "CHATGPT_PC"}
+CONVERSATION_ROLES = {"USER", "ASSISTANT", "SYSTEM", "TOOL"}
+CONVERSATION_DELIVERY_STATES = {
+    "GENERATED", "MIRRORED_BCP", "TELEGRAM_SENT", "USER_SEEN",
+    "CHATGPT_UI_DELIVERY_UNKNOWN", "DELIVERY_GAP_DETECTED"
+}
+
+_CONVERSATION_SECRET_PATTERNS = (
+    re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b"),
+    re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{12,}"),
+)
+
+def _conversation_safe_text(value) -> str:
+    text = str(value or "").replace("\x00", " ").strip()[:12000]
+    for pattern in _CONVERSATION_SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED_SECRET]", text)
+    return text
+
+def conversation_append_message(conversation_id: str, *, alias: str, source_kind: str,
+                                source_ref: str, message_key: str, role: str, text: str,
+                                delivery_state: str, evidence_class: str = "EXTERNAL_RECEIPT",
+                                generated_at: str = "", linked_mission_id: str = "") -> dict:
+    cid = str(conversation_id or "").strip()[:64]
+    if not cid or not re.fullmatch(r"[A-Za-z0-9._:-]{1,64}", cid):
+        raise ValueError("invalid_conversation_id")
+    alias = str(alias or cid).strip()[:120]
+    source_kind = str(source_kind or "BCP_AGENT").upper()
+    role = str(role or "").upper()
+    state = str(delivery_state or "MIRRORED_BCP").upper()
+    message_key = str(message_key or "").strip()[:160]
+    if source_kind not in CONVERSATION_SOURCE_KINDS:
+        raise ValueError("invalid_conversation_source")
+    if role not in CONVERSATION_ROLES:
+        raise ValueError("invalid_conversation_role")
+    if state not in CONVERSATION_DELIVERY_STATES:
+        raise ValueError("invalid_delivery_state")
+    if not message_key:
+        raise ValueError("message_key_required")
+    safe_text = _conversation_safe_text(text)
+    if not safe_text:
+        raise ValueError("message_text_required")
+    now = utc_now()
+    generated = str(generated_at or now)[:64]
+    digest = sha256_text(safe_text)
+    with db_connection() as cx:
+        existing = cx.execute(
+            "SELECT * FROM conversation_messages WHERE conversation_id=? AND message_key=?",
+            (cid, message_key),
+        ).fetchone()
+        if existing:
+            return {"result": "ALREADY_RECORDED", "conversation_id": cid,
+                    "sequence": int(existing["sequence"]), "content_hash": existing["content_hash"]}
+        thread = cx.execute("SELECT * FROM conversation_threads WHERE conversation_id=?", (cid,)).fetchone()
+        seq = int(thread["last_sequence"] if thread else 0) + 1
+        cx.execute(
+            """INSERT INTO conversation_messages(
+                conversation_id,sequence,message_key,role,text,generated_at,mirrored_at,
+                delivery_state,evidence_class,linked_mission_id,content_hash,seen_at,created_at
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (cid, seq, message_key, role, safe_text, generated, now, state,
+             str(evidence_class or "EXTERNAL_RECEIPT")[:80],
+             str(linked_mission_id or "")[:80], digest, "", now),
+        )
+        if thread:
+            cx.execute(
+                """UPDATE conversation_threads SET alias=?,source_kind=?,source_ref=?,
+                   last_sequence=?,last_activity_at=?,last_delivery_state=?,updated_at=?
+                   WHERE conversation_id=?""",
+                (alias, source_kind, str(source_ref or "")[:240], seq, now, state, now, cid),
+            )
+        else:
+            cx.execute(
+                """INSERT INTO conversation_threads(
+                    conversation_id,alias,source_kind,source_ref,last_sequence,last_activity_at,
+                    last_delivery_state,created_at,updated_at
+                ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (cid, alias, source_kind, str(source_ref or "")[:240], seq, now, state, now, now),
+            )
+    return {"result": "RECORDED", "conversation_id": cid, "sequence": seq,
+            "content_hash": digest, "delivery_state": state}
+
+def conversation_list(limit: int = 8) -> list[dict]:
+    limit = max(1, min(int(limit), 20))
+    with db_connection() as cx:
+        rows = cx.execute(
+            """SELECT conversation_id,alias,source_kind,source_ref,last_sequence,last_activity_at,
+                      last_delivery_state,created_at,updated_at
+               FROM conversation_threads ORDER BY last_activity_at DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+def conversation_messages(conversation_id: str, limit: int = 8) -> list[dict]:
+    limit = max(1, min(int(limit), 20))
+    with db_connection() as cx:
+        rows = cx.execute(
+            """SELECT conversation_id,sequence,message_key,role,text,generated_at,mirrored_at,
+                      delivery_state,evidence_class,linked_mission_id,content_hash,seen_at
+               FROM conversation_messages WHERE conversation_id=?
+               ORDER BY sequence DESC LIMIT ?""",
+            (str(conversation_id)[:64], limit),
+        ).fetchall()
+    return [dict(r) for r in reversed(rows)]
+
+def conversation_mark_seen(conversation_id: str, sequence: int = 0) -> dict:
+    cid = str(conversation_id or "")[:64]
+    now = utc_now()
+    with db_connection() as cx:
+        if sequence > 0:
+            cur = cx.execute(
+                """UPDATE conversation_messages SET seen_at=?,delivery_state='USER_SEEN'
+                   WHERE conversation_id=? AND sequence=?""",
+                (now, cid, int(sequence)),
+            )
+        else:
+            cur = cx.execute(
+                """UPDATE conversation_messages SET seen_at=?,delivery_state='USER_SEEN'
+                   WHERE conversation_id=? AND sequence=(
+                     SELECT MAX(sequence) FROM conversation_messages WHERE conversation_id=?
+                   )""",
+                (now, cid, cid),
+            )
+        latest = cx.execute(
+            "SELECT delivery_state FROM conversation_messages WHERE conversation_id=? ORDER BY sequence DESC LIMIT 1",
+            (cid,),
+        ).fetchone()
+        if latest:
+            cx.execute(
+                "UPDATE conversation_threads SET last_delivery_state=?,updated_at=? WHERE conversation_id=?",
+                (latest["delivery_state"], now, cid),
+            )
+    return {"ok": True, "conversation_id": cid, "updated": int(cur.rowcount or 0), "seen_at": now}
 
 
 def mission_tail(mission_id: str, limit: int = 12) -> list[dict]:
@@ -3224,6 +3396,23 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
+        if parts == ["v1", "conversations"]:
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                limit = int((query.get("limit") or ["8"])[0])
+            except Exception:
+                limit = 8
+            self.send_json(200, {"ok": True, "conversations": conversation_list(limit)})
+            return
+        if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "messages":
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                limit = int((query.get("limit") or ["8"])[0])
+            except Exception:
+                limit = 8
+            self.send_json(200, {"ok": True, "conversation_id": parts[2],
+                                "messages": conversation_messages(parts[2], limit)})
+            return
         if len(parts) == 4 and parts[:2] == ["v1", "projects"]:
             project = parts[2]
             if parts[3] == "head":
@@ -3404,6 +3593,34 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
+        if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "messages":
+            try:
+                body = self.read_json()
+                idem = self.headers.get("Idempotency-Key") or body.get("message_key")
+                receipt = conversation_append_message(
+                    parts[2],
+                    alias=body.get("alias") or parts[2],
+                    source_kind=body.get("source_kind") or "BCP_AGENT",
+                    source_ref=body.get("source_ref") or "",
+                    message_key=str(idem or ""),
+                    role=body.get("role"),
+                    text=body.get("text"),
+                    delivery_state=body.get("delivery_state") or "MIRRORED_BCP",
+                    evidence_class=body.get("evidence_class") or "EXTERNAL_RECEIPT",
+                    generated_at=body.get("generated_at") or "",
+                    linked_mission_id=body.get("linked_mission_id") or "",
+                )
+                self.send_json(200, receipt)
+            except Exception as e:
+                self.send_json(400, {"error": "conversation_message_failed", "detail": str(e)[:240]})
+            return
+        if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "seen":
+            try:
+                body = self.read_json()
+                self.send_json(200, conversation_mark_seen(parts[2], int(body.get("sequence") or 0)))
+            except Exception as e:
+                self.send_json(400, {"error": "conversation_seen_failed", "detail": str(e)[:240]})
+            return
         if parts == ["v1", "missions"]:
             try:
                 body = self.read_json()
@@ -3784,6 +4001,19 @@ def selftest():
         assert 'parts[3] == "where"' in source
         assert 'parts[3] == "tail"' in source
         assert "NO_NEW_EXTERNAL_EVIDENCE" in source
+        assert "conversation_threads" in source
+        assert "conversation_messages" in source
+        assert "/v1/conversations" in source
+        mirrored = conversation_append_message(
+            "chat-main", alias="Conversation principale", source_kind="CHATGPT_UI",
+            source_ref="local-test", message_key="turn-1", role="ASSISTANT",
+            text="Réponse produite et miroir durable.", delivery_state="CHATGPT_UI_DELIVERY_UNKNOWN",
+        )
+        assert mirrored["result"] == "RECORDED"
+        assert conversation_list(3)[0]["conversation_id"] == "chat-main"
+        assert conversation_messages("chat-main", 3)[0]["delivery_state"] == "CHATGPT_UI_DELIVERY_UNKNOWN"
+        seen = conversation_mark_seen("chat-main")
+        assert seen["updated"] == 1
         assert "TELEGRAM_COMPANION_MANIFEST_URL" in source
         assert "telegram_companion_update_status" in source
         assert "apply_telegram_companion_update" in source

@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R22
+Revision: 2026-09-20-R23
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1207,3 +1207,54 @@ Acknowledgement is never evidence of recovery.
 
 ### External basis
 This design intentionally follows established incident-management practice: alerts should be actionable, deduplicated/grouped, and resistant to flapping/noise. The implementation remains zero-dollar and does not depend on paid alerting services.
+
+## P0 — Conversation Delivery Ledger & Telegram Inbox V12 / R23
+
+This requirement is additive and preserves R22.
+
+BCP MUST distinguish **work completion** from **user-visible message delivery**. A durable mission/checkpoint or generated response is not proof that the ChatGPT mobile/web UI displayed the answer.
+
+### Durable conversation ledger
+BCP maintains a bounded local SQLite ledger for BCP-aware conversations. Each mirrored message records:
+- bounded stable conversation id and human alias;
+- source kind (CHATGPT_UI, CHATGPT_PC, OPENAI_API, BCP_AGENT);
+- monotonic sequence and idempotent message key;
+- role and redacted/bounded text;
+- generated/mirrored timestamps;
+- content hash and evidence class;
+- linked mission when available;
+- explicit delivery state.
+
+Allowed delivery semantics include:
+- GENERATED;
+- MIRRORED_BCP;
+- TELEGRAM_SENT;
+- USER_SEEN;
+- CHATGPT_UI_DELIVERY_UNKNOWN;
+- DELIVERY_GAP_DETECTED.
+
+The UI MUST render uncertainty honestly. `CHATGPT_UI_DELIVERY_UNKNOWN` MUST NOT be translated to delivered or failed.
+
+### Telegram conversation inbox
+The main cockpit exposes **💬 Conversations**. It shows the most recent BCP-aware conversations X/Y/Z, latest activity, delivery state, and bounded previews of recent messages.
+
+A detailed conversation view MUST remain bounded/low-data and use compact identifiers compatible with Telegram callback limits. DIRECT_TELEGRAM and NEXUS expose equivalent access.
+
+### ChatGPT UI truth boundary
+BCP MUST NOT imply continuous access to arbitrary private ChatGPT UI history. Standard ChatGPT UI messages enter this ledger only through supported explicit receipts/bridges. OpenAI API / BCP-agent conversations may mirror through their supported APIs/clients.
+
+### Privacy
+- full conversation bodies remain local to BCP by default;
+- normal GitHub release metadata and external runtime telemetry MUST NOT contain user conversation bodies;
+- credential/token patterns are redacted before ledger persistence;
+- message text and retention are bounded;
+- the ledger is operational redundancy, not an account-history export.
+
+### Delivery-gap target
+When durable work evidence exists but expected downstream message-delivery evidence does not appear within a bounded interval, BCP SHOULD raise a deduplicated delivery-gap signal. This signal is observational and MUST NOT infer hidden ChatGPT model/UI state.
+
+### Bounded interactive cadence
+During active human development sessions, checkpoint/report cadence SHOULD be bounded (target around five minutes when practical) so long tool/reasoning sequences do not leave the user unable to distinguish work, network/UI loss, or interruption. This is not a ChatGPT scheduled/background automation.
+
+Canonical detailed requirement:
+- `docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md`

@@ -68,15 +68,18 @@ function cockpitKeyboard() {
         { text: "🕘 Depuis ma visite", callback_data: "bcp:since" },
       ],
       [
+        { text: "💬 Conversations", callback_data: "bcp:conversations" },
         { text: "❓ Pourquoi ?", callback_data: "bcp:why" },
+      ],
+      [
         { text: "🔭 Radar", callback_data: "bcp:risks" },
-      ],
-      [
         { text: "📍 Étape", callback_data: "bcp:where" },
-        { text: "⚙️ Activité", callback_data: "bcp:tail" },
       ],
       [
+        { text: "⚙️ Activité", callback_data: "bcp:tail" },
         { text: "🎯 Objectif", callback_data: "bcp:missions" },
+      ],
+      [
         { text: "▶️ Continuer", callback_data: "bcp:continue" },
       ],
       [
@@ -105,6 +108,7 @@ function callbackToCommand(data) {
     "bcp:why": "/why",
     "bcp:risks": "/risks",
     "bcp:ack": "/ack",
+    "bcp:conversations": "/conversations",
     "bcp:where": "/where",
     "bcp:tail": "/tail",
     "bcp:missions": "/objective",
@@ -590,7 +594,7 @@ async function health(env) {
   return jsonResponse({
     schema: "bcp.nexus.health/1",
     service: "BCP_NEXUS",
-    version: "0.2.2",
+    version: "0.2.3",
     status: db === "OK" ? "HEALTHY" : "DEGRADED",
     database: db,
     spend_policy: "ZERO_USD",
