@@ -2,6 +2,7 @@ package com.blessing.bcpedge.work;
 
 import android.content.Context;
 
+import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.ExistingWorkPolicy;
@@ -34,7 +35,13 @@ public final class EdgeWorkScheduler {
     }
 
     public static void requestImmediate(Context context) {
-        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(EdgeReconcileWorker.class).build();
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(EdgeReconcileWorker.class)
+                .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+                .build();
         WorkManager.getInstance(context.getApplicationContext())
                 .enqueueUniqueWork(UNIQUE_NOW, ExistingWorkPolicy.KEEP, work);
     }

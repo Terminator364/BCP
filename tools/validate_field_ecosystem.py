@@ -37,6 +37,7 @@ def main() -> int:
     edge_db = read("android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java")
     edge_worker = read("android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeReconcileWorker.java")
     edge_scheduler = read("android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeWorkScheduler.java")
+    edge_main = read("android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java")
     rdc = read("docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md")
 
     # Zero-cost + data-saver invariants.
@@ -78,7 +79,32 @@ def main() -> int:
     )
     require(edge_db, "EdgeSentinelEntity.class", "Migration(1, 2)", "addMigrations(MIGRATION_1_2)")
     require(edge_worker, "sentinel_state", "resume_pending", "return Result.success(out);")
-    require(edge_scheduler, "15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES")
+    require(
+        edge_scheduler,
+        "15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES",
+        "NetworkType.CONNECTED",
+        "BackoffPolicy.EXPONENTIAL",
+        "30, TimeUnit.SECONDS",
+        "ExistingWorkPolicy.KEEP",
+    )
+    require(
+        edge_main,
+        "registerDefaultNetworkCallback",
+        "NetworkCapabilities.TRANSPORT_WIFI",
+        "WIFI_REENTRY_RECONCILE_REQUESTED",
+        "unregisterNetworkCallback",
+    )
+    assert not (ROOT / "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeReconcileWorker.java").exists(), "legacy reconcile worker returned"
+    candidate_path = ROOT / "release/android_candidate.json"
+    if candidate_path.is_file():
+        candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+        stable = load("release/android.json")
+        assert candidate["publication_allowed"] is False
+        assert int(candidate["version_code"]) > int(stable["version_code"])
+        assert candidate["package_id"] == stable["package_id"]
+        assert candidate["expected_signing_cert_sha256"] == stable["signing_cert_sha256"]
+        assert candidate["signed_artifact"]["url"] == ""
+        assert candidate["signed_artifact"]["sha256"] == ""
 
     # Kinshasa/home-Wi-Fi reality: direct Telegram may fail while DNS still works.
     # Nexus must therefore remain an independent HTTPS control-plane route.

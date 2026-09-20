@@ -4,9 +4,13 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.os.Bundle;
 import android.graphics.Typeface;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.view.View;
 import android.widget.*;
 import org.json.JSONObject;
+import com.blessing.bcpedge.work.EdgeWorkScheduler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,6 +23,8 @@ public class MainActivity extends Activity {
     private TextView status, detail, output;
     private Button connect, checkpoint, resume, settings;
     private UpdateManager updates;
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -73,6 +79,7 @@ public class MainActivity extends Activity {
         resume.setOnClickListener(v -> runAction("RESUME", () -> client.resume()));
 
         setContentView(scroll);
+        registerNetworkReturnReconcile();
         updates.reconcileAfterLaunch();
         autoConnect();
         heartbeat.scheduleAtFixedRate(() -> {
@@ -262,6 +269,27 @@ public class MainActivity extends Activity {
         resume.setEnabled(!busy);
     }
 
+    private void registerNetworkReturnReconcile() {
+        connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) return;
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override public void onAvailable(Network network) {
+                try {
+                    NetworkCapabilities caps = connectivityManager.getNetworkCapabilities(network);
+                    if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                        EdgeWorkScheduler.requestImmediate(getApplicationContext());
+                        if (client != null) client.recordEvent("WIFI_REENTRY_RECONCILE_REQUESTED", "unique_keep");
+                    }
+                } catch (Throwable ignored) {}
+            }
+        };
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+        } catch (Throwable ignored) {
+            networkCallback = null;
+        }
+    }
+
     private Button button(LinearLayout root, String text) {
         Button b = new Button(this);
         b.setText(text);
@@ -276,6 +304,9 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        if (connectivityManager != null && networkCallback != null) {
+            try { connectivityManager.unregisterNetworkCallback(networkCallback); } catch (Throwable ignored) {}
+        }
         super.onDestroy();
         io.shutdownNow();
         heartbeat.shutdownNow();
