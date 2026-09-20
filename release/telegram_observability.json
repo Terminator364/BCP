@@ -4,10 +4,10 @@
   "version": "2026.09.20-human-cockpit-v6",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
   "sha256": "3d60065ffba07fb47182733a34dee3d6fe09abb67fd32b0c8160f369c2cb2631",
-  "minimum_server_version": "0.6.8",
+  "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first cockpit V6 preserves V5 controls/PDFs and adds secret-free worker health, successful poll timestamps, callback receive/handle receipts, and degraded retry state so silent button failures are diagnosable without screenshots or user log shuttling.",
+  "notes": "Human-first cockpit V6 preserves V5 controls/PDFs and adds secret-free worker health, successful poll timestamps, callback receive/handle receipts, and degraded retry state. It remains backward-compatible with BCP >=0.6.3; BCP 0.6.8 adds external heartbeat mirroring and stale-health watchdog recovery.",
   "requirements_revision": "2026-09-20-R14"
 }
