@@ -2446,12 +2446,16 @@ class Nexus:
             "idempotency_key": idem,
         }, timeout=25)
 
-    def live_card(self, text: str, card_key: str = "mission-status") -> None:
+    def live_card(self, text: str, card_key: str = "mission-status",
+                  rich_html: str = "") -> None:
         safe_text = redact_text(text)[:3900]
-        self.api("/v1/device/live-card", method="POST", payload={
+        payload = {
             "card_key": clean(card_key, 96),
             "text": safe_text,
-        }, timeout=25)
+        }
+        if rich_html:
+            payload["rich_html"] = redact_text(rich_html)[:30000]
+        self.api("/v1/device/live-card", method="POST", payload=payload, timeout=25)
 
     def publish_reports(self) -> None:
         summary = redact_text(self.service.report_summary())[:18000]
@@ -2578,12 +2582,17 @@ class Nexus:
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
         self.publish_reports()
-        self.live_card(str(snap["text"]), "mission:" + self.service.project_id)
+        self.live_card(
+            str(snap["text"]),
+            "mission:" + self.service.project_id,
+            rich_html=self.service.rich_status_html(),
+        )
         atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/2",
+            "schema": "bcp.telegram_system_presence/3",
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "NEXUS",
+            "render_mode": "RICH_V10_WITH_V9_FALLBACK",
             "card_key": "mission:" + self.service.project_id,
         })
 
