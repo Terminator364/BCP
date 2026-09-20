@@ -30,7 +30,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.11"
+SERVER_VERSION = "0.7.12"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -1623,8 +1623,55 @@ def _apply_nexus_bootstrap_delivery_locked(auto_launch: bool = True) -> dict:
     return {"ok": True, "result": "STAGED", "bundle_version": version, "files_staged": staged}
 
 
-def apply_nexus_bootstrap_delivery(auto_launch: bool = True) -> dict:
+def _archive_nexus_auth_receipt(reason: str) -> str:
+    if not NEXUS_BOOTSTRAP_RECEIPT_PATH.is_file():
+        return ""
+    archive_dir = STATE_DIR / "nexus-auth-archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    target = archive_dir / ("nexus_bootstrap_receipt_" + stamp + "_" + uuid.uuid4().hex[:8] + ".json")
+    shutil.copy2(NEXUS_BOOTSTRAP_RECEIPT_PATH, target)
+    NEXUS_BOOTSTRAP_RECEIPT_PATH.unlink(missing_ok=True)
+    atomic_json(archive_dir / "LATEST.json", {
+        "schema": "bcp.nexus_auth_archive/1",
+        "reason": str(reason)[:120],
+        "archived_receipt": str(target),
+        "archived_at": utc_now(),
+    })
+    return str(target)
+
+
+def apply_nexus_bootstrap_delivery(auto_launch: bool = True, explicit_human_retry: bool = False) -> dict:
     with NEXUS_BOOTSTRAP_LOCK:
+        if explicit_human_retry:
+            prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+            if str(prior.get("state") or "") != "HUMAN_AUTH_REQUIRED":
+                return {
+                    "ok": True,
+                    "result": "NO_HUMAN_AUTH_RETRY_NEEDED",
+                    "state": str(prior.get("state") or ""),
+                    "bundle_version": str(prior.get("bundle_version") or ""),
+                }
+            archived = _archive_nexus_auth_receipt("EXPLICIT_FRESH_DEVICE_FLOW_RETRY")
+            atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+                "schema": "bcp.nexus_bootstrap_delivery/1",
+                "state": "EXPLICIT_RETRY_REQUESTED",
+                "bundle_version": str(prior.get("bundle_version") or ""),
+                "attempt_count": int(prior.get("attempt_count") or 0),
+                "previous_state": "HUMAN_AUTH_REQUIRED",
+                "previous_receipt_archived": bool(archived),
+                "previous_receipt_archive_path": archived,
+                "explicit_retry_nonce": uuid.uuid4().hex,
+                "requested_at": utc_now(),
+                "updated_at": utc_now(),
+                "spend_usd": 0.0,
+            })
+            result = _apply_nexus_bootstrap_delivery_locked(auto_launch=auto_launch)
+            if str(result.get("result") or "") == "HUMAN_AUTH_REQUIRED":
+                raise RuntimeError("explicit_retry_did_not_launch_fresh_device_flow")
+            result["explicit_human_retry"] = True
+            result["previous_receipt_archived"] = bool(archived)
+            return result
         return _apply_nexus_bootstrap_delivery_locked(auto_launch=auto_launch)
 
 
@@ -4468,6 +4515,18 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(200, apply_nexus_bootstrap_delivery(auto_launch=True))
             except Exception as e:
                 self.send_json(500, {"ok": False, "error": "nexus_bootstrap_apply_failed", "detail": str(e)[:500]})
+            return
+
+        if path == "/v1/system/nexus/retry-auth":
+            try:
+                body = self.read_json()
+                if body.get("confirm") is not True:
+                    raise ValueError("explicit_confirm_required")
+                self.send_json(202, apply_nexus_bootstrap_delivery(auto_launch=True, explicit_human_retry=True))
+            except ValueError as e:
+                self.send_json(400, {"ok": False, "error": "nexus_auth_retry_rejected", "detail": str(e)[:500]})
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "nexus_auth_retry_failed", "detail": str(e)[:500]})
             return
 
         if path == "/v1/telemetry":
