@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R53
+Revision: 2026-09-20-R54
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1649,3 +1649,72 @@ The normal mobile cockpit MUST NOT expose reports and deep technical diagnostics
 The primary keyboard contains only orientation, current-step, resume, acknowledgement, notification and help controls plus one entry point **📚 Rapports & technique**.
 The advanced keyboard contains the four PDF exports, technical details and a clear return control.
 Direct Telegram and Nexus MUST keep this hierarchy semantically identical.
+
+
+## P0 — Human Presentation, Kinshasa Time & PDF Quality / R54
+
+This requirement is additive and preserves all prior requirements.
+
+### Human-time boundary
+
+BCP MUST distinguish machine time from human presentation time.
+
+- Canonical receipts, hashes, leases, database events and interoperability timestamps remain UTC/offset-aware for deterministic machine processing.
+- Every normal user-facing timestamp in Telegram, Nexus human surfaces, email checkpoints and generated human reports MUST be rendered in **Africa/Kinshasa (UTC+1)**.
+- A human-facing timestamp MUST say that it is Kinshasa time when ambiguity is possible.
+- Raw UTC ISO timestamps may appear only in explicitly technical/debug evidence, and even there the normal reading path SHOULD provide the Kinshasa equivalent.
+- Time conversion MUST NOT mutate the underlying canonical evidence.
+
+### Ten-second comprehension contract
+
+A normal user surface MUST answer, without requiring GitHub/BCP jargon:
+1. Where are we?
+2. What is already confirmed?
+3. What is happening now?
+4. What happens next?
+5. Does the user need to do anything?
+6. Is the information fresh or stale?
+
+The first screen/page SHOULD be understandable by a non-technical reader without knowing SHA, PR, workflow IDs, internal enum names, transport class names or database field names.
+
+Internal labels such as `nexus_bootstrap_error_class`, `mission_id`, `last_committed_step`, `event_age_seconds`, raw enum values and raw JSON MUST NOT be the primary presentation in human reports.
+
+### PDF quality contract
+
+The four PDF reports remain complementary, but their roles are now explicit:
+
+1. **Situation humaine** — decision/orientation first; concise state, objective, confirmed work, current step, next step, human action.
+2. **Appareils, réseau et transports** — human-readable device and connectivity status; raw telemetry field names are hidden.
+3. **Objectif, étapes et progression** — objective, proven progress, current work, next work, user action and points to watch; technical mission IDs are hidden.
+4. **Dossier technique et audit** — versions, checkpoints, IDs and engineering evidence are allowed, but raw multi-kilobyte JSON dumps are replaced by structured summaries.
+
+All PDF outputs MUST:
+- use a single non-duplicated document title;
+- use clear visual hierarchy between title, sections, body and bullets;
+- preserve French accents and punctuation correctly;
+- have bounded margins and no clipped/overlapping text;
+- paginate automatically and display page number;
+- state that displayed human time is Kinshasa time;
+- avoid orphan section headings where practical;
+- remain lightweight enough for the 4 GB Windows target and weak network;
+- preserve a dependency-free fallback path;
+- be visually rendered and inspected in qualification, not merely checked for a valid `%PDF` header.
+
+### Human/technical separation
+
+User-facing views MAY link to a technical view, but MUST NOT force the user to read diagnostic internals to understand normal operation.
+
+The technical report MUST retain enough exact evidence for engineering audit while the human reports translate that evidence into plain language.
+
+### Regression obligations
+
+Qualification MUST include at least:
+- UTC -> Kinshasa conversion fixture;
+- no raw UTC offset in reports 1–3;
+- no raw mission ID / Nexus error-class field in reports 1–3;
+- WinAnsi-compatible French glyph rendering in the dependency-free PDF fallback;
+- bold/section font presence and page footer/page count;
+- rendered-page visual smoke inspection for representative long content;
+- protection against duplicate report titles.
+
+Target presentation revision: **R54**.
