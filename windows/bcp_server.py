@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.6"
+SERVER_VERSION = "0.7.7"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -52,6 +52,8 @@ NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
+NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS = 2 * 60
+NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS = 15 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 MISSION_STALE_SECONDS = 10 * 60
 MISSION_WATCHDOG_MAX_AUTO_REQUESTS = 3
@@ -1640,6 +1642,44 @@ def schedule_server_restart(http_server, bind: str, port: int, result: dict) -> 
         creationflags=flags,
     )
     threading.Timer(0.8, http_server.shutdown).start()
+
+
+def start_nexus_human_gate_manifest_watcher() -> None:
+    """Fast low-data manifest watch only while a Cloudflare human gate is open."""
+    def worker():
+        failures = 0
+        while True:
+            delay = AUTO_UPDATE_INTERVAL_SECONDS
+            try:
+                current = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+                state = str(current.get("state") or "")
+                current_version = str(current.get("bundle_version") or "")
+                if state == "HUMAN_AUTH_REQUIRED":
+                    delay = NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS
+                    manifest = _fetch_json(NEXUS_BOOTSTRAP_MANIFEST_URL)
+                    target_version = str(manifest.get("version") or "")
+                    failures = 0
+                    if target_version and target_version != current_version:
+                        mirror_telemetry_status("NEXUS_HUMAN_GATE_NEW_BUNDLE_DETECTED", {
+                            "status": "UPDATE_AVAILABLE",
+                            "target_version": target_version,
+                            "update_result": "HUMAN_GATE_FAST_PATH",
+                            "auto_update": True,
+                        })
+                        apply_nexus_bootstrap_delivery(auto_launch=True)
+            except Exception:
+                failures = min(failures + 1, 4)
+                delay = min(
+                    NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS * (2 ** failures),
+                    NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS,
+                )
+            time.sleep(max(30, int(delay)))
+
+    threading.Thread(
+        target=worker,
+        name="BCP-Nexus-HumanGate-ManifestWatch",
+        daemon=True,
+    ).start()
 
 
 def start_auto_update_worker(http_server, bind: str, port: int) -> None:
@@ -4921,6 +4961,7 @@ def main():
     start_external_heartbeat_worker()
     start_conversation_receipt_worker()
     start_mdns_advertiser(args.port)
+    start_nexus_human_gate_manifest_watcher()
     start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
     try:
