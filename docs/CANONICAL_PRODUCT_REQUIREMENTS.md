@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R11
+Revision: 2026-09-20-R12
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -745,6 +745,19 @@ Routine BCP/PC/B-EDGE upgrades MUST converge toward zero-manual distribution:
 
 Canonical design:
 `docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
+
+
+### P0 — Nexus bootstrap runtime fallback
+
+The Nexus bootstrap MUST remain zero-touch until a genuinely irreducible human authorization gate is reached.
+
+- If a discovered system `npx`/Wrangler launcher fails its bounded version probe, BCP MUST automatically attempt the pinned managed portable runtime before entering a human hold.
+- The managed fallback SHOULD invoke portable `node.exe` with npm's `npx-cli.js` directly so bootstrap correctness does not depend on a Windows `.cmd` wrapper.
+- System and managed probes MUST remain bounded, retry/backoff aware, low-data, secret-safe and externally diagnosable through sanitized receipts.
+- A runtime-probe failure MUST NOT require the user to install Node/Wrangler manually, re-enter the Telegram token/chat identity, run PowerShell, or shuttle ZIPs.
+- `DEFAULT_PAID_SPEND = 0 USD` remains mandatory.
+- Successful CI proves only the candidate implementation. FIELD promotion still requires fresh resident runtime readback and a real Nexus/Telegram round-trip.
+- Cloudflare account/browser authorization, when first genuinely required by a functioning Wrangler runtime, remains an explicit one-time human gate and MUST NOT be bypassed.
 
 
 Canonical Nexus field gate:

@@ -123,8 +123,9 @@ function Invoke-ResilientDownload([string]$Uri, [string]$Destination) {
 function Ensure-ManagedWranglerLauncher {
     $toolRoot = Join-Path $ManagedToolsRoot ("wrangler-" + $WranglerVersion)
     $nodeHome = Join-Path $toolRoot ("node-v" + $NodeVersion + "-win-x64")
-    $npx = Join-Path $nodeHome "npx.cmd"
-    if (-not (Test-Path -LiteralPath $npx -PathType Leaf)) {
+    $nodeExe = Join-Path $nodeHome "node.exe"
+    $npxCli = Join-Path $nodeHome "node_modules\npm\bin\npx-cli.js"
+    if (-not (Test-Path -LiteralPath $nodeExe -PathType Leaf) -or -not (Test-Path -LiteralPath $npxCli -PathType Leaf)) {
         New-Item -ItemType Directory -Force -Path $toolRoot | Out-Null
         $archive = Join-Path $toolRoot $NodeArchiveName
         if (Test-Path -LiteralPath $archive -PathType Leaf) {
@@ -145,7 +146,7 @@ function Ensure-ManagedWranglerLauncher {
         try {
             Expand-Archive -LiteralPath $archive -DestinationPath $extractRoot -Force
             $candidate = Join-Path $extractRoot ("node-v" + $NodeVersion + "-win-x64")
-            if (-not (Test-Path -LiteralPath (Join-Path $candidate "npx.cmd") -PathType Leaf)) {
+            if (-not (Test-Path -LiteralPath (Join-Path $candidate "node.exe") -PathType Leaf) -or -not (Test-Path -LiteralPath (Join-Path $candidate "node_modules\npm\bin\npx-cli.js") -PathType Leaf)) {
                 throw "MANAGED_NODE_ARCHIVE_LAYOUT_INVALID"
             }
             Remove-Item -Recurse -Force -LiteralPath $nodeHome -ErrorAction SilentlyContinue
@@ -166,7 +167,7 @@ function Ensure-ManagedWranglerLauncher {
     $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
     $env:NPM_CONFIG_FETCH_TIMEOUT = "120000"
     $env:NPM_CONFIG_PREFER_OFFLINE = "true"
-    return [pscustomobject]@{ File = $npx; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $true }
+    return [pscustomobject]@{ File = $nodeExe; Prefix = @($npxCli, "--yes", ("wrangler@" + $WranglerVersion)); Managed = $true; Invocation = "NODE_DIRECT_NPX_CLI" }
 }
 
 function Find-WranglerLauncher {
@@ -181,12 +182,12 @@ function Find-WranglerLauncher {
             $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
     $env:NPM_CONFIG_FETCH_TIMEOUT = "120000"
     $env:NPM_CONFIG_PREFER_OFFLINE = "true"
-            return [pscustomobject]@{ File = $cmd.Source; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $false }
+            return [pscustomobject]@{ File = $cmd.Source; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $false; Invocation = "SYSTEM_NPX" }
         }
     }
     foreach ($name in @("wrangler.cmd","wrangler.exe","wrangler")) {
         $cmd = Get-Command $name -ErrorAction SilentlyContinue
-        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @(); Managed = $false } }
+        if ($cmd) { return [pscustomobject]@{ File = $cmd.Source; Prefix = @(); Managed = $false; Invocation = "SYSTEM_WRANGLER" } }
     }
     try {
         return Ensure-ManagedWranglerLauncher
@@ -294,7 +295,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
@@ -359,14 +360,37 @@ for ($attempt = 1; $attempt -le 3; $attempt++) {
     }
     if ($attempt -lt 3) { Start-Sleep -Seconds ([Math]::Min(20, [Math]::Pow(2, $attempt + 1))) }
 }
+if (-not $runtimeReady -and -not $launcher.Managed) {
+    Write-Host "BCP Nexus: system Wrangler probe failed; switching automatically to managed portable Node/Wrangler..."
+    try {
+        $managedLauncher = Ensure-ManagedWranglerLauncher
+        $managedProbe = $null
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $managedProbe = Invoke-Wrangler $managedLauncher @("--version") -AllowFailure
+            $lastProbe = $managedProbe
+            if ($managedProbe.ExitCode -eq 0) {
+                $launcher = $managedLauncher
+                $runtimeReady = $true
+                Write-Host "BCP_NEXUS_MANAGED_RUNTIME_FALLBACK=PASS"
+                break
+            }
+            if ($attempt -lt 3) { Start-Sleep -Seconds ([Math]::Min(20, [Math]::Pow(2, $attempt + 1))) }
+        }
+    } catch {
+        $script:ManagedRuntimeFailure = Get-SafeFailureDetail ([string]$_.Exception.Message)
+    }
+}
 if (-not $runtimeReady) {
     $probeClass = Classify-WranglerProbeFailure $lastProbe
     $probeDetail = Get-WranglerProbeDetail $lastProbe
+    if ($script:ManagedRuntimeFailure) {
+        $probeDetail = Get-SafeFailureDetail ($probeDetail + " managed_fallback=" + $script:ManagedRuntimeFailure)
+    }
     try { Write-RuntimePrepReceipt "RUNTIME_PROBE_FAILED" $probeClass "WRANGLER_VERSION_PROBE" $probeDetail } catch {}
     Write-Host "BCP_NEXUS_HUMAN_GATE=WRANGLER_RUNTIME_REQUIRED"
     Write-Host ("BCP_NEXUS_RUNTIME_CLASS=" + $probeClass)
     Write-Host ("BCP_NEXUS_RUNTIME_DETAIL=" + $probeDetail)
-    Write-Host "Pinned Wrangler is not ready yet. BCP preserved the bounded diagnostic and will use the managed retry/update path; no manual install, token re-entry, or ZIP shuttle is required."
+    Write-Host "Wrangler is not ready yet. BCP tried the system launcher and the managed portable Node fallback automatically; no manual install, token re-entry, or ZIP shuttle is required."
     exit 3
 }
 

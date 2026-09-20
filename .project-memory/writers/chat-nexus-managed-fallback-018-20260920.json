@@ -1,0 +1,23 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-nexus-managed-fallback-018-20260920",
+  "project_or_mission": "API/BCP Nexus automatic managed-runtime fallback after 0.1.7 field probe failure",
+  "base_main_sha": "c090522a4d299e141c08da66f0bc8d04e02e21d9",
+  "created_at": "2026-09-20T02:11:00+01:00",
+  "intended_file_scope": [
+    "windows/BOOTSTRAP_BCP_NEXUS.ps1",
+    "release/nexus_bootstrap.json",
+    "release/current.json",
+    ".project-memory/writers/chat-nexus-managed-fallback-018-20260920.json",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Nexus Transport Qualification",
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Coordinated Product Qualification",
+    "exact PR head CI binding"
+  ],
+  "direct_main_write": false,
+  "merge_requires_main_reread": true,
+  "status": "WORK_BRANCH_ACTIVE_CI_REQUALIFY"
+}
