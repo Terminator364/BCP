@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_7_FIELD_RUNNING_NEXUS_0_1_8_RESIDENT_LAUNCHED_TELEGRAM_V5_MERGED_R13_PREFLIGHT_ACTIVE",
-  "last_completed_atomic_action": "PR #75 field-ecosystem preflight R13 passed exact-head CI (CURRENT, Telegram, Nexus, coordinated product, and the new field-ecosystem workflow) and merged to main at 1f85262342ce73e946a354362d2b32e11fd22bae. Fresh Drive machine readback then proved resident BCP 0.6.7 on MBMPC had consumed Nexus 0.1.8 and launched its bootstrap by 2026-09-20T01:36:54Z; subsequent heartbeats through 2026-09-20T01:38:39Z still show state LAUNCHED with no terminal receipt yet.",
-  "next_action": "Continue observing the already-launched Nexus 0.1.8 process through machine-readable Drive evidence only. When a terminal receipt appears, if managed portable Node/Wrangler succeeds, proceed to the genuine Cloudflare authorization gate or automatic deployment; if it fails, use the new sanitized receipt/error class as the next regression input. Do not restart, reinstall, re-enter Telegram secrets, install Node/Wrangler manually, move ZIPs, or run PowerShell.",
+  "status": "BCP_0_6_7_FIELD_RUNNING_NEXUS_0_1_9_MERGED_CONVERGENCE_PENDING_R13_PREFLIGHT_GREEN",
+  "last_completed_atomic_action": "PR #77 qualified Nexus 0.1.9 on exact-head CI, including the real Windows field-ecosystem job that downloads the pinned Node 24.21.0 archive, installs the pinned Wrangler 4.135.0 package through npm, and invokes wrangler.js directly through node.exe. CURRENT, Nexus transport, coordinated product, and field-ecosystem preflight all passed on head 141f037a0b0170c4cbf3198f758cd01dab6e80f4. PR #77 then merged to main as 66a757f0c1df4ba8ebd2fdb3d5d0ce48245341d2. Fresh Drive heartbeat at 2026-09-20T07:51:25Z still showed the resident PC on Nexus 0.1.8 WRANGLER_RUNTIME_REQUIRED because the 0.1.9 merge occurred after that heartbeat.",
+  "next_action": "Do not replay or ask the user to intervene. Allow the resident BCP 0.6.7 periodic updater to consume Nexus 0.1.9 on its next normal update cycle, then perform a fresh Drive readback. If 0.1.9 reaches a terminal runtime-prep or Cloudflare authorization state, classify from machine-readable telemetry and continue. Preserve zero-dollar/data-saver policy; do not shorten the normal update interval merely to accelerate this one deployment.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -182,12 +182,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-018-RESIDENT-LAUNCHED-R13-PREFLIGHT-20260920",
-    "status": "FIELD_PROCESS_RUNNING",
-    "last_completed_action": "R13 field-ecosystem preflight merged; Nexus 0.1.8 resident and LAUNCHED on MBMPC.",
-    "next_atomic_action": "Read the next terminal Nexus 0.1.8 receipt from Drive and classify the result.",
-    "branch": "work/bcp/state-r13-nexus018-launched-20260920",
-    "base_main_sha": "1f85262342ce73e946a354362d2b32e11fd22bae",
+    "checkpoint_id": "BCP-NEXUS-019-MERGED-FIELD-CONVERGENCE-PENDING-20260920",
+    "status": "MERGED_FIELD_CONVERGENCE_PENDING",
+    "last_completed_action": "Nexus 0.1.9 merged after exact-head CI PASS including real managed Wrangler Windows probe.",
+    "next_atomic_action": "Fresh Drive readback after resident updater's next normal cycle.",
+    "branch": "work/bcp/state-nexus019-merged-field-pending-20260920",
+    "base_main_sha": "66a757f0c1df4ba8ebd2fdb3d5d0ce48245341d2",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1238,8 +1238,8 @@
     }
   },
   "latest_field_evidence_nexus_0_1_8": {
-    "observed_at_utc": "2026-09-20T01:38:39+00:00",
-    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json plus BCP_RUNTIME_EVENTS.jsonl",
+    "observed_at_utc": "2026-09-20T07:51:25+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
     "evidence_status": "MACHINE_READBACK",
     "server_version": "0.6.7",
     "server_pid": 6444,
@@ -1247,9 +1247,29 @@
     "paired": true,
     "update_state": "UP_TO_DATE",
     "nexus_bootstrap_bundle_version": "0.1.8",
-    "nexus_bootstrap_state": "LAUNCHED",
-    "nexus_bootstrap_exit_code": null,
-    "nexus_bootstrap_receipt_status": "",
-    "conclusion": "Nexus 0.1.8 has converged to the resident PC and is actively running its bootstrap. Terminal result not yet observed."
+    "nexus_bootstrap_state": "WRANGLER_RUNTIME_REQUIRED",
+    "nexus_bootstrap_exit_code": 3,
+    "nexus_bootstrap_receipt_status": "RUNTIME_PROBE_FAILED",
+    "nexus_bootstrap_error_class": "WRANGLER_RUNTIME_PROBE_FAILED",
+    "nexus_bootstrap_error_detail": "WRANGLER_PROBE_EXIT_1 no stdout/stderr captured",
+    "conclusion": "Resident PC is alive and paired; 0.1.9 had not yet been consumed at this readback."
+  },
+  "nexus_0_1_9": {
+    "status": "MERGED_CI_QUALIFIED_FIELD_PENDING",
+    "pr": 77,
+    "exact_head_sha": "141f037a0b0170c4cbf3198f758cd01dab6e80f4",
+    "merged_main_sha": "66a757f0c1df4ba8ebd2fdb3d5d0ce48245341d2",
+    "current_manifest_sha256": "c5e471b54b039deb4e1fc494fe2900df2007ee67e90e7b6d8cc513d2ad591a92",
+    "bootstrap_sha256": "d5f66da2ce1026548564c93cb3044a036aa64f6182787e6bcdf0afe3b57f7428",
+    "exact_head_ci": {
+      "nexus_transport": 35497923767,
+      "current_release_contract": 35497923813,
+      "coordinated_product": 35497923732,
+      "field_ecosystem_preflight": 35497923743,
+      "result": "PASS"
+    },
+    "runtime_strategy": "SYSTEM_FIRST_THEN_PINNED_PORTABLE_NODE_PERSISTENT_WRANGLER_DIRECT_JS",
+    "windows_powershell_native_stderr_captured": true,
+    "field_verified": false
   }
 }
