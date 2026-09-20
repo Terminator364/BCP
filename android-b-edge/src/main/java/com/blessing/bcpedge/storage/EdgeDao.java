@@ -28,6 +28,12 @@ public interface EdgeDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insertDependency(EdgeDependencyEntity dependency);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void putSentinel(EdgeSentinelEntity sentinel);
+
+    @Query("SELECT * FROM edge_sentinel WHERE projectId = :projectId LIMIT 1")
+    EdgeSentinelEntity sentinel(String projectId);
+
     @Query("SELECT * FROM edge_projects ORDER BY updatedAt DESC")
     List<EdgeProjectEntity> projects();
 
