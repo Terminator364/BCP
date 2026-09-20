@@ -611,6 +611,47 @@ class LocalTruth:
             "status": "NOT_OBSERVED", "backlog": None, "read_only": True
         }
 
+    def conversation_latency_summary(self, conversation_id: str) -> dict:
+        messages = self.conversation_messages(conversation_id, 20)
+        assistant = None
+        user = None
+        for msg in reversed(messages):
+            if assistant is None and str(msg.get("role") or "").upper() == "ASSISTANT":
+                assistant = msg
+                continue
+            if assistant is not None and str(msg.get("role") or "").upper() == "USER":
+                user = msg
+                break
+        def elapsed(a, b):
+            try:
+                x = dt.datetime.fromisoformat(str(a or "").replace("Z", "+00:00"))
+                y = dt.datetime.fromisoformat(str(b or "").replace("Z", "+00:00"))
+                if x.tzinfo is None:
+                    x = x.replace(tzinfo=dt.timezone.utc)
+                if y.tzinfo is None:
+                    y = y.replace(tzinfo=dt.timezone.utc)
+                return max(0, int((y.astimezone(dt.timezone.utc) - x.astimezone(dt.timezone.utc)).total_seconds()))
+            except Exception:
+                return None
+        out = {
+            "producer_response_seconds": None,
+            "producer_to_bcp_mirror_seconds": None,
+            "bcp_mirror_to_seen_seconds": None,
+            "user_to_seen_seconds": None,
+            "seen_evidence": False,
+        }
+        if not assistant:
+            return out
+        if user:
+            out["producer_response_seconds"] = elapsed(user.get("generated_at"), assistant.get("generated_at"))
+        out["producer_to_bcp_mirror_seconds"] = elapsed(assistant.get("generated_at"), assistant.get("mirrored_at"))
+        if assistant.get("seen_at"):
+            out["seen_evidence"] = True
+            out["bcp_mirror_to_seen_seconds"] = elapsed(assistant.get("mirrored_at"), assistant.get("seen_at"))
+            if user:
+                out["user_to_seen_seconds"] = elapsed(user.get("generated_at"), assistant.get("seen_at"))
+        return out
+
     def buildhub(self) -> dict:
         raw = os.environ.get("BCP_BUILDHUB_RECEIPT", "").strip()
         if raw:
@@ -2253,6 +2294,18 @@ class Service:
                 clean(msg.get("text"), 700),
                 self._delivery_label(str(msg.get("delivery_state") or "")),
             ]
+        latency = self.local.conversation_latency_summary(cid)
+        if latency.get("producer_response_seconds") is not None:
+            lines += ["", "⏱️ Décomposition temporelle (preuves durables) :"]
+            lines.append("• Producteur : " + self._age_label(int(latency["producer_response_seconds"])))
+            if latency.get("producer_to_bcp_mirror_seconds") is not None:
+                lines.append("• Producteur → miroir BCP : " + self._age_label(int(latency["producer_to_bcp_mirror_seconds"])))
+            if latency.get("seen_evidence"):
+                lines.append("• Miroir BCP → vu : " + self._age_label(int(latency.get("bcp_mirror_to_seen_seconds") or 0)))
+                if latency.get("user_to_seen_seconds") is not None:
+                    lines.append("• Demande → vu : " + self._age_label(int(latency["user_to_seen_seconds"])))
+            else:
+                lines.append("• Vu utilisateur : non mesuré")
         producer_sync = self.local.conversation_producer_sync(cid)
         if producer_sync:
             lines += ["", "🔄 Producteurs synchronisés :"]
@@ -2275,6 +2328,7 @@ class Service:
         lines += [
             "",
             "La présence d’un texte ici prouve son miroir BCP, pas son affichage dans l’interface ChatGPT.",
+            "Le temps « Réfléchi pendant… » de ChatGPT reste diagnostique : il n’est pas traité comme un temps utilisateur de bout en bout.",
         ]
         return "\n".join(lines)
 
