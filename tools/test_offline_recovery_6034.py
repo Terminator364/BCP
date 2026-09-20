@@ -33,7 +33,7 @@ def pack(path:Path,runner:str,duplicates:int=1,version="6.0.34",sequence=6034,fr
 
 def invoke(td:Path,pkg:Path,sha:str,mem:int=512,preflight=False,active_version="6.0.32",active_sequence=6032):
  root=td/"install";root.mkdir(parents=True,exist_ok=True);(root/"state").mkdir(exist_ok=True)
- if active_version:
+ if active_version and not (root/"state"/"active_release.json").exists():
   (root/"state"/"active_release.json").write_text(json.dumps({"version":active_version,"sequence":active_sequence}),encoding="utf-8")
  work=td/"work"
  cmd=[sys.executable,str(INSTALLER),"--test-mode","--package",str(pkg),"--install-root",str(root),
