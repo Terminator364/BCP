@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "fbe7eed59379c3be3895b25f6cd3ab4f4203bc8f6e0c750c5afd17ad3478f066",
+      "sha256": "ad51af572e48456ccd099be714decdd4f359ba1a1425dcb46f6328eae022d2cf",
       "max_bytes": 500000
     },
     {
@@ -68,7 +68,12 @@
     "styled_callback_buttons": true,
     "v9_plain_fallback": true,
     "fallback_on_rich_send_failure": true,
-    "fallback_on_rich_edit_failure": true
+    "fallback_on_rich_edit_failure": true,
+    "notification_tiers": {
+      "actionable": "AUDIBLE",
+      "automatic_recovery": "SILENT",
+      "watch": "DASHBOARD_ONLY"
+    }
   },
   "report_exports": {
     "enabled": true,
@@ -87,5 +92,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.1 preserves the proven 0.2.0 portable Node/Wrangler runtime and adds Telegram Rich Cockpit V10 edge rendering: rich live-card send/edit is preferred, V9 plain text + InlineKeyboard is mandatory fallback, callback controls match the PC surface, and all four report caches are available through Nexus. No paid broadcast, no media-heavy live card, no new local runtime."
+  "notes": "Nexus 0.2.1 preserves the proven 0.2.0 portable runtime and adds Rich Cockpit V10 edge parity: rich-first live cards with mandatory V9 fallback, all four reports, and tiered notifications (human-action audible, auto-recovery silent, WATCH dashboard-only). No paid broadcast or media-heavy live card."
 }
