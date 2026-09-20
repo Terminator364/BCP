@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-human-cockpit-v6",
+  "version": "2026.09.20-human-cockpit-v7",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "3d60065ffba07fb47182733a34dee3d6fe09abb67fd32b0c8160f369c2cb2631",
+  "sha256": "4c9df843af2c01d89e2347f71f23f8d0e68ed59ae2e8b59348f920139e33e424",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first cockpit V6 preserves V5 controls/PDFs and adds secret-free worker health, successful poll timestamps, callback receive/handle receipts, and degraded retry state. It remains backward-compatible with BCP >=0.6.3; BCP 0.6.8 adds external heartbeat mirroring and stale-health watchdog recovery.",
-  "requirements_revision": "2026-09-20-R14"
+  "notes": "Human-first cockpit V7: interactive Automate de suivi BCP card, approximate dynamic fine-grained micro-action forecast (explicit ≈), human-readable ecosystem health, adaptive automatic refresh with offline/reconnect semantics, contextual hiding of unnecessary user-action prompts, clearer device/Nexus/CI explanations, and four complementary PDF reports: situation, devices/network, mission/micro-actions, technical audit. Preserves V6 liveness/callback receipts and single-poller safeguards.",
+  "requirements_revision": "2026-09-20-R15"
 }
