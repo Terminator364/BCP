@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "841b2662da3279d6ec2566581d6be235d03679169b279a0e3cb57e32737d4294"
+        "sha256": "acfbed4d9263b89bef0da0d13ae270e514c1c4fc636d0ffdfa09fd8106b27973"
       },
       "notes": "Nexus 0.2.5 remains device-flow-only and now mirrors the human-first R53 cockpit labels/help surface across the remote path."
     }
@@ -136,7 +136,10 @@
       "hash-verified target-bundled ChatGPT-PC recovery runner staging",
       "recovery bootstrap runner skew eliminated before target install",
       "human-first R53 labels: Où en sommes-nous / Nouveautés / Messages récents / Pourquoi cet état / Reprendre maintenant",
-      "direct Aide / mode d’emploi control with canonical Drive/GitHub guide"
+      "direct Aide / mode d’emploi control with canonical Drive/GitHub guide",
+      "mail-first checkpoint order: exact email mirror before ChatGPT final when Gmail is available",
+      "progressive disclosure: compact primary cockpit plus Rapports & technique secondary menu",
+      "delivery-gap wording states saved response / reading not confirmed, never assumes ChatGPT failure"
     ]
   }
 }
