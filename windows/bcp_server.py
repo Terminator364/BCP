@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.2"
+SERVER_VERSION = "0.7.3"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -40,6 +40,9 @@ TELEGRAM_COMPANION_WATCHDOG_PATH = STATE_DIR / "telegram_companion_watchdog.json
 MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
 MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
 MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
+CONVERSATION_RECEIPT_INBOX = STATE_DIR / "CONVERSATION_RECEIPTS.jsonl"
+CONVERSATION_RECEIPT_CURSOR = STATE_DIR / "conversation_receipt_cursor.json"
+CONVERSATION_RECEIPT_POLL_SECONDS = 10
 NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json"
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
@@ -1969,6 +1972,8 @@ def ensure_state() -> str:
                 linked_mission_id TEXT NOT NULL DEFAULT '',
                 content_hash TEXT NOT NULL,
                 seen_at TEXT NOT NULL DEFAULT '',
+                producer_sequence INTEGER NOT NULL DEFAULT 0,
+                producer_session_id TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL,
                 UNIQUE(conversation_id,sequence),
                 UNIQUE(conversation_id,message_key)
@@ -1976,6 +1981,12 @@ def ensure_state() -> str:
         )
         cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_threads_activity ON conversation_threads(last_activity_at DESC)")
         cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_messages_thread_seq ON conversation_messages(conversation_id,sequence DESC)")
+        for col, ddl in (
+            ("producer_sequence", "producer_sequence INTEGER NOT NULL DEFAULT 0"),
+            ("producer_session_id", "producer_session_id TEXT NOT NULL DEFAULT ''")
+        ):
+            _ensure_sqlite_column(cx, "conversation_messages", col, ddl)
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_messages_producer_seq ON conversation_messages(conversation_id,producer_session_id,producer_sequence)")
         cx.execute("CREATE INDEX IF NOT EXISTS idx_missions_project_updated ON missions(project_id,updated_at)")
         for col, ddl in (
             ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'UNCLASSIFIED'"),
@@ -2483,7 +2494,8 @@ def _conversation_safe_text(value) -> str:
 def conversation_append_message(conversation_id: str, *, alias: str, source_kind: str,
                                 source_ref: str, message_key: str, role: str, text: str,
                                 delivery_state: str, evidence_class: str = "EXTERNAL_RECEIPT",
-                                generated_at: str = "", linked_mission_id: str = "") -> dict:
+                                generated_at: str = "", linked_mission_id: str = "",
+                                producer_sequence: int = 0, producer_session_id: str = "") -> dict:
     cid = str(conversation_id or "").strip()[:64]
     if not cid or not re.fullmatch(r"[A-Za-z0-9._:-]{1,64}", cid):
         raise ValueError("invalid_conversation_id")
@@ -2506,6 +2518,11 @@ def conversation_append_message(conversation_id: str, *, alias: str, source_kind
     now = utc_now()
     generated = str(generated_at or now)[:64]
     digest = sha256_text(safe_text)
+    try:
+        producer_sequence = max(0, int(producer_sequence or 0))
+    except Exception:
+        producer_sequence = 0
+    producer_session_id = str(producer_session_id or "")[:120]
     with db_connection() as cx:
         existing = cx.execute(
             "SELECT * FROM conversation_messages WHERE conversation_id=? AND message_key=?",
@@ -2519,11 +2536,13 @@ def conversation_append_message(conversation_id: str, *, alias: str, source_kind
         cx.execute(
             """INSERT INTO conversation_messages(
                 conversation_id,sequence,message_key,role,text,generated_at,mirrored_at,
-                delivery_state,evidence_class,linked_mission_id,content_hash,seen_at,created_at
-            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                delivery_state,evidence_class,linked_mission_id,content_hash,seen_at,
+                producer_sequence,producer_session_id,created_at
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (cid, seq, message_key, role, safe_text, generated, now, state,
              str(evidence_class or "EXTERNAL_RECEIPT")[:80],
-             str(linked_mission_id or "")[:80], digest, "", now),
+             str(linked_mission_id or "")[:80], digest, "",
+             producer_sequence, producer_session_id, now),
         )
         if thread:
             cx.execute(
@@ -2542,6 +2561,121 @@ def conversation_append_message(conversation_id: str, *, alias: str, source_kind
             )
     return {"result": "RECORDED", "conversation_id": cid, "sequence": seq,
             "content_hash": digest, "delivery_state": state}
+
+def conversation_sequence_gaps(conversation_id: str = "", limit: int = 20) -> list[dict]:
+    limit = max(1, min(int(limit), 100))
+    params = []
+    where = "WHERE producer_sequence>0 AND producer_session_id<>''"
+    if conversation_id:
+        where += " AND conversation_id=?"
+        params.append(str(conversation_id)[:64])
+    with db_connection() as cx:
+        rows = cx.execute(
+            f"""SELECT conversation_id,producer_session_id,producer_sequence
+                FROM conversation_messages {where}
+                ORDER BY conversation_id,producer_session_id,producer_sequence""",
+            tuple(params),
+        ).fetchall()
+    groups = {}
+    for row in rows:
+        key = (row["conversation_id"], row["producer_session_id"])
+        groups.setdefault(key, []).append(int(row["producer_sequence"]))
+    out = []
+    for (cid, sid), seqs in groups.items():
+        unique = sorted(set(x for x in seqs if x > 0))
+        if len(unique) < 2:
+            continue
+        prev = unique[0]
+        for cur in unique[1:]:
+            if cur > prev + 1:
+                out.append({
+                    "conversation_id": cid,
+                    "producer_session_id": sid,
+                    "missing_from": prev + 1,
+                    "missing_to": cur - 1,
+                    "missing_count": cur - prev - 1,
+                    "state": "SEQUENCE_GAP",
+                })
+                if len(out) >= limit:
+                    return out
+            prev = cur
+    return out
+
+def conversation_ingest_receipt(receipt: dict) -> dict:
+    if not isinstance(receipt, dict):
+        raise ValueError("receipt_must_be_object")
+    schema = str(receipt.get("schema") or "")
+    if schema not in {"bcp.conversation_receipt/1", "bcp.conversation_receipt/2"}:
+        raise ValueError("unsupported_receipt_schema")
+    result = conversation_append_message(
+        receipt.get("conversation_id"),
+        alias=receipt.get("alias") or receipt.get("conversation_id"),
+        source_kind=receipt.get("source_kind") or "BCP_AGENT",
+        source_ref=receipt.get("source_ref") or "",
+        message_key=receipt.get("message_key") or "",
+        role=receipt.get("role") or "",
+        text=receipt.get("text") or "",
+        delivery_state=receipt.get("delivery_state") or "MIRRORED_BCP",
+        evidence_class=receipt.get("evidence_class") or "PRODUCER_RECEIPT",
+        generated_at=receipt.get("generated_at") or "",
+        linked_mission_id=receipt.get("linked_mission_id") or "",
+        producer_sequence=receipt.get("producer_sequence") or 0,
+        producer_session_id=receipt.get("producer_session_id") or "",
+    )
+    result["sequence_gaps"] = conversation_sequence_gaps(str(receipt.get("conversation_id") or ""), 20)
+    return result
+
+def process_conversation_receipt_inbox(max_lines: int = 64) -> dict:
+    """Consume local append-only receipts incrementally; no cloud transcript dependency."""
+    path = CONVERSATION_RECEIPT_INBOX
+    if not path.is_file():
+        return {"processed": 0, "accepted": 0, "rejected": 0, "offset": 0}
+    state = read_json(CONVERSATION_RECEIPT_CURSOR, {}) or {}
+    try:
+        offset = max(0, int(state.get("offset") or 0))
+        size = path.stat().st_size
+        if offset > size:
+            offset = 0
+    except Exception:
+        offset = 0
+    processed = accepted = rejected = 0
+    with path.open("r", encoding="utf-8", errors="replace") as fh:
+        fh.seek(offset)
+        while processed < max(1, min(int(max_lines), 256)):
+            raw = fh.readline(32769)
+            if not raw:
+                break
+            processed += 1
+            if len(raw) > 32768 and not raw.endswith("\n"):
+                rejected += 1
+                continue
+            try:
+                obj = json.loads(raw)
+                conversation_ingest_receipt(obj)
+                accepted += 1
+            except Exception:
+                rejected += 1
+        offset = fh.tell()
+    atomic_json(CONVERSATION_RECEIPT_CURSOR, {
+        "schema": "bcp.conversation_receipt_cursor/1",
+        "offset": offset,
+        "processed": processed,
+        "accepted": accepted,
+        "rejected": rejected,
+        "updated_at": utc_now(),
+    })
+    return {"processed": processed, "accepted": accepted, "rejected": rejected, "offset": offset}
+
+def start_conversation_receipt_worker() -> None:
+    def worker():
+        while True:
+            try:
+                process_conversation_receipt_inbox(64)
+            except Exception:
+                pass
+            time.sleep(CONVERSATION_RECEIPT_POLL_SECONDS)
+    threading.Thread(target=worker, name="BCP-conversation-receipts", daemon=True).start()
+
 
 def _iso_age_seconds(value: str) -> int | None:
     try:
@@ -2600,7 +2734,8 @@ def conversation_messages(conversation_id: str, limit: int = 8) -> list[dict]:
     with db_connection() as cx:
         rows = cx.execute(
             """SELECT conversation_id,sequence,message_key,role,text,generated_at,mirrored_at,
-                      delivery_state,evidence_class,linked_mission_id,content_hash,seen_at
+                      delivery_state,evidence_class,linked_mission_id,content_hash,seen_at,
+                      producer_sequence,producer_session_id
                FROM conversation_messages WHERE conversation_id=?
                ORDER BY sequence DESC LIMIT ?""",
             (str(conversation_id)[:64], limit),
@@ -3454,6 +3589,15 @@ class Handler(BaseHTTPRequestHandler):
                 "truth_boundary": "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE",
             })
             return
+        if parts == ["v1", "conversations", "sequence-gaps"]:
+            query = parse_qs(urlparse(self.path).query)
+            cid = str((query.get("conversation_id") or [""])[0])[:64]
+            self.send_json(200, {
+                "ok": True,
+                "schema": "bcp.conversation_sequence_gaps/1",
+                "gaps": conversation_sequence_gaps(cid, 50),
+            })
+            return
         if parts == ["v1", "conversations"]:
             query = parse_qs(urlparse(self.path).query)
             try:
@@ -3823,7 +3967,7 @@ class Handler(BaseHTTPRequestHandler):
 def selftest():
     import tempfile
 
-    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG
+    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG, CONVERSATION_RECEIPT_INBOX, CONVERSATION_RECEIPT_CURSOR
     with tempfile.TemporaryDirectory() as td:
         APP_ROOT = Path(td)
         STATE_DIR = APP_ROOT / "state"
@@ -3834,6 +3978,8 @@ def selftest():
         MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
         MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
         MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
+        CONVERSATION_RECEIPT_INBOX = STATE_DIR / "CONVERSATION_RECEIPTS.jsonl"
+        CONVERSATION_RECEIPT_CURSOR = STATE_DIR / "conversation_receipt_cursor.json"
         token = ensure_state()
         assert token
         r1 = commit_event(
@@ -4074,6 +4220,36 @@ def selftest():
         assert conversation_messages("chat-main", 3)[0]["delivery_state"] == "CHATGPT_UI_DELIVERY_UNKNOWN"
         # Fresh message must not be called a gap; aging it beyond the threshold must.
         assert conversation_delivery_gaps(300, 10) == []
+
+        # R25 local producer bridge: accept out-of-order receipts, expose a gap,
+        # then resolve it when the missing sequence arrives later.
+        receipts = [
+            {"schema":"bcp.conversation_receipt/2","conversation_id":"bridge-x","alias":"Bridge X",
+             "source_kind":"CHATGPT_PC","source_ref":"selftest","message_key":"p1","role":"USER",
+             "text":"Question","producer_session_id":"session-a","producer_sequence":1},
+            {"schema":"bcp.conversation_receipt/2","conversation_id":"bridge-x","alias":"Bridge X",
+             "source_kind":"CHATGPT_PC","source_ref":"selftest","message_key":"p3","role":"ASSISTANT",
+             "text":"Réponse après trou","delivery_state":"CHATGPT_UI_DELIVERY_UNKNOWN",
+             "producer_session_id":"session-a","producer_sequence":3},
+        ]
+        CONVERSATION_RECEIPT_INBOX.write_text(
+            "".join(json.dumps(x, ensure_ascii=False) + "\n" for x in receipts), encoding="utf-8"
+        )
+        receipt_pass = process_conversation_receipt_inbox()
+        assert receipt_pass["accepted"] == 2 and receipt_pass["rejected"] == 0
+        seq_gaps = conversation_sequence_gaps("bridge-x", 10)
+        assert len(seq_gaps) == 1 and seq_gaps[0]["missing_from"] == 2 and seq_gaps[0]["missing_to"] == 2
+        with CONVERSATION_RECEIPT_INBOX.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(
+                {"schema":"bcp.conversation_receipt/2","conversation_id":"bridge-x","alias":"Bridge X",
+                 "source_kind":"CHATGPT_PC","source_ref":"selftest","message_key":"p2","role":"ASSISTANT",
+                 "text":"Réponse arrivée en retard","delivery_state":"MIRRORED_BCP",
+                 "producer_session_id":"session-a","producer_sequence":2},
+                ensure_ascii=False
+            ) + "\n")
+        receipt_late = process_conversation_receipt_inbox()
+        assert receipt_late["accepted"] == 1
+        assert conversation_sequence_gaps("bridge-x", 10) == []
         with db_connection() as cx:
             old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
             cx.execute("UPDATE conversation_messages SET mirrored_at=?,generated_at=? WHERE conversation_id='chat-main'", (old, old))
@@ -4236,6 +4412,7 @@ def main():
     if not lifecycle.get("registered", False):
         mirror_telemetry_status("LIFECYCLE_REGISTRATION_DEGRADED", {"status": "DEGRADED"})
     start_external_heartbeat_worker()
+    start_conversation_receipt_worker()
     start_mdns_advertiser(args.port)
     start_auto_update_worker(server, args.bind, args.port)
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
