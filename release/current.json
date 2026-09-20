@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R13",
+  "requirements_revision": "2026-09-20-R14",
   "zero_usd": true,
   "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.6.7",
+      "version": "0.6.8",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "9ac158600e898c0ac5653ce484827c832c279c4269e678ad2423f377ddc9ad63"
+        "sha256": "c272885cf356497b6cace85f84eb07903f195129e789d5d676c4889c833ce297"
       },
-      "notes": "BCP 0.6.7 preserves 0.6.6 watchdog/recovery and adds secret-free Nexus runtime-preparation failure class/detail/stage to the external machine-readable heartbeat so field failures can be diagnosed without user log shuttling."
+      "notes": "BCP 0.6.8 preserves resident recovery and adds Telegram companion liveness telemetry plus a bounded stale-health watchdog so silent cockpit failures can be diagnosed and recovered without user log shuttling."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -56,7 +56,7 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-human-cockpit-v5",
+    "version": "2026.09.20-human-cockpit-v6",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -65,8 +65,9 @@
       "inline refresh/current-step/micro-actions/missions/details controls",
       "concrete numbered micro-action journal from persisted mission evidence",
       "truthful finite-plan progress bar from persisted mission plan",
-      "expanded human PDF with plan and micro-action journal",
-      "expanded technical PDF with mission metadata/evidence",
+      "expanded human/technical PDF exports",
+      "secret-free worker liveness and callback receive/handle receipts",
+      "bounded resident watchdog for genuinely stale companion health",
       "compact low-data presentation",
       "no ChatGPT scheduled automation"
     ]
