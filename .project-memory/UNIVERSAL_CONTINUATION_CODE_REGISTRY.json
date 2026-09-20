@@ -1,0 +1,149 @@
+{
+  "schema": "bcp.universal_continuation_code_registry/1",
+  "status": "CANONICAL_POINTER_REGISTRY",
+  "updated_at": "2026-09-20",
+  "invariants": {
+    "codes_are_pointers_not_summaries": true,
+    "universal_cold_bootstrap": "BCPGO",
+    "explicit_scope_syntax": "BCPGO <project>",
+    "same_conversation_default": "CONTINUE ATOMIC",
+    "plain_continue_rule": "`Continue` is allowed only when the active project/mission is unambiguous; otherwise resolve through BCPGO <project>.",
+    "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    "load_cadence_before_resume": true,
+    "resume_exact_durable_checkpoint": true,
+    "no_replay_of_committed_work": true,
+    "future_projects_default": "BCPGO <project>"
+  },
+  "universal": [
+    {
+      "code": "BCPGO",
+      "scope": "ALL_PROJECTS",
+      "purpose": "cold/fresh-conversation bootstrap from durable context"
+    },
+    {
+      "code": "BCPGO <project>",
+      "scope": "ALL_PROJECTS",
+      "purpose": "explicitly scoped cold bootstrap"
+    },
+    {
+      "code": "CONTINUE ATOMIC",
+      "scope": "ACTIVE_PROJECT",
+      "purpose": "same-conversation resume from next uncommitted atomic action"
+    },
+    {
+      "code": "TAKEOVER SAFE",
+      "scope": "DUAL_CONVERSATION",
+      "purpose": "writer-fenced takeover using durable state"
+    },
+    {
+      "code": "Continue",
+      "scope": "ACTIVE_UNAMBIGUOUS_CONTEXT_ONLY",
+      "purpose": "human shorthand for the current durable continuation pointer"
+    }
+  ],
+  "project_aliases": [
+    {
+      "project": "API/BCP",
+      "codes": [
+        "APIAX07",
+        "APIAX07 RESYNC"
+      ],
+      "status": "VALID_SCOPED_ALIAS",
+      "fallback": "BCPGO BCP"
+    },
+    {
+      "project": "AX150K / AX15GO",
+      "codes": [
+        "AX15GO",
+        "AX150K CONTINUE"
+      ],
+      "status": "VALID_SCOPED_ALIAS",
+      "fallback": "BCPGO AX150K"
+    },
+    {
+      "project": "BuildHub",
+      "codes": [
+        "BUILDHUB CONTINUE",
+        "BUILDHUB AX15 RECOVER",
+        "BUILD2 CONTINUE"
+      ],
+      "status": "VALID_PLUS_LEGACY_ALIASES",
+      "fallback": "BCPGO BuildHub"
+    },
+    {
+      "project": "PhoneMouse",
+      "codes": [
+        "PHONEMOUSE RECOVER",
+        "ENDO6872GO",
+        "END06872GO"
+      ],
+      "status": "VALID_PLUS_LEGACY_ALIASES",
+      "fallback": "BCPGO PhoneMouse"
+    },
+    {
+      "project": "PC Remote",
+      "codes": [
+        "P2PCR95 RECOVER"
+      ],
+      "status": "VALID_SCOPED_ALIAS",
+      "fallback": "BCPGO P2PCR95"
+    },
+    {
+      "project": "Browser4G / personal browser",
+      "codes": [
+        "BROWSER4G CONTINUE"
+      ],
+      "status": "VALID_SCOPED_ALIAS",
+      "fallback": "BCPGO Browser4G"
+    },
+    {
+      "project": "LIB532",
+      "codes": [
+        "LIB532GO"
+      ],
+      "status": "VALID_SCOPED_ALIAS",
+      "fallback": "BCPGO LIB532"
+    },
+    {
+      "project": "Sports Matrix",
+      "codes": [
+        "MAXV4PP8",
+        "MAXV4PP8 AUDIT",
+        "MAXV4PP8 STOP",
+        "MAXV4PP8 RECOVER"
+      ],
+      "status": "VALID_SCOPED_COMMAND_FAMILY",
+      "fallback": "BCPGO MAXV4PP8"
+    },
+    {
+      "project": "Legacy mission family 2003",
+      "codes": [
+        "2003"
+      ],
+      "status": "VALID_ONLY_WITH_ITS_DURABLE_PROJECT_CONTEXT",
+      "fallback": "BCPGO 2003"
+    },
+    {
+      "project": "UCMF001",
+      "codes": [
+        "UCMF001"
+      ],
+      "status": "PROJECT_LOCATOR_REQUIRES_DURABLE_CONTEXT",
+      "fallback": "BCPGO UCMF001"
+    },
+    {
+      "project": "Bulletin 24",
+      "codes": [
+        "B24GO"
+      ],
+      "status": "VALID_SCOPED_ALIAS",
+      "fallback": "BCPGO B24"
+    }
+  ],
+  "propagation": {
+    "current_projects": "APPLY_ON_NEXT_DURABLE_RECOVERY",
+    "future_projects": "INHERIT_UNLESS_EXPLICITLY_OVERRIDDEN",
+    "past_conversations": "NOT_RETROACTIVELY_REWRITTEN; recover through durable project state and BCPGO",
+    "cross_chat_rule": "fresh supported conversation should use BCPGO or BCPGO <project> rather than reconstructing old chat manually"
+  }
+}
