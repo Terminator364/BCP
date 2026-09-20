@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R51",
+  "requirements_revision": "2026-09-20-R53",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "73ba5afa81a50d439a22121bf7c89ae70040c69e5535a3d800e4728cf9d5949f",
+      "sha256": "0a9171419dd30ca1b400ee60e5c19887e2278a15a885d6948b5bf69f84a9873b",
       "max_bytes": 500000
     },
     {
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 remains device-flow-only. R51 adds explicit fresh retry semantics at the BCP server: stale HUMAN_AUTH_REQUIRED receipts are archived, a new retry nonce is recorded, and a new device-flow process must be launched. No localhost:8976 fallback or token copy."
+  "notes": "Nexus 0.2.5 remains device-flow-only. R53 humanizes cockpit labels, adds direct Help/Mode d'emploi, keeps direct/Nexus label parity, and preserves explicit fresh-auth retry without localhost fallback."
 }
