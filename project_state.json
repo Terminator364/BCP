@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R40_ZERO_TOUCH_REENTRY_HARDENING_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R40 research-driven hardening implemented without touching the field devices: Nexus automatic Cloudflare auth is device-flow-only with no localhost:8976 fallback; provider-synchronised DriveFS is explicitly non-authoritative for critical local recovery state; canonical/test architecture now requires fresh LAN machine readback to outrank stale Drive telemetry; B-EDGE next signed release is required to unify duplicate reconcile workers and add unique bounded one-shot Wi-Fi-return reconciliation while preserving the 15-minute WorkManager safety net.",
-  "next_action": "Qualify exact R40 branch head. If green, merge under single-writer fence. Do not invoke field Recovery 6.0.33 or Cloudflare while user is away from PC/old phone. After merge, prepare a separately versioned/signed B-EDGE successor; never mutate the already distributed 2.1.0 APK identity.",
+  "status": "R41_BEDGE_ZERO_TOUCH_REENTRY_SUCCESSOR_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R40 post-merge readback is fully green across Windows, Android, CURRENT, Field Ecosystem, Nexus, Telegram, Final Acceptance and coordinated packages. R41 implemented the next non-human background tranche: B-EDGE 2.1.1-rc1-reentry source candidate, one authoritative connected WorkManager scheduler, exponential bounded backoff, KEEP-coalesced immediate work, process-level validated Wi-Fi return trigger, legacy v1/v2 work cancellation, and a compatibility-only legacy worker shim. Stable distributed B-EDGE 2.1.0 metadata remains unchanged.",
+  "next_action": "Qualify exact R41 head. If green, merge source/CI candidate only. Do not publish or replace Drive CURRENT until a newly signed 2.1.1 APK exists with pinned certificate, v2/v3 verification, SHA-256 readback, and in-place update proof. Do not invoke Cloudflare or ChatGPT-PC Recovery while the user is away.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,53 +229,38 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R40-ZERO-TOUCH-REENTRY-HARDENING-20260920",
+    "checkpoint_id": "BCP-R41-BEDGE-ZERO-TOUCH-REENTRY-SUCCESSOR-20260920",
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
-    "branch": "work/bcp/r40-zero-touch-reentry-hardening-20260920",
-    "base_main_sha": "e20aa78b773222e4d21572115935d7b9748a290e",
-    "field_state_preserved": {
-      "bcp_server_version": "0.7.9",
-      "bcp_field_verified": true,
-      "recovery_target_version": "6.0.33",
-      "recovery_target_sequence": 6033,
-      "recovery_request_invoked": false,
-      "field_devices_untouched": true
+    "branch": "work/bcp/r41-bedge-reentry-unification-20260920",
+    "base_main_sha": "025ef70a223c554a71f210b650a631e50f578dfb",
+    "r40_postmerge_ci": "ALL_GREEN",
+    "stable_distributed_android": {
+      "version_code": 210,
+      "version_name": "2.1.0-rc1-sentinel-evergreen",
+      "mutation_allowed": false
     },
-    "nexus": {
-      "target_version": "0.2.5",
-      "auth_strategy": "DEVICE_FLOW_ONLY_AUTOMATIC_NO_LOCALHOST_FALLBACK",
-      "device_code_window_minutes": 5,
-      "localhost_8976_auto_fallback": false,
-      "post_auth_whoami_required": true
+    "candidate_android": {
+      "version_code": 211,
+      "version_name": "2.1.1-rc1-reentry-evergreen",
+      "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
+      "publication_allowed": false
     },
-    "provider_mirror_policy": {
-      "critical_state_authority": "LOCAL_NTFS",
-      "drivefs_role": "REPLICATION_EXCHANGE_ONLY",
-      "stale_drive_can_override_fresh_lan_readback": false,
-      "mirror_failure_state": "CLOUD_MIRROR_HOLD"
-    },
-    "bedge_next_release_requirements": [
-      "NEW_VERSION_CODE_AND_NAME_REQUIRED",
-      "SAME_SIGNING_CERTIFICATE_REQUIRED",
-      "UNIFY_DUPLICATE_RECONCILE_WORKERS",
-      "UNIQUE_ONE_SHOT_REENTRY_WORK",
-      "CONNECTED_CONSTRAINT_AND_BOUNDED_BACKOFF",
-      "WIFI_AVAILABILITY_TRIGGER_WHILE_PROCESS_ALIVE",
-      "15_MIN_PERIODIC_SAFETY_NET",
-      "NO_UNINSTALL_NO_REPAIRING"
+    "implementation": [
+      "ONE_AUTHORITATIVE_WORK_SCHEDULER",
+      "ONE_AUTHORITATIVE_RECONCILE_EXECUTION",
+      "LEGACY_WORKER_COMPATIBILITY_SHIM_ONLY",
+      "CANCEL_LEGACY_V1_AND_V2_UNIQUE_WORK",
+      "PERIODIC_15_MIN_CONNECTED_SAFETY_NET",
+      "ONE_SHOT_CONNECTED_KEEP_COALESCING",
+      "EXPONENTIAL_BACKOFF_30_SECONDS_MAX_THREE_WORKER_ATTEMPTS",
+      "PROCESS_LEVEL_VALIDATED_WIFI_RETURN_TRIGGER",
+      "15_SECOND_LOCAL_REENTRY_DEDUP",
+      "APPLICATION_SOLE_SCHEDULER_OWNER"
     ],
-    "research_basis": [
-      "Google Drive for desktop streaming uses a virtual drive and depends on Drive for desktop/connectivity; mirror mode provides local files",
-      "Wrangler device authorization avoids localhost:8976 and uses a bounded short-lived user code",
-      "Android WorkManager periodic work minimum is 15 minutes; faster recovery should be one-shot constrained work"
-    ],
-    "prohibited_replay": [
-      "NO_FIELD_RECOVERY_WHILE_USER_AWAY",
-      "NO_CLOUDFLARE_RETRY_WHILE_USER_AWAY",
-      "NO_REPEAT_SERVER_UPDATE",
-      "NO_SAME_VERSION_ANDROID_REPUBLISH"
-    ],
-    "next_atomic_action": "Exact-head R40 CI, then serialized merge if green."
+    "field_devices_touched": false,
+    "cloudflare_touched": false,
+    "recovery_6033_invoked": false,
+    "next_atomic_action": "Exact-head R41 CI then serialized merge if green."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1841,5 +1826,14 @@
     "device_flow_only_automatic": true,
     "classic_localhost_fallback_automatic": false,
     "field_verified": false
+  },
+  "b_edge_2_1_1_r41": {
+    "status": "SOURCE_CANDIDATE_CI_PENDING_NOT_PUBLISHED",
+    "version_code": 211,
+    "version_name": "2.1.1-rc1-reentry-evergreen",
+    "same_package_id": true,
+    "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+    "field_verified": false,
+    "publication_allowed": false
   }
 }
