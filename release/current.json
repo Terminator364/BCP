@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "66592a44be6cf8dedb064356751f13042a06beb7c8116a45581060d50fed70f9"
+        "sha256": "922b639ea937950695c23ab58be83e1c88c02486fd0724214c47c69d7bddfe73"
       },
       "notes": "Nexus 0.2.5 uses Wrangler device authorization as the sole automatic Cloudflare auth path; expired/uncompleted codes remain HUMAN_AUTH_REQUIRED and are renewed only by an explicit qualified retry. No localhost:8976 fallback, token copy, or auth bypass."
     }
