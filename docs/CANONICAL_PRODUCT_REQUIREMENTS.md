@@ -1125,6 +1125,12 @@ Semantic button style MUST preserve meaning:
 
 Exact client colors MUST NOT be assumed; style is semantic.
 
+### Actionability-aware notifications
+- CRITIQUE and genuine ACTION REQUISE states may generate normal notifications.
+- Automatic recovery/resume notices SHOULD be delivered silently when supported.
+- À SURVEILLER remains visible in the cockpit/Radar and SHOULD NOT behave like a paging alert while safe automation remains available.
+- Notification muting never disables evaluation or durable recovery.
+
 ### Mandatory V9 fallback
 For every rich send/edit:
 1. try the rich API;
