@@ -9,5 +9,5 @@
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
   "notes": "Telegram V17 preserves V16 and shows evidence-based time decomposition in conversation detail without treating ChatGPT thinking duration as end-to-end latency.",
-  "requirements_revision": "2026-09-20-R28"
+  "requirements_revision": "2026-09-20-R29"
 }
