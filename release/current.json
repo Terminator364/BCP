@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "1c8869a3d0c98893cb855da87ecd5092f2125583b2ec3950182d0d074bf6396b"
+        "sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
       },
-      "notes": "Nexus 0.2.1 preserves the field-shaped portable runtime and adds Rich Cockpit V10 parity: rich-first live cards with mandatory V9 fallback, modern callbacks, and all four report caches."
+      "notes": "Nexus 0.2.1 preserves the field-shaped portable runtime and adds Rich Cockpit V10 parity: rich-first live cards with mandatory V9 fallback, four reports, human-action audible alerts, silent auto-recovery notices and WATCH dashboard-only behavior."
     }
   },
   "telegram_cockpit": {
@@ -93,7 +93,8 @@
       "rich send/edit with immediate V9 plain-text fallback",
       "Direct Telegram and Nexus rich/fallback transport parity",
       "four-report parity through Nexus: summary, devices, mission, technical",
-      "bounded rich payload with no default media and no paid broadcast"
+      "bounded rich payload with no default media and no paid broadcast",
+      "actionability-aware notification tiers: human-action normal, auto-recovery silent, WATCH dashboard-only"
     ]
   }
 }
