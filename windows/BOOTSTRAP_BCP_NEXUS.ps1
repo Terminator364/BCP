@@ -157,6 +157,21 @@ function Ensure-ManagedWranglerLauncher {
         }
     }
 
+    # npm lifecycle scripts (notably esbuild postinstall) invoke "node" by
+    # command name. The GitHub runners have a system Node that used to mask this
+    # field dependency. Put the pinned portable Node first in PATH so every npm
+    # child process uses the same verified runtime.
+    $pathParts = @($env:PATH -split ';' | Where-Object { $_ -and ($_.TrimEnd('\\') -ne $nodeHome.TrimEnd('\\')) })
+    $env:PATH = $nodeHome + ';' + ($pathParts -join ';')
+    $resolvedNode = Get-Command node.exe -ErrorAction SilentlyContinue
+    if (-not $resolvedNode -or ([IO.Path]::GetFullPath($resolvedNode.Source) -ne [IO.Path]::GetFullPath($nodeExe))) {
+        throw "MANAGED_NODE_PATH_BINDING_FAILED"
+    }
+    $childNodeProbe = & cmd.exe /d /s /c "node --version" 2>&1
+    if ($LASTEXITCODE -ne 0 -or (($childNodeProbe -join ' ') -notmatch [regex]::Escape($NodeVersion))) {
+        throw "MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED"
+    }
+
     $npmCache = Join-Path $AppRoot "cache\npm"
     New-Item -ItemType Directory -Force -Path $npmCache | Out-Null
     $env:NPM_CONFIG_CACHE = $npmCache
@@ -186,7 +201,7 @@ function Ensure-ManagedWranglerLauncher {
                 # into NativeCommandError when the script-wide preference is Stop.
                 # Capture native exit/output explicitly instead.
                 $ErrorActionPreference = "Continue"
-                $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" 2>&1
+                $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" "--foreground-scripts" 2>&1
                 $code = $LASTEXITCODE
             } finally {
                 $ErrorActionPreference = $oldEap
@@ -350,7 +365,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","MANAGED_NODE_PATH_BINDING_FAILED","MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
