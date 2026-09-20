@@ -1544,3 +1544,28 @@ BCP MUST:
 - avoid recursive failure while recording the local mirror hold.
 
 Target server release: BCP 0.7.10.
+
+
+## P0 — Target-bundled recovery runner / R47
+
+This requirement is additive and preserves R43-R46.
+
+### Field-derived failure mechanism
+A recovery target can contain the fix required to install itself while the currently installed recovery runner still contains the older defect. Hash-verifying the target ZIP is not sufficient if BCP then launches the stale installed runner to perform the transition.
+
+### Mandatory bootstrap rule
+After BCP verifies the target recovery package SHA-256:
+- BCP MUST extract the recovery runner from that exact verified target archive;
+- the member path MUST be exact and unique;
+- the member size MUST be bounded;
+- the source MUST decode deterministically and compile successfully;
+- target-specific safety contracts MAY be enforced before launch;
+- the staged local copy MUST be byte-readback verified and SHA-256 receipted;
+- the launched runner provenance MUST be HASH_VERIFIED_TARGET_PACKAGE;
+- the older installed recovery runner MUST NOT be trusted as the bootstrap authority for a newer target package.
+
+For Recovery sequence 6034 and later, the runner contract MUST preserve DriveFS recovery-result fail-open semantics: provider publication failure cannot abort a locally successful updater before active-pointer convergence.
+
+No UAC elevation, credential transfer, generic process kill, OAuth bypass, or network-policy broadening is introduced by this bootstrap rule.
+
+Target server release: BCP 0.7.11.
