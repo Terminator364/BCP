@@ -1,33 +1,34 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/3",
+  "schema": "bcp.interactive_work_cadence_policy/4",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
-  "target_minutes": 5,
+  "target_minutes": 9,
   "acceptable_window_minutes": [
-    5,
-    7
+    8,
+    10
   ],
   "principles": [
-    "Perform at least about 5 minutes of useful technical work per normal tranche unless a real human gate, safety hold, tool failure, or completed atomic action makes an earlier return necessary.",
-    "Prefer a 5–6 minute internal work budget; checkpoint before optional work pushes the tranche materially beyond the 5–7 minute user target.",
+    "Perform a substantial 8–10 minute useful-work tranche by default unless a real human gate, safety hold, tool failure, or completed atomic action makes an earlier return necessary.",
+    "Prefer about 9 minutes of useful work, with a hard practical target window of 8–10 minutes; checkpoint before optional work would push materially beyond that window.",
     "Do not infer network/UI latency from an unsynchronized manual stopwatch or from ChatGPT's thinking-duration indicator.",
     "Separate producer time, BCP mirror delay, transport acceptance, and explicit seen acknowledgement whenever evidence exists.",
     "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
-    "Resume from that durable checkpoint on the next Continue invocation."
+    "Resume from that durable checkpoint on the next Continue invocation.",
+    "Before the ChatGPT checkpoint is shown, prepare and send the exact same checkpoint body by the configured email mirror whenever the mail connector is available."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-20",
-  "target_internal_work_minutes": 5.5,
+  "updated_at": "2026-09-20T22:00:00+01:00",
+  "target_internal_work_minutes": 9,
   "acceptable_internal_work_window_minutes": [
-    5,
-    6.5
+    8,
+    10
   ],
   "user_visible_target_window_minutes": [
-    5,
-    7
+    8,
+    10
   ],
   "cutoff_strategy": "CHECKPOINT_BEFORE_OPTIONAL_WORK_ONCE_INTERNAL_WINDOW_IS_SATISFIED",
   "measurement_truth": {
@@ -46,11 +47,11 @@
   },
   "response_timing": {
     "user_visible_target_minutes": [
-      5,
-      7
+      8,
+      10
     ],
-    "useful_work_minimum_minutes": 5,
-    "internal_soft_cutoff_minutes": 6.25,
+    "useful_work_minimum_minutes": 8,
+    "internal_soft_cutoff_minutes": 9.5,
     "checkpoint_before_optional_overrun": true,
     "true_gate_may_return_early": true,
     "transport_latency_is_separate_from_useful_work": true
