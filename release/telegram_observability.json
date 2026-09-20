@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-receipt-bridge-v14",
+  "version": "2026.09.20-producer-watermark-v15",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "327f44a9eae4b825e1a9be14be69ad9341cb656fb61b35ff4b1c109388a24306",
+  "sha256": "62b37ba7c05d39158d61d9737fdf6a262066ba57bad768354f964fceaf010e8e",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V14 preserves V13 delivery-gap behavior and adds conversation producer-sequence gap visibility, including incomplete-sync WATCH attention and detailed missing ranges.",
-  "requirements_revision": "2026-09-20-R25"
+  "notes": "Telegram V15 preserves V14 and adds producer watermark sync visibility: complete-through sequence, announced watermark, and incomplete tail/internal gap WATCH state.",
+  "requirements_revision": "2026-09-20-R26"
 }
