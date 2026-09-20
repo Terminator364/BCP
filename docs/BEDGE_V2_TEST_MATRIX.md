@@ -548,3 +548,30 @@ Expected: local canonical recovery evidence is preserved; cloud mirror becomes H
 
 W11. Cloudflare classic browser OAuth callback reaches localhost after the callback listener has exited while a separate device-authorization page is/was present.
 Expected: localhost failure and device-flow state remain distinct. No auth success is claimed until provider-authenticated whoami/readback succeeds.
+
+
+## X. R40 zero-touch re-entry / provider-mirror / auth regressions
+
+X1. Drive for desktop is stopped or its streamed virtual drive is unavailable while local BCP remains healthy.
+Expected: local recovery/watchdog truth continues; Drive becomes CLOUD_MIRROR_HOLD, never the sole reason to fail a local transaction.
+
+X2. Drive heartbeat is stale but a paired B-EDGE obtains a newer authenticated /health readback from the same PC.
+Expected: the fresh LAN machine readback is current field truth; the stale Drive sample remains historical evidence and is never allowed to downgrade the newer observation.
+
+X3. Wrangler device authorization is started and the human does not approve within the bounded code window.
+Expected: HUMAN_AUTH_REQUIRED / CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED. No automatic classic `wrangler login`, no localhost:8976 callback, no token-copy instruction.
+
+X4. A later explicit Nexus retry follows X3.
+Expected: generate a fresh device code and require authenticated whoami readback before deployment; never reuse the stale device code.
+
+X5. B-EDGE leaves home Wi-Fi and later regains Wi-Fi while its process is alive.
+Expected: one unique one-shot reconciliation is requested on network availability and duplicate triggers coalesce; no scan/retry storm.
+
+X6. B-EDGE process is absent during Wi-Fi return.
+Expected: WorkManager periodic recovery remains bounded at the 15-minute minimum interval; no illegal faster periodic schedule is introduced.
+
+X7. Source code changes after a signed APK version was distributed.
+Expected: CI forbids silently reusing the distributed version/artifact metadata; next publication requires a new versionCode/versionName and verified same-certificate signed artifact.
+
+X8. PC RAM stays above 90% during recovery.
+Expected: one heavy recovery/update lane at a time, bounded telemetry/queues, no duplicate extraction/build/restart storm, and foreground user work retains priority.
