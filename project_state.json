@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_6_TELEGRAM_V17_R28_CADENCE_TELEMETRY_CANDIDATE",
-  "last_completed_atomic_action": "R28 candidate implemented: cadence policy v2 requires about five minutes minimum useful work, separates ChatGPT thinking indicator from end-to-end latency, and BCP/Telegram decompose producer, mirror and explicit seen timing using durable receipts only.",
-  "next_action": "Run exact-head CI for R28. Fix only evidence-backed failures. Merge under writer fence after all five workflows pass and main is unchanged; then field-read back resident versions.",
+  "status": "NEXUS_0_2_4_R29_CLOUDFLARE_DEVICE_AUTH_CANDIDATE",
+  "last_completed_atomic_action": "R29 candidate implemented: Nexus bootstrap prefers Wrangler OAuth device flow, falls back to classic browser OAuth, rechecks whoami, preserves secret hygiene and zero-dollar policy.",
+  "next_action": "Align CURRENT, run exact-head Nexus/Field/CURRENT/Coordinated/Telegram CI, merge only if all required workflows pass and main is unchanged, then wait for resident Nexus 0.2.4 field readback.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -225,12 +225,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R28-E2E-CADENCE-TELEMETRY-20260920",
+    "checkpoint_id": "BCP-R29-CLOUDFLARE-DEVICE-AUTH-20260920",
     "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_READY",
-    "last_completed_action": "R28 policy/code/spec/releases persisted.",
-    "next_atomic_action": "Open PR and exact-head qualification.",
-    "branch": "work/bcp/r28-end-to-end-cadence-telemetry-20260920",
-    "base_main_sha": "626a0c9055301604af251215c73b63cba6e4352b",
+    "last_completed_action": "R29 bootstrap/spec/component manifests persisted.",
+    "next_atomic_action": "CURRENT alignment + PR + exact-head qualification.",
+    "branch": "work/bcp/r29-cloudflare-device-auth-resilience-20260920",
+    "base_main_sha": "d1ecf6b656f66b738ea38a214bbfd6e94a0b7196",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1640,6 +1640,16 @@
     "thinking_indicator_authoritative": false,
     "manual_stopwatch_requires_synced_start_stop": true,
     "durable_latency_decomposition": true,
+    "field_verified": false
+  },
+  "nexus_0_2_4": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "version": "0.2.4",
+    "requirements_revision": "2026-09-20-R29",
+    "device_flow_first": true,
+    "browser_fallback": true,
+    "pinned_wrangler_version": "4.135.0",
+    "no_api_token_copy": true,
     "field_verified": false
   }
 }
