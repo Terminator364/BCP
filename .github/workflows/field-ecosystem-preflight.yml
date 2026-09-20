@@ -76,7 +76,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Exercise exact pinned portable Node + npm npx-cli + Wrangler
+      - name: Exercise exact pinned portable Node + persistent Wrangler package
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -93,8 +93,8 @@ jobs:
             Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
             $nodeHome = Join-Path $root ('node-v' + $nodeVersion + '-win-x64')
             $node = Join-Path $nodeHome 'node.exe'
-            $npxCli = Join-Path $nodeHome 'node_modules\npm\bin\npx-cli.js'
-            if (-not (Test-Path $node) -or -not (Test-Path $npxCli)) { throw 'PINNED_NODE_LAYOUT_INVALID' }
+            $npmCli = Join-Path $nodeHome 'node_modules\npm\bin\npm-cli.js'
+            if (-not (Test-Path $node) -or -not (Test-Path $npmCli)) { throw 'PINNED_NODE_LAYOUT_INVALID' }
 
             $env:NPM_CONFIG_CACHE = Join-Path $root 'npm-cache'
             $env:NPM_CONFIG_AUDIT = 'false'
@@ -106,9 +106,20 @@ jobs:
             $env:NPM_CONFIG_FETCH_TIMEOUT = '120000'
             $env:NPM_CONFIG_PREFER_OFFLINE = 'true'
 
+            $wranglerRoot = Join-Path $root ('wrangler-package-' + $wranglerVersion)
+            $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund 2>&1
+            $installCode = $LASTEXITCODE
+            Write-Host ('BCP_REAL_MANAGED_INSTALL_EXIT=' + $installCode)
+            if ($installCode -ne 0) {
+              Write-Host ('BCP_REAL_MANAGED_INSTALL_DETAIL=' + (($installOut -join ' ') -replace '[\r\n]+',' '))
+              throw 'REAL_MANAGED_WRANGLER_INSTALL_FAILED'
+            }
+            $wranglerCli = Join-Path $wranglerRoot 'node_modules\wrangler\bin\wrangler.js'
+            if (-not (Test-Path $wranglerCli)) { throw 'REAL_MANAGED_WRANGLER_CLI_MISSING' }
+
             $stdout = Join-Path $root 'probe.stdout.txt'
             $stderr = Join-Path $root 'probe.stderr.txt'
-            $args = @($npxCli, '--yes', ('wrangler@' + $wranglerVersion), '--version')
+            $args = @($wranglerCli, '--version')
             $p = Start-Process -FilePath $node -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
             $out = if (Test-Path $stdout) { Get-Content -Raw $stdout } else { '' }
             $err = if (Test-Path $stderr) { Get-Content -Raw $stderr } else { '' }
