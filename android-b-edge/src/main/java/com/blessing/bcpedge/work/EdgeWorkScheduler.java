@@ -23,7 +23,7 @@ public final class EdgeWorkScheduler {
                 .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
                 .build();
         PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(
-                EdgeReconcileWorker.class, 30, TimeUnit.MINUTES)
+                EdgeReconcileWorker.class, 15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES)
                 .setConstraints(constraints)
                 .build();
         WorkManager.getInstance(context.getApplicationContext())
