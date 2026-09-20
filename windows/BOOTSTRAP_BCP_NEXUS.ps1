@@ -164,6 +164,8 @@ function Ensure-ManagedWranglerLauncher {
     $env:NPM_CONFIG_FETCH_RETRIES = "5"
     $env:NPM_CONFIG_FETCH_RETRY_MINTIMEOUT = "2000"
     $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
+    $env:NPM_CONFIG_FETCH_TIMEOUT = "120000"
+    $env:NPM_CONFIG_PREFER_OFFLINE = "true"
     return [pscustomobject]@{ File = $npx; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $true }
 }
 
@@ -177,6 +179,8 @@ function Find-WranglerLauncher {
             $env:NPM_CONFIG_FETCH_RETRIES = "5"
             $env:NPM_CONFIG_FETCH_RETRY_MINTIMEOUT = "2000"
             $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
+    $env:NPM_CONFIG_FETCH_TIMEOUT = "120000"
+    $env:NPM_CONFIG_PREFER_OFFLINE = "true"
             return [pscustomobject]@{ File = $cmd.Source; Prefix = @("--yes", ("wrangler@" + $WranglerVersion)); Managed = $false }
         }
     }
@@ -202,6 +206,32 @@ function Invoke-Wrangler($Launcher, [string[]]$Arguments, [switch]$AllowFailure)
     $text = (($out | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
     if ($code -ne 0 -and -not $AllowFailure) { throw ("WRANGLER_FAILED exit=" + $code) }
     return [pscustomobject]@{ ExitCode = $code; Text = $text }
+}
+
+function Classify-WranglerProbeFailure($Probe) {
+    if (-not $Probe) { return "WRANGLER_RUNTIME_PROBE_FAILED" }
+    $raw = [string]$Probe.Text
+    if ($raw -match '(?i)ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENETUNREACH|network|registry\.npmjs\.org') {
+        return "NPM_NETWORK_OR_REGISTRY_UNAVAILABLE"
+    }
+    if ($raw -match '(?i)CERT_|SELF_SIGNED_CERT|UNABLE_TO_VERIFY_LEAF_SIGNATURE|certificate') {
+        return "NPM_TLS_CERTIFICATE_FAILURE"
+    }
+    if ($raw -match '(?i)EPERM|EACCES|permission denied|access is denied') {
+        return "NPM_CACHE_PERMISSION_FAILURE"
+    }
+    if ($raw -match '(?i)not recognized|cannot find|MODULE_NOT_FOUND') {
+        return "MANAGED_NPX_OR_WRANGLER_LAUNCH_FAILURE"
+    }
+    return "WRANGLER_RUNTIME_PROBE_FAILED"
+}
+
+function Get-WranglerProbeDetail($Probe) {
+    if (-not $Probe) { return "No probe result captured." }
+    $exitCode = [int]$Probe.ExitCode
+    $safeText = Get-SafeFailureDetail ([string]$Probe.Text)
+    if (-not $safeText) { $safeText = "no stdout/stderr captured" }
+    return Get-SafeFailureDetail ("WRANGLER_PROBE_EXIT=" + $exitCode + " " + $safeText)
 }
 
 function Invoke-WranglerSecret($Launcher, [string]$ConfigPath, [string]$Name, [string]$Value) {
@@ -264,7 +294,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
@@ -319,8 +349,10 @@ if (-not $launcher) {
 }
 
 $runtimeReady = $false
+$lastProbe = $null
 for ($attempt = 1; $attempt -le 3; $attempt++) {
     $probe = Invoke-Wrangler $launcher @("--version") -AllowFailure
+    $lastProbe = $probe
     if ($probe.ExitCode -eq 0) {
         $runtimeReady = $true
         break
@@ -328,10 +360,13 @@ for ($attempt = 1; $attempt -le 3; $attempt++) {
     if ($attempt -lt 3) { Start-Sleep -Seconds ([Math]::Min(20, [Math]::Pow(2, $attempt + 1))) }
 }
 if (-not $runtimeReady) {
-    try { Write-RuntimePrepReceipt "RUNTIME_PROBE_FAILED" "WRANGLER_RUNTIME_PROBE_FAILED" "WRANGLER_VERSION_PROBE" "Pinned Wrangler could not complete --version after three bounded attempts." } catch {}
+    $probeClass = Classify-WranglerProbeFailure $lastProbe
+    $probeDetail = Get-WranglerProbeDetail $lastProbe
+    try { Write-RuntimePrepReceipt "RUNTIME_PROBE_FAILED" $probeClass "WRANGLER_VERSION_PROBE" $probeDetail } catch {}
     Write-Host "BCP_NEXUS_HUMAN_GATE=WRANGLER_RUNTIME_REQUIRED"
-    Write-Host "BCP_NEXUS_RUNTIME_DETAIL=WRANGLER_VERSION_PROBE_FAILED"
-    Write-Host "Pinned Wrangler download/cache is not ready yet. No manual install is required; preserve the durable state and retry only through the managed BCP update path."
+    Write-Host ("BCP_NEXUS_RUNTIME_CLASS=" + $probeClass)
+    Write-Host ("BCP_NEXUS_RUNTIME_DETAIL=" + $probeDetail)
+    Write-Host "Pinned Wrangler is not ready yet. BCP preserved the bounded diagnostic and will use the managed retry/update path; no manual install, token re-entry, or ZIP shuttle is required."
     exit 3
 }
 

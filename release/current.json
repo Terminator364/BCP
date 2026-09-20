@@ -41,7 +41,7 @@
       "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
     },
     "nexus": {
-      "version": "0.1.6",
+      "version": "0.1.7",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "44d360b77a8602edbad3c3078b666624338c63bcf3e43650ed7d0b8f07885252"
+        "sha256": "06047be7d2197aa3ae0b1ac08b96752fc8d412617aff9553b067312d2dd21758"
       },
-      "notes": "Nexus 0.1.6 persists a bounded secret-free failure receipt when managed Node/Wrangler preparation or the Wrangler version probe cannot complete. BCP 0.6.7 mirrors the failure stage/detail externally. No manual Node/Wrangler installation is the normal path."
+      "notes": "Nexus 0.1.7 captures bounded Wrangler probe exit/output and classifies npm network, TLS, permission, or launch failures while preferring the persistent npm cache. No manual Node/Wrangler install or secret re-entry."
     }
   },
   "telegram_cockpit": {
