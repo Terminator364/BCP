@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-human-ops-v9",
+  "version": "2026.09.20-rich-cockpit-v10",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "6a20571e259289f5a80d76a1ee32f30d7eccb53ab0397d4284ca1fc71a24673b",
+  "sha256": "04217df121ab51d5bff58278adb17487d164e1af275aa8310cb5b0f9da835c7b",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human Ops V9: orientation-first attention states, forecast confidence, Since-my-last-visit digest, Why explanation, predictive risk radar, bounded quiet mode with critical bypass, transition/deduplicated alerts and one-shot recovery notification. Preserves V8 durable Continue/watchdog, V7 reports, low-data/offline semantics and single-receiver discipline.",
-  "requirements_revision": "2026-09-20-R20"
+  "notes": "Rich Cockpit V10: Bot API 10.3 rich tables/details/styled callbacks with mandatory V9 fallback; action-required alerts are normal, auto-resume notices are silent, WATCH remains dashboard-only. Preserves V9 Since/Why/Radar/quiet/recovery, V8 durable Continue/watchdog and four reports.",
+  "requirements_revision": "2026-09-20-R21"
 }

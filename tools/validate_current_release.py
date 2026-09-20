@@ -11,7 +11,9 @@ CURRENT = ROOT / "release" / "current.json"
 SERVER = ROOT / "release" / "server.json"
 ANDROID = ROOT / "release" / "android.json"
 NEXUS = ROOT / "release" / "nexus_bootstrap.json"
+TELEGRAM = ROOT / "release" / "telegram_observability.json"
 SERVER_SOURCE = ROOT / "windows" / "bcp_server.py"
+TELEGRAM_SOURCE = ROOT / "windows" / "bcp_telegram_observability.py"
 SPEC = ROOT / "docs" / "CANONICAL_PRODUCT_REQUIREMENTS.md"
 
 
@@ -47,7 +49,9 @@ def main() -> int:
     srv = load(SERVER)
     edge = load(ANDROID)
     nexus_manifest = load(NEXUS)
+    telegram_manifest = load(TELEGRAM)
     source = SERVER_SOURCE.read_bytes()
+    telegram_source = TELEGRAM_SOURCE.read_bytes()
     spec = SPEC.read_text(encoding="utf-8")
 
     if cur.get("schema") != "bcp.current_release/1":
@@ -76,6 +80,17 @@ def main() -> int:
     pc = components.get("windows_bcp") or {}
     android = components.get("android_b_edge") or {}
     nexus = components.get("nexus") or {}
+    telegram = cur.get("telegram_cockpit") or {}
+
+    expected_revision = str(cur.get("requirements_revision") or "")
+    for name, manifest in [
+        ("server", srv),
+        ("android", edge),
+        ("nexus", nexus_manifest),
+        ("telegram", telegram_manifest),
+    ]:
+        if str(manifest.get("requirements_revision") or "") != expected_revision:
+            fail(name + "_requirements_revision_drift")
 
     actual_server_sha = hashlib.sha256(source).hexdigest()
     if pc.get("version") != str(srv.get("version")):
@@ -125,6 +140,18 @@ def main() -> int:
     if bool(nexus.get("distribution_ready")) != nexus_ready:
         fail("nexus_distribution_truth_mismatch")
 
+    actual_telegram_sha = hashlib.sha256(telegram_source).hexdigest()
+    if telegram.get("version") != str(telegram_manifest.get("version")):
+        fail("telegram_version_drift")
+    if actual_telegram_sha != str(telegram_manifest.get("sha256") or ""):
+        fail("telegram_source_sha_drift")
+    if telegram_manifest.get("auto_update") is not True:
+        fail("telegram_auto_update_contract")
+    if not str(telegram_manifest.get("minimum_selftest") or ""):
+        fail("telegram_selftest_contract")
+    if version_tuple(str(srv.get("version"))) < version_tuple(str(telegram_manifest.get("minimum_server_version"))):
+        fail("telegram_server_compatibility_drift")
+
     all_ready = bool(pc.get("distribution_ready") and android.get("distribution_ready") and nexus.get("distribution_ready"))
     overall = str(cur.get("overall_state") or "")
     if all_ready and overall == "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE":
@@ -138,6 +165,7 @@ def main() -> int:
         "server": {"version": pc["version"], "distribution_ready": pc["distribution_ready"]},
         "android": {"version": android["version"], "distribution_ready": android["distribution_ready"]},
         "nexus": {"version": nexus["version"], "distribution_ready": nexus["distribution_ready"]},
+        "telegram": {"version": telegram["version"], "sha256_verified": True},
         "zero_usd": True,
     }, sort_keys=True))
     print("BCP_CURRENT_RELEASE_CONTRACT=PASS")

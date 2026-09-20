@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import html
 import json
 import os
 from pathlib import Path
@@ -998,6 +999,17 @@ class Service:
             "forecast_confidence_reason": forecast_confidence_reason,
             "evidence_age_label": age_label,
             "evidence_time": evidence_time,
+            "objective": objective,
+            "activity": activity,
+            "execution_text": execution_text,
+            "last_completed": last_completed,
+            "pc_text": pc_text,
+            "edge_text": edge_text,
+            "drive_text": ("🟢 Drive : synchronisation visible" if drive_ok else "🟡 Drive : synchronisation non confirmée"),
+            "nexus_pct": nexus_pct,
+            "nexus_stage": nexus_stage,
+            "ci_text": self._human_ci_explanation(gh),
+            "refresh_seconds": refresh_seconds,
             "refresh_bucket": refresh_bucket,
         }
         digest = hashlib.sha256(
@@ -1055,6 +1067,74 @@ class Service:
 
     def status(self) -> str:
         return self.presence_snapshot()["text"]
+
+    def rich_status_html(self) -> str:
+        """Telegram Bot API 10.3 rich cockpit. Plain V9 remains the fallback."""
+        snap = self.presence_snapshot()
+        s = snap.get("snapshot") or {}
+
+        def esc(value: Any, limit: int = 500) -> str:
+            return html.escape(clean(value, limit), quote=True)
+
+        level = str(s.get("attention_level") or "NORMAL")
+        title = self._attention_label(level)
+        style = "danger" if level in {"CRITICAL", "ACTION"} else ("primary" if level == "WATCH" else "success")
+        forecast = s.get("forecast") or [0, 1, 0]
+        try:
+            done, total, pct = int(forecast[0]), int(forecast[1]), int(forecast[2])
+        except Exception:
+            done, total, pct = 0, 1, 0
+
+        reasons = list(s.get("attention_reasons") or [])
+        why = "".join("<li>" + esc(x, 260) + "</li>" for x in reasons[:6])
+        if not why:
+            why = "<li>Aucun signal prioritaire détecté.</li>"
+
+        human_gate = clean(s.get("human_gate") or "AUCUNE", 220)
+        action_row = ""
+        if human_gate != "AUCUNE":
+            action_row = "<tr><th>Vous</th><td>" + esc(human_gate, 220) + "</td></tr>"
+
+        last_completed = clean(s.get("last_completed") or "", 220)
+        last_html = ("<p>✅ <b>Dernière preuve confirmée</b><br/>" + esc(last_completed, 220) + "</p>") if last_completed else ""
+
+        return (
+            "<h2>🛰️ BCP · " + esc(title, 80) + "</h2>"
+            "<p><b>" + esc(s.get("activity") or "Suivi actif", 240) + "</b></p>"
+            "<table bordered striped compact>"
+            "<tr><th>Objectif</th><td>" + esc(s.get("objective") or self.project_id, 300) + "</td></tr>"
+            "<tr><th>Progression</th><td>≈" + str(pct) + "% · ≈" + str(done) + "/" + str(total) + " micro-actions</td></tr>"
+            "<tr><th>Confiance</th><td>" + esc(str(s.get("forecast_confidence") or "FAIBLE").lower(), 60) + "</td></tr>"
+            "<tr><th>Preuve</th><td>" + esc(s.get("evidence_age_label") or "inconnue", 80) + "</td></tr>"
+            + action_row +
+            "</table>"
+            "<p>🧭 <b>Maintenant</b><br/>" + esc(s.get("mission_action") or "", 260) + "</p>"
+            + last_html +
+            ("<p>➡️ <b>Ensuite</b><br/>" + esc(s.get("mission_next"), 260) + "</p>" if s.get("mission_next") else "") +
+            "<details><summary>❓ Pourquoi cet état ?</summary><ul>" + why + "</ul></details>"
+            "<details><summary>🌐 Appareils, réseau et preuves</summary>"
+            "<table compact>"
+            "<tr><th>PC</th><td>" + esc(s.get("pc_text") or "", 220) + "</td></tr>"
+            "<tr><th>B-EDGE</th><td>" + esc(s.get("edge_text") or "", 220) + "</td></tr>"
+            "<tr><th>Drive</th><td>" + esc(s.get("drive_text") or "", 220) + "</td></tr>"
+            "<tr><th>Nexus</th><td>≈" + str(int(s.get("nexus_pct") or 0)) + "% · " + esc(s.get("nexus_stage") or "", 180) + "</td></tr>"
+            "<tr><th>Tests</th><td>" + esc(s.get("ci_text") or "", 220) + "</td></tr>"
+            "</table></details>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"" + style + "\" data=\"bcp:status\">Situation</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:since\">Depuis ma visite</tg-button>"
+            "</tg-button-row>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:why\">Pourquoi ?</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:risks\">Radar</tg-button>"
+            "</tg-button-row>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:where\">Étape</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Activité</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Continuer</tg-button>"
+            "</tg-button-row>"
+            "<footer>Fallback V9 texte actif si Rich Messages n’est pas disponible.</footer>"
+        )
 
     def details(self) -> str:
         head = self._head()
@@ -1895,11 +1975,12 @@ class Telegram:
             raise RuntimeError("telegram_api_error:" + desc)
         return obj
 
-    def send(self, text: str, with_keyboard: bool = True) -> int | None:
+    def send(self, text: str, with_keyboard: bool = True, silent: bool = False) -> int | None:
         payload = {
             "chat_id": self.chat_id,
             "text": redact_text(text)[:3900],
             "disable_web_page_preview": True,
+            "disable_notification": bool(silent),
         }
         if with_keyboard:
             payload["reply_markup"] = self.keyboard()
@@ -1909,6 +1990,44 @@ class Telegram:
             return int(result.get("message_id"))
         except Exception:
             return None
+
+    def send_rich(self, rich_html: str, fallback_text: str) -> int | None:
+        """Prefer Bot API 10.3 Rich Messages; V9 plain text is mandatory fallback."""
+        try:
+            obj = self.api("sendRichMessage", {
+                "chat_id": self.chat_id,
+                "rich_message": {
+                    "html": redact_text(rich_html)[:30000],
+                    "skip_entity_detection": True,
+                },
+            }, 20)
+            result = obj.get("result") or {}
+            append_log("RICH_MESSAGE_SENT", mode="BOT_API_10_3")
+            try:
+                return int(result.get("message_id"))
+            except Exception:
+                return None
+        except Exception as e:
+            append_log("RICH_MESSAGE_SEND_FALLBACK",
+                       error_class=type(e).__name__, detail=clean(e, 140))
+            return self.send(fallback_text, with_keyboard=True)
+
+    def edit_rich(self, message_id: int, rich_html: str, fallback_text: str) -> bool:
+        try:
+            self.api("editMessageText", {
+                "chat_id": self.chat_id,
+                "message_id": int(message_id),
+                "rich_message": {
+                    "html": redact_text(rich_html)[:30000],
+                    "skip_entity_detection": True,
+                },
+            }, 20)
+            append_log("RICH_MESSAGE_EDITED", mode="BOT_API_10_3")
+            return True
+        except Exception as e:
+            append_log("RICH_MESSAGE_EDIT_FALLBACK",
+                       error_class=type(e).__name__, detail=clean(e, 140))
+            return self.edit(message_id, fallback_text, with_keyboard=True)
 
     def edit(self, message_id: int, text: str, with_keyboard: bool = True) -> bool:
         try:
@@ -2022,7 +2141,14 @@ class Telegram:
         response = self.service.dispatch(command)
         self.service.mark_user_seen("TELEGRAM_CALLBACK:" + data)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/since", "/why", "/risks", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
+        if command == "/status":
+            rich_html = self.service.rich_status_html()
+            if message_id:
+                if not self.edit_rich(int(message_id), rich_html, response):
+                    self.send(response)
+            else:
+                self.send_rich(rich_html, response)
+        elif message_id and command in {"/since", "/why", "/risks", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -2100,7 +2226,7 @@ class Telegram:
         prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
         if str(prior.get("key") or "") == key:
             return
-        self.send(text)
+        self.send(text, silent=(wd_state == "RESUME_REQUESTED"))
         atomic_json(WATCHDOG_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_watchdog_notice/1",
             "key": key,
@@ -2123,13 +2249,15 @@ class Telegram:
 
         text = ""
         critical = level in {"CRITICAL", "ACTION"}
-        if level in {"CRITICAL", "ACTION", "WATCH"}:
-            text = self.service._attention_label(level) + "\n" + (root or "Un nouveau signal opérationnel nécessite votre attention.")
-        elif prior_level in {"CRITICAL", "ACTION", "WATCH"} and level in {"ACTIVE", "NORMAL"}:
-            text = "✅ SITUATION RÉTABLIE\nLe signal précédent n’est plus actif. Le suivi automatique continue."
+        if level in {"CRITICAL", "ACTION"}:
+            text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
+        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+            text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
+        # WATCH remains visible in the live card/Radar but is deliberately not
+        # pushed as a page-like alert while automation can still handle it.
         if text and self.service.notifications_allowed(critical):
-            self.send(text)
+            self.send(text, silent=(level in {"ACTIVE", "NORMAL"}))
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_attention_notice/1",
             "key": key,
@@ -2148,18 +2276,20 @@ class Telegram:
             return
         message_id = prior.get("message_id")
         updated = False
+        rich_html = self.service.rich_status_html()
         if message_id:
             try:
-                updated = self.edit(int(message_id), str(snap["text"]))
+                updated = self.edit_rich(int(message_id), rich_html, str(snap["text"]))
             except Exception:
                 updated = False
         if not updated:
-            message_id = self.send(str(snap["text"]))
+            message_id = self.send_rich(rich_html, str(snap["text"]))
         atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/2",
+            "schema": "bcp.telegram_system_presence/3",
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "DIRECT_TELEGRAM",
+            "render_mode": "RICH_V10_WITH_V9_FALLBACK",
             "message_id": message_id,
         })
 
@@ -2310,27 +2440,36 @@ class Nexus:
             "idempotency_key": idem,
         }, timeout=25)
 
-    def push(self, text: str, idem_seed: str) -> None:
+    def push(self, text: str, idem_seed: str, silent: bool = False) -> None:
         safe_text = redact_text(text)[:3900]
         idem = hashlib.sha256(("push:" + idem_seed).encode("utf-8")).hexdigest()
         self.api("/v1/device/push", method="POST", payload={
             "kind": "MISSION_PROGRESS",
             "text": safe_text,
             "idempotency_key": idem,
+            "silent": bool(silent),
         }, timeout=25)
 
-    def live_card(self, text: str, card_key: str = "mission-status") -> None:
+    def live_card(self, text: str, card_key: str = "mission-status",
+                  rich_html: str = "") -> None:
         safe_text = redact_text(text)[:3900]
-        self.api("/v1/device/live-card", method="POST", payload={
+        payload = {
             "card_key": clean(card_key, 96),
             "text": safe_text,
-        }, timeout=25)
+        }
+        if rich_html:
+            payload["rich_html"] = redact_text(rich_html)[:30000]
+        self.api("/v1/device/live-card", method="POST", payload=payload, timeout=25)
 
     def publish_reports(self) -> None:
         summary = redact_text(self.service.report_summary())[:18000]
+        devices = redact_text(self.service.report_devices())[:22000]
+        mission = redact_text(self.service.report_mission())[:24000]
         technical = redact_text(self.service.report_technical())[:26000]
         self.api("/v1/device/report", method="POST", payload={
             "summary": summary,
+            "devices": devices,
+            "mission": mission,
             "technical": technical,
         }, timeout=30)
 
@@ -2403,7 +2542,7 @@ class Nexus:
         prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
         if str(prior.get("key") or "") == key:
             return
-        self.push(text, "watchdog:" + key)
+        self.push(text, "watchdog:" + key, silent=(wd_state == "RESUME_REQUESTED"))
         atomic_json(WATCHDOG_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_watchdog_notice/1",
             "key": key,
@@ -2426,13 +2565,13 @@ class Nexus:
 
         text = ""
         critical = level in {"CRITICAL", "ACTION"}
-        if level in {"CRITICAL", "ACTION", "WATCH"}:
-            text = self.service._attention_label(level) + "\n" + (root or "Un nouveau signal opérationnel nécessite votre attention.")
-        elif prior_level in {"CRITICAL", "ACTION", "WATCH"} and level in {"ACTIVE", "NORMAL"}:
-            text = "✅ SITUATION RÉTABLIE\nLe signal précédent n’est plus actif. Le suivi automatique continue."
+        if level in {"CRITICAL", "ACTION"}:
+            text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
+        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+            text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
         if text and self.service.notifications_allowed(critical):
-            self.push(text, "attention:" + key)
+            self.push(text, "attention:" + key, silent=(level in {"ACTIVE", "NORMAL"}))
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_attention_notice/1",
             "key": key,
@@ -2451,12 +2590,17 @@ class Nexus:
         if str(prior.get("fingerprint") or "") == str(snap["fingerprint"]):
             return
         self.publish_reports()
-        self.live_card(str(snap["text"]), "mission:" + self.service.project_id)
+        self.live_card(
+            str(snap["text"]),
+            "mission:" + self.service.project_id,
+            rich_html=self.service.rich_status_html(),
+        )
         atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/2",
+            "schema": "bcp.telegram_system_presence/3",
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "NEXUS",
+            "render_mode": "RICH_V10_WITH_V9_FALLBACK",
             "card_key": "mission:" + self.service.project_id,
         })
 
@@ -2730,6 +2874,11 @@ def selftest() -> int:
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
+        rich = svc.rich_status_html()
+        assert "<table bordered striped compact>" in rich
+        assert 'style="success"' in rich or 'style="primary"' in rich or 'style="danger"' in rich
+        assert 'type="callback_data"' in rich
+        assert "Fallback V9" in rich
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",

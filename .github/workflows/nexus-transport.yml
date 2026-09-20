@@ -70,8 +70,16 @@ jobs:
           assert "bcp:pdf:summary" in worker
           assert "bcp:pdf:technical" in worker
           assert "reports" in worker
-          assert 'version: "0.1.5"' in worker
+          assert 'version: "0.2.1"' in worker
           assert "live_cards" in worker
+          for rich_guard in [
+              "sendRichMessage", "rich_message", "RICH_V10", "V9_PLAIN_FALLBACK",
+              "bcp:since", "bcp:why", "bcp:risks", "bcp:continue",
+              "bcp:pdf:devices", "bcp:pdf:mission", "disable_notification",
+          ]:
+              assert rich_guard in joined, rich_guard
+          for report_key in ["summary", "devices", "mission", "technical"]:
+              assert report_key in worker, report_key
           assert "https://" in client
           print("BCP_NEXUS_SECURITY_CONTRACT=PASS")
 

@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R20",
+  "requirements_revision": "2026-09-20-R21",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -41,7 +41,7 @@
       "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
     },
     "nexus": {
-      "version": "0.2.0",
+      "version": "0.2.1",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,13 +50,13 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "0f428dfc802eb67ffe0bb8762e347cac83974db16d1eb273dd1909078dabbc27"
+        "sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
       },
-      "notes": "Nexus 0.2.0 hardens the managed portable runtime: npm lifecycle children are forced onto the pinned portable Node path, with a child-process probe and CI that deliberately removes hosted system Node before installing Wrangler/esbuild."
+      "notes": "Nexus 0.2.1 preserves the field-shaped portable runtime and adds Rich Cockpit V10 parity: rich-first live cards with mandatory V9 fallback, four reports, human-action audible alerts, silent auto-recovery notices and WATCH dashboard-only behavior."
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-human-ops-v9",
+    "version": "2026.09.20-rich-cockpit-v10",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -86,7 +86,15 @@
       "bounded quiet mode with critical/human-gate bypass",
       "transition-based grouped alerts with deduplication",
       "one-shot recovery notification when an attention state clears",
-      "optional future Telegram Mini App with plain-bot low-data fallback"
+      "optional future Telegram Mini App with plain-bot low-data fallback",
+      "Telegram Bot API 10.3 Rich Message live card",
+      "structured compact table plus collapsible explanation and subsystem detail",
+      "semantic success / primary / danger Rich Message controls",
+      "rich send/edit with immediate V9 plain-text fallback",
+      "Direct Telegram and Nexus rich/fallback transport parity",
+      "four-report parity through Nexus: summary, devices, mission, technical",
+      "bounded rich payload with no default media and no paid broadcast",
+      "actionability-aware notification tiers: human-action normal, auto-recovery silent, WATCH dashboard-only"
     ]
   }
 }

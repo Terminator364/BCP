@@ -64,26 +64,50 @@ function cockpitKeyboard() {
   return {
     inline_keyboard: [
       [
-        { text: "🔄 Actualiser", callback_data: "bcp:status" },
-        { text: "📍 Où ?", callback_data: "bcp:where" },
+        { text: "🟢 Situation", callback_data: "bcp:status" },
+        { text: "🕘 Depuis ma visite", callback_data: "bcp:since" },
       ],
       [
-        { text: "🗂 Missions", callback_data: "bcp:missions" },
-        { text: "🧾 Détails", callback_data: "bcp:details" },
+        { text: "❓ Pourquoi ?", callback_data: "bcp:why" },
+        { text: "🔭 Radar", callback_data: "bcp:risks" },
       ],
       [
-        { text: "📄 PDF suivi", callback_data: "bcp:pdf:summary" },
-        { text: "📚 PDF technique", callback_data: "bcp:pdf:technical" },
+        { text: "📍 Étape", callback_data: "bcp:where" },
+        { text: "⚙️ Activité", callback_data: "bcp:tail" },
       ],
+      [
+        { text: "🎯 Objectif", callback_data: "bcp:missions" },
+        { text: "▶️ Continuer", callback_data: "bcp:continue" },
+      ],
+      [
+        { text: "🔕 Discret 2h", callback_data: "bcp:quiet:120" },
+        { text: "🔔 Normal", callback_data: "bcp:quiet:off" },
+      ],
+      [
+        { text: "📄 Suivi", callback_data: "bcp:pdf:summary" },
+        { text: "🖥️ Appareils", callback_data: "bcp:pdf:devices" },
+      ],
+      [
+        { text: "🧭 Mission", callback_data: "bcp:pdf:mission" },
+        { text: "📚 Audit", callback_data: "bcp:pdf:technical" },
+      ],
+      [{ text: "🧰 Technique", callback_data: "bcp:details" }],
     ],
   };
 }
 
 function callbackToCommand(data) {
   const map = {
+    "bcp:continue": "/continue",
     "bcp:status": "/status",
+    "bcp:since": "/since",
+    "bcp:why": "/why",
+    "bcp:risks": "/risks",
     "bcp:where": "/where",
-    "bcp:missions": "/missions",
+    "bcp:tail": "/tail",
+    "bcp:missions": "/objective",
+    "bcp:quiet:120": "/quiet 120",
+    "bcp:quiet:off": "/quiet off",
     "bcp:details": "/details",
   };
   return map[String(data || "")] || "";
@@ -210,9 +234,14 @@ async function sendCachedReportPdf(env, reportKey) {
     });
     return false;
   }
-  const technical = reportKey === "technical";
-  const title = technical ? "BCP - Rapport technique" : "BCP - Rapport de suivi";
-  const filename = technical ? "BCP_DETAILS_TECHNIQUES.pdf" : "BCP_SUIVI.pdf";
+  const meta = {
+    summary: ["BCP - Situation humaine complète", "BCP_1_SITUATION.pdf"],
+    devices: ["BCP - Appareils, réseau et transports", "BCP_2_APPAREILS_RESEAU.pdf"],
+    mission: ["BCP - Objectif, étapes et micro-actions", "BCP_3_MISSION_MICRO_ACTIONS.pdf"],
+    technical: ["BCP - Dossier technique et audit", "BCP_4_AUDIT_TECHNIQUE.pdf"],
+  }[reportKey] || ["BCP - Rapport", "BCP_RAPPORT.pdf"];
+  const title = meta[0];
+  const filename = meta[1];
   const bytes = reportPdfBytes(title, String(row.body_text));
   await telegramSendDocument(env, filename, bytes, title + " · " + String(row.updated_at || ""));
   return true;
@@ -254,6 +283,14 @@ async function acceptTelegramWebhook(request, env) {
 
     if (data === "bcp:pdf:summary") {
       await sendCachedReportPdf(env, "summary");
+      return jsonResponse({ ok: true, callback: data });
+    }
+    if (data === "bcp:pdf:devices") {
+      await sendCachedReportPdf(env, "devices");
+      return jsonResponse({ ok: true, callback: data });
+    }
+    if (data === "bcp:pdf:mission") {
+      await sendCachedReportPdf(env, "mission");
       return jsonResponse({ ok: true, callback: data });
     }
     if (data === "bcp:pdf:technical") {
@@ -381,6 +418,7 @@ async function pushEvent(request, env) {
   const text = cleanText(body?.text || "");
   const idem = cleanText(body?.idempotency_key || "", 128);
   const kind = cleanText(body?.kind || "EVENT", 40);
+  const silent = Boolean(body?.silent);
   if (!text || !idem) return jsonResponse({ ok: false, error: "invalid_event" }, 400);
 
   const bodyHash = await sha256Hex(kind + "\n" + text);
@@ -406,6 +444,7 @@ async function pushEvent(request, env) {
       chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
       text,
       disable_web_page_preview: true,
+      disable_notification: silent,
     });
     const messageId = String(result?.message_id ?? "");
     await env.DB.prepare(
@@ -428,27 +467,40 @@ async function liveCard(request, env) {
   catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
 
   const text = cleanText(body?.text || "");
+  const richHtml = cleanText(body?.rich_html || "", 30000);
   const cardKey = cleanText(body?.card_key || "mission-status", 96);
   if (!text || !cardKey) return jsonResponse({ ok: false, error: "invalid_live_card" }, 400);
 
-  const bodyHash = await sha256Hex(cardKey + "\n" + text);
+  const bodyHash = await sha256Hex(cardKey + "\n" + text + "\n" + richHtml);
   const prior = await env.DB.prepare(
     "SELECT telegram_message_id, body_hash FROM live_cards WHERE card_key=?1"
   ).bind(cardKey).first();
 
   if (prior && String(prior.body_hash || "") === bodyHash) {
     return jsonResponse({
-      ok: true,
-      duplicate: true,
-      edited: false,
+      ok: true, duplicate: true, edited: false,
       telegram_message_id: String(prior.telegram_message_id || ""),
     });
   }
 
   let messageId = prior ? String(prior.telegram_message_id || "") : "";
   let edited = false;
+  let renderMode = "V9_PLAIN_FALLBACK";
 
-  if (messageId) {
+  if (messageId && richHtml) {
+    try {
+      const result = await telegramCall(env, "editMessageText", {
+        chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
+        message_id: Number(messageId),
+        rich_message: { html: richHtml, skip_entity_detection: true },
+      });
+      messageId = String(result?.message_id ?? messageId);
+      edited = true;
+      renderMode = "RICH_V10";
+    } catch (_) {}
+  }
+
+  if (messageId && !edited) {
     try {
       const result = await telegramCall(env, "editMessageText", {
         chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
@@ -459,9 +511,21 @@ async function liveCard(request, env) {
       });
       messageId = String(result?.message_id ?? messageId);
       edited = true;
+      renderMode = "V9_PLAIN_FALLBACK";
     } catch (_) {
       messageId = "";
     }
+  }
+
+  if (!messageId && richHtml) {
+    try {
+      const result = await telegramCall(env, "sendRichMessage", {
+        chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
+        rich_message: { html: richHtml, skip_entity_detection: true },
+      });
+      messageId = String(result?.message_id ?? "");
+      renderMode = "RICH_V10";
+    } catch (_) {}
   }
 
   if (!messageId) {
@@ -472,6 +536,7 @@ async function liveCard(request, env) {
       disable_web_page_preview: true,
     });
     messageId = String(result?.message_id ?? "");
+    renderMode = "V9_PLAIN_FALLBACK";
   }
 
   await env.DB.prepare(
@@ -479,11 +544,7 @@ async function liveCard(request, env) {
     "ON CONFLICT(card_key) DO UPDATE SET telegram_message_id=excluded.telegram_message_id, body_hash=excluded.body_hash, updated_at=excluded.updated_at"
   ).bind(cardKey, messageId, bodyHash, nowIso()).run();
 
-  return jsonResponse({
-    ok: true,
-    edited,
-    telegram_message_id: messageId,
-  });
+  return jsonResponse({ ok: true, edited, render_mode: renderMode, telegram_message_id: messageId });
 }
 
 async function storeReports(request, env) {
@@ -492,22 +553,28 @@ async function storeReports(request, env) {
   try { body = await request.json(); }
   catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
 
-  const summary = cleanText(body?.summary || "", 18000);
-  const technical = cleanText(body?.technical || "", 26000);
-  if (!summary || !technical) return jsonResponse({ ok: false, error: "invalid_report" }, 400);
+  const values = {
+    summary: cleanText(body?.summary || "", 18000),
+    devices: cleanText(body?.devices || "", 22000),
+    mission: cleanText(body?.mission || "", 24000),
+    technical: cleanText(body?.technical || "", 26000),
+  };
+  if (!values.summary || !values.technical) {
+    return jsonResponse({ ok: false, error: "invalid_report" }, 400);
+  }
 
   const now = nowIso();
-  const rows = [
-    ["summary", summary, await sha256Hex(summary), now],
-    ["technical", technical, await sha256Hex(technical), now],
-  ];
+  const rows = [];
+  for (const [key, value] of Object.entries(values)) {
+    if (value) rows.push([key, value, await sha256Hex(value), now]);
+  }
   await env.DB.batch(rows.map((r) =>
     env.DB.prepare(
       "INSERT INTO reports(report_key, body_text, body_hash, updated_at) VALUES(?1, ?2, ?3, ?4) " +
       "ON CONFLICT(report_key) DO UPDATE SET body_text=excluded.body_text, body_hash=excluded.body_hash, updated_at=excluded.updated_at"
     ).bind(...r)
   ));
-  return jsonResponse({ ok: true, updated_at: now });
+  return jsonResponse({ ok: true, updated_at: now, report_count: rows.length });
 }
 
 async function health(env) {
@@ -521,7 +588,7 @@ async function health(env) {
   return jsonResponse({
     schema: "bcp.nexus.health/1",
     service: "BCP_NEXUS",
-    version: "0.1.5",
+    version: "0.2.1",
     status: db === "OK" ? "HEALTHY" : "DEGRADED",
     database: db,
     spend_policy: "ZERO_USD",

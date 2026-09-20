@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_V8_RESIDENT_NEXUS_0_2_0_HUMAN_AUTH_REQUIRED_BEDGE_2_1_0_INSTALL_PENDING_TELEGRAM_V9_R20_CANDIDATE",
-  "last_completed_atomic_action": "Implemented Telegram Human Ops V9 / R20 candidate on a fenced branch: orientation-first attention states, forecast confidence, Since/Why/Radar views, bounded quiet mode, transition-based deduplicated alerts and one-shot recovery notifications. Nexus 0.2.0 and signed B-EDGE 2.1.0 human field gates remain unchanged.",
-  "next_action": "Run exact-head CI for Telegram V9/R20. If green, re-read main and merge serially. Resident BCP 0.7.0 may then auto-consume Telegram V9 while Cloudflare authorization and B-EDGE 2.1.0 install remain deferred human gates. No user action required while away from the PC.",
+  "status": "BCP_0_7_0_NEXUS_AUTH_PENDING_BEDGE_INSTALL_PENDING_TELEGRAM_V10_NEXUS_0_2_1_R21_CANDIDATE",
+  "last_completed_atomic_action": "Telegram Rich Cockpit V10 / Nexus 0.2.1 R21 final candidate persisted: rich-first structured card, mandatory V9 fallback, Direct/Nexus four-report parity, exact Telegram release hash validation, field-shaped fallback guards, and actionability-aware notification tiers (human-action normal, auto-resume silent, WATCH dashboard-only).",
+  "next_action": "Open exact-head PR and run all qualification workflows. Merge only after CURRENT, Telegram Windows+Ubuntu, Nexus, coordinated Android/server, and field ecosystem preflight all pass on the same head SHA; then re-read main and merge under writer fence. User action remains unnecessary while away.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -72,7 +72,8 @@
     "telegram_human_cockpit_v5": "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md",
     "telegram_human_cockpit_v7": "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
     "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
-    "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md"
+    "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
+    "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -131,7 +132,8 @@
     "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md",
     "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
     "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
-    "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md"
+    "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
+    "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -165,7 +167,10 @@
     "P0_attention_first_telegram_cockpit": true,
     "P0_alert_grouping_dedup_recovery": true,
     "P0_return_after_absence_digest": true,
-    "P0_predictive_risk_radar": true
+    "P0_predictive_risk_radar": true,
+    "P0_rich_cockpit_with_plain_fallback": true,
+    "P0_direct_nexus_ui_parity": true,
+    "P0_nexus_four_report_parity": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -195,12 +200,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-TELEGRAM-V9-R20-CANDIDATE-20260920",
-    "status": "CI_PENDING",
-    "last_completed_action": "Human Ops V9 code, canonical R20 specification, release manifests and design document persisted.",
-    "next_atomic_action": "Exact-head CI then serialized merge if green.",
-    "branch": "work/bcp/r20-telegram-human-ops-ux-20260920",
-    "base_main_sha": "2bf683408d5e730d409d989cfef33c97d5d6553f",
+    "checkpoint_id": "BCP-RICH-V10-NEXUS-021-R21-QUALIFICATION-20260920",
+    "status": "PR_AND_CI_PENDING",
+    "last_completed_action": "Final code/manifests/spec/CI guards aligned; source and manifest hashes updated.",
+    "next_atomic_action": "Open exact-head PR and qualify.",
+    "branch": "work/bcp/r21-telegram-rich-cockpit-v10-20260920",
+    "base_main_sha": "1a19a78fe05ea3403c85e4d8cdf53163b2a86e48",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1435,5 +1440,45 @@
       "low_data_bot_fallback": true
     },
     "field_verified": false
+  },
+  "telegram_rich_cockpit_v10": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "version": "2026.09.20-rich-cockpit-v10",
+    "requirements_revision": "2026-09-20-R21",
+    "telegram_bot_api_basis": "10.3",
+    "rich_message_preferred": true,
+    "v9_fallback_mandatory": true,
+    "semantic_button_styles": [
+      "success",
+      "primary",
+      "danger"
+    ],
+    "structured_blocks": [
+      "table",
+      "details",
+      "buttons"
+    ],
+    "default_media": false,
+    "paid_broadcast": false,
+    "direct_nexus_parity": true,
+    "nexus_version": "0.2.1",
+    "nexus_four_report_parity": true,
+    "field_verified": false,
+    "release_integrity": {
+      "telegram_source_hash_required": true,
+      "telegram_version_manifest_required": true,
+      "component_revision_alignment": true,
+      "v9_fallback_regression_guard": true,
+      "nexus_four_report_regression_guard": true,
+      "paid_broadcast_forbidden": true
+    },
+    "notification_tiers": {
+      "human_action": "NORMAL_NOTIFICATION",
+      "automatic_resume": "SILENT_NOTIFICATION",
+      "watch": "DASHBOARD_ONLY",
+      "recovery": "SILENT_NOTIFICATION"
+    },
+    "telegram_source_sha256": "04217df121ab51d5bff58278adb17487d164e1af275aa8310cb5b0f9da835c7b",
+    "nexus_manifest_sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
   }
 }
