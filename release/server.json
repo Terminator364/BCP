@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "a2f0765c160a533f15510c34d20ba15d6785109c238ce489ac8f19fdf44df4b3",
+  "sha256": "f963fd1008fb3564343660b4fb656982e67d90bf94e8f627f9f77019ab4fad07",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R26",
-  "release_train": "BCP-0.7.4_EDGE-2.1.0-rc1-sentinel",
-  "notes": "BCP 0.7.4 preserves R25 and adds producer high-water marks, tail/internal sync-gap derivation, durable local receipt acknowledgement, and authenticated producer-sync readback."
+  "requirements_revision": "2026-09-20-R27",
+  "release_train": "BCP-0.7.5_EDGE-2.1.0-rc1-sentinel",
+  "notes": "BCP 0.7.5 adds a bounded read-only bridge from ChatGPT-PC's local flow_ledger.sqlite3 into the BCP conversation ledger with source hash verification, idempotent event mapping and fail-open source availability."
 }

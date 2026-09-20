@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.4"
+SERVER_VERSION = "0.7.5"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -43,6 +43,9 @@ MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
 CONVERSATION_RECEIPT_INBOX = STATE_DIR / "CONVERSATION_RECEIPTS.jsonl"
 CONVERSATION_RECEIPT_CURSOR = STATE_DIR / "conversation_receipt_cursor.json"
 CONVERSATION_RECEIPT_ACK = STATE_DIR / "conversation_receipt_ack.json"
+CHATGPT_PC_FLOW_BRIDGE_CURSOR = STATE_DIR / "chatgpt_pc_flow_bridge_cursor.json"
+CHATGPT_PC_FLOW_BRIDGE_STATUS = STATE_DIR / "chatgpt_pc_flow_bridge_status.json"
+CHATGPT_PC_FLOW_BATCH = 24
 CONVERSATION_RECEIPT_POLL_SECONDS = 10
 NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json"
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
@@ -2852,11 +2855,162 @@ def process_conversation_receipt_inbox(max_lines: int = 64) -> dict:
     write_conversation_receipt_ack()
     return {"processed": processed, "accepted": accepted, "rejected": rejected, "offset": offset}
 
+def chatgpt_pc_flow_db_path() -> Path:
+    override = os.environ.get("BCP_CHATGPT_PC_FLOW_DB", "").strip()
+    if override:
+        return Path(override)
+    local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    return local / "Tunnel_PC_G4" / "state" / "flow_ledger.sqlite3"
+
+def _chatgpt_pc_conversation_id(session_id: str, mission_id: str) -> str:
+    material = (str(session_id or "") + "\n" + str(mission_id or "")).strip() or "default"
+    return "cgp-" + hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
+
+def sync_chatgpt_pc_flow_ledger(max_events: int = CHATGPT_PC_FLOW_BATCH) -> dict:
+    """Read ChatGPT-PC's local append-only flow ledger without mutating it."""
+    source = chatgpt_pc_flow_db_path()
+    state = read_json(CHATGPT_PC_FLOW_BRIDGE_CURSOR, {}) or {}
+    last_source_seq = max(0, int(state.get("last_source_seq") or 0))
+    counters = state.get("conversation_counters") if isinstance(state.get("conversation_counters"), dict) else {}
+    if not source.is_file():
+        status = {
+            "schema": "bcp.chatgpt_pc_flow_bridge/1", "status": "NOT_OBSERVED",
+            "source": str(source), "last_source_seq": last_source_seq,
+            "updated_at": utc_now(), "imported": 0, "backlog": None,
+        }
+        atomic_json(CHATGPT_PC_FLOW_BRIDGE_STATUS, status)
+        return status
+
+    rows = []
+    backlog = 0
+    source_high_seq = last_source_seq
+    try:
+        uri = "file:" + str(source.resolve()).replace("\\", "/") + "?mode=ro"
+        cx = sqlite3.connect(uri, uri=True, timeout=1)
+        cx.row_factory = sqlite3.Row
+        try:
+            high = cx.execute(
+                """SELECT COALESCE(MAX(seq),0) FROM flow_events
+                   WHERE kind IN ('conversation_message_exact','assistant_visible_message_exact')
+                     AND role IN ('user','assistant')"""
+            ).fetchone()
+            source_high_seq = int(high[0] or 0)
+            rows = cx.execute(
+                """SELECT seq,event_id,at,session_id,mission_id,kind,role,exact_utf8,
+                          source,evidence_ref,text_sha256,chain_sha256
+                   FROM flow_events
+                   WHERE seq>? AND kind IN ('conversation_message_exact','assistant_visible_message_exact')
+                     AND role IN ('user','assistant')
+                   ORDER BY seq LIMIT ?""",
+                (last_source_seq, max(1, min(int(max_events), 64))),
+            ).fetchall()
+            pending = cx.execute(
+                """SELECT COUNT(*) FROM flow_events
+                   WHERE seq>? AND kind IN ('conversation_message_exact','assistant_visible_message_exact')
+                     AND role IN ('user','assistant')""",
+                (last_source_seq,),
+            ).fetchone()
+            backlog = int(pending[0] or 0)
+        finally:
+            cx.close()
+    except Exception as ex:
+        status = {
+            "schema": "bcp.chatgpt_pc_flow_bridge/1", "status": "SOURCE_READ_DEFERRED",
+            "source": str(source), "last_source_seq": last_source_seq,
+            "updated_at": utc_now(), "imported": 0, "backlog": None,
+            "error_class": type(ex).__name__,
+        }
+        atomic_json(CHATGPT_PC_FLOW_BRIDGE_STATUS, status)
+        return status
+
+    imported = duplicates = rejected = 0
+    for row in rows:
+        seq = int(row["seq"])
+        try:
+            raw = row["exact_utf8"]
+            if raw is None:
+                raise ValueError("missing_exact_text")
+            raw_bytes = bytes(raw) if isinstance(raw, (bytes, bytearray, memoryview)) else str(raw).encode("utf-8")
+            text = raw_bytes.decode("utf-8", "strict")
+            declared = str(row["text_sha256"] or "").lower()
+            actual = hashlib.sha256(raw_bytes).hexdigest()
+            if declared and declared != actual:
+                raise ValueError("source_text_sha256_mismatch")
+
+            session_id = str(row["session_id"] or "")
+            mission_id = str(row["mission_id"] or "")
+            cid = _chatgpt_pc_conversation_id(session_id, mission_id)
+            producer_session = "chatgptpc-" + hashlib.sha256(
+                (session_id or mission_id or "default").encode("utf-8")
+            ).hexdigest()[:20]
+            producer_seq = int(counters.get(cid) or 0) + 1
+            alias = ("ChatGPT-PC · " + (mission_id or session_id or "conversation"))[:120]
+            role = str(row["role"] or "").upper()
+            delivery = "CHATGPT_UI_DELIVERY_UNKNOWN" if role == "ASSISTANT" else "MIRRORED_BCP"
+            receipt = conversation_append_message(
+                cid,
+                alias=alias,
+                source_kind="CHATGPT_PC",
+                source_ref="flow_ledger.sqlite3#seq=" + str(seq),
+                message_key="chatgptpc-flow:" + str(row["event_id"] or seq),
+                role=role,
+                text=text,
+                delivery_state=delivery,
+                evidence_class="CHATGPT_PC_FLOW_LEDGER",
+                generated_at=str(row["at"] or ""),
+                linked_mission_id=mission_id,
+                producer_sequence=producer_seq,
+                producer_session_id=producer_session,
+            )
+            if receipt.get("result") == "ALREADY_RECORDED":
+                duplicates += 1
+            else:
+                imported += 1
+                counters[cid] = producer_seq
+                conversation_touch_producer_receipt(
+                    cid, producer_session, producer_seq, "CHATGPT_PC",
+                    "flow_ledger.sqlite3#seq=" + str(seq),
+                )
+            last_source_seq = max(last_source_seq, seq)
+        except Exception:
+            rejected += 1
+            # Fail closed on the bad source row: do not advance beyond it.
+            break
+
+    atomic_json(CHATGPT_PC_FLOW_BRIDGE_CURSOR, {
+        "schema": "bcp.chatgpt_pc_flow_cursor/1",
+        "last_source_seq": last_source_seq,
+        "source_high_seq": source_high_seq,
+        "conversation_counters": counters,
+        "updated_at": utc_now(),
+    })
+    write_conversation_receipt_ack()
+    remaining = max(0, backlog - len(rows))
+    status = {
+        "schema": "bcp.chatgpt_pc_flow_bridge/1",
+        "status": "CAUGHT_UP" if remaining == 0 and rejected == 0 else ("SOURCE_ROW_HOLD" if rejected else "CATCHING_UP"),
+        "source": str(source),
+        "last_source_seq": last_source_seq,
+        "source_high_seq": source_high_seq,
+        "imported": imported,
+        "duplicates": duplicates,
+        "rejected": rejected,
+        "backlog": remaining,
+        "updated_at": utc_now(),
+        "read_only": True,
+    }
+    atomic_json(CHATGPT_PC_FLOW_BRIDGE_STATUS, status)
+    return status
+
 def start_conversation_receipt_worker() -> None:
     def worker():
         while True:
             try:
                 process_conversation_receipt_inbox(64)
+            except Exception:
+                pass
+            try:
+                sync_chatgpt_pc_flow_ledger(CHATGPT_PC_FLOW_BATCH)
             except Exception:
                 pass
             time.sleep(CONVERSATION_RECEIPT_POLL_SECONDS)
@@ -4192,7 +4346,7 @@ class Handler(BaseHTTPRequestHandler):
 def selftest():
     import tempfile
 
-    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG, CONVERSATION_RECEIPT_INBOX, CONVERSATION_RECEIPT_CURSOR, CONVERSATION_RECEIPT_ACK
+    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG, CONVERSATION_RECEIPT_INBOX, CONVERSATION_RECEIPT_CURSOR, CONVERSATION_RECEIPT_ACK, CHATGPT_PC_FLOW_BRIDGE_CURSOR, CHATGPT_PC_FLOW_BRIDGE_STATUS
     with tempfile.TemporaryDirectory() as td:
         APP_ROOT = Path(td)
         STATE_DIR = APP_ROOT / "state"
@@ -4206,6 +4360,8 @@ def selftest():
         CONVERSATION_RECEIPT_INBOX = STATE_DIR / "CONVERSATION_RECEIPTS.jsonl"
         CONVERSATION_RECEIPT_CURSOR = STATE_DIR / "conversation_receipt_cursor.json"
         CONVERSATION_RECEIPT_ACK = STATE_DIR / "conversation_receipt_ack.json"
+        CHATGPT_PC_FLOW_BRIDGE_CURSOR = STATE_DIR / "chatgpt_pc_flow_bridge_cursor.json"
+        CHATGPT_PC_FLOW_BRIDGE_STATUS = STATE_DIR / "chatgpt_pc_flow_bridge_status.json"
         token = ensure_state()
         assert token
         r1 = commit_event(
@@ -4435,6 +4591,9 @@ def selftest():
         assert "conversation_messages" in source
         assert "/v1/conversations" in source
         assert "conversation_delivery_gaps" in source
+        assert "sync_chatgpt_pc_flow_ledger" in source
+        assert "mode=ro" in source
+        assert "CHATGPT_PC_FLOW_LEDGER" in source
         assert "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE" in source
         mirrored = conversation_append_message(
             "chat-main", alias="Conversation principale", source_kind="CHATGPT_UI",
@@ -4490,6 +4649,50 @@ def selftest():
         ack = write_conversation_receipt_ack()
         assert ack["producer_count"] >= 1
         assert any(x["sync_state"] == "COMPLETE" for x in ack["producers"])
+
+        # R27: import exact ChatGPT-PC visible turns from a read-only source ledger.
+        source_root = Path(td) / "chatgpt-pc-source"
+        source_root.mkdir(parents=True, exist_ok=True)
+        source_db = source_root / "flow_ledger.sqlite3"
+        scx = sqlite3.connect(source_db)
+        scx.executescript("""
+        CREATE TABLE flow_events(
+            seq INTEGER PRIMARY KEY,event_id TEXT,at TEXT,session_id TEXT,mission_id TEXT,
+            kind TEXT,role TEXT,exact_utf8 BLOB,source TEXT,evidence_ref TEXT,
+            text_sha256 TEXT,chain_sha256 TEXT
+        );
+        CREATE INDEX idx_flow_kind_seq ON flow_events(kind,seq DESC);
+        """)
+        u = "Question exacte depuis ChatGPT-PC."
+        atext = "Réponse exacte produite; affichage mobile non confirmé."
+        scx.execute("INSERT INTO flow_events VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (
+            101,"evt-u",utc_now(),"chat-session-1","M-R27","conversation_message_exact","user",
+            sqlite3.Binary(u.encode("utf-8")),"runtime","selftest",hashlib.sha256(u.encode()).hexdigest(),"chain-u"
+        ))
+        scx.execute("INSERT INTO flow_events VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (
+            102,"evt-a",utc_now(),"chat-session-1","M-R27","assistant_visible_message_exact","assistant",
+            sqlite3.Binary(atext.encode("utf-8")),"runtime","selftest",hashlib.sha256(atext.encode()).hexdigest(),"chain-a"
+        ))
+        scx.commit(); scx.close()
+        old_flow_override = os.environ.get("BCP_CHATGPT_PC_FLOW_DB")
+        os.environ["BCP_CHATGPT_PC_FLOW_DB"] = str(source_db)
+        try:
+            bridge = sync_chatgpt_pc_flow_ledger(24)
+            assert bridge["status"] == "CAUGHT_UP"
+            assert bridge["imported"] == 2 and bridge["read_only"] is True
+            expected_cid = _chatgpt_pc_conversation_id("chat-session-1", "M-R27")
+            threads = {x["conversation_id"]: x for x in conversation_list(20)}
+            assert expected_cid in threads and threads[expected_cid]["source_kind"] == "CHATGPT_PC"
+            bridged = conversation_messages(expected_cid, 8)
+            assert [x["role"] for x in bridged][-2:] == ["USER","ASSISTANT"]
+            assert bridged[-1]["delivery_state"] == "CHATGPT_UI_DELIVERY_UNKNOWN"
+            again = sync_chatgpt_pc_flow_ledger(24)
+            assert again["imported"] == 0
+        finally:
+            if old_flow_override is None:
+                os.environ.pop("BCP_CHATGPT_PC_FLOW_DB", None)
+            else:
+                os.environ["BCP_CHATGPT_PC_FLOW_DB"] = old_flow_override
         with db_connection() as cx:
             old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
             cx.execute("UPDATE conversation_messages SET mirrored_at=?,generated_at=? WHERE conversation_id='chat-main'", (old, old))

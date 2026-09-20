@@ -194,6 +194,10 @@ def main() -> int:
         "conversation_receipt_ack.json",
         '["v1", "conversations", "producers"]',
         '"producer-heartbeat"',
+        "sync_chatgpt_pc_flow_ledger",
+        "flow_ledger.sqlite3",
+        "mode=ro",
+        "CHATGPT_PC_FLOW_LEDGER",
     )
     require(
         telegram,
@@ -207,6 +211,8 @@ def main() -> int:
         "conversation_producer_sync",
         "Sync producteur complète",
         "announced_sequence",
+        "chatgpt_pc_flow_bridge",
+        "Bridge ChatGPT-PC",
     )
 
     # Release coordination remains explicit.

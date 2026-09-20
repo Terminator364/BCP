@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R26
+Revision: 2026-09-20-R27
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1338,3 +1338,23 @@ The cadence policy MUST NOT be treated as a background-execution promise: after 
 
 Canonical policy:
 - `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`
+
+## P0 — ChatGPT-PC Local Flow Ledger Bridge / R27
+
+This requirement is additive and preserves R26.
+
+BCP MUST consume supported exact ChatGPT-PC conversation evidence directly from the local ChatGPT-PC flow ledger using read-only SQLite access, without mutating ChatGPT-PC runtime authority or requiring the user to relay screenshots/messages manually.
+
+The bridge MUST:
+- read only exact conversation-message event kinds with user/assistant roles;
+- verify declared source text SHA-256 before import;
+- use source event identity for idempotence;
+- persist a local source cursor and import in bounded batches;
+- fail open if ChatGPT-PC is unavailable;
+- fail closed on a corrupt source row rather than skip past it;
+- preserve the distinction between response existence and ChatGPT UI display;
+- keep canonical message bodies local by default;
+- expose bridge health/backlog in Telegram Conversations.
+
+Canonical detail:
+- `docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md`
