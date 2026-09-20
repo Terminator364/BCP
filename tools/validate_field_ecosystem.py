@@ -198,6 +198,8 @@ def main() -> int:
         "flow_ledger.sqlite3",
         "mode=ro",
         "CHATGPT_PC_FLOW_LEDGER",
+        "conversation_latency_summary",
+        "MEASURED_FROM_DURABLE_RECEIPT_TIMESTAMPS_ONLY",
     )
     require(
         telegram,
@@ -213,6 +215,8 @@ def main() -> int:
         "announced_sequence",
         "chatgpt_pc_flow_bridge",
         "Bridge ChatGPT-PC",
+        "conversation_latency_summary",
+        "Décomposition temporelle",
     )
 
     # Release coordination remains explicit.
