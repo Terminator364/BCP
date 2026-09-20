@@ -1303,7 +1303,7 @@ class Service:
             oldest_gap = max(int(x.get("age_seconds") or 0) for x in delivery_gaps)
             attention_reasons.append(
                 str(len(delivery_gaps)) + " réponse(s) ChatGPT sont sauvegardées dans BCP, mais aucune confirmation de lecture n’a été reçue depuis "
-                + self._age_label(oldest_gap) + ". Si vous les avez déjà lues, utilisez « ✅ Vu / compris »; sinon ouvrez « 💬 Messages récents »."
+                + self._age_label(oldest_gap) + ". Si vous les avez déjà lues, utilisez « ✅ Vu / compris »; sinon consultez d’abord le mail miroir, puis « 💬 Messages récents » si nécessaire."
             )
         if human_gate != "AUCUNE":
             attention_reasons.append("Une intervention humaine est explicitement requise par la mission.")
@@ -1502,7 +1502,10 @@ class Service:
             "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Reprendre maintenant</tg-button>"
             "</tg-button-row>"
             + ("<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:ack\">✅ Vu / compris</tg-button></tg-button-row>" if level in {"CRITICAL","ACTION","WATCH"} else "") +
-            "<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:help\">Aide / mode d’emploi</tg-button></tg-button-row>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:help\">Aide / mode d’emploi</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:advanced\">Rapports & technique</tg-button>"
+            "</tg-button-row>"
             "<footer>Fallback V9 texte actif si Rich Messages n’est pas disponible.</footer>"
         )
 
@@ -2390,7 +2393,7 @@ class Service:
             lines += ["", str(pos) + ". " + alias + " · " + source,
                       "   " + self._delivery_label(state) + " · " + clean(thread.get("last_activity_at"), 40)]
             if gap:
-                lines.append("   ⚠️ Réponse potentiellement manquée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " sans preuve de lecture")
+                lines.append("   ⚠️ Réponse sauvegardée mais lecture non confirmée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " · mail miroir d’abord, puis Messages récents")
             seq_gap = seq_gap_by_thread.get(cid)
             producer = producer_by_thread.get(cid)
             if seq_gap:
@@ -2489,8 +2492,10 @@ class Service:
             "▶️ Reprendre maintenant — crée une demande de reprise durable, sans dupliquer le travail déjà terminé.\n"
             "✅ Vu / compris — confirme que vous avez pris connaissance de l’alerte courante.\n"
             "🔕 Pause 2h / 🔔 Alertes normales — règle seulement les notifications non critiques.\n"
+            "📚 Rapports & technique — ouvre le niveau secondaire sans surcharger le cockpit principal.\n"
             "📄 Résumé PDF / 🖥️ État appareils / 🧭 Plan mission / 📚 Audit PDF — rapports téléchargeables.\n"
-            "🧰 Détails techniques — diagnostics GitHub, transport, CI et preuves.\n\n"
+            "🧰 Détails techniques — diagnostics GitHub, transport, CI et preuves.\n"
+            "📧 Si ChatGPT mobile est désynchronisé : consultez d’abord le mail miroir exact, puis Messages récents.\n\n"
             "Commandes équivalentes :\n"
             "/continue /status /conversations /since /why /risks /ack /quiet 120 /objective /missions /details\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
@@ -2574,7 +2579,7 @@ class Telegram:
 
     @staticmethod
     def keyboard() -> dict:
-        # Keep the chat surface compact: orientation first, deep reports last.
+        # Primary surface: orientation + human action only. Deep evidence is one level down.
         return {
             "inline_keyboard": [
                 [
@@ -2593,9 +2598,7 @@ class Telegram:
                     {"text": "⚙️ Travail récent", "callback_data": "bcp:tail"},
                     {"text": "🔭 Risques à venir", "callback_data": "bcp:risks"},
                 ],
-                [
-                    {"text": "▶️ Reprendre maintenant", "callback_data": "bcp:continue"},
-                ],
+                [{"text": "▶️ Reprendre maintenant", "callback_data": "bcp:continue"}],
                 [
                     {"text": "✅ Vu / compris", "callback_data": "bcp:ack"},
                     {"text": "🔕 Pause 2h", "callback_data": "bcp:quiet:120"},
@@ -2603,7 +2606,15 @@ class Telegram:
                 ],
                 [
                     {"text": "❔ Aide / mode d’emploi", "callback_data": "bcp:help"},
+                    {"text": "📚 Rapports & technique", "callback_data": "bcp:advanced"},
                 ],
+            ]
+        }
+
+    @staticmethod
+    def advanced_keyboard() -> dict:
+        return {
+            "inline_keyboard": [
                 [
                     {"text": "📄 Résumé PDF", "callback_data": "bcp:pdf:summary"},
                     {"text": "🖥️ État appareils", "callback_data": "bcp:pdf:devices"},
@@ -2612,9 +2623,8 @@ class Telegram:
                     {"text": "🧭 Plan mission", "callback_data": "bcp:pdf:mission"},
                     {"text": "📚 Audit PDF", "callback_data": "bcp:pdf:technical"},
                 ],
-                [
-                    {"text": "🧰 Détails techniques", "callback_data": "bcp:details"},
-                ],
+                [{"text": "🧰 Détails techniques", "callback_data": "bcp:details"}],
+                [{"text": "↩️ Retour au cockpit", "callback_data": "bcp:status"}],
             ]
         }
 
@@ -2771,6 +2781,15 @@ class Telegram:
         authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
         if not authorized:
             self.answer_callback(callback_id, "Non autorisé")
+            return
+        if data == "bcp:advanced":
+            self.answer_callback(callback_id, "Rapports et diagnostics")
+            self.api("sendMessage", {
+                "chat_id": self.chat_id,
+                "text": "📚 Rapports & technique\nCes outils sont secondaires : utilisez-les pour approfondir une situation déjà comprise.",
+                "disable_web_page_preview": True,
+                "reply_markup": self.advanced_keyboard(),
+            }, 20)
             return
         if data == "bcp:pdf:summary":
             self.answer_callback(callback_id, "Rapport 1/4 en préparation…")
