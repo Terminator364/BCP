@@ -20,8 +20,13 @@ if __name__=="__main__": raise SystemExit(main())
 '''
 BAD_DRIVEFS_RUNNER=GOOD_RUNNER.replace('return {"cloud":"PASS"}','atomic(result,rec); return {"cloud":"PASS"}')
 
-def pack(path:Path,runner:str,duplicates:int=1):
+def pack(path:Path,runner:str,duplicates:int=1,version="6.0.34",sequence=6034,from_versions=None):
+ if from_versions is None: from_versions=["6.0.32"]
+ manifest={"schema":1,"package_type":"agent_update","version":version,"sequence":sequence,
+           "from_version":from_versions[0] if from_versions else None,"from_versions":from_versions,
+           "files":[{"path":"app/marker.txt","sha256":hashlib.sha256(b"fixture").hexdigest(),"size":7}]}
  with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED) as z:
+  z.writestr("manifest.json",json.dumps(manifest))
   for _ in range(duplicates): z.writestr(MEMBER,runner)
   z.writestr("payload/app/marker.txt","fixture")
  return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -95,6 +100,27 @@ def main():
   cp=subprocess.run(cmd,capture_output=True,text=True,timeout=60)
   check("no-downgrade-superseded",cp.returncode==20 and "TARGET_SUPERSEDED" in cp.stdout)
 
- print("R48_OFFLINE_RECOVERY_6034_TESTS=PASS")
+ with tempfile.TemporaryDirectory(prefix="r49_") as raw:
+  td=Path(raw);pkg=td/"wrongver.zip";sha=pack(pkg,GOOD_RUNNER,version="6.0.33")
+  cp,root,work=invoke(td,pkg,sha)
+  check("manifest-version-mismatch-hold",cp.returncode==20 and "PACKAGE_MANIFEST_VERSION_MISMATCH" in cp.stdout)
+
+ with tempfile.TemporaryDirectory(prefix="r49_") as raw:
+  td=Path(raw);pkg=td/"wrongseq.zip";sha=pack(pkg,GOOD_RUNNER,sequence=6033)
+  cp,root,work=invoke(td,pkg,sha)
+  check("manifest-sequence-mismatch-hold",cp.returncode==20 and "PACKAGE_MANIFEST_SEQUENCE_MISMATCH" in cp.stdout)
+
+ with tempfile.TemporaryDirectory(prefix="r49_") as raw:
+  td=Path(raw);pkg=td/"wrongsource.zip";sha=pack(pkg,GOOD_RUNNER,from_versions=["6.0.31"])
+  root=td/"install";(root/"state").mkdir(parents=True)
+  (root/"state"/"active_release.json").write_text(json.dumps({"version":"6.0.32","sequence":6032}),encoding="utf-8")
+  work=td/"work"
+  cmd=[sys.executable,str(INSTALLER),"--test-mode","--package",str(pkg),"--install-root",str(root),"--python",sys.executable,
+       "--work-root",str(work),"--expected-sha",sha,"--target-version",TARGET_VERSION,"--target-sequence",str(TARGET_SEQUENCE),
+       "--free-memory-override-mb","512"]
+  cp=subprocess.run(cmd,capture_output=True,text=True,timeout=60)
+  check("manifest-source-mismatch-hold",cp.returncode==20 and "PACKAGE_MANIFEST_SOURCE_MISMATCH" in cp.stdout)
+
+ print("R49_OFFLINE_RECOVERY_6034_TESTS=PASS")
  return 0
 if __name__=="__main__": raise SystemExit(main())
