@@ -109,6 +109,10 @@ jobs:
               "conversation_receipt_ack.json",
               '["v1", "conversations", "producers"]',
               '"producer-heartbeat"',
+              "sync_chatgpt_pc_flow_ledger",
+              "flow_ledger.sqlite3",
+              "mode=ro",
+              "CHATGPT_PC_FLOW_LEDGER",
           ]
           required_edge = [
               "updates",
