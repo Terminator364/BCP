@@ -127,8 +127,8 @@ Un PDF BCP qualifié doit:
 Le fait qu’une réponse existe dans BCP ou dans un mail ne prouve pas que l’application ChatGPT mobile l’a déjà affichée.
 
 Ordre de continuité:
-1. **mail miroir exact**;
-2. message final ChatGPT;
+1. **mail détaillé complet**;
+2. pointeur ChatGPT;
 3. Telegram comme témoin ou cockpit.
 
 Si l’application ChatGPT est en retard, le mail devient le premier chemin de lecture. Le système ne doit pas vous demander de deviner si une réponse existe.
@@ -164,3 +164,10 @@ Le cockpit R54 doit rester:
 - honnête sur faits, estimations et incertitudes;
 - compatible avec la contrainte PC 4 Go / RAM >90% / chauffe;
 - fidèle à l’heure de Kinshasa pour toute présentation humaine.
+
+
+## R55 — Où lire désormais les comptes rendus complets
+
+Le **mail détaillé complet** est désormais l'unique surface humaine détaillée de fin de tranche.
+Après confirmation d'envoi du mail, l'application ChatGPT n'affiche plus le compte rendu complet : elle affiche seulement un **pointeur ChatGPT** avec la date/heure de Kinshasa et l'identifiant du checkpoint.
+Telegram reste un témoin secondaire, un canal d'alerte et de navigation de reprise.
