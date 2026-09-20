@@ -1,7 +1,7 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/2",
+  "schema": "bcp.interactive_work_cadence_policy/3",
   "status": "ACTIVE_DEFAULT",
-  "scope": "TECHNICAL_PROJECT_WORK_WHERE_CONTEXT_IS_AVAILABLE",
+  "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 5,
   "acceptable_window_minutes": [
     5,
@@ -37,5 +37,22 @@
     "bcp_mirror_timestamp": "AUTHORITATIVE_FOR_LOCAL_MIRROR",
     "telegram_send_receipt": "AUTHORITATIVE_FOR_TELEGRAM_API_ACCEPTANCE_ONLY",
     "explicit_seen_ack": "AUTHORITATIVE_FOR_USER_ACK_ONLY"
+  },
+  "inheritance": {
+    "current_projects": "DEFAULT_ON_NEXT_RECOVERY",
+    "future_projects": "INHERIT_UNLESS_EXPLICITLY_OVERRIDDEN",
+    "past_conversations": "NOT_RETROACTIVELY_REWRITTEN",
+    "continuation_registry_ref": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+  },
+  "response_timing": {
+    "user_visible_target_minutes": [
+      5,
+      7
+    ],
+    "useful_work_minimum_minutes": 5,
+    "internal_soft_cutoff_minutes": 6.25,
+    "checkpoint_before_optional_overrun": true,
+    "true_gate_may_return_early": true,
+    "transport_latency_is_separate_from_useful_work": true
   }
 }

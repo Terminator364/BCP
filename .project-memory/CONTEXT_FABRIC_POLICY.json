@@ -1,6 +1,6 @@
 {
   "schema": "bcp.context_fabric/1",
-  "updated_at": "2026-09-19",
+  "updated_at": "2026-09-20",
   "status": "DESIGN_HARDENED_FIELD_UNVERIFIED",
   "universal_code": {
     "command": "BCPGO",
@@ -9,7 +9,18 @@
       "BCPGO PhoneMouse",
       "BCPGO BCP",
       "BCPGO Browser4G"
-    ]
+    ],
+    "registry_ref": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    "recovery_load_order": [
+      ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+      ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+      "GLOBAL_CORE",
+      "PROJECT_CORE",
+      "TASK_DELTA"
+    ],
+    "future_project_default": "BCPGO <project>",
+    "plain_continue_semantics": "ACTIVE_UNAMBIGUOUS_CONTEXT_ONLY"
   },
   "components": {
     "b_edge": {

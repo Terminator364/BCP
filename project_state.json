@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "NEXUS_0_2_4_R29_CLOUDFLARE_DEVICE_AUTH_CANDIDATE",
-  "last_completed_atomic_action": "R29 candidate implemented: Nexus bootstrap prefers Wrangler OAuth device flow, falls back to classic browser OAuth, rechecks whoami, preserves secret hygiene and zero-dollar policy.",
-  "next_action": "Align CURRENT, run exact-head Nexus/Field/CURRENT/Coordinated/Telegram CI, merge only if all required workflows pass and main is unchanged, then wait for resident Nexus 0.2.4 field readback.",
+  "status": "R30_UNIVERSAL_CONTINUATION_REGISTRY_CANDIDATE",
+  "last_completed_atomic_action": "R30 continuity hardening: universal BCPGO continuation registry persisted, project aliases centralized, 5–7 minute useful-work cadence promoted to global technical-project default, and both are mandatory recovery inputs.",
+  "next_action": "Open and qualify the R30 continuity-only PR. Merge under the writer fence if exact-head checks pass. Then read back resident Nexus 0.2.4 authorization state; user action is only Cloudflare Allow/Authorize if the new device-flow page appears.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -79,7 +79,8 @@
     "conversation_receipt_bridge": "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md",
     "producer_watermark_sync": "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
     "interactive_work_cadence": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
-    "chatgpt_pc_flow_bridge": "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md"
+    "chatgpt_pc_flow_bridge": "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
+    "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -145,7 +146,8 @@
     "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md",
     "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
     ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
-    "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md"
+    "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -195,7 +197,9 @@
     "P0_producer_watermark_sync": true,
     "P0_receipt_acknowledgement": true,
     "P0_interactive_work_tranche_5_to_7_minutes": true,
-    "P0_chatgpt_pc_local_flow_bridge": true
+    "P0_chatgpt_pc_local_flow_bridge": true,
+    "P0_universal_continuation_registry": true,
+    "P0_global_5_to_7_minute_tranche_cadence": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -225,12 +229,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R29-CLOUDFLARE-DEVICE-AUTH-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_READY",
-    "last_completed_action": "R29 bootstrap/spec/component manifests persisted.",
-    "next_atomic_action": "CURRENT alignment + PR + exact-head qualification.",
-    "branch": "work/bcp/r29-cloudflare-device-auth-resilience-20260920",
-    "base_main_sha": "d1ecf6b656f66b738ea38a214bbfd6e94a0b7196",
+    "checkpoint_id": "BCP-R30-UNIVERSAL-CONTINUATION-REGISTRY-20260920",
+    "status": "POLICY_CANDIDATE_PR_PENDING",
+    "last_completed_action": "Registry, context-fabric binding, cadence v3, session-survival and continuity bindings persisted.",
+    "next_atomic_action": "PR + exact-head qualification.",
+    "branch": "work/bcp/r30-universal-continuation-registry-20260920",
+    "base_main_sha": "be92b058c9be55f8abdd93c0713cd476c167220d",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1651,5 +1655,16 @@
     "pinned_wrangler_version": "4.135.0",
     "no_api_token_copy": true,
     "field_verified": false
+  },
+  "universal_continuation_registry_r30": {
+    "status": "PERSISTED_CANDIDATE",
+    "registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    "universal_bootstrap": "BCPGO",
+    "scoped_syntax": "BCPGO <project>",
+    "same_conversation": "CONTINUE ATOMIC",
+    "plain_continue": "ACTIVE_UNAMBIGUOUS_CONTEXT_ONLY",
+    "cadence_policy": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    "future_projects_inherit": true,
+    "past_chats_retroactively_rewritten": false
   }
 }

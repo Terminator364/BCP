@@ -340,3 +340,17 @@ The cockpit target is one human-first editable Telegram card with read-only inli
 No ChatGPT scheduled automation is part of this presence/update path. Do not require token re-entry, repeated manual ZIP replacement or user-mediated log transfer for normal updates.
 
 The 2026-09-19 V4 implementation lives on its fenced candidate branch until exact-head CI, main-head reconciliation and serialized merge succeed. FIELD_VERIFIED remains false until a real Kinshasa button/PDF round-trip and resident update readback succeed.
+
+
+## Universal continuation registry — 2026-09-20
+
+Mandatory recovery inputs:
+- `.project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json`;
+- `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`.
+
+Resolution order:
+`BCPGO / scoped alias -> durable project pointer -> writer-fence state -> exact checkpoint -> cadence policy -> next uncommitted atomic action`.
+
+Aliases do not fork project history. If an alias and `BCPGO <project>` resolve to different durable authorities, enter conflict hold rather than guessing.
+
+Current/future projects inherit the 5–7 minute useful-work checkpoint cadence by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
