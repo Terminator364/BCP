@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R24
+Revision: 2026-09-20-R25
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1284,3 +1284,25 @@ Field acceptance additionally requires:
 - automatic disappearance after explicit seen evidence;
 - no duplicate notification for an unchanged gap episode;
 - no false “delivered” claim when the UI delivery remains unknown.
+
+## P0 — Conversation Receipt Bridge & Sequence Repair / R25
+
+This requirement is additive and preserves R24.
+
+BCP MUST provide a low-footprint local receipt bridge so supported local producers can feed the Conversation Delivery Ledger automatically without making the user or the ChatGPT UI the telemetry bus.
+
+The bridge MUST:
+- consume a bounded append-only local JSONL inbox incrementally;
+- persist a cursor and survive process restart;
+- preserve message-key idempotency;
+- tolerate malformed lines without poisoning later valid receipts;
+- treat producer sequence separately from BCP ingestion sequence;
+- dynamically detect missing producer sequence ranges;
+- automatically clear a sequence gap when late receipts arrive;
+- expose synchronization gaps without claiming hidden ChatGPT failure;
+- keep canonical conversation bodies local by default.
+
+Telegram MUST surface sequence incompleteness as a human-readable WATCH signal in the Conversations view.
+
+Canonical detail:
+- `docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md`

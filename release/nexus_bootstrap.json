@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R24",
+  "requirements_revision": "2026-09-20-R25",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -102,5 +102,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.3 remains transport-compatible with R24. Delivery-gap computation stays local on BCP/Telegram; Nexus transports the resulting command/reply and live-card state without becoming a transcript store."
+  "notes": "Nexus 0.2.3 remains R25-compatible. Conversation receipt bodies and sequence repair stay local on BCP; Nexus transports only cockpit commands/replies/live-card state."
 }

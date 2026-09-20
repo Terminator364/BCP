@@ -103,6 +103,9 @@ jobs:
           assert "conversation_delivery_gaps" in py
           assert "Réponse potentiellement manquée" in py
           assert "delivery_gap_count" in py
+          assert "conversation_sequence_gaps" in py
+          assert "Synchronisation incomplète" in py
+          assert "sequence_gap_count" in py
           assert "MISSION_RESUME_REQUESTS.jsonl" in py
           assert "watchdog_notice" in py
           assert "WATCHDOG_NOTIFY_STATE_PATH" in py

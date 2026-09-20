@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-delivery-gap-v13",
+  "version": "2026.09.20-receipt-bridge-v14",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "6a0cf3d7145b8b668c6026d847be02321b4408850ef3e732ac95a4668ffa2f51",
+  "sha256": "327f44a9eae4b825e1a9be14be69ad9341cb656fb61b35ff4b1c109388a24306",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V13 preserves V12 Conversations and V11 alert controls, adds derived response-delivery gap detection after 5 minutes without positive seen evidence, surfaces it as WATCH attention, and labels potentially missed responses without asserting ChatGPT UI failure.",
-  "requirements_revision": "2026-09-20-R24"
+  "notes": "Telegram V14 preserves V13 delivery-gap behavior and adds conversation producer-sequence gap visibility, including incomplete-sync WATCH attention and detailed missing ranges.",
+  "requirements_revision": "2026-09-20-R25"
 }

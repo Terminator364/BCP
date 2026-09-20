@@ -495,6 +495,40 @@ class LocalTruth:
                 break
         return out
 
+    def conversation_sequence_gaps(self, conversation_id: str = "", limit: int = 20) -> list[dict]:
+        params = []
+        where = "WHERE producer_sequence>0 AND producer_session_id<>''"
+        if conversation_id:
+            where += " AND conversation_id=?"
+            params.append(str(conversation_id)[:64])
+        rows = self._query(
+            "SELECT conversation_id,producer_session_id,producer_sequence "
+            "FROM conversation_messages " + where +
+            " ORDER BY conversation_id,producer_session_id,producer_sequence",
+            tuple(params),
+        )
+        groups = {}
+        for row in rows:
+            key = (str(row.get("conversation_id") or ""), str(row.get("producer_session_id") or ""))
+            groups.setdefault(key, []).append(int(row.get("producer_sequence") or 0))
+        out = []
+        for (cid, sid), seqs in groups.items():
+            unique = sorted(set(x for x in seqs if x > 0))
+            if len(unique) < 2:
+                continue
+            prev = unique[0]
+            for cur in unique[1:]:
+                if cur > prev + 1:
+                    out.append({
+                        "conversation_id": cid, "producer_session_id": sid,
+                        "missing_from": prev + 1, "missing_to": cur - 1,
+                        "missing_count": cur - prev - 1,
+                    })
+                    if len(out) >= limit:
+                        return out
+                prev = cur
+        return out
+
     def buildhub(self) -> dict:
         raw = os.environ.get("BCP_BUILDHUB_RECEIPT", "").strip()
         if raw:
@@ -992,7 +1026,14 @@ class Service:
         forecast_confidence, forecast_confidence_reason = self._forecast_confidence(ctx, events, gh)
         telegram_state = str(runtime.get("telegram_companion_state") or "").upper()
         delivery_gaps = self.local.conversation_delivery_gaps(300, 20)
+        sequence_gaps = self.local.conversation_sequence_gaps("", 20)
         attention_reasons = []
+        if sequence_gaps:
+            missing_total = sum(int(x.get("missing_count") or 0) for x in sequence_gaps)
+            attention_reasons.append(
+                str(missing_total) + " reçu(s) de conversation manquent dans la séquence locale; "
+                "BCP attend leur arrivée tardive avant de déclarer la synchronisation complète."
+            )
         if delivery_gaps:
             oldest_gap = max(int(x.get("age_seconds") or 0) for x in delivery_gaps)
             attention_reasons.append(
@@ -1018,7 +1059,7 @@ class Service:
             attention_level = "CRITICAL"
         elif human_gate != "AUCUNE" or nexus == "HUMAN_AUTH_REQUIRED":
             attention_level = "ACTION"
-        elif delivery_gaps or mission_state in HOLD_STATES or hold_reason or (isinstance(age, int) and age >= 900):
+        elif sequence_gaps or delivery_gaps or mission_state in HOLD_STATES or hold_reason or (isinstance(age, int) and age >= 900):
             attention_level = "WATCH"
         elif isinstance(age, int) and age < 900 and mission_state not in {"DONE", "CANCELLED"}:
             attention_level = "ACTIVE"
@@ -1056,6 +1097,7 @@ class Service:
             "attention_level": attention_level,
             "attention_reasons": attention_reasons,
             "delivery_gap_count": len(delivery_gaps),
+            "sequence_gap_count": len(sequence_gaps),
             "forecast_confidence": forecast_confidence,
             "forecast_confidence_reason": forecast_confidence_reason,
             "evidence_age_label": age_label,
@@ -2047,6 +2089,10 @@ class Service:
         gap_by_thread = {}
         for gap in gaps:
             gap_by_thread.setdefault(str(gap.get("conversation_id") or ""), gap)
+        seq_gaps = self.local.conversation_sequence_gaps("", 20)
+        seq_gap_by_thread = {}
+        for gap in seq_gaps:
+            seq_gap_by_thread.setdefault(str(gap.get("conversation_id") or ""), gap)
         if not threads:
             return (
                 "💬 CONVERSATIONS SYNCHRONISÉES\n"
@@ -2068,6 +2114,12 @@ class Service:
                       "   " + self._delivery_label(state) + " · " + clean(thread.get("last_activity_at"), 40)]
             if gap:
                 lines.append("   ⚠️ Réponse potentiellement manquée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " sans preuve de lecture")
+            seq_gap = seq_gap_by_thread.get(cid)
+            if seq_gap:
+                lines.append(
+                    "   🧩 Synchronisation incomplète · séquence(s) "
+                    + str(seq_gap.get("missing_from")) + "–" + str(seq_gap.get("missing_to")) + " absente(s)"
+                )
             msgs = self.local.conversation_messages(cid, 2)
             for msg in msgs:
                 role = str(msg.get("role") or "").upper()
@@ -2102,6 +2154,14 @@ class Service:
                 clean(msg.get("text"), 700),
                 self._delivery_label(str(msg.get("delivery_state") or "")),
             ]
+        seq_gaps = self.local.conversation_sequence_gaps(cid, 10)
+        if seq_gaps:
+            lines += ["", "🧩 Trous de synchronisation détectés :"]
+            for gap in seq_gaps[:5]:
+                lines.append(
+                    "• " + str(gap.get("missing_from")) + "–" + str(gap.get("missing_to"))
+                    + " · session " + clean(gap.get("producer_session_id"), 40)
+                )
         lines += [
             "",
             "La présence d’un texte ici prouve son miroir BCP, pas son affichage dans l’interface ChatGPT.",
@@ -3109,7 +3169,9 @@ def selftest() -> int:
         CREATE TABLE conversation_messages(
             id INTEGER PRIMARY KEY AUTOINCREMENT,conversation_id TEXT,sequence INTEGER,role TEXT,text TEXT,
             generated_at TEXT,mirrored_at TEXT,delivery_state TEXT,evidence_class TEXT,
-            linked_mission_id TEXT,seen_at TEXT
+            linked_mission_id TEXT,seen_at TEXT,
+            producer_sequence INTEGER NOT NULL DEFAULT 0,
+            producer_session_id TEXT NOT NULL DEFAULT ''
         );
         """)
         cx.execute("INSERT INTO heads VALUES(?,?,?,?,?,?,?,?)", (
@@ -3249,6 +3311,18 @@ def selftest() -> int:
         assert "affichage ChatGPT non confirmé" in inbox
         assert "Réponse potentiellement manquée" in inbox
         assert svc.presence_snapshot()["snapshot"]["delivery_gap_count"] == 1
+        cx = sqlite3.connect(db)
+        cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at,producer_sequence,producer_session_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (
+            "chat-main", 3, "ASSISTANT", "Seq 10", now, now, "MIRRORED_BCP", "PRODUCER_RECEIPT", "", "", 10, "s1"
+        ))
+        cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at,producer_sequence,producer_session_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (
+            "chat-main", 4, "ASSISTANT", "Seq 12", now, now, "MIRRORED_BCP", "PRODUCER_RECEIPT", "", "", 12, "s1"
+        ))
+        cx.commit()
+        cx.close()
+        assert svc.local.conversation_sequence_gaps("chat-main", 10)[0]["missing_from"] == 11
+        assert "Synchronisation incomplète" in svc.conversations_inbox()
+        assert svc.presence_snapshot()["snapshot"]["sequence_gap_count"] == 1
         assert "Travail terminé côté BCP" in svc.conversation_view("chat-main")
         ack_text = svc.acknowledge_attention()
         assert "Pris en compte" in ack_text or "Aucun signal prioritaire" in ack_text

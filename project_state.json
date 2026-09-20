@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_2_TELEGRAM_V13_R24_DELIVERY_GAP_CANDIDATE",
-  "last_completed_atomic_action": "R24 implemented: BCP 0.7.2 derives conversation delivery gaps from durable assistant-message receipts after a 5-minute threshold; Telegram V13 surfaces potentially missed responses as WATCH attention and clears the gap after USER_SEEN evidence.",
-  "next_action": "Add exact CI guards for R24, open a PR, qualify exact head, then merge only if main is unchanged and all required workflows pass. After merge, wait for resident self-update and verify via Drive; do not claim field convergence before machine readback.",
+  "status": "BCP_0_7_3_TELEGRAM_V14_R25_RECEIPT_BRIDGE_CANDIDATE",
+  "last_completed_atomic_action": "R25 candidate implemented: BCP 0.7.3 local append-only conversation receipt bridge with durable cursor, bounded ingestion, producer session/sequence metadata, dynamic sequence-gap detection and automatic late-receipt repair; Telegram V14 surfaces incomplete synchronization as WATCH.",
+  "next_action": "Run exact-head CI for R25. Fix only evidence-backed failures. Merge only after all required workflows pass on the same head and main is re-read unchanged; then wait for resident BCP/Telegram convergence and machine readback.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -75,7 +75,8 @@
     "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
     "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
     "telegram_attention_lifecycle_v11": "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md",
-    "conversation_delivery_ledger": "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md"
+    "conversation_delivery_ledger": "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md",
+    "conversation_receipt_bridge": "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -137,7 +138,8 @@
     "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
     "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
     "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md",
-    "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md"
+    "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md",
+    "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -181,7 +183,9 @@
     "P0_conversation_delivery_ledger": true,
     "P0_chatgpt_ui_delivery_uncertainty": true,
     "P0_telegram_conversation_inbox": true,
-    "P0_bounded_interactive_checkpoint_cadence": true
+    "P0_bounded_interactive_checkpoint_cadence": true,
+    "P0_local_conversation_receipt_bridge": true,
+    "P0_sequence_gap_repair": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -211,12 +215,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R24-DELIVERY-GAP-DETECTOR-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_PENDING",
-    "last_completed_action": "R24 server/Telegram/spec/release manifests persisted.",
-    "next_atomic_action": "CI guards + PR + exact-head qualification.",
-    "branch": "work/bcp/r24-delivery-gap-detector-20260920",
-    "base_main_sha": "7bfd8cdfcc2aa680a0af45758948d4cc65a8c908",
+    "checkpoint_id": "BCP-R25-CONVERSATION-RECEIPT-BRIDGE-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_READY",
+    "last_completed_action": "R25 code/spec/releases persisted.",
+    "next_atomic_action": "Open PR and exact-head qualification.",
+    "branch": "work/bcp/r25-conversation-receipt-bridge-20260920",
+    "base_main_sha": "d8239df4519702fec86f9ecfdbd99df775e96d8d",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1574,6 +1578,20 @@
     "watch_attention": true,
     "clears_on_user_seen": true,
     "hidden_chatgpt_state_inference": false,
+    "field_verified": false
+  },
+  "conversation_receipt_bridge_r25": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.3",
+    "telegram_version": "2026.09.20-receipt-bridge-v14",
+    "requirements_revision": "2026-09-20-R25",
+    "local_jsonl_inbox": true,
+    "durable_cursor": true,
+    "bounded_lines_per_pass": 64,
+    "poll_seconds": 10,
+    "producer_sequence_tracking": true,
+    "late_receipt_gap_repair": true,
+    "transcript_cloud_upload_default": false,
     "field_verified": false
   }
 }
