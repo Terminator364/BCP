@@ -68,7 +68,6 @@ jobs:
             if (($out -join "`n") -notmatch '4\.135\.0') { throw 'NODE_DIRECT_NPX_CLI_OUTPUT_MISSING' }
             Write-Host 'BCP_FIELD_WRANGLER_FALLBACK_SHAPE=PASS'
           } finally {
-            if ($originalPath) { $env:PATH = $originalPath }
             Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
           }
 
@@ -151,6 +150,7 @@ jobs:
             if (($out + $err) -notmatch [regex]::Escape($wranglerVersion)) { throw 'REAL_MANAGED_WRANGLER_VERSION_NOT_OBSERVED' }
             Write-Host 'BCP_REAL_MANAGED_WRANGLER_PROBE=PASS'
           } finally {
+            if ($originalPath) { $env:PATH = $originalPath }
             Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
           }
 
