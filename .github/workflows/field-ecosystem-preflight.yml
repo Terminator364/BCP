@@ -107,8 +107,14 @@ jobs:
             $env:NPM_CONFIG_PREFER_OFFLINE = 'true'
 
             $wranglerRoot = Join-Path $root ('wrangler-package-' + $wranglerVersion)
-            $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund 2>&1
-            $installCode = $LASTEXITCODE
+            $oldEap = $ErrorActionPreference
+            try {
+              $ErrorActionPreference = 'Continue'
+              $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund 2>&1
+              $installCode = $LASTEXITCODE
+            } finally {
+              $ErrorActionPreference = $oldEap
+            }
             Write-Host ('BCP_REAL_MANAGED_INSTALL_EXIT=' + $installCode)
             if ($installCode -ne 0) {
               Write-Host ('BCP_REAL_MANAGED_INSTALL_DETAIL=' + (($installOut -join ' ') -replace '[\r\n]+',' '))
