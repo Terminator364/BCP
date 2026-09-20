@@ -9,6 +9,7 @@ import com.blessing.bcpedge.storage.EdgeJobEntity;
 import com.blessing.bcpedge.storage.EdgeMemoryEntity;
 import com.blessing.bcpedge.storage.EdgeProjectEntity;
 import com.blessing.bcpedge.storage.EdgeReceiptEntity;
+import com.blessing.bcpedge.storage.EdgeSentinelEntity;
 import com.blessing.bcpedge.work.EdgeWorkScheduler;
 
 import org.json.JSONArray;
@@ -257,6 +258,82 @@ public final class EdgeOrchestrator {
 
     public int pendingCount() {
         return dao.countPendingJobs();
+    }
+
+    public synchronized JSONObject observePcReachability(String projectId, boolean reachable) {
+        long now = System.currentTimeMillis();
+        EdgeSentinelEntity old = dao.sentinel(projectId);
+        long lastSuccess = old == null ? 0L : old.lastPcSuccessAt;
+        int failures = old == null ? 0 : old.consecutiveFailures;
+        String oldState = old == null ? "UNKNOWN" : old.state;
+        String lastAlertKey = old == null ? "" : old.lastAlertKey;
+        long lastAlertAt = old == null ? 0L : old.lastAlertAt;
+        boolean resumePending = old != null && old.resumePending;
+        String resumeRequestId = old == null ? "" : old.resumeRequestId;
+
+        if (reachable) {
+            lastSuccess = now;
+            failures = 0;
+            resumePending = false;
+            resumeRequestId = "";
+        } else {
+            failures = Math.min(1000, failures + 1);
+        }
+
+        String state = EdgePolicy.sentinelState(now, lastSuccess, failures);
+        boolean alertDue = EdgePolicy.sentinelAlertDue(state, now, lastAlertAt);
+        if ("PC_UNAVAILABLE_RECOVERY".equals(state) && !resumePending) {
+            resumePending = true;
+            resumeRequestId = "edge-resume-" + sha256(projectId + "\n" + lastSuccess);
+        }
+        if (alertDue) {
+            lastAlertKey = sha256(projectId + "\n" + state + "\n" + lastSuccess);
+            lastAlertAt = now;
+        }
+        dao.putSentinel(new EdgeSentinelEntity(
+                projectId, state, lastSuccess, now, failures,
+                lastAlertKey, lastAlertAt, resumePending, resumeRequestId
+        ));
+        if ("PC_AVAILABLE".equals(state)) setMode("PC_AVAILABLE");
+        else if ("PC_UNAVAILABLE_RECOVERY".equals(state)) setMode("PC_UNAVAILABLE_RECOVERY");
+        else setMode("EDGE_ONLY");
+
+        JSONObject out = new JSONObject();
+        try {
+            out.put("project_id", projectId);
+            out.put("state", state);
+            out.put("previous_state", oldState);
+            out.put("last_pc_success_at", lastSuccess);
+            out.put("last_check_at", now);
+            out.put("consecutive_failures", failures);
+            out.put("resume_pending", resumePending);
+            out.put("resume_request_id", resumeRequestId);
+            out.put("alert_due", alertDue);
+            out.put("transitioned", !state.equals(oldState));
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    public JSONObject sentinelStatus(String projectId) {
+        EdgeSentinelEntity s = dao.sentinel(projectId);
+        JSONObject out = new JSONObject();
+        try {
+            if (s == null) {
+                out.put("state", "NOT_OBSERVED");
+                out.put("project_id", projectId);
+                return out;
+            }
+            out.put("project_id", s.projectId);
+            out.put("state", s.state);
+            out.put("last_pc_success_at", s.lastPcSuccessAt);
+            out.put("last_check_at", s.lastCheckAt);
+            out.put("consecutive_failures", s.consecutiveFailures);
+            out.put("last_alert_key", s.lastAlertKey);
+            out.put("last_alert_at", s.lastAlertAt);
+            out.put("resume_pending", s.resumePending);
+            out.put("resume_request_id", s.resumeRequestId);
+        } catch (Exception ignored) {}
+        return out;
     }
 
     public int compactExpiredMemory() {
