@@ -88,8 +88,10 @@ def main() -> int:
         "NetworkType.CONNECTED",
         "BackoffPolicy.EXPONENTIAL",
         "ExistingWorkPolicy.KEEP",
-        "LEGACY_PERIODIC",
-        "LEGACY_NOW",
+        "LEGACY_V1_PERIODIC",
+        "LEGACY_V1_NOW",
+        "LEGACY_V2_PERIODIC",
+        "LEGACY_V2_NOW",
     )
     require(edge_legacy_worker, "Compatibility shim", "work.EdgeReconcileWorker.execute")
     assert "enqueueUniqueWork" not in edge_legacy_worker
