@@ -98,7 +98,7 @@ jobs:
               "/v1/system/nexus",
               "/v1/system/nexus/apply",
               "conversation_delivery_gaps",
-              "/v1/conversations/gaps",
+              '["v1", "conversations", "gaps"]',
               "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE",
           ]
           required_edge = [
