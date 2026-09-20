@@ -18,6 +18,9 @@ public final class CredentialStore {
     private static final String ALIAS = "bcp-edge-evergreen-v1";
     private static final String PREFS = "bcp_credentials";
     private static final String TOKEN_BLOB = "token_blob";
+    private static final String NEXUS_URL_BLOB = "nexus_url_blob";
+    private static final String NEXUS_DEVICE_ID_BLOB = "nexus_device_id_blob";
+    private static final String NEXUS_DEVICE_TOKEN_BLOB = "nexus_device_token_blob";
     private final SharedPreferences prefs;
 
     public CredentialStore(Context context) {
@@ -25,21 +28,63 @@ public final class CredentialStore {
     }
 
     public synchronized void putToken(String token) throws Exception {
-        if (token == null || token.isEmpty()) throw new IllegalArgumentException("EMPTY_TOKEN");
+        putSecret(TOKEN_BLOB, token);
+    }
+
+    public synchronized String getToken() {
+        return getSecret(TOKEN_BLOB);
+    }
+
+    public synchronized void putNexusCredentials(String nexusUrl, String deviceId, String deviceToken) throws Exception {
+        if (nexusUrl == null || !nexusUrl.startsWith("https://")) throw new IllegalArgumentException("NEXUS_HTTPS_REQUIRED");
+        if (deviceId == null || deviceId.trim().isEmpty()) throw new IllegalArgumentException("NEXUS_DEVICE_ID_REQUIRED");
+        if (deviceToken == null || deviceToken.length() < 24) throw new IllegalArgumentException("NEXUS_DEVICE_TOKEN_INVALID");
+        putSecret(NEXUS_URL_BLOB, nexusUrl.trim().replaceAll("/+$", ""));
+        putSecret(NEXUS_DEVICE_ID_BLOB, deviceId.trim());
+        putSecret(NEXUS_DEVICE_TOKEN_BLOB, deviceToken.trim());
+    }
+
+    public synchronized String getNexusUrl() { return getSecret(NEXUS_URL_BLOB); }
+    public synchronized String getNexusDeviceId() { return getSecret(NEXUS_DEVICE_ID_BLOB); }
+    public synchronized String getNexusDeviceToken() { return getSecret(NEXUS_DEVICE_TOKEN_BLOB); }
+
+    public synchronized boolean hasNexusCredentials() {
+        return !getNexusUrl().isEmpty() && !getNexusDeviceId().isEmpty() && !getNexusDeviceToken().isEmpty();
+    }
+
+    public synchronized void clearNexusCredentials() {
+        prefs.edit()
+                .remove(NEXUS_URL_BLOB)
+                .remove(NEXUS_DEVICE_ID_BLOB)
+                .remove(NEXUS_DEVICE_TOKEN_BLOB)
+                .commit();
+    }
+
+    public synchronized void clear() {
+        prefs.edit()
+                .remove(TOKEN_BLOB)
+                .remove(NEXUS_URL_BLOB)
+                .remove(NEXUS_DEVICE_ID_BLOB)
+                .remove(NEXUS_DEVICE_TOKEN_BLOB)
+                .commit();
+    }
+
+    private void putSecret(String name, String value) throws Exception {
+        if (value == null || value.isEmpty()) throw new IllegalArgumentException("EMPTY_SECRET");
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key());
         byte[] iv = cipher.getIV();
-        byte[] ct = cipher.doFinal(token.getBytes(StandardCharsets.UTF_8));
+        byte[] ct = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
         byte[] blob = new byte[1 + iv.length + ct.length];
         blob[0] = (byte)iv.length;
         System.arraycopy(iv,0,blob,1,iv.length);
         System.arraycopy(ct,0,blob,1+iv.length,ct.length);
-        prefs.edit().putString(TOKEN_BLOB, Base64.encodeToString(blob, Base64.NO_WRAP)).commit();
+        prefs.edit().putString(name, Base64.encodeToString(blob, Base64.NO_WRAP)).commit();
     }
 
-    public synchronized String getToken() {
+    private String getSecret(String name) {
         try {
-            String encoded = prefs.getString(TOKEN_BLOB, "");
+            String encoded = prefs.getString(name, "");
             if (encoded == null || encoded.isEmpty()) return "";
             byte[] blob = Base64.decode(encoded, Base64.NO_WRAP);
             if (blob.length < 14) return "";
@@ -55,10 +100,6 @@ public final class CredentialStore {
         } catch (Exception ignored) {
             return "";
         }
-    }
-
-    public synchronized void clear() {
-        prefs.edit().remove(TOKEN_BLOB).commit();
     }
 
     private SecretKey key() throws Exception {
