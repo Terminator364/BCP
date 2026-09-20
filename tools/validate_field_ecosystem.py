@@ -225,6 +225,36 @@ def main() -> int:
         "bcp:pdf:mission",
         'version: "0.2.3"',
     )
+    # R53 human cockpit: primary labels must be self-explanatory and identical across direct/Nexus.
+    require(
+        telegram,
+        "🟢 Où en sommes-nous ?",
+        "🕘 Nouveautés",
+        "💬 Messages récents",
+        "❓ Pourquoi cet état ?",
+        "📍 Étape actuelle",
+        "🎯 Objectif & plan",
+        "⚙️ Travail récent",
+        "🔭 Risques à venir",
+        "▶️ Reprendre maintenant",
+        "✅ Vu / compris",
+        "❔ Aide / mode d’emploi",
+        "🧰 Détails techniques",
+        "réponse(s) ChatGPT sont sauvegardées dans BCP",
+    )
+    require(
+        nexus_worker,
+        "🟢 Où en sommes-nous ?",
+        "🕘 Nouveautés",
+        "💬 Messages récents",
+        "❓ Pourquoi cet état ?",
+        "▶️ Reprendre maintenant",
+        "❔ Aide / mode d’emploi",
+        '"bcp:help": "/help"',
+    )
+    assert "🟢 Situation" not in telegram
+    assert "🟢 Situation" not in nexus_worker
+
     assert "allow_paid_broadcast" not in telegram
     assert "allow_paid_broadcast" not in nexus_worker
     assert set(nexus_release["report_exports"]["cached_reports"]) == {
