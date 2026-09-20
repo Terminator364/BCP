@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/1",
+  "schema": "bcp.interactive_work_cadence_policy/2",
   "status": "ACTIVE_DEFAULT",
   "scope": "TECHNICAL_PROJECT_WORK_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 5,
@@ -8,16 +8,34 @@
     7
   ],
   "principles": [
-    "Prefer one bounded, high-value tranche over long silent reasoning/execution.",
-    "Do not stop at 3-4 minutes merely to report unless a true gate or failure requires immediate return.",
-    "Do not extend beyond about 7 minutes merely to chase optional work; checkpoint first.",
-    "Each tranche ends with a durable checkpoint: what changed, evidence/tests, next atomic action, and any real human gate.",
-    "If a blocking verification/tool failure occurs, report it as the gate instead of pretending continued execution.",
-    "Resume from the durable checkpoint on the next Continue invocation."
+    "Perform at least about 5 minutes of useful technical work per normal tranche unless a real human gate, safety hold, tool failure, or completed atomic action makes an earlier return necessary.",
+    "Prefer a 5–6 minute internal work budget; checkpoint before optional work pushes the tranche materially beyond the 5–7 minute user target.",
+    "Do not infer network/UI latency from an unsynchronized manual stopwatch or from ChatGPT's thinking-duration indicator.",
+    "Separate producer time, BCP mirror delay, transport acceptance, and explicit seen acknowledgement whenever evidence exists.",
+    "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
+    "Resume from that durable checkpoint on the next Continue invocation."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-20"
+  "updated_at": "2026-09-20",
+  "target_internal_work_minutes": 5.5,
+  "acceptable_internal_work_window_minutes": [
+    5,
+    6.5
+  ],
+  "user_visible_target_window_minutes": [
+    5,
+    7
+  ],
+  "cutoff_strategy": "CHECKPOINT_BEFORE_OPTIONAL_WORK_ONCE_INTERNAL_WINDOW_IS_SATISFIED",
+  "measurement_truth": {
+    "chatgpt_thinking_indicator": "DIAGNOSTIC_ONLY_NOT_END_TO_END",
+    "manual_stopwatch": "USEFUL_IF_START_AND_STOP_ARE_SYNCHRONIZED",
+    "producer_event_timestamps": "AUTHORITATIVE_FOR_PRODUCER_SIDE_ONLY",
+    "bcp_mirror_timestamp": "AUTHORITATIVE_FOR_LOCAL_MIRROR",
+    "telegram_send_receipt": "AUTHORITATIVE_FOR_TELEGRAM_API_ACCEPTANCE_ONLY",
+    "explicit_seen_ack": "AUTHORITATIVE_FOR_USER_ACK_ONLY"
+  }
 }
