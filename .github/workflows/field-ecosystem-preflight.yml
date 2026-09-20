@@ -91,9 +91,9 @@ jobs:
             $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
             if ($actualSha -ne $expectedSha) { throw ('PINNED_NODE_SHA_MISMATCH actual=' + $actualSha) }
             Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
-            $home = Join-Path $root ('node-v' + $nodeVersion + '-win-x64')
-            $node = Join-Path $home 'node.exe'
-            $npxCli = Join-Path $home 'node_modules\npm\bin\npx-cli.js'
+            $nodeHome = Join-Path $root ('node-v' + $nodeVersion + '-win-x64')
+            $node = Join-Path $nodeHome 'node.exe'
+            $npxCli = Join-Path $nodeHome 'node_modules\npm\bin\npx-cli.js'
             if (-not (Test-Path $node) -or -not (Test-Path $npxCli)) { throw 'PINNED_NODE_LAYOUT_INVALID' }
 
             $env:NPM_CONFIG_CACHE = Join-Path $root 'npm-cache'
