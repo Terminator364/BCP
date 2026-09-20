@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R53",
+  "requirements_revision": "2026-09-20-R54",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 remains device-flow-only. R53 now mirrors the compact primary cockpit, advanced reports/technical submenu, human-first labels, and mail-first delivery guidance across the remote path."
+  "notes": "Nexus 0.2.5 preserves the device-flow-only auth path and R53 human-first controls. R54 keeps remote presentation aligned with Kinshasa-time human reports generated/cached by BCP Telegram V18."
 }
