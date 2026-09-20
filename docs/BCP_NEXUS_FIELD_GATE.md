@@ -117,3 +117,20 @@ PASS requires:
 - no secrets appear in repository, Drive artifacts or logs.
 
 Until these pass, status is IMPLEMENTED_CI_QUALIFIED / FIELD_UNVERIFIED.
+
+
+## R40 device-authorization gate
+
+Cloudflare authorization uses Wrangler OAuth device authorization as the only automatic login path.
+
+Field rules:
+- If the page displays a device code, that code belongs to one bounded authorization attempt.
+- If approval is not completed before expiry, classify the attempt as `HUMAN_AUTH_REQUIRED / CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED`.
+- Never reuse or ask the user to reuse an expired code.
+- The next explicit qualified attempt must generate a fresh device code.
+- Do not automatically run classic `wrangler login` after device flow failure; specifically, do not create a second localhost:8976 callback flow.
+- A browser page saying localhost refused the connection is evidence about the classic callback listener only; it is not proof of device-flow success or failure.
+- Cloudflare authorization becomes PASS only after `wrangler whoami --json` succeeds after the human approval.
+- No API token, Telegram token, chat ID secret or BCP device secret is copied into chat.
+
+This keeps the human gate singular, bounded and explainable.
