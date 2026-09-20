@@ -8,6 +8,6 @@
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V17 preserves V16 and shows evidence-based time decomposition in conversation detail without treating ChatGPT thinking duration as end-to-end latency. R31 does not change Telegram runtime behavior; it aligns the cockpit with the adaptive Nexus human-gate update policy.",
-  "requirements_revision": "2026-09-20-R31"
+  "notes": "Telegram V17 preserves V16 and evidence-based cadence telemetry. R34 preserves Telegram runtime behavior while making its resident update lane independent from the server-manifest lane and exposing bounded transport diagnostics.",
+  "requirements_revision": "2026-09-20-R34"
 }
