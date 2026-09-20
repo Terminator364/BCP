@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R11",
+  "requirements_revision": "2026-09-20-R12",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "8ec2d3469fe88ed28c91965ff74cfd56f8125d375ccd90facc3de511fdb5b8e7",
+      "sha256": "e7c2ba3e838931a71742fe3139513dce0cc12e384706fe1123054e91eae1e852",
       "max_bytes": 300000
     },
     {
@@ -67,5 +67,6 @@
       "/reporttech"
     ],
     "field_verified": false
-  }
+  },
+  "notes": "Adds bounded sanitized Wrangler probe exit/output diagnostics and cause classification while preferring the existing npm cache on constrained Kinshasa links. No manual Node/Wrangler install or secret re-entry."
 }
