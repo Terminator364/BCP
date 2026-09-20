@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R14",
+  "requirements_revision": "2026-09-20-R15",
   "zero_usd": true,
   "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -56,16 +56,19 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-human-cockpit-v6",
+    "version": "2026.09.20-human-cockpit-v7",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
     "features": [
-      "editable live mission card",
-      "inline refresh/current-step/micro-actions/missions/details controls",
-      "concrete numbered micro-action journal from persisted mission evidence",
-      "truthful finite-plan progress bar from persisted mission plan",
-      "expanded human/technical PDF exports",
+      "Automate de suivi BCP human-first live card",
+      "estimated dynamic fine-grained micro-action counter explicitly marked ≈",
+      "separate ecosystem health percentage and mission progress estimate",
+      "adaptive automatic refresh while connected and state-preserving offline/reconnect behavior",
+      "contextual PC, B-EDGE, Drive, Nexus and CI explanations",
+      "hide user-action line when no human intervention is required",
+      "interactive Situation / Où en est-on / Activité fine / Objectif / Technique controls",
+      "four complementary PDF reports: situation, devices/network, mission/micro-actions, technical audit",
       "secret-free worker liveness and callback receive/handle receipts",
       "bounded resident watchdog for genuinely stale companion health",
       "compact low-data presentation",
