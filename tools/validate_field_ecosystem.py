@@ -55,7 +55,7 @@ def main() -> int:
         rdc,
         "home Wi-Fi TCP/443 to Telegram times out on the PC",
         "SELECTIVE_TRANSPORT_FAILOVER",
-        "NEXUS_WEBHOOK",
+        "BCP Nexus HTTPS webhook/relay",
         "OFFLINE_FIRST_QUEUEING",
         "bounded exponential backoff",
         "MOBILE_DATA_IS_SCARCE",
