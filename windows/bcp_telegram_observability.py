@@ -1804,6 +1804,8 @@ class Service:
     def acknowledge_attention(self) -> str:
         snap = self.presence_snapshot().get("snapshot") or {}
         key, level, root = self._attention_key(snap)
+        if level not in {"CRITICAL", "ACTION", "WATCH"}:
+            return "ℹ️ Aucun signal prioritaire n’a besoin d’être acquitté pour le moment."
         atomic_json(ATTENTION_ACK_STATE_PATH, {
             "schema": "bcp.telegram_attention_ack/1",
             "key": key,
@@ -1821,6 +1823,19 @@ class Service:
     def attention_is_acknowledged(self, key: str) -> bool:
         state = read_json(ATTENTION_ACK_STATE_PATH, {}) or {}
         return bool(key) and str(state.get("key") or "") == str(key)
+
+    def clear_attention_ack(self) -> None:
+        try:
+            ATTENTION_ACK_STATE_PATH.unlink(missing_ok=True)
+        except Exception:
+            try:
+                atomic_json(ATTENTION_ACK_STATE_PATH, {
+                    "schema": "bcp.telegram_attention_ack/1",
+                    "key": "",
+                    "cleared_at": utc_now(),
+                })
+            except Exception:
+                pass
 
     def recovery_transition_stable(self, key: str, level: str) -> bool:
         """Damp recovery flapping: require two observations or 60 seconds."""
@@ -2352,6 +2367,8 @@ class Telegram:
         # twice (or remain stable for 60s) before notifying, which damps flapping.
         if recovery and not self.service.recovery_transition_stable(key, level):
             return
+        if recovery:
+            self.service.clear_attention_ack()
 
         acknowledged = self.service.attention_is_acknowledged(key)
         if level in {"CRITICAL", "ACTION"}:
@@ -2681,6 +2698,8 @@ class Nexus:
         recovery = prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}
         if recovery and not self.service.recovery_transition_stable(key, level):
             return
+        if recovery:
+            self.service.clear_attention_ack()
 
         acknowledged = self.service.attention_is_acknowledged(key)
         if level in {"CRITICAL", "ACTION"}:
@@ -3003,7 +3022,8 @@ def selftest() -> int:
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
-        assert "Pris en compte" in svc.acknowledge_attention()
+        ack_text = svc.acknowledge_attention()
+        assert "Pris en compte" in ack_text or "Aucun signal prioritaire" in ack_text
         rich = svc.rich_status_html()
         assert "<table bordered striped compact>" in rich
         assert 'style="success"' in rich or 'style="primary"' in rich or 'style="danger"' in rich
