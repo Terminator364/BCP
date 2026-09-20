@@ -1550,7 +1550,7 @@ class Service:
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
-            "/status — situation actuelle\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "/continue — demander une reprise durable\n/status — situation actuelle\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -1731,6 +1731,7 @@ class Telegram:
 
     def _callback_action(self, data: str) -> tuple[str, str]:
         mapping = {
+            "bcp:continue": ("/continue", "Reprise demandée"),
             "bcp:status": ("/status", "Actualisation"),
             "bcp:where": ("/where", "Position"),
             "bcp:tail": ("/tail", "Micro-actions"),
@@ -2415,6 +2416,7 @@ def selftest() -> int:
         assert HEALTH_PATH.name == "telegram_worker_health.json"
         assert MISSION_WATCHDOG_STATE_PATH.name == "mission_watchdog.json"
         assert "bcp:continue" in json.dumps(Telegram.keyboard(), ensure_ascii=False)
+        assert Telegram._callback_action.__name__ == "_callback_action"
     print("BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS")
     return 0
 
