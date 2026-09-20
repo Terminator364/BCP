@@ -2377,7 +2377,7 @@ def selftest() -> int:
         assert "OÙ EN EST-ON" in svc.where("48273195") and "≈" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
         assert "Missions récentes" in svc.missions() and "OBJECTIF ACTUEL" in svc.objective()
-        assert "Lecture seule" in svc.dispatch("/run")
+        assert "Commandes:" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
         summary_pdf = svc.report_pdf("summary")
