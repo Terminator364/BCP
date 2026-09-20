@@ -3,11 +3,11 @@
   "channel": "stable",
   "version": "2026.09.20-human-cockpit-v7",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "8657a71d83a65d88c187bac5d4bd0e134d16391935ddc721938c5bc9593926fe",
+  "sha256": "8505c7d274dcff9a2a4aaa6e37c8da94c9e40b3945a6a3736df680c56e4e3bd9",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first cockpit V7: interactive Automate de suivi BCP card, approximate dynamic fine-grained micro-action forecast (explicit ≈), human-readable ecosystem health, adaptive automatic refresh with offline/reconnect semantics, contextual hiding of unnecessary user-action prompts, clearer device/Nexus/CI explanations, and four complementary PDF reports: situation, devices/network, mission/micro-actions, technical audit. Preserves V6 liveness/callback receipts and single-poller safeguards.",
+  "notes": "Human-first cockpit V7: Automate de suivi card, explicit ≈ fine-grained micro-action forecast, separate ecosystem health, adaptive automatic refresh, objective/activity views, four complementary PDFs, human PC/B-EDGE/Drive/Nexus/CI explanations, and PC power/RAM display when BCP 0.6.9 telemetry is available. Preserves V6 liveness/callback receipts and single-poller safeguards.",
   "requirements_revision": "2026-09-20-R15"
 }
