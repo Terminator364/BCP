@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.3"
+SERVER_VERSION = "0.7.4"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -42,6 +42,7 @@ MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
 MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
 CONVERSATION_RECEIPT_INBOX = STATE_DIR / "CONVERSATION_RECEIPTS.jsonl"
 CONVERSATION_RECEIPT_CURSOR = STATE_DIR / "conversation_receipt_cursor.json"
+CONVERSATION_RECEIPT_ACK = STATE_DIR / "conversation_receipt_ack.json"
 CONVERSATION_RECEIPT_POLL_SECONDS = 10
 NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json"
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
@@ -1987,6 +1988,21 @@ def ensure_state() -> str:
         ):
             _ensure_sqlite_column(cx, "conversation_messages", col, ddl)
         cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_messages_producer_seq ON conversation_messages(conversation_id,producer_session_id,producer_sequence)")
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS conversation_producers(
+                conversation_id TEXT NOT NULL,
+                producer_session_id TEXT NOT NULL,
+                source_kind TEXT NOT NULL,
+                source_ref TEXT NOT NULL,
+                sequence_floor INTEGER NOT NULL DEFAULT 1,
+                announced_sequence INTEGER NOT NULL DEFAULT 0,
+                last_heartbeat_at TEXT NOT NULL DEFAULT '',
+                last_receipt_at TEXT NOT NULL DEFAULT '',
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY(conversation_id,producer_session_id)
+            )"""
+        )
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_producers_updated ON conversation_producers(updated_at DESC)")
         cx.execute("CREATE INDEX IF NOT EXISTS idx_missions_project_updated ON missions(project_id,updated_at)")
         for col, ddl in (
             ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'UNCLASSIFIED'"),
@@ -2562,8 +2578,162 @@ def conversation_append_message(conversation_id: str, *, alias: str, source_kind
     return {"result": "RECORDED", "conversation_id": cid, "sequence": seq,
             "content_hash": digest, "delivery_state": state}
 
+def conversation_register_producer(conversation_id: str, producer_session_id: str,
+                                   announced_sequence: int, source_kind: str = "BCP_AGENT",
+                                   source_ref: str = "", sequence_floor: int = 1,
+                                   heartbeat_at: str = "") -> dict:
+    cid = str(conversation_id or "").strip()[:64]
+    sid = str(producer_session_id or "").strip()[:120]
+    if not cid or not re.fullmatch(r"[A-Za-z0-9._:-]{1,64}", cid):
+        raise ValueError("invalid_conversation_id")
+    if not sid:
+        raise ValueError("producer_session_id_required")
+    source_kind = str(source_kind or "BCP_AGENT").upper()
+    if source_kind not in CONVERSATION_SOURCE_KINDS:
+        raise ValueError("invalid_conversation_source")
+    try:
+        announced = max(0, int(announced_sequence or 0))
+        floor = max(1, int(sequence_floor or 1))
+    except Exception:
+        raise ValueError("invalid_producer_sequence")
+    if announced and floor > announced:
+        floor = announced
+    now = utc_now()
+    hb = str(heartbeat_at or now)[:64]
+    with db_connection() as cx:
+        old = cx.execute(
+            "SELECT announced_sequence,sequence_floor FROM conversation_producers "
+            "WHERE conversation_id=? AND producer_session_id=?",
+            (cid, sid),
+        ).fetchone()
+        announced = max(announced, int(old["announced_sequence"]) if old else 0)
+        floor = min(floor, int(old["sequence_floor"]) if old else floor)
+        cx.execute(
+            """INSERT INTO conversation_producers(
+                   conversation_id,producer_session_id,source_kind,source_ref,sequence_floor,
+                   announced_sequence,last_heartbeat_at,last_receipt_at,updated_at
+               ) VALUES(?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(conversation_id,producer_session_id) DO UPDATE SET
+                   source_kind=excluded.source_kind,
+                   source_ref=excluded.source_ref,
+                   sequence_floor=MIN(conversation_producers.sequence_floor,excluded.sequence_floor),
+                   announced_sequence=MAX(conversation_producers.announced_sequence,excluded.announced_sequence),
+                   last_heartbeat_at=excluded.last_heartbeat_at,
+                   updated_at=excluded.updated_at""",
+            (cid, sid, source_kind, str(source_ref or "")[:240], floor,
+             announced, hb, "", now),
+        )
+    return {
+        "ok": True, "conversation_id": cid, "producer_session_id": sid,
+        "announced_sequence": announced, "sequence_floor": floor, "heartbeat_at": hb,
+    }
+
+def conversation_touch_producer_receipt(conversation_id: str, producer_session_id: str,
+                                        producer_sequence: int, source_kind: str,
+                                        source_ref: str = "") -> None:
+    if not producer_session_id or int(producer_sequence or 0) <= 0:
+        return
+    cid = str(conversation_id)[:64]
+    sid = str(producer_session_id)[:120]
+    seq = int(producer_sequence)
+    now = utc_now()
+    conversation_register_producer(cid, sid, seq, source_kind, source_ref, seq, now)
+    with db_connection() as cx:
+        cx.execute(
+            "UPDATE conversation_producers SET last_receipt_at=?,updated_at=? "
+            "WHERE conversation_id=? AND producer_session_id=?",
+            (now, now, cid, sid),
+        )
+
+def conversation_producer_sync(conversation_id: str = "") -> list[dict]:
+    params = []
+    where = ""
+    if conversation_id:
+        where = "WHERE conversation_id=?"
+        params.append(str(conversation_id)[:64])
+    with db_connection() as cx:
+        producers = cx.execute(
+            """SELECT conversation_id,producer_session_id,source_kind,source_ref,sequence_floor,
+                      announced_sequence,last_heartbeat_at,last_receipt_at,updated_at
+               FROM conversation_producers """ + where + " ORDER BY updated_at DESC",
+            tuple(params),
+        ).fetchall()
+        messages = cx.execute(
+            """SELECT conversation_id,producer_session_id,producer_sequence
+               FROM conversation_messages
+               WHERE producer_sequence>0 AND producer_session_id<>'' """
+               + ("AND conversation_id=? " if conversation_id else "")
+               + "ORDER BY conversation_id,producer_session_id,producer_sequence",
+            tuple(params),
+        ).fetchall()
+    received = {}
+    for row in messages:
+        key = (row["conversation_id"], row["producer_session_id"])
+        received.setdefault(key, set()).add(int(row["producer_sequence"]))
+    out = []
+    for row in producers:
+        item = dict(row)
+        key = (item["conversation_id"], item["producer_session_id"])
+        seqs = received.get(key, set())
+        floor = max(1, int(item.get("sequence_floor") or 1))
+        announced = max(0, int(item.get("announced_sequence") or 0))
+        cursor = floor
+        while cursor in seqs and cursor <= announced:
+            cursor += 1
+        contiguous = min(announced, cursor - 1) if announced else (cursor - 1)
+        missing = []
+        if announced >= floor:
+            start = None
+            for n in range(floor, announced + 1):
+                if n not in seqs and start is None:
+                    start = n
+                elif n in seqs and start is not None:
+                    missing.append((start, n - 1))
+                    start = None
+            if start is not None:
+                missing.append((start, announced))
+        item.update({
+            "highest_received_sequence": max(seqs) if seqs else 0,
+            "contiguous_received_sequence": contiguous,
+            "missing_count": sum(b - a + 1 for a, b in missing),
+            "missing_ranges": [{"from": a, "to": b} for a, b in missing[:20]],
+            "sync_state": "COMPLETE" if not missing else "INCOMPLETE",
+        })
+        out.append(item)
+    return out
+
+def write_conversation_receipt_ack() -> dict:
+    producers = conversation_producer_sync("")
+    payload = {
+        "schema": "bcp.conversation_receipt_ack/1",
+        "updated_at": utc_now(),
+        "producer_count": len(producers),
+        "producers": producers,
+    }
+    atomic_json(CONVERSATION_RECEIPT_ACK, payload)
+    return payload
+
 def conversation_sequence_gaps(conversation_id: str = "", limit: int = 20) -> list[dict]:
     limit = max(1, min(int(limit), 100))
+    out = []
+    sync = conversation_producer_sync(conversation_id)
+    if sync:
+        for item in sync:
+            for r in item.get("missing_ranges", []):
+                out.append({
+                    "conversation_id": item["conversation_id"],
+                    "producer_session_id": item["producer_session_id"],
+                    "missing_from": int(r["from"]),
+                    "missing_to": int(r["to"]),
+                    "missing_count": int(r["to"]) - int(r["from"]) + 1,
+                    "announced_sequence": int(item.get("announced_sequence") or 0),
+                    "state": "SEQUENCE_GAP",
+                })
+                if len(out) >= limit:
+                    return out
+        return out
+
+    # Compatibility fallback for R25-era receipts that predate producer watermarks.
     params = []
     where = "WHERE producer_sequence>0 AND producer_session_id<>''"
     if conversation_id:
@@ -2580,7 +2750,6 @@ def conversation_sequence_gaps(conversation_id: str = "", limit: int = 20) -> li
     for row in rows:
         key = (row["conversation_id"], row["producer_session_id"])
         groups.setdefault(key, []).append(int(row["producer_sequence"]))
-    out = []
     for (cid, sid), seqs in groups.items():
         unique = sorted(set(x for x in seqs if x > 0))
         if len(unique) < 2:
@@ -2589,12 +2758,9 @@ def conversation_sequence_gaps(conversation_id: str = "", limit: int = 20) -> li
         for cur in unique[1:]:
             if cur > prev + 1:
                 out.append({
-                    "conversation_id": cid,
-                    "producer_session_id": sid,
-                    "missing_from": prev + 1,
-                    "missing_to": cur - 1,
-                    "missing_count": cur - prev - 1,
-                    "state": "SEQUENCE_GAP",
+                    "conversation_id": cid, "producer_session_id": sid,
+                    "missing_from": prev + 1, "missing_to": cur - 1,
+                    "missing_count": cur - prev - 1, "state": "SEQUENCE_GAP",
                 })
                 if len(out) >= limit:
                     return out
@@ -2605,6 +2771,18 @@ def conversation_ingest_receipt(receipt: dict) -> dict:
     if not isinstance(receipt, dict):
         raise ValueError("receipt_must_be_object")
     schema = str(receipt.get("schema") or "")
+    if schema == "bcp.conversation_producer_heartbeat/1":
+        registered = conversation_register_producer(
+            receipt.get("conversation_id"),
+            receipt.get("producer_session_id"),
+            receipt.get("announced_sequence") or 0,
+            receipt.get("source_kind") or "BCP_AGENT",
+            receipt.get("source_ref") or "",
+            receipt.get("sequence_floor") or 1,
+            receipt.get("heartbeat_at") or "",
+        )
+        registered["sequence_gaps"] = conversation_sequence_gaps(str(receipt.get("conversation_id") or ""), 20)
+        return registered
     if schema not in {"bcp.conversation_receipt/1", "bcp.conversation_receipt/2"}:
         raise ValueError("unsupported_receipt_schema")
     result = conversation_append_message(
@@ -2621,6 +2799,13 @@ def conversation_ingest_receipt(receipt: dict) -> dict:
         linked_mission_id=receipt.get("linked_mission_id") or "",
         producer_sequence=receipt.get("producer_sequence") or 0,
         producer_session_id=receipt.get("producer_session_id") or "",
+    )
+    conversation_touch_producer_receipt(
+        receipt.get("conversation_id"),
+        receipt.get("producer_session_id") or "",
+        int(receipt.get("producer_sequence") or 0),
+        receipt.get("source_kind") or "BCP_AGENT",
+        receipt.get("source_ref") or "",
     )
     result["sequence_gaps"] = conversation_sequence_gaps(str(receipt.get("conversation_id") or ""), 20)
     return result
@@ -2664,6 +2849,7 @@ def process_conversation_receipt_inbox(max_lines: int = 64) -> dict:
         "rejected": rejected,
         "updated_at": utc_now(),
     })
+    write_conversation_receipt_ack()
     return {"processed": processed, "accepted": accepted, "rejected": rejected, "offset": offset}
 
 def start_conversation_receipt_worker() -> None:
@@ -3589,6 +3775,17 @@ class Handler(BaseHTTPRequestHandler):
                 "truth_boundary": "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE",
             })
             return
+        if parts == ["v1", "conversations", "producers"]:
+            query = parse_qs(urlparse(self.path).query)
+            cid = str((query.get("conversation_id") or [""])[0])[:64]
+            producers = conversation_producer_sync(cid)
+            self.send_json(200, {
+                "ok": True,
+                "schema": "bcp.conversation_producer_sync/1",
+                "producer_count": len(producers),
+                "producers": producers,
+            })
+            return
         if parts == ["v1", "conversations", "sequence-gaps"]:
             query = parse_qs(urlparse(self.path).query)
             cid = str((query.get("conversation_id") or [""])[0])[:64]
@@ -3605,6 +3802,24 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 limit = 8
             self.send_json(200, {"ok": True, "conversations": conversation_list(limit)})
+            return
+        if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "producer-heartbeat":
+            try:
+                body = self.read_json()
+                receipt = conversation_register_producer(
+                    parts[2],
+                    body.get("producer_session_id"),
+                    body.get("announced_sequence") or 0,
+                    body.get("source_kind") or "BCP_AGENT",
+                    body.get("source_ref") or "",
+                    body.get("sequence_floor") or 1,
+                    body.get("heartbeat_at") or "",
+                )
+                receipt["sequence_gaps"] = conversation_sequence_gaps(parts[2], 20)
+                write_conversation_receipt_ack()
+                self.send_json(200, receipt)
+            except Exception as e:
+                self.send_json(400, {"error": "conversation_producer_heartbeat_failed", "detail": str(e)[:240]})
             return
         if len(parts) == 4 and parts[:2] == ["v1", "conversations"] and parts[3] == "messages":
             query = parse_qs(urlparse(self.path).query)
@@ -3811,7 +4026,17 @@ class Handler(BaseHTTPRequestHandler):
                     evidence_class=body.get("evidence_class") or "EXTERNAL_RECEIPT",
                     generated_at=body.get("generated_at") or "",
                     linked_mission_id=body.get("linked_mission_id") or "",
+                    producer_sequence=body.get("producer_sequence") or 0,
+                    producer_session_id=body.get("producer_session_id") or "",
                 )
+                conversation_touch_producer_receipt(
+                    parts[2], body.get("producer_session_id") or "",
+                    int(body.get("producer_sequence") or 0),
+                    body.get("source_kind") or "BCP_AGENT",
+                    body.get("source_ref") or "",
+                )
+                receipt["sequence_gaps"] = conversation_sequence_gaps(parts[2], 20)
+                write_conversation_receipt_ack()
                 self.send_json(200, receipt)
             except Exception as e:
                 self.send_json(400, {"error": "conversation_message_failed", "detail": str(e)[:240]})
@@ -3967,7 +4192,7 @@ class Handler(BaseHTTPRequestHandler):
 def selftest():
     import tempfile
 
-    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG, CONVERSATION_RECEIPT_INBOX, CONVERSATION_RECEIPT_CURSOR
+    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG, CONVERSATION_RECEIPT_INBOX, CONVERSATION_RECEIPT_CURSOR, CONVERSATION_RECEIPT_ACK
     with tempfile.TemporaryDirectory() as td:
         APP_ROOT = Path(td)
         STATE_DIR = APP_ROOT / "state"
@@ -3980,6 +4205,7 @@ def selftest():
         MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
         CONVERSATION_RECEIPT_INBOX = STATE_DIR / "CONVERSATION_RECEIPTS.jsonl"
         CONVERSATION_RECEIPT_CURSOR = STATE_DIR / "conversation_receipt_cursor.json"
+        CONVERSATION_RECEIPT_ACK = STATE_DIR / "conversation_receipt_ack.json"
         token = ensure_state()
         assert token
         r1 = commit_event(
@@ -4250,6 +4476,20 @@ def selftest():
         receipt_late = process_conversation_receipt_inbox()
         assert receipt_late["accepted"] == 1
         assert conversation_sequence_gaps("bridge-x", 10) == []
+        hb = conversation_register_producer("bridge-x", "session-a", 4, "CHATGPT_PC", "selftest", 1)
+        assert hb["announced_sequence"] == 4
+        tail_gap = conversation_sequence_gaps("bridge-x", 10)
+        assert len(tail_gap) == 1 and tail_gap[0]["missing_from"] == 4 and tail_gap[0]["missing_to"] == 4
+        conversation_ingest_receipt({
+            "schema":"bcp.conversation_receipt/2","conversation_id":"bridge-x","alias":"Bridge X",
+            "source_kind":"CHATGPT_PC","source_ref":"selftest","message_key":"p4","role":"ASSISTANT",
+            "text":"Dernier reçu","delivery_state":"MIRRORED_BCP",
+            "producer_session_id":"session-a","producer_sequence":4
+        })
+        assert conversation_sequence_gaps("bridge-x", 10) == []
+        ack = write_conversation_receipt_ack()
+        assert ack["producer_count"] >= 1
+        assert any(x["sync_state"] == "COMPLETE" for x in ack["producers"])
         with db_connection() as cx:
             old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
             cx.execute("UPDATE conversation_messages SET mirrored_at=?,generated_at=? WHERE conversation_id='chat-main'", (old, old))
