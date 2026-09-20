@@ -113,6 +113,8 @@ jobs:
               "flow_ledger.sqlite3",
               "mode=ro",
               "CHATGPT_PC_FLOW_LEDGER",
+              "conversation_latency_summary",
+              "MEASURED_FROM_DURABLE_RECEIPT_TIMESTAMPS_ONLY",
           ]
           required_edge = [
               "updates",
