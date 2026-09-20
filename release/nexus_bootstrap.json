@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R38",
+  "requirements_revision": "2026-09-20-R40",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "8348fa27e4b3cfd810b93b397c434b264665b473dd22567a5e48b3effe021ae3",
+      "sha256": "6ab1b567a0948f1831146fd9f2b4a61e419bedcc0d7f7db529932119aca56697",
       "max_bytes": 300000
     },
     {
@@ -53,9 +53,11 @@
     "portable_node_path_binding": true,
     "npm_lifecycle_child_node_probe": true,
     "system_node_independent_ci": true,
-    "cloudflare_auth_strategy": "DEVICE_FLOW_FIRST_THEN_BROWSER_FALLBACK",
+    "cloudflare_auth_strategy": "DEVICE_FLOW_ONLY_AUTOMATIC_NO_LOCALHOST_FALLBACK",
     "cloudflare_device_flow": true,
-    "cloudflare_device_flow_min_wrangler": "4.119.0"
+    "cloudflare_device_flow_min_wrangler": "4.119.0",
+    "cloudflare_device_code_bounded_window_minutes": 5,
+    "classic_localhost_fallback_automatic": false
   },
   "live_card": {
     "enabled": true,
@@ -105,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.4 remains the device-flow-first auth bundle. R38 preserves the Cloudflare human gate and records the field-observed classic localhost callback failure separately from device-flow authorization; no auth bypass is introduced."
+  "notes": "Nexus 0.2.5 makes Wrangler OAuth device authorization the sole automatic Cloudflare login path. Device-code expiry/non-completion remains a truthful HUMAN_AUTH_REQUIRED gate and a later explicit attempt generates a fresh code; BCP never silently falls back to localhost:8976. No API token copy or auth bypass is introduced."
 }
