@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R12
+Revision: 2026-09-20-R13
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -875,3 +875,30 @@ Automatic cockpit presence/update remains resident/event-driven BCP/B-EDGE/Nexus
 
 Canonical detailed delta:
 `docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md`.
+
+## P0 — Field-ecosystem preflight before promotion (R13)
+
+This is additive under `SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE`. It converts recurring field incidents into mandatory pre-promotion regression obligations.
+
+Before a BCP/Telegram/B-EDGE/Nexus release may be promoted, CI MUST run a deterministic field-ecosystem preflight shaped around the actual deployment constraints:
+- Windows 11 PC with approximately 4 GB RAM and frequent high memory pressure;
+- serialized/low-memory Android build settings and explicit `PC_MEMORY_PRESSURE` / `WAITING_FOR_PC` behavior;
+- Kinshasa home-Wi-Fi where DNS may resolve while direct Telegram TCP/443 egress times out;
+- selective Nexus HTTPS control-plane fallback without moving bulk traffic to mobile data;
+- intermittent/weak connectivity with bounded retry/backoff, watchdogs, idempotency and offline queueing;
+- Telegram single-receiver discipline so a prior HTTP 409 `getUpdates` conflict cannot be normalized as healthy multi-poller operation;
+- Nexus runtime regression where system `npx`/Wrangler may exit 1 with empty stdout/stderr;
+- automatic pinned portable Node + direct `node.exe -> npx-cli.js` fallback before any human runtime-install gate;
+- zero-dollar, secret-safe, data-saver and unchanged-version-zero-download invariants;
+- exact release version/hash coordination between CURRENT, Windows BCP, B-EDGE and Nexus.
+
+The preflight MUST be network-independent for deterministic regression checks. Real Internet/Cloudflare/Telegram round-trips remain FIELD gates and MUST NOT be fabricated by CI.
+
+A green generic syntax/self-test alone is insufficient when a known field failure mechanism is not exercised. Every newly classified field failure MUST either become an executable regression test or an explicit machine-checkable contract guard before the next promotion.
+
+Canonical implementation:
+- `tools/validate_field_ecosystem.py`
+- `.github/workflows/field-ecosystem-preflight.yml`
+
+Promotion evidence is bound to the exact tested commit SHA and remains subject to the Git writer lease/integration fence.
+
