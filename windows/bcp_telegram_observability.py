@@ -3704,6 +3704,13 @@ def selftest() -> int:
             assert b"/BaseFont /Helvetica-Bold" in pdf
             assert b"/Encoding /WinAnsiEncoding" in pdf
             assert b"Heure affich" in pdf
+            assert b"Page 1/" in pdf
+        glyph_probe = text_pdf_bytes(
+            "BCP RAPPORT TEST",
+            "BCP RAPPORT TEST\n\nSECTION\nCafé déjà prêt à Kinshasa."
+        )
+        assert glyph_probe.count(b"BCP RAPPORT TEST") == 1
+        assert b"Caf\xe9 d\xe9j\xe0 pr\xeat \xe0 Kinshasa." in glyph_probe
         assert "sk-" not in redact_text("key=sk-abcdefghijklmnopqrstuv")
         assert "ghp_" not in redact_text("ghp_123456789012345678901234567890")
         assert "Bearer abcdefghijklmnop" not in redact_text("Authorization: Bearer abcdefghijklmnop")
@@ -3714,10 +3721,24 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack", "bcp:conversations", "bcp:where", "bcp:tail", "bcp:missions",
-            "bcp:quiet:120", "bcp:quiet:off", "bcp:details",
-            "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
+            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack",
+            "bcp:conversations", "bcp:where", "bcp:tail", "bcp:missions",
+            "bcp:quiet:120", "bcp:quiet:off", "bcp:continue", "bcp:help", "bcp:advanced",
         } <= callback_values
+        assert not {
+            "bcp:details", "bcp:pdf:summary", "bcp:pdf:devices",
+            "bcp:pdf:mission", "bcp:pdf:technical",
+        } & callback_values
+        advanced = Telegram.advanced_keyboard()
+        advanced_values = {
+            button.get("callback_data")
+            for row in advanced.get("inline_keyboard", [])
+            for button in row
+        }
+        assert {
+            "bcp:details", "bcp:pdf:summary", "bcp:pdf:devices",
+            "bcp:pdf:mission", "bcp:pdf:technical", "bcp:status",
+        } <= advanced_values
         assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen() and "Kinshasa" in svc.since_last_seen()
