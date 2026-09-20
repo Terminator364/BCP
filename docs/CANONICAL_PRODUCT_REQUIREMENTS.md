@@ -1636,3 +1636,16 @@ The canonical guide is:
 ### Interactive tranche and exact mail mirror
 The active API/BCP work cadence is now 8–10 minutes by user request.
 When email is available, the exact checkpoint body MUST be sent by email before the final ChatGPT checkpoint is surfaced. The email body and ChatGPT final body MUST be textually identical.
+
+Checkpoint delivery order is normative:
+1. EMAIL_EXACT_MIRROR;
+2. CHATGPT_FINAL;
+3. TELEGRAM_WITNESS_OPTIONAL.
+
+A failed email send MUST remain an explicit EMAIL_DELIVERY_HOLD; the system MUST NOT claim that the mail was sent.
+
+### Progressive disclosure
+The normal mobile cockpit MUST NOT expose reports and deep technical diagnostics at the same visual level as orientation and human-action controls.
+The primary keyboard contains only orientation, current-step, resume, acknowledgement, notification and help controls plus one entry point **📚 Rapports & technique**.
+The advanced keyboard contains the four PDF exports, technical details and a clear return control.
+Direct Telegram and Nexus MUST keep this hierarchy semantically identical.
