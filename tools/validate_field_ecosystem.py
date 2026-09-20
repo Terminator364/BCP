@@ -223,8 +223,88 @@ def main() -> int:
         "bcp:conversations",
         "bcp:pdf:devices",
         "bcp:pdf:mission",
-        'version: "0.2.3"',
+        'version: "0.2.6"',
     )
+    # R53 human cockpit: primary labels must be self-explanatory and identical across direct/Nexus.
+    require(
+        telegram,
+        "🟢 Où en sommes-nous ?",
+        "🕘 Nouveautés",
+        "💬 Messages récents",
+        "❓ Pourquoi cet état ?",
+        "📍 Étape actuelle",
+        "🎯 Objectif & plan",
+        "⚙️ Travail récent",
+        "🔭 Risques à venir",
+        "▶️ Reprendre maintenant",
+        "✅ Vu / compris",
+        "❔ Aide / mode d’emploi",
+        "🧰 Détails techniques",
+        "📚 Rapports & technique",
+        "def advanced_keyboard",
+        "bcp:advanced",
+        "réponse(s) ChatGPT sont sauvegardées dans BCP",
+        "mail miroir",
+    )
+    require(
+        nexus_worker,
+        "🟢 Où en sommes-nous ?",
+        "🕘 Nouveautés",
+        "💬 Messages récents",
+        "❓ Pourquoi cet état ?",
+        "▶️ Reprendre maintenant",
+        "❔ Aide / mode d’emploi",
+        "📚 Rapports & technique",
+        "function advancedCockpitKeyboard",
+        "bcp:advanced",
+        '"bcp:help": "/help"',
+    )
+    assert "🟢 Situation" not in telegram
+    assert "🟢 Situation" not in nexus_worker
+
+    # Progressive disclosure regression: PDF/technical controls belong to the secondary menu.
+    telegram_primary = telegram.split("def keyboard() -> dict:", 1)[1].split("def advanced_keyboard() -> dict:", 1)[0]
+    nexus_primary = nexus_worker.split("function cockpitKeyboard()", 1)[1].split("function advancedCockpitKeyboard()", 1)[0]
+    for deep_label in ("📄 Résumé PDF", "🖥️ État appareils", "🧭 Plan mission", "📚 Audit PDF", "🧰 Détails techniques"):
+        assert deep_label not in telegram_primary, ("telegram_primary_leaks_deep_control", deep_label)
+        assert deep_label not in nexus_primary, ("nexus_primary_leaks_deep_control", deep_label)
+    assert "📚 Rapports & technique" in telegram_primary
+    assert "📚 Rapports & technique" in nexus_primary
+
+    # R54 human presentation / PDF parity.
+    require(
+        telegram,
+        "KINSHASA_TZ",
+        "human_timestamp",
+        "/Encoding /WinAnsiEncoding",
+        "/BaseFont /Helvetica-Bold",
+        "Page {page_no}/{total_pages}",
+        "Heure affichée : Kinshasa",
+        "Créé le : ",
+        "ACTION POUR VOUS",
+    )
+    require(
+        nexus_worker,
+        "pdfWinAnsiEscape",
+        "function advancedCockpitKeyboard",
+        "/Encoding /WinAnsiEncoding",
+        "/BaseFont /Helvetica-Bold",
+        "Page ",
+        "Heure affichée : Kinshasa",
+        "%BCP-HUMAN-PDF",
+        "humanTimestampKinshasa",
+        'version: "0.2.6"',
+    )
+    for human_fn_start, human_fn_end in (
+        ("def report_summary", "def report_devices"),
+        ("def report_devices", "def report_mission"),
+        ("def report_mission", "def report_technical"),
+    ):
+        block = telegram.split(human_fn_start, 1)[1].split(human_fn_end, 1)[0]
+        assert "utc_now()" not in block
+        assert "nexus_bootstrap_error_class" not in block
+        assert "mission_id:" not in block
+
     assert "allow_paid_broadcast" not in telegram
     assert "allow_paid_broadcast" not in nexus_worker
     assert set(nexus_release["report_exports"]["cached_reports"]) == {
@@ -263,18 +343,41 @@ def main() -> int:
         "CONVERSATIONS SYNCHRONISÉES",
         "affichage ChatGPT non confirmé",
         "/conversation <ID>",
-        "Réponse potentiellement manquée",
+        "Réponse sauvegardée mais lecture non confirmée",
+        "mail miroir d’abord",
         "delivery_gap_count",
         "Synchronisation incomplète",
         "sequence_gap_count",
         "conversation_producer_sync",
-        "Sync producteur complète",
+        "Synchronisation complète jusqu’au message",
         "announced_sequence",
         "chatgpt_pc_flow_bridge",
-        "Bridge ChatGPT-PC",
+        "Connexion ChatGPT-PC",
         "conversation_latency_summary",
         "Décomposition temporelle",
+        "human_timestamp",
+        "KINSHASA_TZ",
+        "/Encoding /WinAnsiEncoding",
+        "/BaseFont /Helvetica-Bold",
+        "ACTION POUR VOUS",
+        "Heure affichée : Kinshasa",
     )
+
+    # R53 delivery/cadence policy must remain explicit and machine-checkable.
+    cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
+    delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
+    assert cadence_policy["acceptable_window_minutes"] == [8, 10]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [8, 10]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "8-10"
+    assert delivery_policy["channels"]["email"]["body_must_equal_chat_checkpoint_exactly"] is True
+    assert delivery_policy["channels"]["email"]["send_before_chat_checkpoint"] is True
+    assert delivery_policy["checkpoint_delivery_order"] == [
+        "EMAIL_EXACT_MIRROR", "CHATGPT_FINAL", "TELEGRAM_WITNESS_OPTIONAL"
+    ]
+    assert delivery_policy["ui_policy"]["progressive_disclosure_required"] is True
+    guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md")
+    require(guide, "mail miroir exact", "message final ChatGPT", "Telegram comme témoin", "📚 Rapports & technique", "heure de Kinshasa", "Page X/Y", "UTC+1")
+    assert delivery_policy["packaging"]["nested_zip_for_user_action_forbidden"] is True
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]

@@ -1,4 +1,5 @@
 name: BCP Nexus Transport Qualification
+# R54 exact-head qualification fence: human presentation + mail-first + Kinshasa PDF parity
 
 on:
   workflow_dispatch:
@@ -70,7 +71,12 @@ jobs:
           assert "bcp:pdf:summary" in worker
           assert "bcp:pdf:technical" in worker
           assert "reports" in worker
-          assert 'version: "0.2.3"' in worker
+          assert 'version: "0.2.6"' in worker
+          assert "humanTimestampKinshasa" in worker
+          assert "Heure affichée : Kinshasa" in worker
+          assert "/Encoding /WinAnsiEncoding" in worker
+          assert "/BaseFont /Helvetica-Bold" in worker
+          assert "%BCP-HUMAN-PDF" in worker
           assert "live_cards" in worker
           for rich_guard in [
               "sendRichMessage", "rich_message", "RICH_V10", "V9_PLAIN_FALLBACK",

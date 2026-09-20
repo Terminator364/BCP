@@ -5,7 +5,18 @@ function jsonResponse(body, status = 200) {
 }
 
 function nowIso() {
+  // Canonical machine time remains UTC.
   return new Date().toISOString();
+}
+
+function humanTimestampKinshasa(value = null, seconds = true) {
+  const d = value ? new Date(String(value)) : new Date();
+  if (Number.isNaN(d.getTime())) return cleanText(value || "heure non observée", 80);
+  const k = new Date(d.getTime() + 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  const base = pad(k.getUTCDate()) + "/" + pad(k.getUTCMonth() + 1) + "/" + k.getUTCFullYear()
+    + " à " + pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
+  return base + (seconds ? ":" + pad(k.getUTCSeconds()) : "") + " (Kinshasa)";
 }
 
 function cleanText(value, max = 3900) {
@@ -64,38 +75,48 @@ function cockpitKeyboard() {
   return {
     inline_keyboard: [
       [
-        { text: "🟢 Situation", callback_data: "bcp:status" },
-        { text: "🕘 Depuis ma visite", callback_data: "bcp:since" },
+        { text: "🟢 Où en sommes-nous ?", callback_data: "bcp:status" },
+        { text: "🕘 Nouveautés", callback_data: "bcp:since" },
       ],
       [
-        { text: "💬 Conversations", callback_data: "bcp:conversations" },
-        { text: "❓ Pourquoi ?", callback_data: "bcp:why" },
+        { text: "💬 Messages récents", callback_data: "bcp:conversations" },
+        { text: "❓ Pourquoi cet état ?", callback_data: "bcp:why" },
       ],
       [
-        { text: "🔭 Radar", callback_data: "bcp:risks" },
-        { text: "📍 Étape", callback_data: "bcp:where" },
+        { text: "📍 Étape actuelle", callback_data: "bcp:where" },
+        { text: "🎯 Objectif & plan", callback_data: "bcp:missions" },
       ],
       [
-        { text: "⚙️ Activité", callback_data: "bcp:tail" },
-        { text: "🎯 Objectif", callback_data: "bcp:missions" },
+        { text: "⚙️ Travail récent", callback_data: "bcp:tail" },
+        { text: "🔭 Risques à venir", callback_data: "bcp:risks" },
+      ],
+      [{ text: "▶️ Reprendre maintenant", callback_data: "bcp:continue" }],
+      [
+        { text: "✅ Vu / compris", callback_data: "bcp:ack" },
+        { text: "🔕 Pause 2h", callback_data: "bcp:quiet:120" },
+        { text: "🔔 Alertes normales", callback_data: "bcp:quiet:off" },
       ],
       [
-        { text: "▶️ Continuer", callback_data: "bcp:continue" },
+        { text: "❔ Aide / mode d’emploi", callback_data: "bcp:help" },
+        { text: "📚 Rapports & technique", callback_data: "bcp:advanced" },
+      ],
+    ],
+  };
+}
+
+function advancedCockpitKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: "📄 Résumé PDF", callback_data: "bcp:pdf:summary" },
+        { text: "🖥️ État appareils", callback_data: "bcp:pdf:devices" },
       ],
       [
-        { text: "✅ J’ai vu", callback_data: "bcp:ack" },
-        { text: "🔕 Discret 2h", callback_data: "bcp:quiet:120" },
-        { text: "🔔 Normal", callback_data: "bcp:quiet:off" },
+        { text: "🧭 Plan mission", callback_data: "bcp:pdf:mission" },
+        { text: "📚 Audit PDF", callback_data: "bcp:pdf:technical" },
       ],
-      [
-        { text: "📄 Suivi", callback_data: "bcp:pdf:summary" },
-        { text: "🖥️ Appareils", callback_data: "bcp:pdf:devices" },
-      ],
-      [
-        { text: "🧭 Mission", callback_data: "bcp:pdf:mission" },
-        { text: "📚 Audit", callback_data: "bcp:pdf:technical" },
-      ],
-      [{ text: "🧰 Technique", callback_data: "bcp:details" }],
+      [{ text: "🧰 Détails techniques", callback_data: "bcp:details" }],
+      [{ text: "↩️ Retour au cockpit", callback_data: "bcp:status" }],
     ],
   };
 }
@@ -115,22 +136,82 @@ function callbackToCommand(data) {
     "bcp:quiet:120": "/quiet 120",
     "bcp:quiet:off": "/quiet off",
     "bcp:details": "/details",
+    "bcp:help": "/help",
   };
   return map[String(data || "")] || "";
 }
 
-function pdfAscii(value) {
-  return String(value ?? "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[—–]/g, "-")
-    .replace(/→/g, "->")
-    .replace(/←/g, "<-")
-    .replace(/[^\x20-\x7E\n]/g, "?");
+function pdfNormalize(value) {
+  const replacements = new Map([
+    ["—", "-"], ["–", "-"], ["→", "->"], ["←", "<-"], ["•", "*"], ["≈", "~"],
+    ["✅", "[OK]"], ["⚠️", "[!]"], ["⚠", "[!]"], ["🟢", "[OK]"], ["🟡", "[~]"], ["🟠", "[~]"],
+    ["🔴", "[X]"], ["⚪", "[ ]"], ["🤖", "BCP"], ["🎯", "OBJECTIF"], ["📊", "PROGRESSION"],
+    ["➡️", "ENSUITE"], ["➡", "ENSUITE"], ["👤", "VOUS"], ["🕒", "HEURE"], ["⏱️", "AGE"],
+    ["📨", "ENVOI"], ["🌐", "RESEAU"], ["🧪", "TESTS"], ["🔧", "DETAILS"], ["ℹ️", "INFO"],
+    ["💾", "CHECKPOINT"], ["🏁", "TERMINE"], ["📌", "MISSION"], ["🧭", "PLAN"],
+    ["▶️", "DEMARRER"], ["📤", "ENVOYE"], ["📥", "RECU"], ["🔎", "VERIFIER"],
+    ["🔁", "REESSAI"], ["🛑", "BLOQUE"], ["⏹️", "ARRET"], ["🛰️", "BCP"],
+    ["💬", "MESSAGES"], ["❓", "POURQUOI"], ["📍", "ETAPE"], ["⚙️", "TRAVAIL"],
+    ["🔭", "RISQUES"], ["🔕", "PAUSE"], ["🔔", "ALERTES"], ["📄", "RAPPORT"],
+    ["🖥️", "APPAREILS"], ["📚", "AUDIT"], ["🧰", "TECHNIQUE"], ["🕘", "NOUVEAUTES"],
+    ["📈", "PROGRESSION"], ["🎚️", "CONFIANCE"], ["🔵", "[i]"], ["🟣", "[ACTION]"],
+  ]);
+  let text = String(value ?? "").replace(/\r/g, "");
+  for (const [src, dst] of replacements.entries()) text = text.split(src).join(dst);
+  return text;
 }
 
-function pdfEscape(value) {
-  return String(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+function winAnsiByte(ch) {
+  const cp = ch.codePointAt(0);
+  if (cp >= 0x20 && cp <= 0x7e) return cp;
+  if (cp >= 0xa0 && cp <= 0xff) return cp;
+  const extra = new Map([
+    ["€",0x80],["‚",0x82],["ƒ",0x83],["„",0x84],["…",0x85],["†",0x86],["‡",0x87],
+    ["ˆ",0x88],["‰",0x89],["Š",0x8a],["‹",0x8b],["Œ",0x8c],["Ž",0x8e],
+    ["‘",0x91],["’",0x92],["“",0x93],["”",0x94],["•",0x95],["–",0x96],["—",0x97],
+    ["˜",0x98],["™",0x99],["š",0x9a],["›",0x9b],["œ",0x9c],["ž",0x9e],["Ÿ",0x9f],
+  ]);
+  return extra.get(ch) ?? 0x3f;
+}
+
+function pdfWinAnsiEscape(value) {
+  const src = pdfNormalize(value);
+  let out = "";
+  for (const ch of src) {
+    const b = winAnsiByte(ch);
+    if (b === 0x28 || b === 0x29 || b === 0x5c) out += "\\" + String.fromCharCode(b);
+    else if (b < 0x20 || b >= 0x7f) out += "\\" + b.toString(8).padStart(3, "0");
+    else out += String.fromCharCode(b);
+  }
+  return out;
+}
+
+function pdfWrap(value, width) {
+  let text = pdfNormalize(value).trim();
+  if (!text) return [""];
+  const out = [];
+  while (text.length > width) {
+    let cut = text.lastIndexOf(" ", width);
+    if (cut < Math.max(18, Math.floor(width / 3))) cut = width;
+    out.push(text.slice(0, cut).trimEnd());
+    text = text.slice(cut).trimStart();
+  }
+  out.push(text);
+  return out;
+}
+
+function pdfStyle(raw) {
+  const line = String(raw ?? "").trim();
+  if (!line) return ["blank", ""];
+  if (line.startsWith("- ") || line.startsWith("* ")) return ["bullet", line.slice(2).trim()];
+  if (
+    line.length <= 76 &&
+    /[A-Za-zÀ-ÿ]/.test(line) &&
+    line === line.toUpperCase() &&
+    !/^(HTTP|SHA|ID:)/.test(line)
+  ) return ["section", line];
+  if (/^(À RETENIR|ACTION POUR VOUS|CE QUI BLOQUE|CE QUI VA)/.test(line)) return ["section", line];
+  return ["body", line];
 }
 
 function concatBytes(parts) {
@@ -143,42 +224,80 @@ function concatBytes(parts) {
 
 function reportPdfBytes(title, body) {
   const encoder = new TextEncoder();
-  const rawLines = pdfAscii(title + "\n\n" + body).split("\n");
-  const lines = [];
-  for (let raw of rawLines) {
-    if (!raw) { lines.push(""); continue; }
-    while (raw.length > 92) {
-      let cut = raw.lastIndexOf(" ", 92);
-      if (cut < 24) cut = 92;
-      lines.push(raw.slice(0, cut).trimEnd());
-      raw = raw.slice(cut).trimStart();
-    }
-    lines.push(raw);
+  const docTitle = pdfNormalize(cleanText(title, 140));
+  let rawLines = String(body ?? "").replace(/\r/g, "").split("\n");
+
+  // Keep one document title only; cached report bodies may repeat their own title.
+  if (rawLines.length && /^BCP.*RAPPORT/i.test(rawLines[0].trim())) {
+    rawLines = rawLines.slice(1);
+    if (rawLines.length && !rawLines[0].trim()) rawLines = rawLines.slice(1);
   }
-  const perPage = 46;
+
+  const specs = {
+    title:   { font:"F2", size:16, leading:21, width:56, indent:0 },
+    section: { font:"F2", size:11.5, leading:17, width:70, indent:0 },
+    body:    { font:"F1", size:9.5, leading:13, width:82, indent:0 },
+    bullet:  { font:"F1", size:9.5, leading:13, width:78, indent:12 },
+    blank:   { font:"F1", size:9.5, leading:8, width:82, indent:0 },
+  };
+
+  const entries = [["title", docTitle], ["blank", ""]];
+  for (const raw of rawLines) {
+    const [style, value] = pdfStyle(raw);
+    if (style === "blank") { entries.push([style, ""]); continue; }
+    const wrapped = pdfWrap(value, specs[style].width);
+    wrapped.forEach((line, pos) => {
+      entries.push([style, style === "bullet" ? ((pos === 0 ? "* " : "  ") + line) : line]);
+    });
+  }
+
+  const left = 48, top = 792, bottom = 58;
   const pages = [];
-  for (let i = 0; i < Math.max(1, lines.length); i += perPage) pages.push(lines.slice(i, i + perPage));
-  if (!pages.length) pages.push([]);
+  let page = [];
+  let y = top;
+  for (const [style, line] of entries) {
+    const leading = specs[style].leading;
+    const required = leading + (style === "section" ? 13 : 0);
+    if (y - required < bottom) {
+      pages.push(page);
+      page = [];
+      y = top - 18;
+    }
+    page.push([style, line, y]);
+    y -= leading;
+  }
+  if (page.length || !pages.length) pages.push(page);
 
   const objects = [];
   objects.push(encoder.encode("<< /Type /Catalog /Pages 2 0 R >>"));
   objects.push(new Uint8Array());
-  objects.push(encoder.encode("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"));
+  objects.push(encoder.encode("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"));
+  objects.push(encoder.encode("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"));
+
   const pageRefs = [];
-  let nextObj = 4;
-  for (const pageLines of pages) {
+  let nextObj = 5;
+  const totalPages = pages.length;
+  for (let pageNo = 1; pageNo <= totalPages; pageNo++) {
     const pageObj = nextObj++;
     const streamObj = nextObj++;
     pageRefs.push(pageObj);
-    const content = ["BT", "/F1 10 Tf", "48 790 Td", "12 TL"];
-    pageLines.forEach((line, idx) => {
-      if (idx) content.push("T*");
-      content.push("(" + pdfEscape(line) + ") Tj");
-    });
-    content.push("ET");
+    const content = ["BT"];
+    if (pageNo > 1) {
+      content.push("/F2 8 Tf", "1 0 0 1 48 814 Tm", "(" + pdfWinAnsiEscape(docTitle) + ") Tj");
+    }
+    for (const [style, line, lineY] of pages[pageNo - 1]) {
+      const spec = specs[style];
+      content.push(
+        "/" + spec.font + " " + spec.size + " Tf",
+        "1 0 0 1 " + (left + spec.indent) + " " + lineY + " Tm",
+        "(" + pdfWinAnsiEscape(line) + ") Tj"
+      );
+    }
+    const footer = "Page " + pageNo + "/" + totalPages + " - Heure affichée : Kinshasa (UTC+1)";
+    content.push("/F1 7.5 Tf", "1 0 0 1 48 28 Tm", "(" + pdfWinAnsiEscape(footer) + ") Tj", "ET");
     const stream = encoder.encode(content.join("\n"));
     objects.push(encoder.encode(
-      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 3 0 R >> >> /Contents " +
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " +
       streamObj + " 0 R >>"
     ));
     objects.push(concatBytes([
@@ -190,15 +309,13 @@ function reportPdfBytes(title, body) {
   objects[1] = encoder.encode("<< /Type /Pages /Kids [" + pageRefs.map((x) => x + " 0 R").join(" ") +
     "] /Count " + pageRefs.length + " >>");
 
-  const parts = [encoder.encode("%PDF-1.4\n%BCP\n")];
+  const parts = [encoder.encode("%PDF-1.4\n%BCP-HUMAN-PDF\n")];
   const offsets = [0];
   let length = parts[0].length;
   objects.forEach((obj, idx) => {
     offsets.push(length);
     const wrapped = concatBytes([
-      encoder.encode(String(idx + 1) + " 0 obj\n"),
-      obj,
-      encoder.encode("\nendobj\n"),
+      encoder.encode(String(idx + 1) + " 0 obj\n"), obj, encoder.encode("\nendobj\n"),
     ]);
     parts.push(wrapped);
     length += wrapped.length;
@@ -243,13 +360,13 @@ async function sendCachedReportPdf(env, reportKey) {
   const meta = {
     summary: ["BCP - Situation humaine complète", "BCP_1_SITUATION.pdf"],
     devices: ["BCP - Appareils, réseau et transports", "BCP_2_APPAREILS_RESEAU.pdf"],
-    mission: ["BCP - Objectif, étapes et micro-actions", "BCP_3_MISSION_MICRO_ACTIONS.pdf"],
+    mission: ["BCP - Objectif, étapes et progression", "BCP_3_MISSION_PROGRESS.pdf"],
     technical: ["BCP - Dossier technique et audit", "BCP_4_AUDIT_TECHNIQUE.pdf"],
   }[reportKey] || ["BCP - Rapport", "BCP_RAPPORT.pdf"];
   const title = meta[0];
   const filename = meta[1];
   const bytes = reportPdfBytes(title, String(row.body_text));
-  await telegramSendDocument(env, filename, bytes, title + " · " + String(row.updated_at || ""));
+  await telegramSendDocument(env, filename, bytes, title + " · " + humanTimestampKinshasa(row.updated_at, true));
   return true;
 }
 
@@ -287,6 +404,15 @@ async function acceptTelegramWebhook(request, env) {
       });
     } catch (_) {}
 
+    if (data === "bcp:advanced") {
+      await telegramCall(env, "sendMessage", {
+        chat_id: allowedChatId,
+        text: "📚 Rapports & technique\nCes outils sont secondaires : utilisez-les pour approfondir une situation déjà comprise.",
+        reply_markup: advancedCockpitKeyboard(),
+        disable_web_page_preview: true,
+      });
+      return jsonResponse({ ok: true, callback: data, advanced_menu: true });
+    }
     if (data === "bcp:pdf:summary") {
       await sendCachedReportPdf(env, "summary");
       return jsonResponse({ ok: true, callback: data });
@@ -594,7 +720,7 @@ async function health(env) {
   return jsonResponse({
     schema: "bcp.nexus.health/1",
     service: "BCP_NEXUS",
-    version: "0.2.3",
+    version: "0.2.6",
     status: db === "OK" ? "HEALTHY" : "DEGRADED",
     database: db,
     spend_policy: "ZERO_USD",

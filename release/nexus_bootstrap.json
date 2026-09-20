@@ -1,12 +1,12 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R51",
+  "requirements_revision": "2026-09-20-R54",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "73ba5afa81a50d439a22121bf7c89ae70040c69e5535a3d800e4728cf9d5949f",
+      "sha256": "cee0c442efad084bf888418dd641e63acfaace0e40efce770405fe3cf5b4cadd",
       "max_bytes": 500000
     },
     {
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 remains device-flow-only. R51 adds explicit fresh retry semantics at the BCP server: stale HUMAN_AUTH_REQUIRED receipts are archived, a new retry nonce is recorded, and a new device-flow process must be launched. No localhost:8976 fallback or token copy."
+  "notes": "Nexus 0.2.6 reconciles Worker health version with the bundle, preserves device-flow-only Cloudflare auth, and aligns cached PDF delivery with R54 human presentation: readable hierarchy, WinAnsi French glyphs, page numbering and Kinshasa-time captions."
 }

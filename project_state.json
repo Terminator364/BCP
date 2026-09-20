@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R47_BCP_0_7_11_TARGET_BUNDLED_RECOVERY_RUNNER_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R46 merged after field readback proved BCP 0.7.10 active. Pre-Recovery counter-audit found bootstrap-runner skew: BCP 0.7.10 verified the 6.0.34 target ZIP but would launch the older installed recovery runner for the initial transition. R47 implements BCP 0.7.11: after target package SHA verification, it extracts/stages payload/tools/recovery_update_runner.py from that exact target ZIP, enforces exact member/size/UTF-8/syntax and sequence-6034 DriveFS fail-open contracts, performs byte readback/SHA receipt, and launches only the staged target-bundled runner. CURRENT second-pass CI exposed a missing zipfile import in the new staging self-test; import wiring was fixed and the server SHA refreshed. R50 codified the 5–6 minute execution-slice cadence, exact response/email mirroring, manual-first one-shot field rule, and CURRENT folder hygiene as durable project policy.",
-  "next_action": "Qualify exact R47 head across CURRENT, Windows, Android, Nexus, Telegram and Field Ecosystem. If green, serialized merge and post-merge readback. Then field-update BCP once from 0.7.10 to 0.7.11, prove active readback, and invoke Recovery 6.0.34 exactly once.",
+  "status": "R54_HUMAN_PRESENTATION_DEEP_AUDIT_IMPLEMENTED_CI_PENDING",
+  "last_completed_atomic_action": "R54 deep human-presentation audit implemented across Telegram direct and Nexus: user-visible Kinshasa time, human-first reports 1-3, structured technical report, hierarchical dependency-free PDFs, French WinAnsi glyphs, anti-double-title, Page X/Y, Nexus caption localization, and Nexus worker health version reconciliation to 0.2.6. Representative PDF render inspected visually; field-generated PDFs remain unverified. R54 CI counter-audit caught a case-sensitive selftest oracle; it now verifies the required Kinshasa/UTC semantics rather than exact sentence casing. Telegram V18 hash refreshed. R54 selftest now preserves missing-time truth: no Kinshasa timestamp is invented when last-visit time is absent; when a timestamp is present it is localized. Telegram V18 release hash/notes reconciled. Final Telegram V18 source byte hash pinned to e18c4d3e... after the concurrent last-visit truth-test commit. H54-11 closed: normal Messages récents no longer exposes caught up/CHATGPT_UI/COMPLETE as primary human text. Telegram V18 SHA pinned to 04b35117...",
+  "next_action": "Run exact-head R54 CI after final human-state translation; merge only if CURRENT, Telegram, Nexus, Field Ecosystem and Coordinated Product are green on the same head; then field-converge and inspect all four real PDFs.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1886,5 +1886,88 @@
     "replace_current_in_place": true,
     "cleanup_temporary_uploads": true,
     "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH"
+  },
+  "r53_human_cockpit_counter_audit": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R53",
+    "mail_first_order": [
+      "EMAIL_EXACT_MIRROR",
+      "CHATGPT_FINAL",
+      "TELEGRAM_WITNESS_OPTIONAL"
+    ],
+    "primary_cockpit_compact": true,
+    "advanced_reports_menu": true,
+    "direct_nexus_parity": true,
+    "delivery_gap_wording": "SAVED_RESPONSE_READING_NOT_CONFIRMED",
+    "exact_email_chat_body_required": true,
+    "field_verified": false
+  },
+  "r54_human_presentation": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R54",
+    "human_timezone": "Africa/Kinshasa",
+    "machine_time_authority": "UTC_OFFSET_AWARE",
+    "ten_second_comprehension_contract": true,
+    "progressive_disclosure": true,
+    "mail_first_checkpoint_order": [
+      "EMAIL_EXACT_MIRROR",
+      "CHATGPT_FINAL",
+      "TELEGRAM_WITNESS_OPTIONAL"
+    ],
+    "human_reports_hide_raw_internal_ids": true,
+    "local_pdf_renderer": "WINANSI_BOLD_PAGINATED_LIGHTWEIGHT",
+    "nexus_pdf_renderer": "WINANSI_BOLD_PAGINATED_LIGHTWEIGHT",
+    "rendered_visual_field_verification": false
+  },
+  "bcp_r54_human_presentation_audit": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R54",
+    "telegram_target_version": "2026.09.20-cadence-telemetry-v18",
+    "telegram_sha256": "04b35117dcc049ce1426627ccec5af6c5c796a01f95f53d77e6a342514fc39b5",
+    "nexus_target_version": "0.2.6",
+    "nexus_worker_sha256": "cee0c442efad084bf888418dd641e63acfaace0e40efce770405fe3cf5b4cadd",
+    "nexus_manifest_sha256": "ea3cb82755ddcfb3642f123c45d9e5e11debc10dc4b44ed8531ded53daccb5ae",
+    "human_timezone": "Africa/Kinshasa",
+    "canonical_machine_timezone": "UTC",
+    "pdf_visual_audit": {
+      "representative_before_pages": 2,
+      "representative_after_pages": 1,
+      "before_defects": [
+        "DOUBLE_TITLE",
+        "RAW_UTC",
+        "RAW_INTERNAL_FIELD_NAMES",
+        "BROKEN_FRENCH_GLYPHS",
+        "FLAT_TYPOGRAPHY"
+      ],
+      "after_observed": [
+        "SINGLE_TITLE",
+        "KINSHASA_TIME",
+        "HUMAN_LABELS",
+        "FRENCH_GLYPHS_OK",
+        "SECTION_HIERARCHY",
+        "PAGE_FOOTER"
+      ],
+      "field_pdf_verified": false
+    },
+    "defects_closed_in_candidate": [
+      "H54-01_RAW_UTC_VISIBLE",
+      "H54-02_RAW_DEVICE_FIELD_NAMES",
+      "H54-03_RAW_MISSION_FIELDS",
+      "H54-04_RAW_GITHUB_JSON_DUMP",
+      "H54-05_DOUBLE_PDF_TITLE",
+      "H54-06_FLAT_PDF_LAYOUT",
+      "H54-07_FRENCH_GLYPH_ENCODING",
+      "H54-08_DUAL_PDF_RENDERER_DRIFT",
+      "H54-09_NEXUS_PDF_CAPTION_UTC",
+      "H54-10_NEXUS_HEALTH_VERSION_DRIFT",
+      "H54-11_HUMAN_VIEW_INTERNAL_ENGLISH_STATES"
+    ],
+    "docs": [
+      "docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md",
+      "docs/BCP_HUMAN_PRESENTATION_AND_PDF_AUDIT_R54.md",
+      "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+    ],
+    "user_feedback_trigger": "Normal user-facing timestamps/PDFs must be Kinshasa-local and understandable without technical knowledge; ChatGPT mobile desynchronization makes mail-first continuity operationally important.",
+    "next_atomic_action": "Exact-head CI qualification and serialized merge if green."
   }
 }

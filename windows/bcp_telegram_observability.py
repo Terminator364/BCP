@@ -86,7 +86,37 @@ def redact_text(value: Any) -> str:
 
 
 def utc_now() -> str:
+    # Canonical machine timestamp. Durable receipts remain UTC.
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+
+
+KINSHASA_TZ = dt.timezone(dt.timedelta(hours=1), name="Africa/Kinshasa")
+
+
+def _parse_timestamp(value: Any) -> dt.datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return parsed
+    except Exception:
+        return None
+
+
+def human_timestamp(value: Any = None, *, seconds: bool = False) -> str:
+    """Render a timestamp for the human cockpit in Africa/Kinshasa (UTC+1).
+
+    Machine state stays UTC through utc_now(); only presentation is localized.
+    """
+    parsed = _parse_timestamp(value) if value not in (None, "") else dt.datetime.now(dt.timezone.utc)
+    if parsed is None:
+        return clean(value, 80) if "clean" in globals() else str(value or "")
+    local = parsed.astimezone(KINSHASA_TZ)
+    fmt = "%d/%m/%Y à %H:%M:%S" if seconds else "%d/%m/%Y à %H:%M"
+    return local.strftime(fmt) + " (Kinshasa)"
 
 
 def read_json(path: Path, default=None):
@@ -177,67 +207,177 @@ def _pdf_escape(text: str) -> str:
 
 def _pdf_ascii(text: str) -> str:
     replacements = {
-        "—": "-", "–": "-", "→": "->", "←": "<-", "•": "*",
+        "—": "-", "–": "-", "→": "->", "←": "<-", "•": "*", "≈": "~",
         "✅": "[OK]", "⚠️": "[!]", "⚠": "[!]", "🟢": "[OK]", "🟡": "[~]", "🟠": "[~]",
-        "🔴": "[X]", "⚪": "[ ]", "🤖": "BCP", "🎯": "NOW", "📊": "PROGRESS",
-        "➡️": "NEXT", "➡": "NEXT", "👤": "YOU", "🕒": "TIME", "⏱️": "AGE",
-        "📨": "SENT", "🌐": "NEXUS", "🧪": "TESTS", "🔧": "DETAILS", "ℹ️": "INFO",
-        "💾": "CHECKPOINT", "🏁": "DONE", "📌": "MISSION", "🧭": "PLAN",
-        "▶️": "START", "📤": "DISPATCH", "📥": "RESULT", "🔎": "VERIFY",
-        "🔁": "RETRY", "🛑": "BLOCKED", "⏹️": "STOP",
+        "🔴": "[X]", "⚪": "[ ]", "🤖": "BCP", "🎯": "OBJECTIF", "📊": "PROGRESSION",
+        "➡️": "ENSUITE", "➡": "ENSUITE", "👤": "VOUS", "🕒": "HEURE", "⏱️": "AGE",
+        "📨": "ENVOI", "🌐": "RESEAU", "🧪": "TESTS", "🔧": "DETAILS", "ℹ️": "INFO",
+        "💾": "CHECKPOINT", "🏁": "TERMINE", "📌": "MISSION", "🧭": "PLAN",
+        "▶️": "DEMARRER", "📤": "ENVOYE", "📥": "RECU", "🔎": "VERIFIER",
+        "🔁": "REESSAI", "🛑": "BLOQUE", "⏹️": "ARRET", "🛰️": "BCP",
+        "💬": "MESSAGES", "❓": "POURQUOI", "📍": "ETAPE", "⚙️": "TRAVAIL",
+        "🔭": "RISQUES", "🔕": "PAUSE", "🔔": "ALERTES", "📄": "RAPPORT",
+        "🖥️": "APPAREILS", "📚": "AUDIT", "🧰": "TECHNIQUE", "🕘": "NOUVEAUTES",
+        "📈": "PROGRESSION", "🎚️": "CONFIANCE", "🔵": "[i]", "🟣": "[ACTION]",
     }
     for src, dst in replacements.items():
         text = text.replace(src, dst)
     return text.encode("cp1252", errors="replace").decode("cp1252")
 
 
+def _pdf_wrap(text: str, width: int) -> list[str]:
+    value = _pdf_ascii(text).strip()
+    if not value:
+        return [""]
+    out: list[str] = []
+    while len(value) > width:
+        cut = value.rfind(" ", 0, width + 1)
+        if cut < max(18, width // 3):
+            cut = width
+        out.append(value[:cut].rstrip())
+        value = value[cut:].lstrip()
+    out.append(value)
+    return out
+
+
+def _pdf_style(raw: str) -> tuple[str, str]:
+    line = str(raw or "").strip()
+    if not line:
+        return "blank", ""
+    if line.startswith("- ") or line.startswith("* "):
+        return "bullet", line[2:].strip()
+    if (
+        len(line) <= 76
+        and any(ch.isalpha() for ch in line)
+        and line.upper() == line
+        and not line.startswith(("HTTP", "SHA", "ID:"))
+    ):
+        return "section", line
+    if line.startswith(("À RETENIR", "ACTION POUR VOUS", "CE QUI BLOQUE", "CE QUI VA")):
+        return "section", line
+    return "body", line
+
+
 def text_pdf_bytes(title: str, body: str) -> bytes:
-    # Tiny dependency-free PDF for low-data status exports.
-    lines: list[str] = []
-    for raw in (title + "\n\n" + body).splitlines():
-        raw = _pdf_ascii(raw)
-        if not raw:
-            lines.append("")
+    """Dependency-free, low-footprint but human-readable PDF renderer.
+
+    It is intentionally lightweight for the 4 GB Windows target, while adding
+    hierarchy, margins, pagination and Kinshasa-labelled page footers.
+    """
+    doc_title = _pdf_ascii(clean(title, 140))
+    raw_lines = str(body or "").splitlines()
+
+    # Prevent the historical double-title defect when a report body repeats its title.
+    if raw_lines and raw_lines[0].strip().upper().startswith("BCP") and "RAPPORT" in raw_lines[0].upper():
+        raw_lines = raw_lines[1:]
+        if raw_lines and not raw_lines[0].strip():
+            raw_lines = raw_lines[1:]
+
+    specs = {
+        "title": {"font": "F2", "size": 16, "leading": 21, "width": 56, "indent": 0},
+        "section": {"font": "F2", "size": 11.5, "leading": 17, "width": 70, "indent": 0},
+        "body": {"font": "F1", "size": 9.5, "leading": 13, "width": 82, "indent": 0},
+        "bullet": {"font": "F1", "size": 9.5, "leading": 13, "width": 78, "indent": 12},
+        "small": {"font": "F1", "size": 8, "leading": 11, "width": 94, "indent": 0},
+        "blank": {"font": "F1", "size": 9.5, "leading": 8, "width": 82, "indent": 0},
+    }
+
+    entries: list[tuple[str, str]] = [("title", doc_title), ("blank", "")]
+    for raw in raw_lines:
+        style, value = _pdf_style(raw)
+        if style == "blank":
+            entries.append((style, ""))
             continue
-        while len(raw) > 92:
-            cut = raw.rfind(" ", 0, 92)
-            if cut < 24:
-                cut = 92
-            lines.append(raw[:cut].rstrip())
-            raw = raw[cut:].lstrip()
-        lines.append(raw)
-    per_page = 46
-    pages = [lines[i:i + per_page] for i in range(0, max(1, len(lines)), per_page)] or [[]]
+        width = int(specs[style]["width"])
+        wrapped = _pdf_wrap(value, width)
+        for pos, line in enumerate(wrapped):
+            if style == "bullet":
+                entries.append(("bullet", ("• " if pos == 0 else "  ") + line))
+            else:
+                entries.append((style, line))
+
+    page_width, page_height = 595, 842
+    left, top, bottom = 48, 792, 58
+    pages: list[list[tuple[str, str, float]]] = []
+    page: list[tuple[str, str, float]] = []
+    y = float(top)
+
+    for style, line in entries:
+        spec = specs[style]
+        leading = float(spec["leading"])
+        # Avoid section headings stranded at the bottom.
+        required = leading + (13 if style == "section" else 0)
+        if y - required < bottom:
+            pages.append(page)
+            page = []
+            y = float(top - 18)
+        page.append((style, line, y))
+        y -= leading
+    if page or not pages:
+        pages.append(page)
 
     objects: list[bytes] = []
-    # 1 Catalog, 2 Pages, 3 Helvetica font.
     objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
     objects.append(b"")
-    objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
+    objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
+
     page_refs: list[int] = []
-    next_obj = 4
-    for page_lines in pages:
+    next_obj = 5
+    total_pages = len(pages)
+    generated_footer = "Heure affichée : Kinshasa (UTC+1)"
+
+    for page_no, page_lines in enumerate(pages, 1):
         page_obj = next_obj
         stream_obj = next_obj + 1
         next_obj += 2
         page_refs.append(page_obj)
-        content = ["BT", "/F1 10 Tf", "48 790 Td", "12 TL"]
-        for idx, line in enumerate(page_lines):
-            if idx:
-                content.append("T*")
-            content.append("(" + _pdf_escape(line) + ") Tj")
-        content.append("ET")
+
+        content: list[str] = ["BT"]
+        if page_no > 1:
+            content += [
+                "/F2 8 Tf",
+                f"1 0 0 1 {left} 814 Tm",
+                "(" + _pdf_escape(doc_title) + ") Tj",
+            ]
+        for style, line, line_y in page_lines:
+            spec = specs[style]
+            font = str(spec["font"])
+            size = float(spec["size"])
+            indent = float(spec["indent"])
+            text_value = _pdf_ascii(line)
+            content += [
+                f"/{font} {size:g} Tf",
+                f"1 0 0 1 {left + indent:g} {line_y:g} Tm",
+                "(" + _pdf_escape(text_value) + ") Tj",
+            ]
+        footer = f"Page {page_no}/{total_pages} - {generated_footer}"
+        content += [
+            "/F1 7.5 Tf",
+            f"1 0 0 1 {left} 28 Tm",
+            "(" + _pdf_escape(_pdf_ascii(footer)) + ") Tj",
+            "ET",
+        ]
         stream = "\n".join(content).encode("cp1252", errors="replace")
         objects.append(
-            ("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] "
-             "/Resources << /Font << /F1 3 0 R >> >> /Contents " +
-             str(stream_obj) + " 0 R >>").encode("ascii")
+            (
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "
+                + str(page_width) + " " + str(page_height)
+                + "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "
+                + str(stream_obj) + " 0 R >>"
+            ).encode("ascii")
         )
-        objects.append(b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream")
-    kids = " ".join(str(x) + " 0 R" for x in page_refs)
-    objects[1] = ("<< /Type /Pages /Kids [" + kids + "] /Count " + str(len(page_refs)) + " >>").encode("ascii")
+        objects.append(
+            b"<< /Length " + str(len(stream)).encode("ascii")
+            + b" >>\nstream\n" + stream + b"\nendstream"
+        )
 
-    out = bytearray(b"%PDF-1.4\n%BCP\n")
+    kids = " ".join(str(x) + " 0 R" for x in page_refs)
+    objects[1] = (
+        "<< /Type /Pages /Kids [" + kids + "] /Count " + str(len(page_refs)) + " >>"
+    ).encode("ascii")
+
+    out = bytearray(b"%PDF-1.4\n%BCP-HUMAN-PDF\n")
     offsets = [0]
     for i, obj in enumerate(objects, start=1):
         offsets.append(len(out))
@@ -248,8 +388,10 @@ def text_pdf_bytes(title: str, body: str) -> bytes:
     for off in offsets[1:]:
         out.extend(f"{off:010d} 00000 n \n".encode("ascii"))
     out.extend(
-        ("trailer\n<< /Size " + str(len(objects) + 1) + " /Root 1 0 R >>\n"
-         "startxref\n" + str(xref) + "\n%%EOF\n").encode("ascii")
+        (
+            "trailer\n<< /Size " + str(len(objects) + 1) + " /Root 1 0 R >>\n"
+            "startxref\n" + str(xref) + "\n%%EOF\n"
+        ).encode("ascii")
     )
     return bytes(out)
 
@@ -1160,8 +1302,8 @@ class Service:
         if delivery_gaps:
             oldest_gap = max(int(x.get("age_seconds") or 0) for x in delivery_gaps)
             attention_reasons.append(
-                str(len(delivery_gaps)) + " réponse(s) assistant ont un miroir BCP mais aucune preuve de lecture depuis au moins "
-                + self._age_label(oldest_gap) + "."
+                str(len(delivery_gaps)) + " réponse(s) ChatGPT sont sauvegardées dans BCP, mais aucune confirmation de lecture n’a été reçue depuis "
+                + self._age_label(oldest_gap) + ". Si vous les avez déjà lues, utilisez « ✅ Vu / compris »; sinon consultez d’abord le mail miroir, puis « 💬 Messages récents » si nécessaire."
             )
         if human_gate != "AUCUNE":
             attention_reasons.append("Une intervention humaine est explicitement requise par la mission.")
@@ -1245,7 +1387,7 @@ class Service:
         headline = self._attention_label(attention_level)
         headline_detail = {
             "CRITICAL": "Le système nécessite une vérification prioritaire.",
-            "ACTION": "Une étape précise attend votre intervention; le reste est conservé.",
+            "ACTION": "Une action précise vous attend. Tout le reste est sauvegardé; vous pouvez agir sans recommencer le projet.",
             "WATCH": "Le système reste suivi mais un signal mérite attention.",
             "ACTIVE": "Des preuves récentes indiquent que le travail avance.",
             "NORMAL": "Aucun signal prioritaire détecté.",
@@ -1347,19 +1489,23 @@ class Service:
             "<tr><th>Tests</th><td>" + esc(s.get("ci_text") or "", 220) + "</td></tr>"
             "</table></details>"
             "<tg-button-row align=\"center\">"
-            "<tg-button type=\"callback_data\" style=\"" + style + "\" data=\"bcp:status\">Situation</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:since\">Depuis ma visite</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"" + style + "\" data=\"bcp:status\">Où en sommes-nous ?</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:since\">Nouveautés</tg-button>"
             "</tg-button-row>"
             "<tg-button-row align=\"center\">"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:why\">Pourquoi ?</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:risks\">Radar</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:why\">Pourquoi cet état ?</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:risks\">Risques à venir</tg-button>"
             "</tg-button-row>"
             "<tg-button-row align=\"center\">"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:where\">Étape</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Activité</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Continuer</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:where\">Étape actuelle</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Travail récent</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Reprendre maintenant</tg-button>"
             "</tg-button-row>"
-            + ("<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:ack\">✅ J’ai vu</tg-button></tg-button-row>" if level in {"CRITICAL","ACTION","WATCH"} else "") +
+            + ("<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:ack\">✅ Vu / compris</tg-button></tg-button-row>" if level in {"CRITICAL","ACTION","WATCH"} else "") +
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:help\">Aide / mode d’emploi</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:advanced\">Rapports & technique</tg-button>"
+            "</tg-button-row>"
             "<footer>Fallback V9 texte actif si Rich Messages n’est pas disponible.</footer>"
         )
 
@@ -1404,83 +1550,118 @@ class Service:
 
     def report_summary(self) -> str:
         snap = self.presence_snapshot()
+        s = snap.get("snapshot") or {}
+        action = clean(s.get("human_gate") or "AUCUNE", 220)
+        action_text = (
+            "Aucune action nécessaire pour le moment."
+            if action == "AUCUNE"
+            else action.replace("REQUISE — ", "")
+        )
+        forecast = s.get("forecast") or [0, 1, 0]
+        try:
+            done, total, pct = int(forecast[0]), int(forecast[1]), int(forecast[2])
+        except Exception:
+            done, total, pct = 0, 1, 0
         return "\n".join([
-            "BCP — RAPPORT 1/4 — SITUATION HUMAINE COMPLÈTE",
-            "Généré: " + utc_now(),
+            "Créé le : " + human_timestamp(seconds=True),
             "",
-            snap["text"],
+            "À RETENIR",
+            "État : " + self._attention_label(str(s.get("attention_level") or "NORMAL")),
+            clean(s.get("activity") or "Suivi automatique actif.", 240),
             "",
-            "OBJECTIF ET TRAJECTOIRE",
-            self.plan_view(),
+            "OBJECTIF",
+            clean(s.get("objective") or "Faire avancer le projet API/BCP.", 300),
             "",
-            "ACTIVITÉ RÉCENTE",
+            "CE QUI EST DÉJÀ CONFIRMÉ",
+            clean(s.get("last_completed") or "Le dernier point de reprise durable est conservé.", 320),
+            "",
+            "MAINTENANT",
+            clean(s.get("mission_action") or "Synchronisation de la prochaine étape vérifiable.", 320),
+            "",
+            "ENSUITE",
+            clean(s.get("mission_next") or "La prochaine étape sera déterminée à partir des preuves durables.", 320),
+            "",
+            "ACTION POUR VOUS",
+            action_text,
+            "",
+            "SYSTÈME EN BREF",
+            clean(s.get("pc_text") or "PC : état non observé.", 260),
+            clean(s.get("edge_text") or "B-EDGE : état non observé.", 260),
+            clean(s.get("drive_text") or "Drive : état non observé.", 260),
+            "Nexus : ~" + str(int(s.get("nexus_pct") or 0)) + "% - " + clean(s.get("nexus_stage") or "état non observé", 220),
+            "Tests : " + clean(s.get("ci_text") or "état non observé", 260),
+            "",
+            "PROGRESSION",
+            "~" + str(pct) + "% - environ " + str(done) + "/" + str(total) + " micro-actions.",
+            "Cette progression est une estimation de planification. Une étape n'est considérée terminée que lorsqu'une preuve durable la confirme.",
+            "",
+            "TRAVAIL RÉCENT",
             self.tail(),
             "",
-            "MISSIONS",
-            self.missions(),
-            "",
-            "COMMENT LIRE LES POURCENTAGES",
-            "- Le compteur de micro-actions marqué ≈ est une prévision dynamique, pas un nombre promis.",
-            "- Une micro-action est atomique: lire/ouvrir un fichier, vérifier un workflow, lire un log, modifier un fichier, calculer un hash, lancer un test, créer un commit, faire un readback, etc.",
-            "- L'estimation se recalcule quand la mission se précise; elle peut donc augmenter ou diminuer.",
-            "- Les actions confirmées restent distinguées des actions seulement prévues.",
+            "COMMENT LIRE CE RAPPORT",
+            "- Commencez par À RETENIR.",
+            "- Si ACTION POUR VOUS dit qu'aucune action n'est nécessaire, vous pouvez laisser le système continuer.",
+            "- Les détails techniques, IDs, hashes et noms internes sont volontairement placés dans le rapport 4/4.",
         ])
 
     def report_devices(self) -> str:
         runtime = self.local.runtime()
         edge = self.local.edge()
         drive = self.local.drive()
-        gh = self.github.snapshot()
-        keys = [
-            "server_version", "server_pid", "pc_name", "updated_at", "paired",
-            "update_state", "update_target_version", "nexus_bootstrap_state",
-            "nexus_bootstrap_bundle_version", "nexus_bootstrap_exit_code",
-            "nexus_bootstrap_receipt_status", "nexus_bootstrap_error_class",
-            "nexus_bootstrap_error_detail", "nexus_bootstrap_stage",
-            "telegram_companion_state", "telegram_companion_mode",
-            "telegram_companion_pid", "telegram_companion_health_age_seconds",
-            "telegram_companion_last_poll_at", "telegram_companion_last_callback_data",
-            "telegram_companion_last_callback_received_at",
-            "telegram_companion_last_callback_handled_at",
-            "telegram_companion_error_class", "telegram_companion_error_detail",
-            "chatgpt_pc_active_version", "chatgpt_pc_heartbeat_age_seconds",
-            "chatgpt_pc_command_plane", "chatgpt_pc_command_plane_age_seconds",
-            "recovery_phase", "recovery_result_status",
-        ]
-        lines = [
-            "BCP — RAPPORT 2/4 — APPAREILS, RÉSEAU ET TRANSPORTS",
-            "Généré: " + utc_now(),
+        snap = self.presence_snapshot().get("snapshot") or {}
+        telegram_state = str(runtime.get("telegram_companion_state") or "NON OBSERVÉ").replace("_", " ")
+        telegram_mode = str(runtime.get("telegram_companion_mode") or "").replace("_", " ")
+        callback_at = runtime.get("telegram_companion_last_callback_handled_at") or runtime.get("telegram_companion_last_callback_received_at")
+        return "\n".join([
+            "Créé le : " + human_timestamp(seconds=True),
             "",
-            "VUE HUMAINE",
-            self.status(),
+            "À RETENIR",
+            clean(snap.get("pc_text") or "PC : état non observé.", 280),
+            clean(snap.get("edge_text") or "B-EDGE : état non observé.", 280),
+            clean(snap.get("drive_text") or "Drive : état non observé.", 280),
+            "Nexus : ~" + str(int(snap.get("nexus_pct") or 0)) + "% - " + clean(snap.get("nexus_stage") or "état non observé", 220),
+            "Tests : " + clean(snap.get("ci_text") or "état non observé", 260),
             "",
-            "TÉLÉMÉTRIE PC / BCP",
-        ]
-        for key in keys:
-            if key in runtime:
-                lines.append(key + ": " + clean(runtime.get(key), 260))
-        lines += [
+            "PC",
+            "Nom : " + clean(runtime.get("pc_name") or "non observé", 80),
+            "BCP : version " + clean(runtime.get("server_version") or "non observée", 60),
+            "ChatGPT-PC : version " + clean(runtime.get("chatgpt_pc_active_version") or "non observée", 60),
+            "Dernière preuve BCP : " + self._age_label(runtime.get("_age_seconds") if isinstance(runtime.get("_age_seconds"), int) else None),
+            (
+                "Mémoire RAM : " + str(runtime.get("pc_memory_load_percent")) + "% utilisée."
+                if isinstance(runtime.get("pc_memory_load_percent"), int)
+                else "Mémoire RAM : mesure non disponible."
+            ),
+            (
+                "Alimentation : " + ("secteur" if str(runtime.get("pc_power_source") or "").upper() == "AC" else "batterie")
+                + ((" - " + str(runtime.get("pc_battery_percent")) + "%") if isinstance(runtime.get("pc_battery_percent"), int) else "")
+                + "."
+                if str(runtime.get("pc_power_source") or "").upper() in {"AC", "BATTERY"}
+                else "Alimentation : état non observé."
+            ),
             "",
-            "B-EDGE / ANCIEN TÉLÉPHONE",
-            "paired: " + str(bool(edge.get("paired"))),
-            "edge_version: " + clean(edge.get("edge_version") or "", 80),
-            "last_event: " + clean(edge.get("last_event") or "", 120),
-            "event_age_seconds: " + str(edge.get("_age_seconds")),
+            "ANCIEN TÉLÉPHONE B-EDGE",
+            "Appairage : " + ("oui" if edge.get("paired") else "non"),
+            "Version : " + clean(edge.get("edge_version") or "non observée", 80),
+            "Dernière preuve : " + self._age_label(edge.get("_age_seconds") if isinstance(edge.get("_age_seconds"), int) else None),
+            "",
+            "MESSAGES TELEGRAM",
+            "État : " + telegram_state.lower() + ((" - mode " + telegram_mode.lower()) if telegram_mode else ""),
+            (
+                "Dernière action reçue : " + human_timestamp(callback_at, seconds=True)
+                if callback_at else "Dernière action reçue : non observée."
+            ),
             "",
             "DRIVE",
-            "status: " + clean(drive.get("status") or "", 80),
-            "age_seconds: " + str(drive.get("age_seconds")),
+            "Synchronisation : " + ("visible" if str(drive.get("status") or "").upper() == "OBSERVED" else "non confirmée"),
+            "Fraîcheur de la preuve : " + self._age_label(drive.get("age_seconds") if isinstance(drive.get("age_seconds"), int) else None),
             "",
-            "GITHUB / QUALIFICATION",
-            self.ci(),
-            "",
-            "INTERPRÉTATION",
-            "- Direct PC→Telegram est opportuniste; une coupure TCP/443 ne doit pas arrêter BCP.",
-            "- Nexus est le relais distant robuste quand le chemin direct est indisponible.",
-            "- Le mode hors-ligne conserve l'état local; la synchronisation reprend quand une liaison revient.",
-            "- Un poller Telegram unique est obligatoire pour éviter HTTP 409 getUpdates.",
-        ]
-        return "\n".join(lines)
+            "CE QUE CELA SIGNIFIE",
+            "- Une coupure Internet ne doit pas effacer l'état du projet.",
+            "- Si Telegram direct fonctionne mal, Nexus doit devenir le relais distant.",
+            "- Si le PC chauffe ou manque de RAM, les tâches lourdes doivent ralentir ou attendre, pas faire planter Windows.",
+            "- Une donnée ancienne est signalée comme ancienne au lieu d'être présentée comme fraîche.",
+        ])
 
     def report_mission(self) -> str:
         ctx = self._mission_context()
@@ -1489,76 +1670,91 @@ class Service:
             e for e in self.local.mission_events(160)
             if not e.get("project_id") or str(e.get("project_id")) == self.project_id
         ]
+        snap = self.presence_snapshot().get("snapshot") or {}
         forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        action = clean(snap.get("human_gate") or "AUCUNE", 220)
+        action_text = "Aucune action nécessaire." if action == "AUCUNE" else action.replace("REQUISE — ", "")
+        last_progress = mission.get("last_progress_at") or mission.get("updated_at")
         return "\n".join([
-            "BCP — RAPPORT 3/4 — OBJECTIF, ÉTAPES ET MICRO-ACTIONS",
-            "Généré: " + utc_now(),
+            "Créé le : " + human_timestamp(seconds=True),
             "",
-            "MISSION COURANTE",
-            "mission_id: " + clean(mission.get("mission_id") or "synthèse depuis preuves externes", 120),
-            "status: " + clean(mission.get("status") or "suivi actif", 80),
-            "current_step: " + clean(mission.get("current_step") or "", 160),
-            "last_committed_step: " + clean(mission.get("last_committed_step") or "", 160),
-            "next_step: " + clean(mission.get("next_step") or "", 160),
-            "last_progress_at: " + clean(mission.get("last_progress_at") or "", 80),
+            "OBJECTIF",
+            clean(snap.get("objective") or "Faire avancer la mission API/BCP.", 320),
             "",
-            "PRÉVISION DYNAMIQUE DE MICRO-ACTIONS",
-            forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
-            "Le total est volontairement estimatif et peut être recalculé quand de nouvelles sous-actions apparaissent.",
+            "PROGRESSION",
+            "~" + str(forecast["pct"]) + "% - environ " + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions.",
+            "Confiance : " + clean(snap.get("forecast_confidence") or "faible", 60).lower() + ".",
+            (
+                "Dernière progression confirmée : " + human_timestamp(last_progress, seconds=True)
+                if last_progress else "Dernière progression confirmée : heure non observée."
+            ),
             "",
+            "CE QUI EST DÉJÀ CONFIRMÉ",
+            clean(snap.get("last_completed") or "Le dernier checkpoint durable est conservé.", 340),
+            "",
+            "MAINTENANT",
+            clean(snap.get("mission_action") or "Synchronisation de l'étape courante.", 340),
+            "",
+            "ENSUITE",
+            clean(snap.get("mission_next") or "La prochaine étape sera déterminée depuis l'état durable.", 340),
+            "",
+            "ACTION POUR VOUS",
+            action_text,
+            "",
+            "PLAN SIMPLIFIÉ",
             self.plan_view(),
             "",
-            "JOURNAL FIN",
+            "TRAVAIL RÉCENT",
             self.tail(),
             "",
-            "BLOCAGES / ATTENTES",
-            self.holds(),
-            "",
-            "MISSIONS RÉCENTES",
-            self.missions(),
+            "POINTS À SURVEILLER",
+            self.why(),
         ])
 
     def report_technical(self) -> str:
         ctx = self._mission_context()
         mission = (ctx or {}).get("mission") or {}
         head = self._head() or {}
-        gh = self.github.snapshot()
+        runtime = self.local.runtime()
         return "\n".join([
-            "BCP — RAPPORT 4/4 — DOSSIER TECHNIQUE ET AUDIT",
-            "Généré: " + utc_now(),
+            "Créé le : " + human_timestamp(seconds=True),
+            "Note : les heures de cette présentation sont en heure de Kinshasa. Les reçus machine restent conservés en UTC.",
             "",
             "ÉTAT TECHNIQUE",
             self.details(),
             "",
+            "VERSIONS OBSERVÉES",
+            "BCP : " + clean(runtime.get("server_version") or "NOT_OBSERVED", 80),
+            "ChatGPT-PC : " + clean(runtime.get("chatgpt_pc_active_version") or "NOT_OBSERVED", 80),
+            "B-EDGE : " + clean((self.local.edge() or {}).get("edge_version") or "NOT_OBSERVED", 80),
+            "Nexus : " + clean(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED", 120),
+            "Telegram : " + clean(runtime.get("telegram_companion_state") or "NOT_OBSERVED", 120),
+            "",
             "HEAD / CHECKPOINT",
             "revision: " + str(head.get("revision") or ""),
             "status: " + clean(head.get("status") or "", 120),
-            "last_completed_action: " + clean(head.get("last_completed_action") or "", 500),
-            "next_action: " + clean(head.get("next_action") or "", 500),
+            "last_completed_action: " + clean(head.get("last_completed_action") or "", 700),
+            "next_action: " + clean(head.get("next_action") or "", 700),
             "",
-            "MISSION",
+            "MISSION TECHNIQUE",
             "mission_id: " + clean(mission.get("mission_id") or "", 120),
             "worker_component: " + clean(mission.get("worker_component") or "", 120),
-            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "", 500),
-            "hold_reason: " + clean(mission.get("hold_reason") or "", 240),
+            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "", 700),
+            "hold_reason: " + clean(mission.get("hold_reason") or "", 300),
             "",
             "CI / WORKFLOWS",
             self.ci(),
             "",
-            "PLAN ET JOURNAL",
-            self.plan_view(),
+            "DERNIÈRES PREUVES",
             self.tail(),
             "",
             "CONTRAT DE VÉRITÉ",
-            "- micro-actions confirmées = preuves externes/durables;",
-            "- total ≈ = estimation de planification, explicitement non exacte;",
-            "- état des appareils = heartbeat/télémétrie, jamais supposition silencieuse;",
-            "- pas d'accès à la chaîne de pensée privée de ChatGPT;",
-            "- absence de preuve ≠ travail inventé;",
-            "- mutations: writer fence, idempotence, hash/readback avant COMMITTED.",
-            "",
-            "SNAPSHOT GITHUB",
-            clean(json.dumps(gh, ensure_ascii=False, sort_keys=True), 5000),
+            "- Une étape confirmée exige une preuve externe ou durable.",
+            "- Le total ~ est une estimation de planification, jamais une preuve de progression.",
+            "- L'état des appareils vient de la télémétrie; une absence de preuve reste une absence de preuve.",
+            "- Aucun accès à la chaîne de pensée privée de ChatGPT n'est revendiqué.",
+            "- Les mutations utilisent fencing, idempotence et readback avant COMMITTED.",
+            "- Les IDs, hashes et codes ci-dessus sont destinés au diagnostic; les rapports 1 à 3 les masquent volontairement.",
         ])
 
     def report_pdf(self, kind: Any = "summary") -> bytes:
@@ -1568,13 +1764,13 @@ class Service:
             kind = "summary"
         key = str(kind or "summary").lower()
         if key == "devices":
-            body, title = self.report_devices(), "BCP Appareils Reseau et Transports"
+            body, title = self.report_devices(), "BCP - Appareils, réseau et transports"
         elif key == "mission":
-            body, title = self.report_mission(), "BCP Objectif Etapes et Micro-actions"
+            body, title = self.report_mission(), "BCP - Objectif, étapes et progression"
         elif key == "technical":
-            body, title = self.report_technical(), "BCP Dossier technique et audit"
+            body, title = self.report_technical(), "BCP - Dossier technique et audit"
         else:
-            body, title = self.report_summary(), "BCP Situation humaine complete"
+            body, title = self.report_summary(), "BCP - Situation humaine complète"
         return text_pdf_bytes(title, body)
 
     def objective(self) -> str:
@@ -1661,28 +1857,28 @@ class Service:
             )
         return "\n".join([
             "MISSION " + clean(code, 20),
-            "Project: " + clean(rec.get("project_id") or rec.get("project"), 80),
-            "State: " + clean(rec.get("state") or "OBSERVED", 80),
-            "Step: " + clean(rec.get("step_id") or rec.get("kind"), 80),
-            "Last event: " + clean(
-                rec.get("timestamp") or rec.get("updated_at") or rec.get("created_at"), 80
+            "Projet : " + clean(rec.get("project_id") or rec.get("project"), 80),
+            "État : " + clean(rec.get("state") or "OBSERVED", 80).replace("_", " ").lower(),
+            "Étape : " + clean(rec.get("step_id") or rec.get("kind"), 80).replace("_", " "),
+            "Dernier événement : " + human_timestamp(
+                rec.get("timestamp") or rec.get("updated_at") or rec.get("created_at"), seconds=True
             ),
-            "Next safe action: " + clean(
+            "Prochaine action sûre : " + clean(
                 rec.get("next_safe_action") or "read durable mission journal", 160
             ),
-            "Spend: $0.00",
+            "Coût : $0.00",
         ])
 
     def last(self) -> str:
         events = self.local.mission_events(8) or self.local.events(self.project_id, 8)
         if not events:
-            return "LAST EVENTS\nAucun événement durable observé."
-        lines = ["LAST EVENTS"]
+            return "DERNIERS ÉVÉNEMENTS\nAucun événement durable observé."
+        lines = ["DERNIERS ÉVÉNEMENTS"]
         for ev in events[-8:]:
             state = ev.get("state") or ev.get("event_type") or "EVENT"
             ts = ev.get("timestamp") or ev.get("created_at") or ev.get("ts") or ""
             summary = ev.get("action_summary") or ev.get("step_id") or ""
-            lines.append("- " + clean(ts, 35) + " " + clean(state, 45) + " " + clean(summary, 90))
+            lines.append("- " + human_timestamp(ts, seconds=True) + " - " + clean(state, 45).replace("_", " ").lower() + " - " + clean(summary, 90))
         return "\n".join(lines)
 
     def ci(self) -> str:
@@ -1781,7 +1977,7 @@ class Service:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
         forecast = self._micro_forecast(ctx, events, self.github.snapshot())
         lines = [
-            "⚙️ ACTIVITÉ FINE",
+            "⚙️ TRAVAIL RÉCENT",
             "Compteur prévisionnel : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
             "",
             "Micro-actions confirmées récemment :",
@@ -1884,7 +2080,7 @@ class Service:
     def _attention_label(level: str) -> str:
         return {
             "CRITICAL": "🔴 CRITIQUE",
-            "ACTION": "🟣 ACTION REQUISE",
+            "ACTION": "🟣 VOTRE ACTION EST NÉCESSAIRE",
             "WATCH": "🟠 À SURVEILLER",
             "ACTIVE": "🟢 EN COURS",
             "NORMAL": "🔵 STABLE",
@@ -1930,7 +2126,7 @@ class Service:
             recent = events[-12:]
         lines = ["🕘 DEPUIS VOTRE DERNIÈRE VISITE"]
         if since:
-            lines.append("Depuis : " + clean(since, 40))
+            lines.append("Depuis : " + human_timestamp(since, seconds=True))
         if not recent:
             lines += ["", "Aucune nouvelle micro-action durable observée."]
         else:
@@ -2228,9 +2424,19 @@ class Service:
                 "Les conversations apparaissent ici dès qu’un client BCP/ChatGPT-PC/OpenAI API publie un reçu de message durable."
             )
         bridge = self.local.chatgpt_pc_flow_bridge()
-        bridge_state = clean(bridge.get("status") or "NOT_OBSERVED", 32)
+        bridge_state = str(bridge.get("status") or "NOT_OBSERVED").upper()
+        bridge_labels = {
+            "CAUGHT_UP": "à jour",
+            "RUNNING": "synchronisation en cours",
+            "DEGRADED": "dégradée",
+            "HOLD": "en attente",
+            "ERROR": "problème détecté",
+            "NOT_OBSERVED": "non observée",
+        }
         backlog = bridge.get("backlog")
-        bridge_line = "🔗 Bridge ChatGPT-PC: " + bridge_state
+        bridge_line = "🔗 Connexion ChatGPT-PC : " + bridge_labels.get(
+            bridge_state, clean(bridge_state.replace("_", " ").lower(), 48)
+        )
         if isinstance(backlog, int):
             bridge_line += " · attente " + str(backlog)
         lines = [
@@ -2241,13 +2447,19 @@ class Service:
         for pos, thread in enumerate(threads, 1):
             cid = clean(thread.get("conversation_id"), 64)
             alias = clean(thread.get("alias") or cid, 80)
-            source = clean(thread.get("source_kind") or "BCP", 30)
+            raw_source = str(thread.get("source_kind") or "BCP").upper()
+            source = {
+                "CHATGPT_UI": "application ChatGPT",
+                "CHATGPT_PC": "ChatGPT-PC",
+                "OPENAI_API": "API OpenAI",
+                "BCP_AGENT": "BCP",
+            }.get(raw_source, clean(raw_source.replace("_", " ").lower(), 30))
             state = str(thread.get("last_delivery_state") or "")
             gap = gap_by_thread.get(cid)
             lines += ["", str(pos) + ". " + alias + " · " + source,
-                      "   " + self._delivery_label(state) + " · " + clean(thread.get("last_activity_at"), 40)]
+                      "   " + self._delivery_label(state) + " · " + human_timestamp(thread.get("last_activity_at"), seconds=True)]
             if gap:
-                lines.append("   ⚠️ Réponse potentiellement manquée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " sans preuve de lecture")
+                lines.append("   ⚠️ Réponse sauvegardée mais lecture non confirmée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " · mail miroir d’abord, puis Messages récents")
             seq_gap = seq_gap_by_thread.get(cid)
             producer = producer_by_thread.get(cid)
             if seq_gap:
@@ -2257,7 +2469,7 @@ class Service:
                 )
             elif producer:
                 lines.append(
-                    "   🔄 Sync producteur complète jusqu’à #"
+                    "   🔄 Synchronisation complète jusqu’au message #"
                     + str(producer.get("contiguous_received_sequence") or producer.get("announced_sequence") or 0)
                 )
             msgs = self.local.conversation_messages(cid, 2)
@@ -2266,10 +2478,10 @@ class Service:
                 icon = "👤" if role == "USER" else ("🤖" if role == "ASSISTANT" else "⚙️")
                 preview = clean(msg.get("text"), 180)
                 lines.append("   " + icon + " " + preview)
-            lines.append("   ID: " + cid)
+            lines.append("   Référence technique : " + cid)
         lines += [
             "",
-            "🔎 Pour ouvrir davantage : /conversation <ID>",
+            "🔎 Pour plus de détails : utilisez Messages récents; la référence technique ci-dessus sert seulement au dépannage.",
             "ℹ️ « affichage ChatGPT non confirmé » signifie que BCP possède la réponse mais ne possède pas de preuve que l’app ChatGPT de votre téléphone l’a affichée.",
         ]
         return "\n".join(lines)
@@ -2284,7 +2496,7 @@ class Service:
         if not thread and not messages:
             return "Conversation BCP introuvable : " + cid
         alias = clean((thread or {}).get("alias") or cid, 100)
-        lines = ["💬 " + alias, "ID: " + cid]
+        lines = ["💬 " + alias, "Référence dépannage : " + cid]
         for msg in messages:
             role = str(msg.get("role") or "").upper()
             who = "Vous" if role == "USER" else ("Assistant" if role == "ASSISTANT" else role.title())
@@ -2315,7 +2527,10 @@ class Service:
                     + " · session " + clean(item.get("producer_session_id"), 36)
                     + " · reçu #" + str(item.get("contiguous_received_sequence") or 0)
                     + " / annoncé #" + str(item.get("announced_sequence") or 0)
-                    + " · " + clean(item.get("sync_state"), 20)
+                    + " · " + {
+                        "COMPLETE": "complète",
+                        "INCOMPLETE": "incomplète",
+                    }.get(str(item.get("sync_state") or "").upper(), clean(item.get("sync_state") or "état inconnu", 20).lower())
                 )
         seq_gaps = self.local.conversation_sequence_gaps(cid, 10)
         if seq_gaps:
@@ -2334,8 +2549,24 @@ class Service:
 
     def help(self) -> str:
         return (
-            "Automate de suivi BCP — lecture simple\n"
-            "/continue — demander une reprise durable\n/status — situation actuelle\n/conversations — derniers messages synchronisés X/Y/Z\n/conversation <ID> — ouvrir les derniers messages d’une conversation\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/ack — confirmer que vous avez vu le signal courant\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "BCP Cockpit — mode d’emploi rapide\n"
+            "🟢 Où en sommes-nous ? — état général, progression et prochaine étape.\n"
+            "🕘 Nouveautés — uniquement ce qui a changé depuis votre dernière visite.\n"
+            "💬 Messages récents — réponses ChatGPT/BCP synchronisées et leur état de livraison.\n"
+            "❓ Pourquoi cet état ? — raisons observables derrière l’alerte ou le statut.\n"
+            "📍 Étape actuelle — action en cours ou dernière action prouvée.\n"
+            "🎯 Objectif & plan — objectif courant et plan durable.\n"
+            "⚙️ Travail récent — micro-actions et reçus récents.\n"
+            "🔭 Risques à venir — risques prédictifs, séparés des faits confirmés.\n"
+            "▶️ Reprendre maintenant — crée une demande de reprise durable, sans dupliquer le travail déjà terminé.\n"
+            "✅ Vu / compris — confirme que vous avez pris connaissance de l’alerte courante.\n"
+            "🔕 Pause 2h / 🔔 Alertes normales — règle seulement les notifications non critiques.\n"
+            "📚 Rapports & technique — ouvre le niveau secondaire sans surcharger le cockpit principal.\n"
+            "📄 Résumé PDF / 🖥️ État appareils / 🧭 Plan mission / 📚 Audit PDF — rapports téléchargeables.\n"
+            "🧰 Détails techniques — diagnostics GitHub, transport, CI et preuves.\n"
+            "📧 Si ChatGPT mobile est désynchronisé : consultez d’abord le mail miroir exact, puis Messages récents.\n\n"
+            "Commandes équivalentes :\n"
+            "/continue /status /conversations /since /why /risks /ack /quiet 120 /objective /missions /details\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -2417,44 +2648,52 @@ class Telegram:
 
     @staticmethod
     def keyboard() -> dict:
-        # Keep the chat surface compact: orientation first, deep reports last.
+        # Primary surface: orientation + human action only. Deep evidence is one level down.
         return {
             "inline_keyboard": [
                 [
-                    {"text": "🟢 Situation", "callback_data": "bcp:status"},
-                    {"text": "🕘 Depuis ma visite", "callback_data": "bcp:since"},
+                    {"text": "🟢 Où en sommes-nous ?", "callback_data": "bcp:status"},
+                    {"text": "🕘 Nouveautés", "callback_data": "bcp:since"},
                 ],
                 [
-                    {"text": "💬 Conversations", "callback_data": "bcp:conversations"},
-                    {"text": "❓ Pourquoi ?", "callback_data": "bcp:why"},
+                    {"text": "💬 Messages récents", "callback_data": "bcp:conversations"},
+                    {"text": "❓ Pourquoi cet état ?", "callback_data": "bcp:why"},
                 ],
                 [
-                    {"text": "🔭 Radar", "callback_data": "bcp:risks"},
                     {"text": "📍 Étape actuelle", "callback_data": "bcp:where"},
+                    {"text": "🎯 Objectif & plan", "callback_data": "bcp:missions"},
                 ],
                 [
-                    {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
-                    {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
+                    {"text": "⚙️ Travail récent", "callback_data": "bcp:tail"},
+                    {"text": "🔭 Risques à venir", "callback_data": "bcp:risks"},
+                ],
+                [{"text": "▶️ Reprendre maintenant", "callback_data": "bcp:continue"}],
+                [
+                    {"text": "✅ Vu / compris", "callback_data": "bcp:ack"},
+                    {"text": "🔕 Pause 2h", "callback_data": "bcp:quiet:120"},
+                    {"text": "🔔 Alertes normales", "callback_data": "bcp:quiet:off"},
                 ],
                 [
-                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
+                    {"text": "❔ Aide / mode d’emploi", "callback_data": "bcp:help"},
+                    {"text": "📚 Rapports & technique", "callback_data": "bcp:advanced"},
+                ],
+            ]
+        }
+
+    @staticmethod
+    def advanced_keyboard() -> dict:
+        return {
+            "inline_keyboard": [
+                [
+                    {"text": "📄 Résumé PDF", "callback_data": "bcp:pdf:summary"},
+                    {"text": "🖥️ État appareils", "callback_data": "bcp:pdf:devices"},
                 ],
                 [
-                    {"text": "✅ J’ai vu", "callback_data": "bcp:ack"},
-                    {"text": "🔕 Discret 2h", "callback_data": "bcp:quiet:120"},
-                    {"text": "🔔 Normal", "callback_data": "bcp:quiet:off"},
+                    {"text": "🧭 Plan mission", "callback_data": "bcp:pdf:mission"},
+                    {"text": "📚 Audit PDF", "callback_data": "bcp:pdf:technical"},
                 ],
-                [
-                    {"text": "🧰 Technique", "callback_data": "bcp:details"},
-                ],
-                [
-                    {"text": "📄 Suivi", "callback_data": "bcp:pdf:summary"},
-                    {"text": "🖥️ Appareils", "callback_data": "bcp:pdf:devices"},
-                ],
-                [
-                    {"text": "🧭 Mission", "callback_data": "bcp:pdf:mission"},
-                    {"text": "📚 Audit", "callback_data": "bcp:pdf:technical"},
-                ],
+                [{"text": "🧰 Détails techniques", "callback_data": "bcp:details"}],
+                [{"text": "↩️ Retour au cockpit", "callback_data": "bcp:status"}],
             ]
         }
 
@@ -2597,7 +2836,8 @@ class Telegram:
             "bcp:missions": ("/objective", "Objectif"),
             "bcp:quiet:120": ("/quiet 120", "Mode discret 2h"),
             "bcp:quiet:off": ("/quiet off", "Mode normal"),
-            "bcp:details": ("/details", "Détails"),
+            "bcp:details": ("/details", "Détails techniques"),
+            "bcp:help": ("/help", "Mode d’emploi"),
         }
         return mapping.get(data, ("", ""))
 
@@ -2610,6 +2850,15 @@ class Telegram:
         authorized = incoming == self.chat_id and str(chat.get("type") or "") == "private"
         if not authorized:
             self.answer_callback(callback_id, "Non autorisé")
+            return
+        if data == "bcp:advanced":
+            self.answer_callback(callback_id, "Rapports et diagnostics")
+            self.api("sendMessage", {
+                "chat_id": self.chat_id,
+                "text": "📚 Rapports & technique\nCes outils sont secondaires : utilisez-les pour approfondir une situation déjà comprise.",
+                "disable_web_page_preview": True,
+                "reply_markup": self.advanced_keyboard(),
+            }, 20)
             return
         if data == "bcp:pdf:summary":
             self.answer_callback(callback_id, "Rapport 1/4 en préparation…")
@@ -3441,7 +3690,7 @@ def selftest() -> int:
         assert "État global: EN_COURS" in details
         assert "GitHub CI: Windows=SUCCESS [work/test]" in details
         assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
-        assert "48273195" in svc.job("48273195")
+        assert "48273195" in svc.job("48273195") and "Kinshasa" in svc.job("48273195")
         assert "Vérifier le commit de la PR" in svc.tail()
         assert "Lancer le test Windows Bootstrap" in svc.tail()
         assert "OÙ EN EST-ON" in svc.where("48273195") and "≈" in svc.where("48273195")
@@ -3450,6 +3699,20 @@ def selftest() -> int:
         assert "Commandes:" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
+        assert human_timestamp("2026-09-20T21:51:24+00:00", seconds=True) == "20/09/2026 à 22:51:24 (Kinshasa)"
+        summary_text = svc.report_summary()
+        devices_text = svc.report_devices()
+        mission_text = svc.report_mission()
+        technical_text = svc.report_technical()
+        for human_report in (summary_text, devices_text, mission_text):
+            assert "Kinshasa" in human_report
+            assert "+00:00" not in human_report
+            assert "nexus_bootstrap_error_class" not in human_report
+            assert "mission_id:" not in human_report
+        assert "Kinshasa" in technical_text and "reçus machine" in technical_text and "UTC" in technical_text
+        assert "SNAPSHOT GITHUB" not in technical_text
+        assert "TRAVAIL RÉCENT" in summary_text
+        assert "ACTION POUR VOUS" in summary_text
         summary_pdf = svc.report_pdf("summary")
         devices_pdf = svc.report_pdf("devices")
         mission_pdf = svc.report_pdf("mission")
@@ -3457,6 +3720,16 @@ def selftest() -> int:
         for pdf in (summary_pdf, devices_pdf, mission_pdf, technical_pdf):
             assert pdf.startswith(b"%PDF-1.4")
             assert pdf.rstrip().endswith(b"%%EOF")
+            assert b"/BaseFont /Helvetica-Bold" in pdf
+            assert b"/Encoding /WinAnsiEncoding" in pdf
+            assert b"Heure affich" in pdf
+            assert b"Page 1/" in pdf
+        glyph_probe = text_pdf_bytes(
+            "BCP RAPPORT TEST",
+            "BCP RAPPORT TEST\n\nSECTION\nCafé déjà prêt à Kinshasa."
+        )
+        assert glyph_probe.count(b"BCP RAPPORT TEST") == 1
+        assert b"Caf\xe9 d\xe9j\xe0 pr\xeat \xe0 Kinshasa." in glyph_probe
         assert "sk-" not in redact_text("key=sk-abcdefghijklmnopqrstuv")
         assert "ghp_" not in redact_text("ghp_123456789012345678901234567890")
         assert "Bearer abcdefghijklmnop" not in redact_text("Authorization: Bearer abcdefghijklmnop")
@@ -3467,13 +3740,28 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack", "bcp:conversations", "bcp:where", "bcp:tail", "bcp:missions",
-            "bcp:quiet:120", "bcp:quiet:off", "bcp:details",
-            "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
+            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack",
+            "bcp:conversations", "bcp:where", "bcp:tail", "bcp:missions",
+            "bcp:quiet:120", "bcp:quiet:off", "bcp:continue", "bcp:help", "bcp:advanced",
         } <= callback_values
+        assert not {
+            "bcp:details", "bcp:pdf:summary", "bcp:pdf:devices",
+            "bcp:pdf:mission", "bcp:pdf:technical",
+        } & callback_values
+        advanced = Telegram.advanced_keyboard()
+        advanced_values = {
+            button.get("callback_data")
+            for row in advanced.get("inline_keyboard", [])
+            for button in row
+        }
+        assert {
+            "bcp:details", "bcp:pdf:summary", "bcp:pdf:devices",
+            "bcp:pdf:mission", "bcp:pdf:technical", "bcp:status",
+        } <= advanced_values
         assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert "POURQUOI CET ÉTAT" in svc.why()
-        assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
+        since_view = svc.since_last_seen()
+        assert "DEPUIS VOTRE DERNIÈRE VISITE" in since_view and "+00:00" not in since_view
         assert "RADAR" in svc.risk_radar()
         cx = sqlite3.connect(db)
         old_gap = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
@@ -3484,10 +3772,10 @@ def selftest() -> int:
         assert len(gaps) == 1 and gaps[0]["derived_state"] == "DELIVERY_GAP_DETECTED"
         inbox = svc.conversations_inbox()
         assert "CONVERSATIONS SYNCHRONISÉES" in inbox
-        assert "Bridge ChatGPT-PC: CAUGHT_UP" in inbox
+        assert "Connexion ChatGPT-PC : à jour" in inbox
         assert "Conversation principale" in inbox
         assert "affichage ChatGPT non confirmé" in inbox
-        assert "Réponse potentiellement manquée" in inbox
+        assert "Réponse sauvegardée mais lecture non confirmée" in inbox
         assert svc.presence_snapshot()["snapshot"]["delivery_gap_count"] == 1
         cx = sqlite3.connect(db)
         cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at,producer_sequence,producer_session_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (

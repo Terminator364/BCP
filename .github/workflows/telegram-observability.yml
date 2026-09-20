@@ -1,4 +1,5 @@
 name: BCP Telegram Observability Qualification
+# R54 exact-head qualification fence: human presentation + mail-first + Kinshasa PDF parity
 
 on:
   workflow_dispatch:
@@ -101,18 +102,36 @@ jobs:
           assert "conversation_threads" in py
           assert "CHATGPT_UI_DELIVERY_UNKNOWN" in py
           assert "conversation_delivery_gaps" in py
-          assert "Réponse potentiellement manquée" in py
+          assert "Réponse sauvegardée mais lecture non confirmée" in py
           assert "delivery_gap_count" in py
+          assert "📚 Rapports & technique" in py
+          assert "def advanced_keyboard" in py
+          assert "mail miroir d’abord" in py
           assert "conversation_sequence_gaps" in py
           assert "Synchronisation incomplète" in py
           assert "sequence_gap_count" in py
           assert "conversation_producer_sync" in py
-          assert "Sync producteur complète" in py
+          assert "Synchronisation complète jusqu’au message" in py
           assert "announced_sequence" in py
           assert "chatgpt_pc_flow_bridge" in py
-          assert "Bridge ChatGPT-PC" in py
+          assert "Connexion ChatGPT-PC" in py
           assert "conversation_latency_summary" in py
           assert "Décomposition temporelle" in py
+          assert "human_timestamp" in py
+          assert "KINSHASA_TZ" in py
+          assert "/Encoding /WinAnsiEncoding" in py
+          assert "/BaseFont /Helvetica-Bold" in py
+          assert "ACTION POUR VOUS" in py
+          assert "Heure affichée : Kinshasa" in py
+          devices = py.split("def report_devices", 1)[1].split("def report_mission", 1)[0]
+          mission = py.split("def report_mission", 1)[1].split("def report_technical", 1)[0]
+          summary = py.split("def report_summary", 1)[1].split("def report_devices", 1)[0]
+          technical = py.split("def report_technical", 1)[1].split("def report_pdf", 1)[0]
+          for human_block in (summary, devices, mission):
+              assert "utc_now()" not in human_block
+              assert "nexus_bootstrap_error_class" not in human_block
+              assert "mission_id:" not in human_block
+          assert "SNAPSHOT GITHUB" not in technical
           assert "MISSION_RESUME_REQUESTS.jsonl" in py
           assert "watchdog_notice" in py
           assert "WATCHDOG_NOTIFY_STATE_PATH" in py

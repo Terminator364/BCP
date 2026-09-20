@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R51
+Revision: 2026-09-20-R54
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1276,7 +1276,7 @@ The detector:
 
 A delivery gap is therefore evidence of **missing positive delivery/reading proof**, not proof of a ChatGPT failure.
 
-The Telegram Conversations view MUST show a human-readable “Réponse potentiellement manquée” indicator with age when the threshold is crossed.
+The Telegram Conversations view MUST show a human-readable “Réponse sauvegardée mais lecture non confirmée” indicator with age when the threshold is crossed. R53 supersedes the older “Réponse potentiellement manquée” display wording because missing seen evidence is not proof that generation or delivery failed.
 
 Field acceptance additionally requires:
 - no gap before threshold;
@@ -1586,3 +1586,135 @@ A fresh retry MUST be an explicit human-confirmed action and MUST:
 
 The explicit retry endpoint is `/v1/system/nexus/retry-auth` and requires `{"confirm": true}`.
 Ordinary `/v1/system/nexus/apply` remains non-escalating when the current state is already `HUMAN_AUTH_REQUIRED`.
+
+
+## R53 — Human-first Cockpit simplification and user guide
+
+This requirement is additive and preserves prior cockpit, evidence, Nexus, Telegram and mission semantics.
+
+### Human comprehension is a P0 acceptance criterion
+The normal Telegram/API cockpit MUST be understandable without Git, CI, SHA, transport or internal BCP vocabulary.
+
+The primary surface MUST answer in this order:
+1. where are we now;
+2. what changed;
+3. what is the current step;
+4. what happens next;
+5. does the user need to act;
+6. why is the system showing this state.
+
+### Required primary labels
+Direct Telegram and Nexus MUST expose semantically identical controls:
+- 🟢 Où en sommes-nous ?
+- 🕘 Nouveautés
+- 💬 Messages récents
+- ❓ Pourquoi cet état ?
+- 📍 Étape actuelle
+- 🎯 Objectif & plan
+- ⚙️ Travail récent
+- 🔭 Risques à venir
+- ▶️ Reprendre maintenant
+- ✅ Vu / compris
+- 🔕 Pause 2h
+- 🔔 Alertes normales
+- ❔ Aide / mode d’emploi
+
+Deep technical evidence remains behind:
+- 🧰 Détails techniques;
+- the four PDF exports.
+
+### Delivery-gap wording
+A mirrored assistant response with no seen evidence MUST NOT be phrased as if ChatGPT necessarily failed.
+The human-facing explanation must say that BCP has a durable copy but has not received a reading confirmation, and must provide a clear choice:
+- ✅ Vu / compris if already read;
+- 💬 Messages récents or email mirror if not visible in ChatGPT.
+
+### User guide
+The canonical guide is:
+- docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md
+
+### Interactive tranche and exact mail mirror
+The active API/BCP work cadence is now 8–10 minutes by user request.
+When email is available, the exact checkpoint body MUST be sent by email before the final ChatGPT checkpoint is surfaced. The email body and ChatGPT final body MUST be textually identical.
+
+Checkpoint delivery order is normative:
+1. EMAIL_EXACT_MIRROR;
+2. CHATGPT_FINAL;
+3. TELEGRAM_WITNESS_OPTIONAL.
+
+A failed email send MUST remain an explicit EMAIL_DELIVERY_HOLD; the system MUST NOT claim that the mail was sent.
+
+### Progressive disclosure
+The normal mobile cockpit MUST NOT expose reports and deep technical diagnostics at the same visual level as orientation and human-action controls.
+The primary keyboard contains only orientation, current-step, resume, acknowledgement, notification and help controls plus one entry point **📚 Rapports & technique**.
+The advanced keyboard contains the four PDF exports, technical details and a clear return control.
+Direct Telegram and Nexus MUST keep this hierarchy semantically identical.
+
+
+## P0 — Human Presentation, Kinshasa Time & PDF Quality / R54
+
+This requirement is additive and preserves all prior requirements.
+
+### Human-time boundary
+
+BCP MUST distinguish machine time from human presentation time.
+
+- Canonical receipts, hashes, leases, database events and interoperability timestamps remain UTC/offset-aware for deterministic machine processing.
+- Every normal user-facing timestamp in Telegram, Nexus human surfaces, email checkpoints and generated human reports MUST be rendered in **Africa/Kinshasa (UTC+1)**.
+- A human-facing timestamp MUST say that it is Kinshasa time when ambiguity is possible.
+- Raw UTC ISO timestamps may appear only in explicitly technical/debug evidence, and even there the normal reading path SHOULD provide the Kinshasa equivalent.
+- Time conversion MUST NOT mutate the underlying canonical evidence.
+
+### Ten-second comprehension contract
+
+A normal user surface MUST answer, without requiring GitHub/BCP jargon:
+1. Where are we?
+2. What is already confirmed?
+3. What is happening now?
+4. What happens next?
+5. Does the user need to do anything?
+6. Is the information fresh or stale?
+
+The first screen/page SHOULD be understandable by a non-technical reader without knowing SHA, PR, workflow IDs, internal enum names, transport class names or database field names.
+
+Internal labels such as `nexus_bootstrap_error_class`, `mission_id`, `last_committed_step`, `event_age_seconds`, raw enum values and raw JSON MUST NOT be the primary presentation in human reports.
+
+### PDF quality contract
+
+The four PDF reports remain complementary, but their roles are now explicit:
+
+1. **Situation humaine** — decision/orientation first; concise state, objective, confirmed work, current step, next step, human action.
+2. **Appareils, réseau et transports** — human-readable device and connectivity status; raw telemetry field names are hidden.
+3. **Objectif, étapes et progression** — objective, proven progress, current work, next work, user action and points to watch; technical mission IDs are hidden.
+4. **Dossier technique et audit** — versions, checkpoints, IDs and engineering evidence are allowed, but raw multi-kilobyte JSON dumps are replaced by structured summaries.
+
+All PDF outputs MUST:
+- use a single non-duplicated document title;
+- use clear visual hierarchy between title, sections, body and bullets;
+- preserve French accents and punctuation correctly;
+- have bounded margins and no clipped/overlapping text;
+- paginate automatically and display page number;
+- state that displayed human time is Kinshasa time;
+- avoid orphan section headings where practical;
+- remain lightweight enough for the 4 GB Windows target and weak network;
+- preserve a dependency-free fallback path;
+- be visually rendered and inspected in qualification, not merely checked for a valid `%PDF` header.
+
+### Human/technical separation
+
+User-facing views MAY link to a technical view, but MUST NOT force the user to read diagnostic internals to understand normal operation.
+
+The technical report MUST retain enough exact evidence for engineering audit while the human reports translate that evidence into plain language.
+
+### Regression obligations
+
+Qualification MUST include at least:
+- UTC -> Kinshasa conversion fixture;
+- no raw UTC offset in reports 1–3;
+- no raw mission ID / Nexus error-class field in reports 1–3;
+- WinAnsi-compatible French glyph rendering in the dependency-free PDF fallback;
+- bold/section font presence and page footer/page count;
+- rendered-page visual smoke inspection for representative long content;
+- protection against duplicate report titles.
+
+Target presentation revision: **R54**.
