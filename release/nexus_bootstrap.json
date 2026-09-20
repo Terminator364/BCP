@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "0a9171419dd30ca1b400ee60e5c19887e2278a15a885d6948b5bf69f84a9873b",
+      "sha256": "8ec8153cfb90d7ee049a425ec2693e639b9a6a6919662cce62561ecfa032437a",
       "max_bytes": 500000
     },
     {
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 remains device-flow-only. R53 humanizes cockpit labels, adds direct Help/Mode d'emploi, keeps direct/Nexus label parity, and preserves explicit fresh-auth retry without localhost fallback."
+  "notes": "Nexus 0.2.5 remains device-flow-only. R53 now mirrors the compact primary cockpit, advanced reports/technical submenu, human-first labels, and mail-first delivery guidance across the remote path."
 }
