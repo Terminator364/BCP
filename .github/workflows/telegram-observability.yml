@@ -65,7 +65,7 @@ jobs:
           ps = pathlib.Path("windows/CONFIGURE_BCP_TELEGRAM.ps1").read_text(encoding="utf-8")
           joined = py + "\n" + ps
           required = [
-              "/status", "/missions", "/details", "/report", "/reporttech", "/project", "/job", "/tail", "/where", "/last", "/ci", "/holds",
+              "/continue", "/status", "/objective", "/missions", "/details", "/report", "/reporttech", "/project", "/job", "/tail", "/where", "/last", "/ci", "/holds",
               "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
               "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
               "ACCEPTED", "NORMALIZED", "PLANNED", "QUEUED", "STARTED",
@@ -96,6 +96,10 @@ jobs:
           assert "auto_push = $true" in ps
           assert "MISSION_EVENT_LOG" in py
           assert "telegram_presence_state" in py
+          assert "bcp:continue" in py
+          assert "MISSION_RESUME_REQUESTS.jsonl" in py
+          assert "watchdog_notice" in py
+          assert "WATCHDOG_NOTIFY_STATE_PATH" in py
           print("BCP_TELEGRAM_CONTRACT_GUARDS=PASS")
 
   package:
