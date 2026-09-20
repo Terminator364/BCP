@@ -10,7 +10,6 @@ import com.blessing.bcpedge.storage.EdgeMemoryEntity;
 import com.blessing.bcpedge.storage.EdgeProjectEntity;
 import com.blessing.bcpedge.storage.EdgeReceiptEntity;
 import com.blessing.bcpedge.storage.EdgeSentinelEntity;
-import com.blessing.bcpedge.work.EdgeWorkScheduler;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,7 +28,6 @@ public final class EdgeOrchestrator {
         Context app = context.getApplicationContext();
         settings = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         dao = EdgeDatabase.get(app).edgeDao();
-        EdgeWorkScheduler.schedulePeriodic(app);
     }
 
     public synchronized void setMode(String mode) {

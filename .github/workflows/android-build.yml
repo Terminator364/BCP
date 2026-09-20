@@ -6,6 +6,7 @@ on:
     paths:
       - "android-b-edge/**"
       - "release/android.json"
+      - "release/android_candidate.json"
       - "settings.gradle"
       - "build.gradle"
       - "gradle.properties"
@@ -59,7 +60,8 @@ jobs:
           grep -F 'applicationId "com.blessing.bcpedge.evergreen"' "$GRADLE" >/dev/null
           python - <<'PY'
           import json, pathlib
-          ar=json.loads(pathlib.Path('release/android.json').read_text(encoding='utf-8'))
+          manifest=pathlib.Path('release/android_candidate.json') if pathlib.Path('release/android_candidate.json').is_file() else pathlib.Path('release/android.json')
+          ar=json.loads(manifest.read_text(encoding='utf-8'))
           gradle=pathlib.Path('android-b-edge/build.gradle').read_text(encoding='utf-8')
           client=pathlib.Path('android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java').read_text(encoding='utf-8')
           code=int(ar['version_code']); name=str(ar['version_name']); core=name.removesuffix('-evergreen')
@@ -117,8 +119,8 @@ jobs:
           sha256sum "$DEBUG" | tee android-b-edge-debug.apk.sha256
           sha256sum "$RELEASE" | tee android-b-edge-release-unsigned.apk.sha256
           /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$RELEASE" | tee android-b-edge-release.badging.txt
-          EXPECTED_CODE=$(python -c "import json; print(json.load(open('release/android.json'))['version_code'])")
-          EXPECTED_NAME=$(python -c "import json; print(json.load(open('release/android.json'))['version_name'])")
+          EXPECTED_CODE=$(python -c "import json; print(json.load(open('release/android_candidate.json'))['version_code'])")
+          EXPECTED_NAME=$(python -c "import json; print(json.load(open('release/android_candidate.json'))['version_name'])")
           grep -F "package: name='com.blessing.bcpedge.evergreen' versionCode='$EXPECTED_CODE' versionName='$EXPECTED_NAME'" android-b-edge-release.badging.txt >/dev/null
           echo "EDGE_UNSIGNED_RELEASE_CONTRACT=PASS"
 

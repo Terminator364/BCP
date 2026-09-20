@@ -1,0 +1,32 @@
+{
+  "schema": "bcp.android_source_candidate/1",
+  "channel": "ci-candidate",
+  "version_code": 211,
+  "version_name": "2.1.1-rc1-reentry-evergreen",
+  "package_id": "com.blessing.bcpedge.evergreen",
+  "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "minimum_server_version": "0.7.9",
+  "coordinated_server_version": "0.7.9",
+  "requirements_revision": "2026-09-20-R42",
+  "base_distributed_version_code": 210,
+  "base_distributed_version_name": "2.1.0-rc1-sentinel-evergreen",
+  "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
+  "publication_allowed": false,
+  "publication_requirements": [
+    "EXACT_HEAD_CI_GREEN",
+    "NEW_APK_SIGNED_WITH_PINNED_CERTIFICATE",
+    "V2_V3_SIGNATURE_VERIFIED",
+    "APK_SHA256_RECORDED",
+    "DRIVE_CURRENT_REPLACEMENT_READBACK",
+    "IN_PLACE_UPDATE_NO_UNINSTALL"
+  ],
+  "features": [
+    "single authoritative reconciliation scheduler",
+    "legacy WorkManager compatibility shim without scheduling policy",
+    "connected-network constraint for periodic and one-shot work",
+    "bounded exponential WorkManager backoff",
+    "unique KEEP one-shot reconciliation",
+    "process-level validated Wi-Fi return trigger",
+    "15-minute periodic safety net"
+  ]
+}
