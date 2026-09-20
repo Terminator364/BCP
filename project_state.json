@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_NEXUS_0_2_2_TELEGRAM_V11_R22_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R22/V11 notification-budget bug fixed so budget is charged only after successful delivery; Telegram release hash realigned to the exact source.",
-  "next_action": "Re-run exact-head CI for PR #87. Merge only after CURRENT, Telegram, Nexus, coordinated product and field ecosystem preflight all pass on the same head SHA; then start R23 conversation-delivery mirror work.",
+  "status": "BCP_0_7_0_NEXUS_0_2_2_TELEGRAM_V11_R22_MERGED_FIELD_CONVERGENCE_PENDING",
+  "last_completed_atomic_action": "PR #87 Telegram Attention Lifecycle V11 / R22 passed all five exact-head workflows on head 81c2258b116570e6cd768966f15c740298f2370f and merged serially to main at 888f4c73565cc325b27ec3c62593d61d72aeaf17. Immediate Drive readback at 2026-09-20T11:57:39Z confirmed resident BCP 0.7.0 alive/paired, Telegram V10 already COMMITTED, Nexus 0.2.1 still at the genuine Cloudflare HUMAN_AUTH_REQUIRED gate, and the PC healthy enough to continue resident convergence.",
+  "next_action": "Allow the normal resident updater to consume Telegram V11 and Nexus 0.2.2 without manual intervention. On the next explicit continuation, perform a fresh Drive readback. Do not claim V11/0.2.2 field-resident until machine evidence shows them. Cloudflare browser authorization and signed B-EDGE 2.1.0 install remain deferred genuine human gates while the user is away.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -205,12 +205,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-TELEGRAM-V11-R22-ATTENTION-LIFECYCLE-20260920",
-    "status": "CI_PENDING",
-    "last_completed_action": "R22 code, Nexus parity, release manifests and canonical requirement persisted.",
-    "next_atomic_action": "Exact-head CI then serialized merge if green.",
-    "branch": "work/bcp/r22-attention-ack-flap-budget-20260920",
-    "base_main_sha": "eac7db76711877031def7dee82e5493a98c54e5c",
+    "checkpoint_id": "BCP-R22-V11-MERGED-FIELD-CONVERGENCE-PENDING-20260920",
+    "status": "MERGED_FIELD_CONVERGENCE_PENDING",
+    "last_completed_action": "PR #87 merged after exact-head CURRENT/Telegram/Nexus/Coordinated/Field-Ecosystem PASS.",
+    "next_atomic_action": "Fresh Drive runtime readback after resident update cycle.",
+    "branch": "work/bcp/state-r22-merged-field-convergence-20260920",
+    "base_main_sha": "888f4c73565cc325b27ec3c62593d61d72aeaf17",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1487,7 +1487,7 @@
     "nexus_manifest_sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
   },
   "telegram_attention_lifecycle_v11": {
-    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "status": "MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
     "version": "2026.09.20-attention-lifecycle-v11",
     "requirements_revision": "2026-09-20-R22",
     "acknowledgement": true,
@@ -1504,6 +1504,39 @@
     "field_verified": false,
     "episode_scoped_acknowledgement": true,
     "recurrence_after_recovery_notifies": true,
-    "telegram_source_sha256": "0ab488dbf41e6a2eef877b602cfa605d71631d765f160296c0730fdbd3479c78"
+    "telegram_source_sha256": "0ab488dbf41e6a2eef877b602cfa605d71631d765f160296c0730fdbd3479c78",
+    "pr": 87,
+    "exact_head_sha": "81c2258b116570e6cd768966f15c740298f2370f",
+    "merged_main_sha": "888f4c73565cc325b27ec3c62593d61d72aeaf17",
+    "exact_head_ci": {
+      "current_release_contract": 35509191842,
+      "telegram_observability": 35509191839,
+      "nexus_transport": 35509191847,
+      "coordinated_product": 35509191846,
+      "field_ecosystem_preflight": 35509191834,
+      "result": "PASS"
+    }
+  },
+  "latest_field_evidence_r22_merge": {
+    "observed_at_utc": "2026-09-20T11:57:39+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.7.0",
+    "server_pid": 1460,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "update_state": "UP_TO_DATE",
+    "nexus_bootstrap_bundle_version": "0.2.1",
+    "nexus_bootstrap_state": "HUMAN_AUTH_REQUIRED",
+    "nexus_bootstrap_receipt_status": "HUMAN_AUTH_REQUIRED",
+    "telegram_companion_mode": "DIRECT_TELEGRAM",
+    "telegram_companion_state": "DEGRADED_RETRY",
+    "telegram_companion_update_state": "COMMITTED",
+    "telegram_companion_target_version": "2026.09.20-rich-cockpit-v10",
+    "pc_memory_load_percent": 84,
+    "pc_available_memory_mb": 579,
+    "pc_power_source": "AC",
+    "pc_battery_percent": 100,
+    "conclusion": "R22/V11 is merged and CI-qualified; the resident PC had not yet consumed V11/Nexus 0.2.2 at this immediate post-merge heartbeat."
   }
 }
