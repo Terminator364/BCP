@@ -240,7 +240,11 @@ def main() -> int:
         "✅ Vu / compris",
         "❔ Aide / mode d’emploi",
         "🧰 Détails techniques",
+        "📚 Rapports & technique",
+        "def advanced_keyboard",
+        "bcp:advanced",
         "réponse(s) ChatGPT sont sauvegardées dans BCP",
+        "mail miroir",
     )
     require(
         nexus_worker,
@@ -250,10 +254,22 @@ def main() -> int:
         "❓ Pourquoi cet état ?",
         "▶️ Reprendre maintenant",
         "❔ Aide / mode d’emploi",
+        "📚 Rapports & technique",
+        "function advancedCockpitKeyboard",
+        "bcp:advanced",
         '"bcp:help": "/help"',
     )
     assert "🟢 Situation" not in telegram
     assert "🟢 Situation" not in nexus_worker
+
+    # Progressive disclosure regression: PDF/technical controls belong to the secondary menu.
+    telegram_primary = telegram.split("def keyboard() -> dict:", 1)[1].split("def advanced_keyboard() -> dict:", 1)[0]
+    nexus_primary = nexus_worker.split("function cockpitKeyboard()", 1)[1].split("function advancedCockpitKeyboard()", 1)[0]
+    for deep_label in ("📄 Résumé PDF", "🖥️ État appareils", "🧭 Plan mission", "📚 Audit PDF", "🧰 Détails techniques"):
+        assert deep_label not in telegram_primary, ("telegram_primary_leaks_deep_control", deep_label)
+        assert deep_label not in nexus_primary, ("nexus_primary_leaks_deep_control", deep_label)
+    assert "📚 Rapports & technique" in telegram_primary
+    assert "📚 Rapports & technique" in nexus_primary
 
     assert "allow_paid_broadcast" not in telegram
     assert "allow_paid_broadcast" not in nexus_worker
@@ -293,7 +309,8 @@ def main() -> int:
         "CONVERSATIONS SYNCHRONISÉES",
         "affichage ChatGPT non confirmé",
         "/conversation <ID>",
-        "Réponse potentiellement manquée",
+        "Réponse sauvegardée mais lecture non confirmée",
+        "mail miroir d’abord",
         "delivery_gap_count",
         "Synchronisation incomplète",
         "sequence_gap_count",
@@ -314,6 +331,12 @@ def main() -> int:
     assert delivery_policy["cadence"]["work_slice_minutes"] == "8-10"
     assert delivery_policy["channels"]["email"]["body_must_equal_chat_checkpoint_exactly"] is True
     assert delivery_policy["channels"]["email"]["send_before_chat_checkpoint"] is True
+    assert delivery_policy["checkpoint_delivery_order"] == [
+        "EMAIL_EXACT_MIRROR", "CHATGPT_FINAL", "TELEGRAM_WITNESS_OPTIONAL"
+    ]
+    assert delivery_policy["ui_policy"]["progressive_disclosure_required"] is True
+    guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md")
+    require(guide, "mail miroir exact", "d’abord le mail miroir exact", "📚 Rapports & technique")
     assert delivery_policy["packaging"]["nested_zip_for_user_action_forbidden"] is True
 
     # Release coordination remains explicit.
