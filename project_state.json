@@ -73,7 +73,8 @@
     "telegram_human_cockpit_v7": "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
     "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
     "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
-    "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md"
+    "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
+    "telegram_attention_lifecycle_v11": "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -133,7 +134,8 @@
     "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
     "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
     "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md",
-    "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md"
+    "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
+    "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -170,7 +172,10 @@
     "P0_predictive_risk_radar": true,
     "P0_rich_cockpit_with_plain_fallback": true,
     "P0_direct_nexus_ui_parity": true,
-    "P0_nexus_four_report_parity": true
+    "P0_nexus_four_report_parity": true,
+    "P0_attention_acknowledgement": true,
+    "P0_notification_flap_damping": true,
+    "P0_notification_budget": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
