@@ -3,7 +3,7 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R43_DRIVEFS_MIRROR_FAILOPEN_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R43 rebased on fully qualified R42. BCP 0.7.10 makes provider-synchronised telemetry mirroring fail-open: local recovery/update truth remains authoritative; DriveFS mirror errors persist locally as CLOUD_MIRROR_HOLD and cannot convert a completed local transaction into API failure.",
+  "last_completed_atomic_action": "R43 rebased on fully qualified R42. BCP 0.7.10 makes provider-synchronised telemetry mirroring fail-open: local recovery/update truth remains authoritative; DriveFS mirror errors persist locally as CLOUD_MIRROR_HOLD and cannot convert a completed local transaction into API failure. First R43 CURRENT pass correctly rejected stale Nexus manifest hash after requirements-revision metadata changed; CURRENT was refreshed to SHA-256 922b639e… without changing Nexus code.",
   "next_action": "Run exact-head R43 CI. If green, re-read main and merge only if fence remains valid. Cloudflare authorization stays deferred as the human gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
