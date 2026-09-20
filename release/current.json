@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "9d6d9c47d2985a6c7db4fda47b4dc42e2e951165ad9e32ac04b3a2806fd5d286"
+        "sha256": "c5e471b54b039deb4e1fc494fe2900df2007ee67e90e7b6d8cc513d2ad591a92"
       },
-      "notes": "Nexus 0.1.9 replaces ephemeral npx package execution with a persistent app-owned Wrangler package installed by the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. The exact pinned Node archive, npm install, and direct Wrangler execution are exercised on Windows CI. No manual runtime install, secret re-entry, PowerShell, ZIP shuttle, or paid service."
+      "notes": "Nexus 0.1.9 replaces ephemeral npx execution with a persistent app-owned Wrangler package installed by the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. Windows PowerShell 5.1 native stderr is captured as data so ordinary npm/Wrangler warnings do not become false terminating errors. Exact pinned Node archive, npm install and direct Wrangler execution are exercised on Windows CI. No manual runtime install, secret re-entry, PowerShell, ZIP shuttle, or paid service."
     }
   },
   "telegram_cockpit": {
