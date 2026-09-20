@@ -365,7 +365,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","MANAGED_NODE_PATH_BINDING_FAILED","MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","MANAGED_NODE_PATH_BINDING_FAILED","MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK","BCP_NEXUS_AUTH_DEVICE_FLOW","--device")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
@@ -467,9 +467,18 @@ if (-not $runtimeReady) {
 $who = Invoke-Wrangler $launcher @("whoami","--json") -AllowFailure
 if ($who.ExitCode -ne 0) {
     Write-Host "BCP_NEXUS_HUMAN_GATE=CLOUDFLARE_LOGIN_REQUIRED"
-    Write-Host "One-time human gate: your browser will open for Cloudflare authorization."
-    Write-Host "No Telegram token, chat ID, or device secret must be copied into chat."
-    $login = Invoke-Wrangler $launcher @("login") -AllowFailure
+    Write-Host "One-time human gate: Cloudflare authorization is required."
+    Write-Host "BCP will prefer the OAuth device flow so no localhost callback or copied API token is required."
+    Write-Host "No Telegram token, chat ID, device secret, or Cloudflare API token must be copied into chat."
+
+    $login = Invoke-Wrangler $launcher @("login","--device") -AllowFailure
+    if ($login.ExitCode -ne 0) {
+        Write-Host "BCP_NEXUS_AUTH_DEVICE_FLOW=DEFERRED_FALLBACK_BROWSER"
+        $login = Invoke-Wrangler $launcher @("login") -AllowFailure
+    } else {
+        Write-Host "BCP_NEXUS_AUTH_DEVICE_FLOW=PASS"
+    }
+
     if ($login.ExitCode -ne 0) {
         throw "CLOUDFLARE_BROWSER_AUTHORIZATION_FAILED_OR_CANCELLED"
     }
