@@ -991,60 +991,178 @@ class Service:
         ])
 
     def report_summary(self) -> str:
+        snap = self.presence_snapshot()
         return "\n".join([
-            "BCP — Rapport de suivi humain",
+            "BCP — RAPPORT 1/4 — SITUATION HUMAINE COMPLÈTE",
             "Généré: " + utc_now(),
             "",
-            self.status(),
+            snap["text"],
             "",
+            "OBJECTIF ET TRAJECTOIRE",
             self.plan_view(),
             "",
-            self.tail(),
-            "",
-            "LECTURE",
-            "- La barre vient uniquement d’un plan fini enregistré.",
-            "- Une micro-action = une action concrète et vérifiable (ouvrir/lire un fichier, modifier un fichier, lancer un test, vérifier un commit, publier un reçu).",
-            "- L’absence de nouvelle preuve n’est pas présentée comme une réflexion ChatGPT.",
-        ])
-
-    def report_technical(self) -> str:
-        ctx = self._mission_context()
-        mission = (ctx or {}).get("mission") or {}
-        mission_meta = [
-            "MISSION COURANTE",
-            "mission_id: " + clean(mission.get("mission_id") or "NOT_OBSERVED", 120),
-            "status: " + clean(mission.get("status") or "NOT_OBSERVED", 80),
-            "worker_component: " + clean(mission.get("worker_component") or "NOT_OBSERVED", 120),
-            "last_progress_at: " + clean(mission.get("last_progress_at") or "NOT_OBSERVED", 80),
-            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "NOT_OBSERVED", 220),
-            "hold_reason: " + clean(mission.get("hold_reason") or "NONE", 180),
-        ]
-        return "\n".join([
-            "BCP — Rapport technique détaillé",
-            "Généré: " + utc_now(),
-            "",
-            self.details(),
-            "",
-            *mission_meta,
-            "",
-            self.plan_view(),
-            "",
-            "JOURNAL DES MICRO-ACTIONS",
+            "ACTIVITÉ RÉCENTE",
             self.tail(),
             "",
             "MISSIONS",
             self.missions(),
             "",
-            "CONTRAT DE VÉRITÉ",
-            "- progression: seulement plan fini persisté et étapes vérifiées;",
-            "- preuves: SQLite/BCP, GitHub, Drive, B-EDGE, Nexus ou autre reçu externe;",
-            "- aucun accès à la chaîne de pensée privée de ChatGPT;",
-            "- un silence UI n’est jamais converti en progrès inventé.",
+            "COMMENT LIRE LES POURCENTAGES",
+            "- Le compteur de micro-actions marqué ≈ est une prévision dynamique, pas un nombre promis.",
+            "- Une micro-action est atomique: lire/ouvrir un fichier, vérifier un workflow, lire un log, modifier un fichier, calculer un hash, lancer un test, créer un commit, faire un readback, etc.",
+            "- L'estimation se recalcule quand la mission se précise; elle peut donc augmenter ou diminuer.",
+            "- Les actions confirmées restent distinguées des actions seulement prévues.",
         ])
 
-    def report_pdf(self, technical: bool = False) -> bytes:
-        body = self.report_technical() if technical else self.report_summary()
-        title = "BCP Rapport technique detaille" if technical else "BCP Rapport de suivi humain"
+    def report_devices(self) -> str:
+        runtime = self.local.runtime()
+        edge = self.local.edge()
+        drive = self.local.drive()
+        gh = self.github.snapshot()
+        keys = [
+            "server_version", "server_pid", "pc_name", "updated_at", "paired",
+            "update_state", "update_target_version", "nexus_bootstrap_state",
+            "nexus_bootstrap_bundle_version", "nexus_bootstrap_exit_code",
+            "nexus_bootstrap_receipt_status", "nexus_bootstrap_error_class",
+            "nexus_bootstrap_error_detail", "nexus_bootstrap_stage",
+            "telegram_companion_state", "telegram_companion_mode",
+            "telegram_companion_pid", "telegram_companion_health_age_seconds",
+            "telegram_companion_last_poll_at", "telegram_companion_last_callback_data",
+            "telegram_companion_last_callback_received_at",
+            "telegram_companion_last_callback_handled_at",
+            "telegram_companion_error_class", "telegram_companion_error_detail",
+            "chatgpt_pc_active_version", "chatgpt_pc_heartbeat_age_seconds",
+            "chatgpt_pc_command_plane", "chatgpt_pc_command_plane_age_seconds",
+            "recovery_phase", "recovery_result_status",
+        ]
+        lines = [
+            "BCP — RAPPORT 2/4 — APPAREILS, RÉSEAU ET TRANSPORTS",
+            "Généré: " + utc_now(),
+            "",
+            "VUE HUMAINE",
+            self.status(),
+            "",
+            "TÉLÉMÉTRIE PC / BCP",
+        ]
+        for key in keys:
+            if key in runtime:
+                lines.append(key + ": " + clean(runtime.get(key), 260))
+        lines += [
+            "",
+            "B-EDGE / ANCIEN TÉLÉPHONE",
+            "paired: " + str(bool(edge.get("paired"))),
+            "edge_version: " + clean(edge.get("edge_version") or "", 80),
+            "last_event: " + clean(edge.get("last_event") or "", 120),
+            "event_age_seconds: " + str(edge.get("_age_seconds")),
+            "",
+            "DRIVE",
+            "status: " + clean(drive.get("status") or "", 80),
+            "age_seconds: " + str(drive.get("age_seconds")),
+            "",
+            "GITHUB / QUALIFICATION",
+            self.ci(),
+            "",
+            "INTERPRÉTATION",
+            "- Direct PC→Telegram est opportuniste; une coupure TCP/443 ne doit pas arrêter BCP.",
+            "- Nexus est le relais distant robuste quand le chemin direct est indisponible.",
+            "- Le mode hors-ligne conserve l'état local; la synchronisation reprend quand une liaison revient.",
+            "- Un poller Telegram unique est obligatoire pour éviter HTTP 409 getUpdates.",
+        ]
+        return "\n".join(lines)
+
+    def report_mission(self) -> str:
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        events = [
+            e for e in self.local.mission_events(160)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        return "\n".join([
+            "BCP — RAPPORT 3/4 — OBJECTIF, ÉTAPES ET MICRO-ACTIONS",
+            "Généré: " + utc_now(),
+            "",
+            "MISSION COURANTE",
+            "mission_id: " + clean(mission.get("mission_id") or "synthèse depuis preuves externes", 120),
+            "status: " + clean(mission.get("status") or "suivi actif", 80),
+            "current_step: " + clean(mission.get("current_step") or "", 160),
+            "last_committed_step: " + clean(mission.get("last_committed_step") or "", 160),
+            "next_step: " + clean(mission.get("next_step") or "", 160),
+            "last_progress_at: " + clean(mission.get("last_progress_at") or "", 80),
+            "",
+            "PRÉVISION DYNAMIQUE DE MICRO-ACTIONS",
+            forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
+            "Le total est volontairement estimatif et peut être recalculé quand de nouvelles sous-actions apparaissent.",
+            "",
+            self.plan_view(),
+            "",
+            "JOURNAL FIN",
+            self.tail(),
+            "",
+            "BLOCAGES / ATTENTES",
+            self.holds(),
+            "",
+            "MISSIONS RÉCENTES",
+            self.missions(),
+        ])
+
+    def report_technical(self) -> str:
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        head = self._head() or {}
+        gh = self.github.snapshot()
+        return "\n".join([
+            "BCP — RAPPORT 4/4 — DOSSIER TECHNIQUE ET AUDIT",
+            "Généré: " + utc_now(),
+            "",
+            "ÉTAT TECHNIQUE",
+            self.details(),
+            "",
+            "HEAD / CHECKPOINT",
+            "revision: " + str(head.get("revision") or ""),
+            "status: " + clean(head.get("status") or "", 120),
+            "last_completed_action: " + clean(head.get("last_completed_action") or "", 500),
+            "next_action: " + clean(head.get("next_action") or "", 500),
+            "",
+            "MISSION",
+            "mission_id: " + clean(mission.get("mission_id") or "", 120),
+            "worker_component: " + clean(mission.get("worker_component") or "", 120),
+            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "", 500),
+            "hold_reason: " + clean(mission.get("hold_reason") or "", 240),
+            "",
+            "CI / WORKFLOWS",
+            self.ci(),
+            "",
+            "PLAN ET JOURNAL",
+            self.plan_view(),
+            self.tail(),
+            "",
+            "CONTRAT DE VÉRITÉ",
+            "- micro-actions confirmées = preuves externes/durables;",
+            "- total ≈ = estimation de planification, explicitement non exacte;",
+            "- état des appareils = heartbeat/télémétrie, jamais supposition silencieuse;",
+            "- pas d'accès à la chaîne de pensée privée de ChatGPT;",
+            "- absence de preuve ≠ travail inventé;",
+            "- mutations: writer fence, idempotence, hash/readback avant COMMITTED.",
+            "",
+            "SNAPSHOT GITHUB",
+            clean(json.dumps(gh, ensure_ascii=False, sort_keys=True), 5000),
+        ])
+
+    def report_pdf(self, kind: Any = "summary") -> bytes:
+        if kind is True:
+            kind = "technical"
+        elif kind is False:
+            kind = "summary"
+        key = str(kind or "summary").lower()
+        if key == "devices":
+            body, title = self.report_devices(), "BCP Appareils Reseau et Transports"
+        elif key == "mission":
+            body, title = self.report_mission(), "BCP Objectif Etapes et Micro-actions"
+        elif key == "technical":
+            body, title = self.report_technical(), "BCP Dossier technique et audit"
+        else:
+            body, title = self.report_summary(), "BCP Situation humaine complete"
         return text_pdf_bytes(title, body)
 
     def missions(self) -> str:
@@ -1301,22 +1419,28 @@ class Telegram:
 
     @staticmethod
     def keyboard() -> dict:
+        # Telegram does not expose arbitrary per-button colours; coloured symbols
+        # provide stable visual semantics without depending on client themes.
         return {
             "inline_keyboard": [
                 [
-                    {"text": "🔄 Actualiser", "callback_data": "bcp:status"},
-                    {"text": "📍 Étape", "callback_data": "bcp:where"},
+                    {"text": "🟢 Situation", "callback_data": "bcp:status"},
+                    {"text": "🔵 Où en est-on ?", "callback_data": "bcp:where"},
                 ],
                 [
-                    {"text": "📋 Micro-actions", "callback_data": "bcp:tail"},
-                    {"text": "🗂 Missions", "callback_data": "bcp:missions"},
+                    {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
+                    {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
                 ],
                 [
-                    {"text": "🧾 Détails", "callback_data": "bcp:details"},
-                    {"text": "📄 PDF suivi", "callback_data": "bcp:pdf:summary"},
+                    {"text": "🧰 Technique", "callback_data": "bcp:details"},
+                    {"text": "📄 1·Suivi", "callback_data": "bcp:pdf:summary"},
                 ],
                 [
-                    {"text": "📚 PDF technique", "callback_data": "bcp:pdf:technical"},
+                    {"text": "🖥️ 2·Appareils", "callback_data": "bcp:pdf:devices"},
+                    {"text": "🧭 3·Mission", "callback_data": "bcp:pdf:mission"},
+                ],
+                [
+                    {"text": "📚 4·Audit", "callback_data": "bcp:pdf:technical"},
                 ],
             ]
         }
@@ -1428,12 +1552,20 @@ class Telegram:
             self.answer_callback(callback_id, "Non autorisé")
             return
         if data == "bcp:pdf:summary":
-            self.answer_callback(callback_id, "Préparation du PDF…")
-            self.send_document("BCP_SUIVI.pdf", self.service.report_pdf(False), "BCP — rapport de suivi")
+            self.answer_callback(callback_id, "Rapport 1/4 en préparation…")
+            self.send_document("BCP_1_SITUATION.pdf", self.service.report_pdf("summary"), "BCP — situation humaine complète")
+            return
+        if data == "bcp:pdf:devices":
+            self.answer_callback(callback_id, "Rapport 2/4 en préparation…")
+            self.send_document("BCP_2_APPAREILS_RESEAU.pdf", self.service.report_pdf("devices"), "BCP — appareils, réseau et transports")
+            return
+        if data == "bcp:pdf:mission":
+            self.answer_callback(callback_id, "Rapport 3/4 en préparation…")
+            self.send_document("BCP_3_MISSION_MICRO_ACTIONS.pdf", self.service.report_pdf("mission"), "BCP — objectif, étapes et micro-actions")
             return
         if data == "bcp:pdf:technical":
-            self.answer_callback(callback_id, "Préparation du PDF technique…")
-            self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
+            self.answer_callback(callback_id, "Rapport 4/4 en préparation…")
+            self.send_document("BCP_4_AUDIT_TECHNIQUE.pdf", self.service.report_pdf("technical"), "BCP — dossier technique et audit")
             return
         command, label = self._callback_action(data)
         if not command:
@@ -2011,12 +2143,13 @@ def selftest() -> int:
         assert "Lecture seule" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
-        summary_pdf = svc.report_pdf(False)
-        technical_pdf = svc.report_pdf(True)
-        assert summary_pdf.startswith(b"%PDF-1.4")
-        assert technical_pdf.startswith(b"%PDF-1.4")
-        assert summary_pdf.rstrip().endswith(b"%%EOF")
-        assert technical_pdf.rstrip().endswith(b"%%EOF")
+        summary_pdf = svc.report_pdf("summary")
+        devices_pdf = svc.report_pdf("devices")
+        mission_pdf = svc.report_pdf("mission")
+        technical_pdf = svc.report_pdf("technical")
+        for pdf in (summary_pdf, devices_pdf, mission_pdf, technical_pdf):
+            assert pdf.startswith(b"%PDF-1.4")
+            assert pdf.rstrip().endswith(b"%%EOF")
         assert "sk-" not in redact_text("key=sk-abcdefghijklmnopqrstuv")
         assert "ghp_" not in redact_text("ghp_123456789012345678901234567890")
         assert "Bearer abcdefghijklmnop" not in redact_text("Authorization: Bearer abcdefghijklmnop")
@@ -2028,7 +2161,7 @@ def selftest() -> int:
         }
         assert {
             "bcp:status", "bcp:where", "bcp:tail", "bcp:missions", "bcp:details",
-            "bcp:pdf:summary", "bcp:pdf:technical",
+            "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
         assert "chaîne de pensée" in svc.help()
         assert CHAT_STATES == {
