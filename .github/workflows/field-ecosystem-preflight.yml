@@ -110,7 +110,7 @@ jobs:
             $oldEap = $ErrorActionPreference
             try {
               $ErrorActionPreference = 'Continue'
-              $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund 2>&1
+              $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund --ignore-scripts 2>&1
               $installCode = $LASTEXITCODE
             } finally {
               $ErrorActionPreference = $oldEap
@@ -121,7 +121,10 @@ jobs:
               throw 'REAL_MANAGED_WRANGLER_INSTALL_FAILED'
             }
             $wranglerCli = Join-Path $wranglerRoot 'node_modules\wrangler\bin\wrangler.js'
+            $esbuildExe = Join-Path $wranglerRoot 'node_modules\@esbuild\win32-x64\esbuild.exe'
             if (-not (Test-Path $wranglerCli)) { throw 'REAL_MANAGED_WRANGLER_CLI_MISSING' }
+            if (-not (Test-Path $esbuildExe)) { throw 'REAL_MANAGED_ESBUILD_PLATFORM_BINARY_MISSING' }
+            Write-Host 'BCP_REAL_MANAGED_IGNORE_SCRIPTS_BINARY=PASS'
 
             $stdout = Join-Path $root 'probe.stdout.txt'
             $stderr = Join-Path $root 'probe.stderr.txt'
