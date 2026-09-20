@@ -28,12 +28,14 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.7"
+SERVER_VERSION = "0.6.8"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
 TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
 TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
+TELEGRAM_COMPANION_HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
+TELEGRAM_COMPANION_WATCHDOG_PATH = STATE_DIR / "telegram_companion_watchdog.json"
 NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json"
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
@@ -330,11 +332,72 @@ def external_telemetry_roots() -> list[Path]:
     return dedup
 
 
+def telegram_companion_runtime_status() -> dict:
+    health = read_json(TELEGRAM_COMPANION_HEALTH_PATH, {}) or {}
+    update = read_json(TELEGRAM_COMPANION_STATE_PATH, {}) or {}
+    age = None
+    try:
+        if TELEGRAM_COMPANION_HEALTH_PATH.is_file():
+            age = max(0, int(time.time() - TELEGRAM_COMPANION_HEALTH_PATH.stat().st_mtime))
+    except Exception:
+        age = None
+    return {
+        "state": str(health.get("state") or "NOT_OBSERVED")[:80],
+        "mode": str(health.get("mode") or "")[:40],
+        "pid": int(health.get("pid") or 0),
+        "age_seconds": age,
+        "last_poll_at": str(health.get("last_poll_at") or "")[:80],
+        "last_callback_data": str(health.get("callback_data") or "")[:80],
+        "last_callback_received_at": str(health.get("callback_received_at") or "")[:80],
+        "last_callback_handled_at": str(health.get("callback_handled_at") or "")[:80],
+        "error_class": str(health.get("error_class") or "")[:120],
+        "error_detail": str(health.get("error_detail") or "")[:240],
+        "consecutive_failures": int(health.get("consecutive_failures") or 0),
+        "update_state": str(update.get("state") or "NONE")[:80],
+        "target_version": str(update.get("target_version") or "")[:80],
+        "installed_sha256": str(update.get("installed_sha256") or "")[:64],
+    }
+
+
+def _telegram_companion_watchdog() -> dict:
+    """Restart only a truly stale V6+ companion; network failures still update health."""
+    status = telegram_companion_runtime_status()
+    age = status.get("age_seconds")
+    if os.name != "nt" or not _telegram_companion_configured() or not TELEGRAM_COMPANION_PATH.is_file():
+        return dict(status, watchdog="NOT_APPLICABLE")
+    if age is None:
+        return dict(status, watchdog="AWAITING_HEALTH_CAPABLE_COMPANION")
+    if age <= 180:
+        return dict(status, watchdog="HEALTHY")
+
+    prior = read_json(TELEGRAM_COMPANION_WATCHDOG_PATH, {}) or {}
+    last = _parse_utc_timestamp(prior.get("restarted_at"))
+    now = dt.datetime.now(dt.timezone.utc)
+    if last is not None and (now - last).total_seconds() < 300:
+        return dict(status, watchdog="RESTART_COOLDOWN")
+
+    _stop_telegram_companion_windows()
+    proc = _launch_telegram_companion()
+    atomic_json(TELEGRAM_COMPANION_WATCHDOG_PATH, {
+        "schema": "bcp.telegram_companion_watchdog/1",
+        "restarted_at": utc_now(),
+        "pid": int(proc.pid),
+        "reason": "HEALTH_STALE",
+        "prior_health_age_seconds": age,
+    })
+    mirror_telemetry_status("TELEGRAM_COMPANION_WATCHDOG_RESTART", {
+        "status": "RECOVERING",
+        "prior_health_age_seconds": age,
+    })
+    return dict(status, watchdog="RESTARTED", restart_pid=int(proc.pid))
+
+
 def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[str]:
     """Publish sanitized runtime truth to any available synced external folder."""
     update = read_json(STATE_DIR / "server_update.json", {}) or {}
     nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
     chat = chatgpt_pc_status()
+    telegram = telegram_companion_runtime_status()
     rec = {
         "schema": "bcp.external_runtime/1",
         "reason": str(reason)[:80],
@@ -354,6 +417,19 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "nexus_bootstrap_error_class": str(nexus.get("error_class") or "")[:120],
         "nexus_bootstrap_error_detail": str(nexus.get("error_detail") or "")[:240],
         "nexus_bootstrap_stage": str(nexus.get("stage") or "")[:120],
+        "telegram_companion_state": telegram["state"],
+        "telegram_companion_mode": telegram["mode"],
+        "telegram_companion_pid": telegram["pid"],
+        "telegram_companion_health_age_seconds": telegram["age_seconds"],
+        "telegram_companion_last_poll_at": telegram["last_poll_at"],
+        "telegram_companion_last_callback_data": telegram["last_callback_data"],
+        "telegram_companion_last_callback_received_at": telegram["last_callback_received_at"],
+        "telegram_companion_last_callback_handled_at": telegram["last_callback_handled_at"],
+        "telegram_companion_error_class": telegram["error_class"],
+        "telegram_companion_error_detail": telegram["error_detail"],
+        "telegram_companion_consecutive_failures": telegram["consecutive_failures"],
+        "telegram_companion_update_state": telegram["update_state"],
+        "telegram_companion_target_version": telegram["target_version"],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
@@ -380,6 +456,16 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
 def start_external_heartbeat_worker() -> None:
     def worker():
         while True:
+            try:
+                _telegram_companion_watchdog()
+            except Exception as e:
+                try:
+                    mirror_telemetry_status("TELEGRAM_COMPANION_WATCHDOG_FAILED", {
+                        "status": "DEGRADED",
+                        "error_class": type(e).__name__,
+                    })
+                except Exception:
+                    pass
             try:
                 mirror_external_runtime_status("PERIODIC_HEARTBEAT")
             except Exception:
@@ -3370,6 +3456,9 @@ def selftest():
         assert "telegram_companion_sha256_mismatch" in source
         assert "telegram_companion_selftest_failed" in source
         assert "BlessingControlPlaneTelegram" in source
+        assert "telegram_companion_runtime_status" in source
+        assert "TELEGRAM_COMPANION_HEALTH_PATH" in source
+        assert "_telegram_companion_watchdog" in source
         assert "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS" in source
