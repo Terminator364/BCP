@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R45_RECOVERY_6034_TARGET_ARMED_FIELD_READBACK_PENDING",
-  "last_completed_atomic_action": "Field B-EDGE successfully applied BCP server update from 0.7.9 to target 0.7.10 with APPLIED_RESTART_PENDING. Before invoking ChatGPT-PC recovery, exact 6.0.33 package inspection found one remaining direct DriveFS atomic RECOVERY_BOOTSTRAP_RESULT write that could reproduce field OSError(22) after a locally successful updater. ChatGPT-PC hotfix 6.0.34 / sequence 6034 was built from exact 6.0.33, preserving UTF-16 VBS recovery; package audit 74/74, fast tests 80/80, full tests 250/250, focused DriveFS fail-open 6/6 and deterministic ZIP roundtrip all pass. Source PR #12 merged to ChatGPT-PC main at 989de15aae487f077841ff442e4702cd3988444b. ZIP uploaded/readback byte-identical on Drive and RECOVERY_BOOTSTRAP_TARGET advanced to 6.0.34 ACTIVE_NOT_INSTALL_PROOF; rollback remains field-proven 6.0.32.",
-  "next_action": "First obtain non-mutating B-EDGE 'État des versions' readback proving BCP 0.7.10 is active after restart transaction. Only then invoke ChatGPT-PC recovery once against target 6.0.34. Require native 6034 readback, no WSH 800A0408, DriveFS result fail-open behavior, and two fresh command-plane cycles before consuming existing BCP probes. Generate a fresh Cloudflare device-flow only after recovery proof; do not reuse stale localhost callback or stale device code.",
+  "status": "R46_BCP_0_7_10_FIELD_READBACK_PROVEN_RECOVERY_6034_GATE_READY",
+  "last_completed_atomic_action": "Field B-EDGE non-mutating version readback proved BCP server_current=0.7.10, server_target=0.7.10, server_update_available=false, server_auto_update=true after the prior APPLIED_RESTART_PENDING transaction. Recovery cloud target 6.0.34/6034 remains ACTIVE_NOT_INSTALL_PROOF and field recovery has not yet been invoked.",
+  "next_action": "Invoke ChatGPT-PC recovery exactly once from B-EDGE against target 6.0.34. Require native 6034 readback, no WSH 800A0408 recurrence, DriveFS result fail-open behavior, and two fresh command-plane cycles before consuming existing probes. Cloudflare remains deferred until recovery proof.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -230,7 +230,7 @@
   },
   "atomic_checkpoint": {
     "checkpoint_id": "BCP-R45-RECOVERY-6034-TARGET-RECONCILE-20260920",
-    "status": "RECOVERY_6034_ARMED_FIELD_READBACK_PENDING",
+    "status": "BCP_0_7_10_FIELD_READBACK_PROVEN_RECOVERY_6034_GATE_READY",
     "branch": "work/bcp/r45-recovery6034-target-reconcile-20260920",
     "base_main_sha": "e68ea469ec3280a844b93e91eb316329922b7da4",
     "bcp_server_update_field": {
@@ -238,7 +238,13 @@
       "from_version": "0.7.9",
       "target_version": "0.7.10",
       "restart_required": true,
-      "active_readback_verified": false
+      "active_readback_verified": true,
+      "readback": {
+        "server_current": "0.7.10",
+        "server_target": "0.7.10",
+        "server_update_available": false,
+        "server_auto_update": true
+      }
     },
     "chatgpt_pc_hotfix": {
       "version": "6.0.34",
@@ -276,7 +282,7 @@
       "FRESH_CLOUDFLARE_DEVICE_FLOW_ONLY",
       "PROVIDER_AUTHENTICATED_WHOAMI_READBACK"
     ],
-    "next_atomic_action": "Qualify and merge R45 state-only reconciliation."
+    "next_atomic_action": "One B-EDGE ChatGPT-PC recovery invocation to target 6.0.34, then native readback."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1880,5 +1886,14 @@
     "package_drive_file_id": "1zXwtX8sD86mF-zF3MFlhK23dljVGRmlQ",
     "rollback_version": "6.0.32",
     "field_verified": false
+  },
+  "bcp_0_7_10_field_readback": {
+    "status": "PROVEN",
+    "server_current": "0.7.10",
+    "server_target": "0.7.10",
+    "server_update_available": false,
+    "server_auto_update": true,
+    "observed_via": "B-EDGE non-mutating version status",
+    "observed_local_time": "2026-09-20T20:42:00+01:00"
   }
 }
