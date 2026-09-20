@@ -1347,19 +1347,20 @@ class Service:
             "<tr><th>Tests</th><td>" + esc(s.get("ci_text") or "", 220) + "</td></tr>"
             "</table></details>"
             "<tg-button-row align=\"center\">"
-            "<tg-button type=\"callback_data\" style=\"" + style + "\" data=\"bcp:status\">Situation</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:since\">Depuis ma visite</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"" + style + "\" data=\"bcp:status\">Où en sommes-nous ?</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:since\">Nouveautés</tg-button>"
             "</tg-button-row>"
             "<tg-button-row align=\"center\">"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:why\">Pourquoi ?</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:risks\">Radar</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:why\">Pourquoi cet état ?</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:risks\">Risques à venir</tg-button>"
             "</tg-button-row>"
             "<tg-button-row align=\"center\">"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:where\">Étape</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Activité</tg-button>"
-            "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Continuer</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:where\">Étape actuelle</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Travail récent</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Reprendre maintenant</tg-button>"
             "</tg-button-row>"
-            + ("<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:ack\">✅ J’ai vu</tg-button></tg-button-row>" if level in {"CRITICAL","ACTION","WATCH"} else "") +
+            + ("<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:ack\">✅ Vu / compris</tg-button></tg-button-row>" if level in {"CRITICAL","ACTION","WATCH"} else "") +
+            "<tg-button-row align=\"center\"><tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:help\">Aide / mode d’emploi</tg-button></tg-button-row>"
             "<footer>Fallback V9 texte actif si Rich Messages n’est pas disponible.</footer>"
         )
 
