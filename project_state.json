@@ -3,7 +3,7 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "BCP_0_7_9_R38_RECOVERY_LAUNCHER_BRIDGE_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R38 candidate implemented from real field evidence: B-EDGE 2.0.0-rc1 reconnected to MBMPC after Private-network firewall consent, but ChatGPT-PC recovery returned HTTP_500 recovery_target_not_active because the Drive cloud recovery target had advanced to 6.0.33 while the PC-local DriveFS control copy remained stale. The prior WSH 800A0408 line-1-char-1 failure was traced to UTF-8-BOM VBS generation, and recovery logs also proved os.replace on G:\\Mon Drive can fail with Errno 22. BCP 0.7.9 adds a least-privilege local UTF-16 RecoveryPlane launcher bridge with readback; it starts local recovery when control target/package is stale and does not claim target installation. CURRENT first-pass CI caught a cross-platform newline-normalization flaw in the UTF-16 readback self-test; the implementation readback was corrected to byte-decode UTF-16 exactly and the server hash was refreshed.",
+  "last_completed_atomic_action": "R38 candidate implemented from real field evidence: B-EDGE 2.0.0-rc1 reconnected to MBMPC after Private-network firewall consent, but ChatGPT-PC recovery returned HTTP_500 recovery_target_not_active because the Drive cloud recovery target had advanced to 6.0.33 while the PC-local DriveFS control copy remained stale. The prior WSH 800A0408 line-1-char-1 failure was traced to UTF-8-BOM VBS generation, and recovery logs also proved os.replace on G:\\Mon Drive can fail with Errno 22. BCP 0.7.9 adds a least-privilege local UTF-16 RecoveryPlane launcher bridge with readback; it starts local recovery when control target/package is stale and does not claim target installation. CURRENT first-pass CI caught a cross-platform newline-normalization flaw in the UTF-16 readback self-test; the implementation readback was corrected to byte-decode UTF-16 exactly and the server hash was refreshed. Windows CI exposed newline translation in text-mode UTF-16 writes; R38 now writes the VBS bytes deterministically via content.encode('utf-16') before atomic local replace.",
   "next_action": "Run exact-head R38 CI. If green, merge with single-writer fence. Then field action: from connected B-EDGE, request BCP server update once; after verified 0.7.9 readback, request ChatGPT-PC recovery once and expect BRIDGE_STARTED rather than HTTP_500. Do not reuse stale Cloudflare device code or repeat probes.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
@@ -234,7 +234,7 @@
     "branch": "work/bcp/r38-recovery-launcher-bridge-20260920",
     "base_main_sha": "b217fbdc1c060e788b91d839590fa93210f00930",
     "target_server_version": "0.7.9",
-    "server_sha256": "d191d70d12168701060412fc72e606d1ddfa0e7693aadc109c7e9ca9c080ad4b",
+    "server_sha256": "5035f1d38e6f359024891e49d0ac71275edf57520f197c61421b389ff8961543",
     "field_evidence": {
       "bedge_connected": true,
       "bedge_pc": "MBMPC",
@@ -1818,7 +1818,7 @@
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
     "requirements_revision": "2026-09-20-R38",
     "server_version": "0.7.9",
-    "server_sha256": "d191d70d12168701060412fc72e606d1ddfa0e7693aadc109c7e9ca9c080ad4b",
+    "server_sha256": "5035f1d38e6f359024891e49d0ac71275edf57520f197c61421b389ff8961543",
     "recovery_launcher_bridge": true,
     "drivefs_critical_state_authority": false,
     "field_verified": false
