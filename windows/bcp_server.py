@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.0"
+SERVER_VERSION = "0.7.1"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -43,6 +43,8 @@ NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
+NEXUS_DEVICE_TOKEN_PATH = STATE_DIR / "nexus_device_token.txt"
+NEXUS_TELEGRAM_CONFIG_PATH = STATE_DIR / "telegram_observability.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
 MISSION_STALE_SECONDS = 10 * 60
@@ -940,6 +942,53 @@ def apply_telegram_companion_update() -> dict:
         "pid": pid,
         "restart_required": False,
     }
+
+
+def nexus_edge_provisioning() -> dict:
+    """Return Nexus device credentials only after a proven deployment.
+
+    This object is intended exclusively for the already-authenticated paired
+    B-EDGE client on the private LAN. Callers must enforce both Bearer auth and
+    paired remote-IP binding before serializing this response.
+    """
+    receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
+    if str(receipt.get("status") or "") != "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING":
+        return {
+            "ready": False,
+            "state": str(receipt.get("status") or "NOT_READY")[:80],
+            "reason": "NEXUS_FIELD_DEPLOYMENT_NOT_COMMITTED",
+        }
+
+    config = read_json(NEXUS_TELEGRAM_CONFIG_PATH, {}) or {}
+    transport = config.get("transport") or {}
+    if not isinstance(transport, dict) or str(transport.get("mode") or "") != "NEXUS":
+        return {"ready": False, "state": "NOT_READY", "reason": "NEXUS_TRANSPORT_NOT_ACTIVE"}
+
+    nexus_url = str(transport.get("nexus_url") or "").strip().rstrip("/")
+    device_id = str(transport.get("device_id") or "").strip()
+    try:
+        device_token = NEXUS_DEVICE_TOKEN_PATH.read_text(encoding="utf-8").strip()
+    except Exception:
+        device_token = ""
+
+    if not nexus_url.startswith("https://") or not device_id or len(device_token) < 24:
+        return {"ready": False, "state": "NOT_READY", "reason": "NEXUS_LOCAL_CREDENTIALS_INCOMPLETE"}
+
+    return {
+        "ready": True,
+        "nexus_url": nexus_url,
+        "device_id": device_id,
+        "device_token": device_token,
+        "provisioning_scope": "PAIRED_PRIVATE_LAN_ONLY",
+        "secrets": "RESPONSE_ONLY_NEVER_TELEMETRY",
+    }
+
+
+def _paired_edge_remote_matches(remote_ip: str) -> bool:
+    pair = read_json(PAIR_PATH, {}) or {}
+    expected = str(pair.get("remote_ip") or "").strip()
+    actual = str(remote_ip or "").strip()
+    return bool(expected and actual and hmac.compare_digest(expected, actual))
 
 
 def _nexus_bootstrap_success() -> bool:
@@ -3156,6 +3205,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(401, {"error": "unauthorized"})
             return
 
+        if path == "/v1/system/nexus/edge-config":
+            if not private_or_loopback(self.remote_ip()) or not _paired_edge_remote_matches(self.remote_ip()):
+                self.send_json(403, {"error": "paired_private_lan_required"})
+                return
+            self.send_json(200, nexus_edge_provisioning())
+            return
+
         if path == "/v1/system/chatgpt-pc":
             try:
                 self.send_json(200, chatgpt_pc_status())
@@ -3796,6 +3852,9 @@ def selftest():
         assert "windows_resource_status" in source
         assert "pc_battery_critical" in source
         assert "pc_memory_load_percent" in source
+        assert "nexus_edge_provisioning" in source
+        assert "/v1/system/nexus/edge-config" in source
+        assert "PAIRED_PRIVATE_LAN_ONLY" in source
         assert "mission_watchdog_tick" in source
         assert "request_mission_resume" in source
         assert "MISSION_RESUME_REQUESTS.jsonl" in source
