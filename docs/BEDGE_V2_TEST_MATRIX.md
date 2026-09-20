@@ -575,3 +575,13 @@ Expected: CI forbids silently reusing the distributed version/artifact metadata;
 
 X8. PC RAM stays above 90% during recovery.
 Expected: one heavy recovery/update lane at a time, bounded telemetry/queues, no duplicate extraction/build/restart storm, and foreground user work retains priority.
+
+
+W12. Recovery target contains a fixed runner while the installed recovery runner is older/defective.
+Expected: after package SHA verification, BCP stages the exact target-bundled payload/tools/recovery_update_runner.py, validates exact member count/size/UTF-8/syntax, readbacks and hashes the staged runner, and launches that runner. The stale installed runner is not bootstrap authority.
+
+W13. Target package runner is missing, duplicated, oversized, invalid UTF-8, syntax-invalid, or violates the sequence-specific DriveFS fail-open contract.
+Expected: recovery HOLD/reject before launch; no fallback to an older installed runner and no false target-install claim.
+
+W14. Target-bundled runner is staged successfully.
+Expected: machine-readable receipt records target version/sequence, target package SHA-256, staged runner SHA-256, local path, and provenance HASH_VERIFIED_TARGET_PACKAGE with no privilege expansion.
