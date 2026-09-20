@@ -1526,3 +1526,25 @@ A changed B-EDGE source MUST NOT be published under an already-distributed versi
 
 ### Resource-pressure invariant
 Recovery/update/orchestration paths on the 4 GB PC must serialize heavy work, bound queues/logs, prefer local disk streaming over RAM aggregation, back off under repeated failure, and yield non-critical work under high memory/thermal pressure. Heartbeat liveness alone is not proof of forward progress.
+
+
+## Preproduction — B-EDGE signed-candidate separation / R42
+
+This section refines the R40 Android release-identity rule without changing the currently qualified R40 release revision.
+
+BCP distinguishes the **stable signed Android release** from the **next source candidate**:
+- `release/android.json` and `release/current.json` describe only the signed, distributable CURRENT APK;
+- `release/android_candidate.json` may describe a newer source/CI candidate;
+- a candidate MUST use a strictly higher versionCode and a distinct versionName;
+- candidate packageId and expected signing-certificate SHA-256 MUST match CURRENT;
+- an unsigned candidate MUST have `publication_allowed=false` and empty signed-artifact URL/hash fields;
+- CI may build/test the candidate while CURRENT remains untouched;
+- promotion is a separate atomic action only after same-certificate signing, v2/v3 verification, package/version readback, SHA-256 verification, Drive upload/readback and rollback preservation.
+
+The R42 B-EDGE source candidate additionally requires:
+- one production `EdgeReconcileWorker` implementation;
+- one unique immediate WorkManager key with KEEP/coalescing;
+- CONNECTED constraint and exponential backoff for immediate work;
+- Wi-Fi `NetworkCallback.onAvailable` one-shot reconciliation while the app process is alive;
+- the existing 15-minute periodic WorkManager sentinel as the process-absent safety net;
+- no uninstall, no re-pairing and no credential re-entry for in-place promotion.
