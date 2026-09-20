@@ -16,6 +16,7 @@ import struct
 import subprocess
 import sys
 import threading
+import zipfile
 from contextlib import contextmanager
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
