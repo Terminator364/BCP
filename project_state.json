@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R43_DRIVEFS_MIRROR_FAILOPEN_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R43 rebased on fully qualified R42. BCP 0.7.10 makes provider-synchronised telemetry mirroring fail-open: local recovery/update truth remains authoritative; DriveFS mirror errors persist locally as CLOUD_MIRROR_HOLD and cannot convert a completed local transaction into API failure. First R43 CURRENT pass correctly rejected stale Nexus manifest hash after requirements-revision metadata changed; CURRENT was refreshed to SHA-256 922b639e… without changing Nexus code.",
-  "next_action": "Run exact-head R43 CI. If green, re-read main and merge only if fence remains valid. Cloudflare authorization stays deferred as the human gate.",
+  "status": "R43_DRIVEFS_MIRROR_FAILOPEN_MERGED_POSTMERGE_CI_GREEN_FIELD_GATE_PENDING",
+  "last_completed_atomic_action": "R43 merged to main at a080da6c684d1021811f2fb245186cda92d6f905. Exact-head and post-merge qualification are green across CURRENT, Managed Server Update, PC Sanity, Coordinated PC Package, Final Acceptance, Telegram, Nexus, Windows Bootstrap, Android Build, Coordinated Product, and Field Ecosystem including real-managed Wrangler. BCP_RUNTIME_LATEST remains stale at 2026-09-20T16:25:17Z, so field convergence is not yet proven. Recovery target 6.0.33 remains ACTIVE in cloud with rollback 6.0.32.",
+  "next_action": "Human gate now available: from connected B-EDGE on home LAN, trigger PC server update once and require readback BCP 0.7.10. Then trigger ChatGPT-PC recovery once; expect local recovery bridge semantics if DriveFS local target/package is stale, then verify 6.0.33 native readback and two fresh command-plane cycles. Only after that generate a fresh Cloudflare device-flow authorization and verify provider-authenticated whoami. Do not reuse stale localhost callback or stale device code.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,19 +229,47 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R43-DRIVEFS-MIRROR-FAILOPEN-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
-    "branch": "work/bcp/r43-drivefs-mirror-failopen-20260920",
-    "base_main_sha": "c17c2ddeb907df96feb4eac8eb667fea317b5647",
+    "checkpoint_id": "BCP-R44-POST-R43-STATE-RECONCILE-20260920",
+    "status": "R43_MERGED_POSTMERGE_CI_GREEN_FIELD_GATE_PENDING",
+    "branch": "work/bcp/r44-post-r43-state-reconcile-20260920",
+    "base_main_sha": "a080da6c684d1021811f2fb245186cda92d6f905",
+    "r43_pr": 112,
+    "r43_exact_head": "87fb5dff22dc77ddfd2107afc3ce271119908659",
+    "r43_merge_sha": "a080da6c684d1021811f2fb245186cda92d6f905",
     "target_server_version": "0.7.10",
     "server_sha256": "ef2871ce04a571bda559e53f52117cda5c812af2c973e3f18b19a791bbdd6622",
-    "preserves": [
-      "R40_NEXUS_0_2_5_DEVICE_FLOW_ONLY",
-      "R41_STATE_RECONCILIATION",
-      "R42_BEDGE_ZERO_TOUCH_REENTRY"
+    "postmerge_ci": {
+      "current_release_contract": 35531227554,
+      "managed_server_update": 35531227570,
+      "pc_sanity": 35531227464,
+      "coordinated_pc_package": 35531227483,
+      "final_acceptance": 35531227535,
+      "telegram_observability": 35531227471,
+      "nexus_transport": 35531227490,
+      "windows_bootstrap": 35531227482,
+      "android_build": 35531227472,
+      "coordinated_product": 35531227466,
+      "field_ecosystem": 35531227512,
+      "result": "PASS"
+    },
+    "field_truth": {
+      "bcp_runtime_latest_modified_utc": "2026-09-20T16:25:17.692Z",
+      "runtime_export_state": "STALE",
+      "recovery_target_version": "6.0.33",
+      "recovery_target_sequence": 6033,
+      "recovery_target_status": "ACTIVE",
+      "recovery_target_field_install_verified": false,
+      "cloudflare_auth_verified": false
+    },
+    "human_gate_sequence": [
+      "ONE_BEDGE_SERVER_UPDATE",
+      "READBACK_BCP_0_7_10",
+      "ONE_CHATGPT_PC_RECOVERY",
+      "READBACK_CHATGPT_PC_6_0_33_AND_TWO_COMMAND_PLANE_CYCLES",
+      "FRESH_CLOUDFLARE_DEVICE_FLOW_ONLY",
+      "PROVIDER_AUTHENTICATED_WHOAMI_READBACK"
     ],
-    "human_gate": "CLOUDFLARE_AUTH_DEFERRED",
-    "next_atomic_action": "Exact-head R43 CI qualification."
+    "next_atomic_action": "Merge R44 state-only reconciliation after exact-head CI."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1826,12 +1854,15 @@
     "publication_allowed": false
   },
   "bcp_0_7_10_r43": {
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "status": "MERGED_POSTMERGE_CI_GREEN_FIELD_PENDING",
     "requirements_revision": "2026-09-20-R43",
     "server_version": "0.7.10",
     "server_sha256": "ef2871ce04a571bda559e53f52117cda5c812af2c973e3f18b19a791bbdd6622",
     "drivefs_mirror_failopen": true,
     "local_mirror_hold": true,
+    "exact_head": "87fb5dff22dc77ddfd2107afc3ce271119908659",
+    "merge_sha": "a080da6c684d1021811f2fb245186cda92d6f905",
+    "postmerge_ci": "PASS",
     "field_verified": false
   }
 }
