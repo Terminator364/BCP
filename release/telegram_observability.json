@@ -3,7 +3,7 @@
   "channel": "stable",
   "version": "2026.09.20-cadence-telemetry-v18",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "8d0a4429b72efbe9efed03c4db27e1e98ee32c2238a343f7b88cb4f00a584add",
+  "sha256": "e18c4d3e592e480581b529e7033d160e4db98517abbb44a717d982741d2ab77b",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
