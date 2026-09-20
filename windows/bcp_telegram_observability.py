@@ -65,7 +65,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/ack", "/report", "/reporttech",
+    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/ack", "/conversations", "/conversation", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -442,6 +442,24 @@ class LocalTruth:
             "failure_hold_reason,created_at FROM mission_events "
             "WHERE mission_id=? ORDER BY seq DESC LIMIT ?",
             (mission_id, max(1, min(limit, 30))),
+        )
+        return list(reversed(rows))
+
+    def conversations(self, limit: int = 5) -> list[dict]:
+        return self._query(
+            "SELECT conversation_id,alias,source_kind,last_sequence,last_activity_at,"
+            "last_delivery_state FROM conversation_threads "
+            "ORDER BY last_activity_at DESC LIMIT ?",
+            (max(1, min(limit, 10)),),
+        )
+
+    def conversation_messages(self, conversation_id: str, limit: int = 3) -> list[dict]:
+        rows = self._query(
+            "SELECT conversation_id,sequence,role,text,generated_at,mirrored_at,"
+            "delivery_state,evidence_class,linked_mission_id,seen_at "
+            "FROM conversation_messages WHERE conversation_id=? "
+            "ORDER BY sequence DESC LIMIT ?",
+            (str(conversation_id)[:64], max(1, min(limit, 10))),
         )
         return list(reversed(rows))
 
@@ -1971,10 +1989,82 @@ class Service:
             )
         return key, text
 
+    @staticmethod
+    def _delivery_label(state: str) -> str:
+        labels = {
+            "GENERATED": "📝 généré",
+            "MIRRORED_BCP": "🪞 miroir BCP",
+            "TELEGRAM_SENT": "📬 envoyé Telegram",
+            "USER_SEEN": "👁 vu",
+            "CHATGPT_UI_DELIVERY_UNKNOWN": "❔ affichage ChatGPT non confirmé",
+            "DELIVERY_GAP_DETECTED": "⚠️ livraison incertaine",
+        }
+        return labels.get(str(state or "").upper(), "• " + clean(state or "état inconnu", 60))
+
+    def conversations_inbox(self) -> str:
+        threads = self.local.conversations(5)
+        if not threads:
+            return (
+                "💬 CONVERSATIONS SYNCHRONISÉES\n"
+                "Aucun message BCP-miroir n’est encore enregistré.\n\n"
+                "Important : le cockpit ne prétend pas lire magiquement l’historique privé de l’interface ChatGPT. "
+                "Les conversations apparaissent ici dès qu’un client BCP/ChatGPT-PC/OpenAI API publie un reçu de message durable."
+            )
+        lines = [
+            "💬 CONVERSATIONS SYNCHRONISÉES",
+            "Derniers échanges connus par BCP · état de livraison séparé de l’état du travail.",
+        ]
+        for pos, thread in enumerate(threads, 1):
+            cid = clean(thread.get("conversation_id"), 64)
+            alias = clean(thread.get("alias") or cid, 80)
+            source = clean(thread.get("source_kind") or "BCP", 30)
+            state = str(thread.get("last_delivery_state") or "")
+            lines += ["", str(pos) + ". " + alias + " · " + source,
+                      "   " + self._delivery_label(state) + " · " + clean(thread.get("last_activity_at"), 40)]
+            msgs = self.local.conversation_messages(cid, 2)
+            for msg in msgs:
+                role = str(msg.get("role") or "").upper()
+                icon = "👤" if role == "USER" else ("🤖" if role == "ASSISTANT" else "⚙️")
+                preview = clean(msg.get("text"), 180)
+                lines.append("   " + icon + " " + preview)
+            lines.append("   ID: " + cid)
+        lines += [
+            "",
+            "🔎 Pour ouvrir davantage : /conversation <ID>",
+            "ℹ️ « affichage ChatGPT non confirmé » signifie que BCP possède la réponse mais ne possède pas de preuve que l’app ChatGPT de votre téléphone l’a affichée.",
+        ]
+        return "\n".join(lines)
+
+    def conversation_view(self, conversation_id: str) -> str:
+        cid = clean(conversation_id, 64)
+        if not cid:
+            return self.conversations_inbox()
+        threads = {str(x.get("conversation_id")): x for x in self.local.conversations(10)}
+        thread = threads.get(cid)
+        messages = self.local.conversation_messages(cid, 8)
+        if not thread and not messages:
+            return "Conversation BCP introuvable : " + cid
+        alias = clean((thread or {}).get("alias") or cid, 100)
+        lines = ["💬 " + alias, "ID: " + cid]
+        for msg in messages:
+            role = str(msg.get("role") or "").upper()
+            who = "Vous" if role == "USER" else ("Assistant" if role == "ASSISTANT" else role.title())
+            lines += [
+                "",
+                ("👤 " if role == "USER" else "🤖 ") + who + " · #" + str(msg.get("sequence") or "?"),
+                clean(msg.get("text"), 700),
+                self._delivery_label(str(msg.get("delivery_state") or "")),
+            ]
+        lines += [
+            "",
+            "La présence d’un texte ici prouve son miroir BCP, pas son affichage dans l’interface ChatGPT.",
+        ]
+        return "\n".join(lines)
+
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
-            "/continue — demander une reprise durable\n/status — situation actuelle\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/ack — confirmer que vous avez vu le signal courant\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "/continue — demander une reprise durable\n/status — situation actuelle\n/conversations — derniers messages synchronisés X/Y/Z\n/conversation <ID> — ouvrir les derniers messages d’une conversation\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/ack — confirmer que vous avez vu le signal courant\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -1993,6 +2083,10 @@ class Service:
             return self.request_continue("TELEGRAM_COMMAND")
         if cmd == "/ack":
             return self.acknowledge_attention()
+        if cmd == "/conversations":
+            return self.conversations_inbox()
+        if cmd == "/conversation":
+            return self.conversation_view(arg)
         if cmd == "/quiet":
             try:
                 minutes = 0 if arg.lower() in {"off","normal","0"} else int(arg or "120")
@@ -2000,7 +2094,7 @@ class Service:
                 return "Usage: /quiet 120 · /quiet off"
             return self.quiet_mode(minutes)
         if cmd not in READ_ONLY_COMMANDS:
-            return "Commandes: /continue /status /since /why /risks /ack /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Commandes: /continue /status /conversations /conversation <ID> /since /why /risks /ack /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -2060,15 +2154,18 @@ class Telegram:
                     {"text": "🕘 Depuis ma visite", "callback_data": "bcp:since"},
                 ],
                 [
+                    {"text": "💬 Conversations", "callback_data": "bcp:conversations"},
                     {"text": "❓ Pourquoi ?", "callback_data": "bcp:why"},
+                ],
+                [
                     {"text": "🔭 Radar", "callback_data": "bcp:risks"},
-                ],
-                [
                     {"text": "📍 Étape actuelle", "callback_data": "bcp:where"},
-                    {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
                 ],
                 [
+                    {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
                     {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
+                ],
+                [
                     {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
                 ],
                 [
@@ -2223,6 +2320,7 @@ class Telegram:
             "bcp:why": ("/why", "Explication"),
             "bcp:risks": ("/risks", "Radar des risques"),
             "bcp:ack": ("/ack", "Signal pris en compte"),
+            "bcp:conversations": ("/conversations", "Conversations synchronisées"),
             "bcp:where": ("/where", "Étape actuelle"),
             "bcp:tail": ("/tail", "Activité fine"),
             "bcp:missions": ("/objective", "Objectif"),
@@ -2957,6 +3055,15 @@ def selftest() -> int:
             step_id TEXT,worker_component TEXT,summary TEXT,evidence_ref TEXT,status TEXT,
             failure_hold_reason TEXT,created_at TEXT
         );
+        CREATE TABLE conversation_threads(
+            conversation_id TEXT PRIMARY KEY,alias TEXT,source_kind TEXT,last_sequence INTEGER,
+            last_activity_at TEXT,last_delivery_state TEXT
+        );
+        CREATE TABLE conversation_messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,conversation_id TEXT,sequence INTEGER,role TEXT,text TEXT,
+            generated_at TEXT,mirrored_at TEXT,delivery_state TEXT,evidence_class TEXT,
+            linked_mission_id TEXT,seen_at TEXT
+        );
         """)
         cx.execute("INSERT INTO heads VALUES(?,?,?,?,?,?,?,?)", (
             "API/BCP", 7, 7, "abc", "EN_COURS", "CI patch persisted",
@@ -2986,6 +3093,16 @@ def selftest() -> int:
         cx.execute("INSERT INTO mission_events(mission_id,seq,event_type,step_id,worker_component,summary,evidence_ref,status,failure_hold_reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
             "mission-test", 3, "STEP_STARTED", "run-test", "GITHUB_CI",
             "Lancer le test Windows Bootstrap", "run:9", "STARTED", "", now
+        ))
+        cx.execute("INSERT INTO conversation_threads VALUES(?,?,?,?,?,?)", (
+            "chat-main", "Conversation principale", "CHATGPT_UI", 2, now, "CHATGPT_UI_DELIVERY_UNKNOWN"
+        ))
+        cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
+            "chat-main", 1, "USER", "Continue le projet.", now, now, "MIRRORED_BCP", "EXTERNAL_RECEIPT", "", ""
+        ))
+        cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
+            "chat-main", 2, "ASSISTANT", "Travail terminé côté BCP; affichage ChatGPT non confirmé.", now, now,
+            "CHATGPT_UI_DELIVERY_UNKNOWN", "EXTERNAL_RECEIPT", "", ""
         ))
         cx.commit()
         cx.close()
@@ -3064,7 +3181,7 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack", "bcp:where", "bcp:tail", "bcp:missions",
+            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:ack", "bcp:conversations", "bcp:where", "bcp:tail", "bcp:missions",
             "bcp:quiet:120", "bcp:quiet:off", "bcp:details",
             "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
@@ -3072,6 +3189,11 @@ def selftest() -> int:
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
+        inbox = svc.conversations_inbox()
+        assert "CONVERSATIONS SYNCHRONISÉES" in inbox
+        assert "Conversation principale" in inbox
+        assert "affichage ChatGPT non confirmé" in inbox
+        assert "Travail terminé côté BCP" in svc.conversation_view("chat-main")
         ack_text = svc.acknowledge_attention()
         assert "Pris en compte" in ack_text or "Aucun signal prioritaire" in ack_text
         rich = svc.rich_status_html()
