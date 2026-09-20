@@ -35,6 +35,8 @@ MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
 MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
 MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
 WATCHDOG_NOTIFY_STATE_PATH = STATE_DIR / "telegram_watchdog_notify_state.json"
+USER_SEEN_STATE_PATH = STATE_DIR / "telegram_user_seen.json"
+NOTIFICATION_POLICY_PATH = STATE_DIR / "telegram_notification_policy.json"
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -58,7 +60,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/objective", "/report", "/reporttech",
+    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -1514,6 +1516,115 @@ class Service:
             h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
         return "▶️ Continuer demandé. La reprise est enregistrée durablement et sera consommée par BCP dès que le moteur/transport qualifié est disponible."
 
+    @staticmethod
+    def _forecast_confidence(ctx: dict | None, events: list[dict], gh: dict) -> tuple[str, str]:
+        plan = (ctx or {}).get("plan") or []
+        evidence = len(events) + len(gh.get("runs") or [])
+        if len(plan) >= 4 and evidence >= 6:
+            return "ÉLEVÉE", "plan durable + preuves multiples"
+        if plan or evidence >= 4:
+            return "MOYENNE", "décomposition partielle, recalcul possible"
+        return "FAIBLE", "peu de preuves structurées; estimation très révisable"
+
+    @staticmethod
+    def _attention_label(level: str) -> str:
+        return {
+            "CRITICAL": "🔴 CRITIQUE",
+            "ACTION": "🟣 ACTION REQUISE",
+            "WATCH": "🟠 À SURVEILLER",
+            "ACTIVE": "🟢 EN COURS",
+            "NORMAL": "🔵 STABLE",
+        }.get(level, "🔵 SUIVI")
+
+    def why(self) -> str:
+        snap = self.presence_snapshot()
+        s = snap.get("snapshot") or {}
+        reasons = list(s.get("attention_reasons") or [])
+        lines = [
+            "❓ POURQUOI CET ÉTAT ?",
+            self._attention_label(str(s.get("attention_level") or "NORMAL")),
+        ]
+        if reasons:
+            lines += [""] + ["• " + clean(x, 220) for x in reasons[:8]]
+        else:
+            lines += ["", "• Aucun signal prioritaire; le système attend la prochaine preuve durable."]
+        lines += [
+            "",
+            "Preuve fraîche : " + clean(s.get("evidence_age_label") or "inconnue", 80),
+            "Confiance progression : " + clean(s.get("forecast_confidence") or "FAIBLE", 40),
+            "ℹ️ La progression ≈ est une prévision; les actions confirmées restent séparées.",
+        ]
+        return "\n".join(lines)
+
+    def mark_user_seen(self, source: str) -> None:
+        atomic_json(USER_SEEN_STATE_PATH, {
+            "schema": "bcp.telegram_user_seen/1",
+            "seen_at": utc_now(),
+            "source": clean(source, 40),
+        })
+
+    def since_last_seen(self) -> str:
+        state = read_json(USER_SEEN_STATE_PATH, {}) or {}
+        since = str(state.get("seen_at") or "")
+        events = [
+            e for e in self.local.mission_events(240)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        if since:
+            recent = [e for e in events if self._event_timestamp(e) > since]
+        else:
+            recent = events[-12:]
+        lines = ["🕘 DEPUIS VOTRE DERNIÈRE VISITE"]
+        if since:
+            lines.append("Depuis : " + clean(since, 40))
+        if not recent:
+            lines += ["", "Aucune nouvelle micro-action durable observée."]
+        else:
+            grouped = recent[-12:]
+            lines += ["", str(len(recent)) + " nouvelle(s) preuve(s) durable(s)."]
+            for ev in grouped:
+                state_name = str(ev.get("state") or ev.get("status") or "EVENT").upper()
+                icon = "✅" if state_name in {"DONE","COMMITTED","CHECKPOINTED","SUCCESS","COMPLETED","VERIFIED"} else ("🟠" if state_name in HOLD_STATES else "•")
+                label = clean(ev.get("action_summary") or ev.get("summary") or ev.get("step_summary") or ev.get("step_id") or state_name, 170)
+                lines.append(icon + " " + label)
+            if len(recent) > len(grouped):
+                lines.append("… +" + str(len(recent) - len(grouped)) + " événements regroupés")
+        snap = self.presence_snapshot().get("snapshot") or {}
+        lines += [
+            "",
+            "Maintenant : " + self._attention_label(str(snap.get("attention_level") or "NORMAL")),
+            "Prochaine étape : " + clean(snap.get("mission_next") or "en cours de détermination", 180),
+        ]
+        return "\n".join(lines)
+
+    def quiet_mode(self, minutes: int) -> str:
+        if minutes <= 0:
+            atomic_json(NOTIFICATION_POLICY_PATH, {
+                "schema": "bcp.telegram_notification_policy/1",
+                "quiet_until_epoch": 0,
+                "updated_at": utc_now(),
+            })
+            return "🔔 Mode normal rétabli. Les alertes pertinentes peuvent de nouveau être envoyées."
+        minutes = max(15, min(480, int(minutes)))
+        until = int(time.time()) + minutes * 60
+        atomic_json(NOTIFICATION_POLICY_PATH, {
+            "schema": "bcp.telegram_notification_policy/1",
+            "quiet_until_epoch": until,
+            "quiet_minutes": minutes,
+            "updated_at": utc_now(),
+            "critical_bypass": True,
+        })
+        return "🔕 Mode discret activé pour " + str(minutes) + " min. Les alertes critiques et actions humaines requises restent autorisées."
+
+    def notifications_allowed(self, critical: bool = False) -> bool:
+        if critical:
+            return True
+        state = read_json(NOTIFICATION_POLICY_PATH, {}) or {}
+        try:
+            return int(state.get("quiet_until_epoch") or 0) <= int(time.time())
+        except Exception:
+            return True
+
     def watchdog_notice(self) -> tuple[str, str] | None:
         wd = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
         state = str(wd.get("state") or "").upper()
@@ -1550,7 +1661,7 @@ class Service:
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
-            "/continue — demander une reprise durable\n/status — situation actuelle\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "/continue — demander une reprise durable\n/status — situation actuelle\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -1567,8 +1678,14 @@ class Service:
         arg = rest[0].strip() if rest else ""
         if cmd == "/continue":
             return self.request_continue("TELEGRAM_COMMAND")
+        if cmd == "/quiet":
+            try:
+                minutes = 0 if arg.lower() in {"off","normal","0"} else int(arg or "120")
+            except Exception:
+                return "Usage: /quiet 120 · /quiet off"
+            return self.quiet_mode(minutes)
         if cmd not in READ_ONLY_COMMANDS:
-            return "Commandes: /continue /status /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Commandes: /continue /status /since /why /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -1579,6 +1696,10 @@ class Service:
             return self.objective()
         if cmd == "/details":
             return self.details()
+        if cmd == "/why":
+            return self.why()
+        if cmd == "/since":
+            return self.since_last_seen()
         if cmd == "/project":
             return self.project(arg)
         if cmd == "/job":
