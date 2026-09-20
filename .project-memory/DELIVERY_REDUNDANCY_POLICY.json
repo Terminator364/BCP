@@ -1,19 +1,26 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/2",
-  "revision": "2026-09-20-R53",
+  "schema": "bcp.delivery_redundancy_policy/3",
+  "revision": "2026-09-20-R55",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
-      "role": "PRIMARY_INTERACTIVE_WORK_SURFACE_SECOND_CHECKPOINT_COPY",
-      "delivery_is_not_assumed_reliable": true
+      "role": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT",
+      "delivery_is_not_assumed_reliable": true,
+      "detailed_checkpoint_body_forbidden_after_successful_email": true,
+      "required_pointer_fields": [
+        "MAIL_SENT",
+        "KINSHASA_DATE_TIME",
+        "CHECKPOINT_ID"
+      ],
+      "allowed_pointer_example": "Va voir le mail — 20 septembre 2026, 23:38 Kinshasa — BCP-R55-..."
     },
     "email": {
-      "role": "PRIMARY_CHECKPOINT_DELIVERY",
-      "body_must_equal_chat_checkpoint_exactly": true,
+      "role": "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY",
+      "full_checkpoint_body_required": true,
       "subject_must_include_checkpoint_id": true,
       "action_instruction_supersession_required": true,
-      "send_before_chat_checkpoint": true,
-      "failure_behavior": "IF_EMAIL_SEND_FAILS_DO_NOT_CLAIM_SENT; SURFACE_EMAIL_DELIVERY_HOLD_IN_CHAT"
+      "send_before_chat_pointer": true,
+      "failure_behavior": "IF_EMAIL_SEND_FAILS_DO_NOT_CLAIM_SENT; CHATGPT_MUST_STATE_EMAIL_DELIVERY_HOLD_AND_MAY_INCLUDE_ONLY_MINIMUM_RECOVERY_INSTRUCTION"
     },
     "telegram": {
       "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",
@@ -31,7 +38,8 @@
     "one_human_gate_at_a_time": true,
     "latest_action_instruction_supersedes_older_action_instructions": true,
     "checkpoint_id_required": true,
-    "manual_first_when_network_is_unreliable": true
+    "manual_first_when_network_is_unreliable": true,
+    "chat_pointer_must_not_duplicate_full_checkpoint": true
   },
   "packaging": {
     "single_extraction_preferred": true,
@@ -43,13 +51,14 @@
   },
   "propagation": "PORT_ON_NEXT_TOUCH_TO_OTHER_PROJECTS",
   "checkpoint_delivery_order": [
-    "EMAIL_EXACT_MIRROR",
-    "CHATGPT_FINAL",
+    "EMAIL_FULL_CHECKPOINT",
+    "CHATGPT_POINTER_ONLY",
     "TELEGRAM_WITNESS_OPTIONAL"
   ],
   "ui_policy": {
-    "primary_surface": "ORIENTATION_AND_HUMAN_ACTION_ONLY",
+    "primary_surface": "EMAIL_FULL_CHECKPOINT",
     "advanced_surface": "REPORTS_AND_TECHNICAL_EVIDENCE",
-    "progressive_disclosure_required": true
+    "progressive_disclosure_required": true,
+    "chatgpt_surface": "POINTER_ONLY_AFTER_MAIL_SENT"
   }
 }

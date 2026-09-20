@@ -1718,3 +1718,47 @@ Qualification MUST include at least:
 - protection against duplicate report titles.
 
 Target presentation revision: **R54**.
+
+
+## P0 — Email-only detailed human checkpoint / R55
+
+This requirement is additive and supersedes only the human checkpoint delivery surface from R53/R54; all underlying execution, telemetry, evidence, rollback, security and product requirements remain active.
+
+### Human-facing delivery rule
+For every normal 8–10 minute active technical work tranche:
+1. execute useful project work first;
+2. persist the durable checkpoint and evidence;
+3. send the complete human-readable checkpoint by email;
+4. only after positive Gmail send receipt, the ChatGPT application response MUST be pointer-only.
+
+The ChatGPT pointer MUST contain only:
+- confirmation that the mail was sent;
+- Kinshasa-local date/time;
+- checkpoint identifier.
+
+After a successful email send, the ChatGPT response MUST NOT duplicate the detailed checkpoint body, action list, technical report, or progress explanation.
+
+### Email is the detailed authority
+Email becomes the sole primary detailed human checkpoint surface for this project. The email MUST contain:
+- checkpoint ID;
+- Kinshasa-local date/time;
+- what was actually executed;
+- verified evidence and uncertainty;
+- current project state;
+- exactly one current human gate when needed;
+- the next project action;
+- explicit supersession of older user instructions when applicable.
+
+Telegram remains a secondary witness/alert/recovery-navigation channel and does not replace the detailed email checkpoint.
+
+### Failure semantics
+If Gmail delivery fails:
+- never claim that the mail was sent;
+- ChatGPT may state only an EMAIL_DELIVERY_HOLD plus the minimum recovery instruction needed to restore delivery;
+- do not silently fall back to a full in-app checkpoint unless the user explicitly asks for that exception.
+
+### Cadence
+The canonical interactive tranche target is now 8–10 minutes for BCP. Earlier 5–6 minute or 5–7 minute human-facing checkpoint cadence rules are superseded by R55 for this project.
+
+Canonical machine policy:
+- `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`

@@ -24,10 +24,13 @@ def main():
     ck("launched-pass", 'NEXUS_FRESH_DEVICE_FLOW_STARTED' in p)
     ck("unexpected-hold", 'HOLD NEXUS_UNEXPECTED_RESULT' in p)
     ck("cmd-one-shot", 'NEXUS_AUTH_RETRY_CURRENT.ps1' in c and 'pause' in c.lower())
-    ck("mail-exact-policy", 'body_must_equal_chat_checkpoint_exactly' in policy)
+    ck("mail-primary-detailed", '"role": "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"' in policy)
+    ck("chat-pointer-only", '"role": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT"' in policy)
+    ck("chat-no-full-body", '"detailed_checkpoint_body_forbidden_after_successful_email": true' in policy)
+    ck("mail-before-chat-pointer", '"send_before_chat_pointer": true' in policy)
     ck("checkpoint-subject-policy", 'subject_must_include_checkpoint_id' in policy)
     ck("nested-zip-forbidden", 'nested_zip_for_user_action_forbidden' in policy)
-    print("R52_NEXUS_AUTH_HELPER=PASS")
+    print("R55_DELIVERY_POLICY_AND_NEXUS_HELPER=PASS")
     return 0
 
 if __name__=="__main__":
