@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R53",
+  "requirements_revision": "2026-09-20-R54",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -56,7 +56,7 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-cadence-telemetry-v17",
+    "version": "2026.09.20-cadence-telemetry-v18",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -139,7 +139,12 @@
       "direct Aide / mode d’emploi control with canonical Drive/GitHub guide",
       "mail-first checkpoint order: exact email mirror before ChatGPT final when Gmail is available",
       "progressive disclosure: compact primary cockpit plus Rapports & technique secondary menu",
-      "delivery-gap wording states saved response / reading not confirmed, never assumes ChatGPT failure"
+      "delivery-gap wording states saved response / reading not confirmed, never assumes ChatGPT failure",
+      "all normal user-facing timestamps rendered in Africa/Kinshasa while canonical receipts remain UTC",
+      "human-first PDF reports 1-3 hide raw internal field names and technical identifiers",
+      "dependency-free PDF hierarchy with Helvetica Bold, WinAnsi French glyphs, margins and page numbers",
+      "PDF report 4 keeps engineering evidence structured without raw multi-kilobyte GitHub JSON dumps",
+      "rendered-PDF visual smoke inspection and duplicate-title regression protection"
     ]
   }
 }
