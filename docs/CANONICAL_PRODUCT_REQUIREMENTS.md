@@ -1526,3 +1526,21 @@ A changed B-EDGE source MUST NOT be published under an already-distributed versi
 
 ### Resource-pressure invariant
 Recovery/update/orchestration paths on the 4 GB PC must serialize heavy work, bound queues/logs, prefer local disk streaming over RAM aggregation, back off under repeated failure, and yield non-critical work under high memory/thermal pressure. Heartbeat liveness alone is not proof of forward progress.
+
+
+## P0 — DriveFS Mirror Fail-Open / R39
+
+This requirement is additive and preserves R38.
+
+Provider-synchronised telemetry/control folders are projections, not the transactional authority for local recovery/update actions.
+
+BCP MUST:
+- keep local transaction state authoritative;
+- treat DriveFS/provider mirror publication as best-effort;
+- record a bounded local `CLOUD_MIRROR_HOLD` receipt when a mirror write fails;
+- never convert a successfully completed local recovery/update action into HTTP 500 solely because the provider-synchronised mirror failed;
+- preserve secret hygiene and bounded error detail;
+- continue retry/reconciliation through existing periodic telemetry paths;
+- avoid recursive failure when recording the mirror hold itself.
+
+Target server release: BCP 0.7.10.
