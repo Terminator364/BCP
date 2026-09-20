@@ -28,6 +28,8 @@ It does **not** mean:
 - automatic recovery stops;
 - a new/worsened signal is hidden.
 
+The acknowledgement belongs to the current incident episode. After stable observable recovery it is cleared, so a later recurrence of the same root cause is treated as a new incident and may notify again.
+
 The acknowledgement key is derived from attention severity plus the observable root reason.
 
 ## 2. Anti-flapping
