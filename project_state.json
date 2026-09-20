@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_8_R34_MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
-  "last_completed_atomic_action": "R34 merged to main at ee8c1b0b68c510336998b2563c96438567a9a561. Exact-head and post-merge qualification passed across CURRENT, Windows bootstrap, managed server update, final acceptance, coordinated PC/product, Android, Telegram, Nexus, PC sanity and Field Ecosystem including real managed Wrangler.",
-  "next_action": "Observe fresh resident telemetry for convergence from BCP 0.7.6 to 0.7.8. Do not reinstall. If outbound transport recovers, verify server 0.7.8 hash/readback and independent Telegram/Nexus lane behavior; if CHECK_FAILED persists, continue transport diagnosis from machine-readable R34 error_class/error_detail once 0.7.8 is resident.",
+  "status": "BCP_0_7_8_R34_CI_QUALIFIED_CROSS_PLANE_LIVENESS_HOLD",
+  "last_completed_atomic_action": "Cross-plane diagnosis proved the resident convergence blocker is not a missing BCP/ChatGPT-PC package: BCP telemetry stopped after 2026-09-20T16:25:07Z; four fresh R0 ChatGPT-PC Drive commands remain unconsumed; ChatGPT-PC recovery target is valid 6.0.32 with exact package Drive ID/hash; BOOTSTRAP_SENTINEL last log shows repeated ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD, restart_not_alive failures and stale-process reaper failures before the recovery executor stopped publishing.",
+  "next_action": "Do not rebuild, reinstall, or duplicate probes. Restore local ChatGPT-PC Recovery/Command Plane liveness first. Once a fresh command-plane cycle consumes the existing R0 probes, use their receipts to classify raw.githubusercontent.com / api.telegram.org / drive.google.com connectivity, then allow BCP 0.7.6->0.7.8 convergence and verify R34 independent lanes.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,53 +229,48 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R35-POST-R34-STATE-RECONCILE-20260920",
-    "status": "R34_MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
-    "branch": "work/bcp/r35-post-r34-state-reconcile-20260920",
-    "base_main_sha": "ee8c1b0b68c510336998b2563c96438567a9a561",
-    "r34_pr": 100,
-    "r34_exact_head": "62759329f206af77925cd67ef9597cda4175cb45",
-    "r34_merge_sha": "ee8c1b0b68c510336998b2563c96438567a9a561",
-    "target_server_version": "0.7.8",
-    "server_sha256": "976d536e322a44518c472997a0646432b19f3d944a72430a802b4c1923e6f691",
-    "premerge_ci": {
-      "current_release_contract": 35522516746,
-      "telegram_observability": 35522516870,
-      "nexus_transport": 35522516891,
-      "coordinated_product": 35522516778,
-      "field_ecosystem_exact_head_push": 35522513557,
-      "result": "PASS"
+    "checkpoint_id": "BCP-R36-CROSS-PLANE-LIVENESS-GATE-20260920",
+    "status": "LOCAL_RECOVERY_EXECUTOR_HOLD",
+    "branch": "work/bcp/r36-cross-plane-liveness-gate-20260920",
+    "base_main_sha": "314aa5199577ce09c56a615109762f659b6e3bea",
+    "bcp_target_version": "0.7.8",
+    "resident_bcp_version": "0.7.6",
+    "resident_bcp_update_state": "CHECK_FAILED",
+    "bcp_heartbeat_last_observed_utc": "2026-09-20T16:25:07+00:00",
+    "chatgpt_pc_target": {
+      "version": "6.0.32",
+      "sequence": 6032,
+      "status": "ACTIVE",
+      "package_file": "Tunnel_PC_G6_6.0.32_2003_WATCHDOG_CYCLE_LEASE_DECODE_HOTFIX.zip",
+      "package_drive_file_id": "1zHAxHqmBGN3-dyZb7VnnB-x2m3o6890k",
+      "package_sha256": "e6e087fddf4a006e7559df2a073dbaaf5d881f1a3481baa1342aaf78da6d19c4",
+      "rollback_version": "6.0.31",
+      "r3_enabled": false
     },
-    "postmerge_ci": {
-      "managed_server_update": 35522688941,
-      "android_build": 35522688970,
-      "coordinated_product": 35522688968,
-      "field_ecosystem": 35522688948,
-      "current_release_contract": 35522688863,
-      "pc_sanity": 35522689148,
-      "coordinated_pc_package": 35522688932,
-      "windows_bootstrap": 35522688924,
-      "telegram_observability": 35522688957,
-      "final_acceptance": 35522688947,
-      "nexus_transport": 35522689001,
-      "result": "PASS"
+    "chatgpt_pc_recovery_evidence": {
+      "sentinel_last_modified_utc": "2026-09-20T03:45:48.739Z",
+      "markers": [
+        "ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
+        "FAIL restart_not_alive_after_reaper_and_recovery_update",
+        "WARN heartbeat_fresh_command_plane_stale",
+        "stale_process_reaper HOLD on agent/watchdog processes"
+      ],
+      "conclusion": "LOCAL_RECOVERY_COMMAND_PLANE_NOT_PROVEN_LIVE"
     },
-    "latest_field_truth": {
-      "observed_at_utc": "2026-09-20T16:25:07+00:00",
-      "resident_server_version": "0.7.6",
-      "update_state": "CHECK_FAILED",
-      "nexus_version": "0.2.3",
-      "nexus_state": "HUMAN_AUTH_REQUIRED",
-      "telegram_state": "DEGRADED_RETRY",
-      "telegram_error_class": "URLError",
-      "telegram_error": "WinError 10060 outbound timeout",
-      "telegram_consecutive_failures": 163,
-      "pc_memory_load_percent": 90,
-      "pc_available_memory_mb": 340,
-      "field_convergence": "PENDING"
-    },
-    "no_replay": true,
-    "next_atomic_action": "Read fresh BCP_RUNTIME_LATEST.json for 0.7.8 convergence; no install replay."
+    "pending_r0_probes": [
+      "cmd-bcp-netprobe-rawgithub-20260920T1634Z",
+      "cmd-bcp-netprobe-telegram-20260920T1634Z",
+      "cmd-bcp-netprobe-drive-20260920T1634Z",
+      "cmd-bcp-diagnose-host-20260920T1634Z"
+    ],
+    "prohibited_replay": [
+      "NO_BCP_REINSTALL",
+      "NO_CHATGPT_PC_PACKAGE_REBUILD",
+      "NO_DUPLICATE_NETWORK_PROBES",
+      "NO_MANUAL_HEAD_EDIT"
+    ],
+    "next_atomic_action": "Restore local recovery/command-plane executor; then read existing R0 probe receipts and resume BCP convergence.",
+    "no_replay": true
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1782,5 +1777,16 @@
     "merge_sha": "ee8c1b0b68c510336998b2563c96438567a9a561",
     "ci_result": "PASS",
     "field_verified": false
+  },
+  "cross_plane_liveness_incident": {
+    "incident_id": "BCP-CHATGPTPC-CROSSPLANE-LIVENESS-20260920",
+    "severity": "P0",
+    "evidence_class": "FIELD_MACHINE_READBACK",
+    "package_missing": false,
+    "recovery_target_valid": true,
+    "command_consumer_proven_live": false,
+    "remote_drive_write_path_working": true,
+    "local_drive_command_consumption_working": false,
+    "field_verified_resolution": false
   }
 }
