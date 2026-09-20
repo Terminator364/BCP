@@ -3741,7 +3741,7 @@ def selftest() -> int:
         } <= advanced_values
         assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert "POURQUOI CET ÉTAT" in svc.why()
-        assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen() and "Kinshasa" in svc.since_last_seen()
+        since_view = svc.since_last_seen()\n        assert "DEPUIS VOTRE DERNIÈRE VISITE" in since_view and "+00:00" not in since_view
         assert "RADAR" in svc.risk_radar()
         cx = sqlite3.connect(db)
         old_gap = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
