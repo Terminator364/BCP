@@ -1160,8 +1160,8 @@ class Service:
         if delivery_gaps:
             oldest_gap = max(int(x.get("age_seconds") or 0) for x in delivery_gaps)
             attention_reasons.append(
-                str(len(delivery_gaps)) + " réponse(s) assistant ont un miroir BCP mais aucune preuve de lecture depuis au moins "
-                + self._age_label(oldest_gap) + "."
+                str(len(delivery_gaps)) + " réponse(s) ChatGPT sont sauvegardées dans BCP, mais aucune confirmation de lecture n’a été reçue depuis "
+                + self._age_label(oldest_gap) + ". Si vous les avez déjà lues, utilisez « ✅ Vu / compris »; sinon ouvrez « 💬 Messages récents »."
             )
         if human_gate != "AUCUNE":
             attention_reasons.append("Une intervention humaine est explicitement requise par la mission.")
@@ -1245,7 +1245,7 @@ class Service:
         headline = self._attention_label(attention_level)
         headline_detail = {
             "CRITICAL": "Le système nécessite une vérification prioritaire.",
-            "ACTION": "Une étape précise attend votre intervention; le reste est conservé.",
+            "ACTION": "Une action précise vous attend. Tout le reste est sauvegardé; vous pouvez agir sans recommencer le projet.",
             "WATCH": "Le système reste suivi mais un signal mérite attention.",
             "ACTIVE": "Des preuves récentes indiquent que le travail avance.",
             "NORMAL": "Aucun signal prioritaire détecté.",
@@ -1884,7 +1884,7 @@ class Service:
     def _attention_label(level: str) -> str:
         return {
             "CRITICAL": "🔴 CRITIQUE",
-            "ACTION": "🟣 ACTION REQUISE",
+            "ACTION": "🟣 VOTRE ACTION EST NÉCESSAIRE",
             "WATCH": "🟠 À SURVEILLER",
             "ACTIVE": "🟢 EN COURS",
             "NORMAL": "🔵 STABLE",
@@ -2334,8 +2334,22 @@ class Service:
 
     def help(self) -> str:
         return (
-            "Automate de suivi BCP — lecture simple\n"
-            "/continue — demander une reprise durable\n/status — situation actuelle\n/conversations — derniers messages synchronisés X/Y/Z\n/conversation <ID> — ouvrir les derniers messages d’une conversation\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/ack — confirmer que vous avez vu le signal courant\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "BCP Cockpit — mode d’emploi rapide\n"
+            "🟢 Où en sommes-nous ? — état général, progression et prochaine étape.\n"
+            "🕘 Nouveautés — uniquement ce qui a changé depuis votre dernière visite.\n"
+            "💬 Messages récents — réponses ChatGPT/BCP synchronisées et leur état de livraison.\n"
+            "❓ Pourquoi cet état ? — raisons observables derrière l’alerte ou le statut.\n"
+            "📍 Étape actuelle — action en cours ou dernière action prouvée.\n"
+            "🎯 Objectif & plan — objectif courant et plan durable.\n"
+            "⚙️ Travail récent — micro-actions et reçus récents.\n"
+            "🔭 Risques à venir — risques prédictifs, séparés des faits confirmés.\n"
+            "▶️ Reprendre maintenant — crée une demande de reprise durable, sans dupliquer le travail déjà terminé.\n"
+            "✅ Vu / compris — confirme que vous avez pris connaissance de l’alerte courante.\n"
+            "🔕 Pause 2h / 🔔 Alertes normales — règle seulement les notifications non critiques.\n"
+            "📄 Résumé PDF / 🖥️ État appareils / 🧭 Plan mission / 📚 Audit PDF — rapports téléchargeables.\n"
+            "🧰 Détails techniques — diagnostics GitHub, transport, CI et preuves.\n\n"
+            "Commandes équivalentes :\n"
+            "/continue /status /conversations /since /why /risks /ack /quiet 120 /objective /missions /details\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -2421,39 +2435,42 @@ class Telegram:
         return {
             "inline_keyboard": [
                 [
-                    {"text": "🟢 Situation", "callback_data": "bcp:status"},
-                    {"text": "🕘 Depuis ma visite", "callback_data": "bcp:since"},
+                    {"text": "🟢 Où en sommes-nous ?", "callback_data": "bcp:status"},
+                    {"text": "🕘 Nouveautés", "callback_data": "bcp:since"},
                 ],
                 [
-                    {"text": "💬 Conversations", "callback_data": "bcp:conversations"},
-                    {"text": "❓ Pourquoi ?", "callback_data": "bcp:why"},
+                    {"text": "💬 Messages récents", "callback_data": "bcp:conversations"},
+                    {"text": "❓ Pourquoi cet état ?", "callback_data": "bcp:why"},
                 ],
                 [
-                    {"text": "🔭 Radar", "callback_data": "bcp:risks"},
                     {"text": "📍 Étape actuelle", "callback_data": "bcp:where"},
+                    {"text": "🎯 Objectif & plan", "callback_data": "bcp:missions"},
                 ],
                 [
-                    {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
-                    {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
+                    {"text": "⚙️ Travail récent", "callback_data": "bcp:tail"},
+                    {"text": "🔭 Risques à venir", "callback_data": "bcp:risks"},
                 ],
                 [
-                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
+                    {"text": "▶️ Reprendre maintenant", "callback_data": "bcp:continue"},
                 ],
                 [
-                    {"text": "✅ J’ai vu", "callback_data": "bcp:ack"},
-                    {"text": "🔕 Discret 2h", "callback_data": "bcp:quiet:120"},
-                    {"text": "🔔 Normal", "callback_data": "bcp:quiet:off"},
+                    {"text": "✅ Vu / compris", "callback_data": "bcp:ack"},
+                    {"text": "🔕 Pause 2h", "callback_data": "bcp:quiet:120"},
+                    {"text": "🔔 Alertes normales", "callback_data": "bcp:quiet:off"},
                 ],
                 [
-                    {"text": "🧰 Technique", "callback_data": "bcp:details"},
+                    {"text": "❔ Aide / mode d’emploi", "callback_data": "bcp:help"},
                 ],
                 [
-                    {"text": "📄 Suivi", "callback_data": "bcp:pdf:summary"},
-                    {"text": "🖥️ Appareils", "callback_data": "bcp:pdf:devices"},
+                    {"text": "📄 Résumé PDF", "callback_data": "bcp:pdf:summary"},
+                    {"text": "🖥️ État appareils", "callback_data": "bcp:pdf:devices"},
                 ],
                 [
-                    {"text": "🧭 Mission", "callback_data": "bcp:pdf:mission"},
-                    {"text": "📚 Audit", "callback_data": "bcp:pdf:technical"},
+                    {"text": "🧭 Plan mission", "callback_data": "bcp:pdf:mission"},
+                    {"text": "📚 Audit PDF", "callback_data": "bcp:pdf:technical"},
+                ],
+                [
+                    {"text": "🧰 Détails techniques", "callback_data": "bcp:details"},
                 ],
             ]
         }
@@ -2597,7 +2614,8 @@ class Telegram:
             "bcp:missions": ("/objective", "Objectif"),
             "bcp:quiet:120": ("/quiet 120", "Mode discret 2h"),
             "bcp:quiet:off": ("/quiet off", "Mode normal"),
-            "bcp:details": ("/details", "Détails"),
+            "bcp:details": ("/details", "Détails techniques"),
+            "bcp:help": ("/help", "Mode d’emploi"),
         }
         return mapping.get(data, ("", ""))
 
