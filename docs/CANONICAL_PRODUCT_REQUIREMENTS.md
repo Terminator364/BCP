@@ -1586,3 +1586,53 @@ A fresh retry MUST be an explicit human-confirmed action and MUST:
 
 The explicit retry endpoint is `/v1/system/nexus/retry-auth` and requires `{"confirm": true}`.
 Ordinary `/v1/system/nexus/apply` remains non-escalating when the current state is already `HUMAN_AUTH_REQUIRED`.
+
+
+## R53 — Human-first Cockpit simplification and user guide
+
+This requirement is additive and preserves prior cockpit, evidence, Nexus, Telegram and mission semantics.
+
+### Human comprehension is a P0 acceptance criterion
+The normal Telegram/API cockpit MUST be understandable without Git, CI, SHA, transport or internal BCP vocabulary.
+
+The primary surface MUST answer in this order:
+1. where are we now;
+2. what changed;
+3. what is the current step;
+4. what happens next;
+5. does the user need to act;
+6. why is the system showing this state.
+
+### Required primary labels
+Direct Telegram and Nexus MUST expose semantically identical controls:
+- 🟢 Où en sommes-nous ?
+- 🕘 Nouveautés
+- 💬 Messages récents
+- ❓ Pourquoi cet état ?
+- 📍 Étape actuelle
+- 🎯 Objectif & plan
+- ⚙️ Travail récent
+- 🔭 Risques à venir
+- ▶️ Reprendre maintenant
+- ✅ Vu / compris
+- 🔕 Pause 2h
+- 🔔 Alertes normales
+- ❔ Aide / mode d’emploi
+
+Deep technical evidence remains behind:
+- 🧰 Détails techniques;
+- the four PDF exports.
+
+### Delivery-gap wording
+A mirrored assistant response with no seen evidence MUST NOT be phrased as if ChatGPT necessarily failed.
+The human-facing explanation must say that BCP has a durable copy but has not received a reading confirmation, and must provide a clear choice:
+- ✅ Vu / compris if already read;
+- 💬 Messages récents or email mirror if not visible in ChatGPT.
+
+### User guide
+The canonical guide is:
+- docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md
+
+### Interactive tranche and exact mail mirror
+The active API/BCP work cadence is now 8–10 minutes by user request.
+When email is available, the exact checkpoint body MUST be sent by email before the final ChatGPT checkpoint is surfaced. The email body and ChatGPT final body MUST be textually identical.
