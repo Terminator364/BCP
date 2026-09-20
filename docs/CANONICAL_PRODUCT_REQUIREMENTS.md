@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R25
+Revision: 2026-09-20-R26
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1306,3 +1306,35 @@ Telegram MUST surface sequence incompleteness as a human-readable WATCH signal i
 
 Canonical detail:
 - `docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md`
+
+## P0 — Producer Watermark Sync & Receipt Acknowledgement / R26
+
+This requirement is additive and preserves R25.
+
+BCP MUST distinguish “all receipts currently seen” from “all receipts the producer reports having emitted”.
+
+Supported producers MAY publish a durable high-water mark per conversation/session. BCP MUST compare this watermark with locally persisted producer-sequence receipts and derive COMPLETE / INCOMPLETE synchronization truth.
+
+BCP MUST:
+- persist producer watermarks and heartbeat timestamps;
+- distinguish producer sequence from BCP ingestion sequence;
+- detect both internal and tail gaps relative to the announced watermark;
+- automatically clear gaps when late receipts arrive;
+- write a local durable acknowledgement summarizing contiguous receipt progress;
+- expose authenticated producer-sync readback;
+- keep canonical conversation bodies local by default;
+- never translate producer synchronization evidence into a claim that the ChatGPT UI displayed a message.
+
+Telegram MUST show producer-sync completeness in the Conversations view.
+
+Canonical detail:
+- `docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md`
+
+### Interactive work cadence default
+
+For active technical project work where this project context is available, use bounded work tranches with a target of about **5 minutes** and an acceptable practical window of **5–7 minutes**, followed by a visible durable checkpoint.
+
+The cadence policy MUST NOT be treated as a background-execution promise: after ChatGPT responds, another invocation is required for the next ChatGPT tranche. Resident BCP components may continue independently where explicitly implemented.
+
+Canonical policy:
+- `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`
