@@ -276,3 +276,12 @@ Do not assume B-EDGE has a different Internet path merely because it is a phone.
 If all remote paths fail, local work and journaling continue; delivery resumes idempotently after connectivity returns.
 
 Update delivery is event-driven from qualified release metadata. It does not use ChatGPT scheduled automations. Windows may self-update automatically with hash/readback/rollback; Android may prefetch a verified APK but must respect any OS-required human install confirmation.
+
+
+## R40 — Provider mirror is not the local control plane
+
+On the target Windows PC, Google Drive for desktop streaming is treated as a virtual/synchronised transport. BCP and ChatGPT-PC critical liveness, leases, active release pointers and recovery transactions remain local-first. Drive receives bounded, replayable mirrors and payloads; its absence/staleness is diagnostic state, not local runtime death.
+
+Cloudflare authentication uses Wrangler device authorization only for automatic login. Classic localhost callback OAuth is not an automatic fallback. This prevents competing browser pages and false inference from a dead localhost callback.
+
+B-EDGE keeps the 15-minute WorkManager periodic safety net and uses unique one-shot reconciliation for prompt return-to-Wi-Fi recovery. A future signed B-EDGE release must unify the duplicate reconcile-worker paths before distribution.
