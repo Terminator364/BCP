@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.9"
+SERVER_VERSION = "0.7.0"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -36,12 +36,18 @@ TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
 TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
 TELEGRAM_COMPANION_HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
 TELEGRAM_COMPANION_WATCHDOG_PATH = STATE_DIR / "telegram_companion_watchdog.json"
+MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
+MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
+MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
 NEXUS_BOOTSTRAP_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json"
 NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
+MISSION_STALE_SECONDS = 10 * 60
+MISSION_WATCHDOG_MAX_AUTO_REQUESTS = 3
+MISSION_WATCHDOG_COOLDOWNS = (5 * 60, 15 * 60, 60 * 60)
 NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS = 5 * 60
 NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS = 30 * 60
 NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS = 4
@@ -457,6 +463,8 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
     chat = chatgpt_pc_status()
     telegram = telegram_companion_runtime_status()
     resources = windows_resource_status()
+    mission_watchdog = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
+    resume_request = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
     rec = {
         "schema": "bcp.external_runtime/1",
         "reason": str(reason)[:80],
@@ -503,6 +511,13 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "pc_power_source": resources.get("pc_power_source"),
         "pc_battery_percent": resources.get("pc_battery_percent"),
         "pc_battery_critical": bool(resources.get("pc_battery_critical")),
+        "mission_watchdog_state": str(mission_watchdog.get("state") or "NOT_OBSERVED")[:80],
+        "mission_watchdog_mission_id": str(mission_watchdog.get("mission_id") or "")[:120],
+        "mission_watchdog_stale_seconds": int(mission_watchdog.get("stale_seconds") or 0),
+        "mission_watchdog_attempt_count": int(mission_watchdog.get("attempt_count") or 0),
+        "mission_watchdog_last_action": str(mission_watchdog.get("last_action") or "")[:160],
+        "mission_resume_request_state": str(resume_request.get("state") or "")[:80],
+        "mission_resume_request_id": str(resume_request.get("request_id") or "")[:120],
     }
     written: list[str] = []
     for root in external_telemetry_roots():
@@ -527,6 +542,17 @@ def start_external_heartbeat_worker() -> None:
                     mirror_telemetry_status("TELEGRAM_COMPANION_WATCHDOG_FAILED", {
                         "status": "DEGRADED",
                         "error_class": type(e).__name__,
+                    })
+                except Exception:
+                    pass
+            try:
+                consume_mission_resume_request()
+                mission_watchdog_tick()
+            except Exception as e:
+                try:
+                    mirror_telemetry_status("MISSION_WATCHDOG_FAILED", {
+                        "status": "DEGRADED",
+                        "update_result": type(e).__name__,
                     })
                 except Exception:
                     pass
@@ -2714,6 +2740,211 @@ def mission_where(mission_id: str) -> dict:
     }
 
 
+def _parse_utc(value: str) -> dt.datetime | None:
+    try:
+        parsed = dt.datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=dt.timezone.utc)
+    except Exception:
+        return None
+
+
+def _mission_watchdog_anchor(mission_id: str) -> tuple[str, int]:
+    """Return last non-watchdog durable event time/seq so retries do not create fake progress."""
+    with db_connection() as cx:
+        row = cx.execute(
+            "SELECT seq,created_at,event_hash FROM mission_events "
+            "WHERE mission_id=? AND NOT (event_type='RETRY_SCHEDULED' AND summary LIKE 'Watchdog:%') "
+            "ORDER BY seq DESC LIMIT 1",
+            (mission_id,),
+        ).fetchone()
+    if not row:
+        mission = mission_get(mission_id)
+        return (str((mission or {}).get("last_progress_at") or ""), 0)
+    return (str(row["created_at"] or ""), int(row["seq"] or 0))
+
+
+def _latest_nonterminal_missions(limit: int = 8) -> list[dict]:
+    with db_connection() as cx:
+        rows = cx.execute(
+            "SELECT mission_id FROM missions WHERE status NOT IN ('DONE','CANCELLED') "
+            "ORDER BY updated_at DESC LIMIT ?",
+            (max(1, min(int(limit), 32)),),
+        ).fetchall()
+    out = []
+    for row in rows:
+        item = mission_get(str(row["mission_id"]))
+        if item:
+            out.append(item)
+    return out
+
+
+def request_mission_resume(mission_id: str, source: str = "WATCHDOG") -> dict:
+    mission = mission_get(mission_id)
+    if not mission:
+        raise ValueError("mission_not_found")
+    if mission.get("status") in MISSION_TERMINAL_STATES:
+        return {"result": "TERMINAL", "mission_id": mission_id}
+
+    hold = str(mission.get("hold_reason") or "").upper()
+    status = str(mission.get("status") or "").upper()
+    human_gate = status in {"PLATFORM_HOLD"} or any(
+        token in hold for token in ("USER_", "HUMAN_", "APPROVAL", "AUTHORIZATION", "LOGIN_REQUIRED")
+    )
+    if human_gate:
+        return {"result": "HUMAN_GATE", "mission_id": mission_id, "hold_reason": hold[:240]}
+
+    anchor_at, anchor_seq = _mission_watchdog_anchor(mission_id)
+    next_info = mission_next_action(mission_id)
+    next_action = next_info.get("next_action") or {}
+    step_id = str(next_action.get("id") or mission.get("next_step") or "RESUME")[:100]
+    worker = str(next_action.get("worker_class") or "UNSPECIFIED").upper()[:40]
+    request_id = sha256_text(
+        "mission-resume:" + mission_id + ":" + anchor_at + ":" + step_id
+    )[:32]
+
+    req = {
+        "schema": "bcp.mission_resume_request/1",
+        "request_id": request_id,
+        "mission_id": mission_id,
+        "project_id": str(mission.get("project_id") or "")[:128],
+        "source": str(source or "WATCHDOG")[:40],
+        "state": "QUEUED",
+        "step_id": step_id,
+        "worker_class": worker,
+        "anchor_at": anchor_at,
+        "anchor_seq": anchor_seq,
+        "created_at": utc_now(),
+        "zero_paid_spend_usd": 0.0,
+    }
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    old = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
+    if old.get("request_id") == request_id and old.get("state") in {"QUEUED", "ACKNOWLEDGED"}:
+        return {"result": "ALREADY_QUEUED", **old}
+    atomic_json(MISSION_RESUME_REQUEST_PATH, req)
+    with MISSION_RESUME_REQUEST_LOG.open("a", encoding="utf-8") as h:
+        h.write(canonical_json(req) + "\n")
+    append_mission_event(
+        mission_id,
+        "RETRY_SCHEDULED",
+        "watchdog:" + request_id,
+        step_id=step_id,
+        worker_component="BCP_WATCHDOG",
+        summary="Watchdog: durable resume request queued after stalled observable progress.",
+        status="RETRY_SCHEDULED",
+        payload={
+            "resume_request_id": request_id,
+            "source": str(source or "WATCHDOG")[:40],
+            "worker_class": worker,
+            "anchor_at": anchor_at,
+            "anchor_seq": anchor_seq,
+            "next_step": step_id,
+        },
+    )
+    mirror_telemetry_status("MISSION_RESUME_QUEUED", {
+        "status": "RETRY_SCHEDULED",
+        "revision": anchor_seq,
+    })
+    return {"result": "QUEUED", **req}
+
+
+def consume_mission_resume_request() -> dict:
+    """Acknowledge durable request locally. Execution is delegated to qualified workers/model broker."""
+    req = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
+    if not req or req.get("state") != "QUEUED":
+        return {"result": "NONE"}
+    mission_id = str(req.get("mission_id") or "")
+    mission = mission_get(mission_id)
+    if not mission:
+        req["state"] = "ORPHANED"
+        req["acknowledged_at"] = utc_now()
+        atomic_json(MISSION_RESUME_REQUEST_PATH, req)
+        return {"result": "ORPHANED"}
+    req["state"] = "ACKNOWLEDGED"
+    req["acknowledged_at"] = utc_now()
+    req["next_action"] = mission_next_action(mission_id).get("next_action")
+    atomic_json(MISSION_RESUME_REQUEST_PATH, req)
+    # Mirror to the Drive/control plane. A qualified orchestrator can consume the
+    # request without the user having to copy/paste context.
+    control = chatgpt_control_folder()
+    if control is not None:
+        root = control / "03_TELEMETRY" / "BCP"
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            atomic_json(root / "MISSION_RESUME_REQUEST.json", req)
+        except Exception:
+            pass
+    return {"result": "ACKNOWLEDGED", **req}
+
+
+def mission_watchdog_tick() -> dict:
+    now = dt.datetime.now(dt.timezone.utc)
+    state = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
+    selected = None
+    for mission in _latest_nonterminal_missions():
+        anchor_at, anchor_seq = _mission_watchdog_anchor(str(mission["mission_id"]))
+        anchor = _parse_utc(anchor_at)
+        if anchor is None:
+            continue
+        stale = max(0, int((now - anchor).total_seconds()))
+        if selected is None or stale > selected["stale_seconds"]:
+            selected = {
+                "mission": mission, "anchor_at": anchor_at,
+                "anchor_seq": anchor_seq, "stale_seconds": stale,
+            }
+    if selected is None:
+        rec = {"schema": "bcp.mission_watchdog/1", "state": "IDLE", "updated_at": utc_now()}
+        atomic_json(MISSION_WATCHDOG_STATE_PATH, rec)
+        return rec
+
+    mission = selected["mission"]
+    mission_id = str(mission["mission_id"])
+    stale = int(selected["stale_seconds"])
+    status = str(mission.get("status") or "").upper()
+    hold = str(mission.get("hold_reason") or "")
+    anchor_key = sha256_text(mission_id + ":" + selected["anchor_at"])[:24]
+    previous_anchor = str(state.get("anchor_key") or "")
+    attempts = int(state.get("attempt_count") or 0) if previous_anchor == anchor_key else 0
+    last_requested = _parse_utc(state.get("last_requested_at")) if previous_anchor == anchor_key else None
+    cooldown = MISSION_WATCHDOG_COOLDOWNS[min(attempts, len(MISSION_WATCHDOG_COOLDOWNS) - 1)]
+    human_gate = status == "PLATFORM_HOLD" or any(
+        token in hold.upper() for token in ("USER_", "HUMAN_", "APPROVAL", "AUTHORIZATION", "LOGIN_REQUIRED")
+    )
+
+    rec = {
+        "schema": "bcp.mission_watchdog/1",
+        "state": "HEALTHY" if stale < MISSION_STALE_SECONDS else ("HUMAN_GATE" if human_gate else "STALLED"),
+        "mission_id": mission_id,
+        "project_id": str(mission.get("project_id") or ""),
+        "mission_status": status,
+        "current_step": str(mission.get("current_step") or ""),
+        "next_step": str(mission.get("next_step") or ""),
+        "last_proof_at": selected["anchor_at"],
+        "stale_seconds": stale,
+        "anchor_key": anchor_key,
+        "attempt_count": attempts,
+        "last_action": "OBSERVE",
+        "updated_at": utc_now(),
+    }
+
+    if stale >= MISSION_STALE_SECONDS and not human_gate and attempts < MISSION_WATCHDOG_MAX_AUTO_REQUESTS:
+        allowed = last_requested is None or (now - last_requested).total_seconds() >= cooldown
+        if allowed:
+            result = request_mission_resume(mission_id, source="AUTO_WATCHDOG")
+            if result.get("result") in {"QUEUED", "ALREADY_QUEUED"}:
+                attempts += 1
+                rec["state"] = "RESUME_REQUESTED"
+                rec["attempt_count"] = attempts
+                rec["last_requested_at"] = utc_now()
+                rec["last_action"] = "QUEUE_RESUME_REQUEST"
+                rec["resume_request_id"] = str(result.get("request_id") or "")
+    elif attempts >= MISSION_WATCHDOG_MAX_AUTO_REQUESTS and stale >= MISSION_STALE_SECONDS:
+        rec["state"] = "ESCALATED"
+        rec["last_action"] = "NOTIFY_USER_NO_MORE_AUTO_RETRIES"
+
+    atomic_json(MISSION_WATCHDOG_STATE_PATH, rec)
+    return rec
+
+
 def provider_call_allowed(expected_cost_usd: float, provider_state: str) -> tuple[bool, str]:
     if float(expected_cost_usd or 0.0) > 0.0:
         return False, "COST_HOLD"
@@ -3317,7 +3548,7 @@ class Handler(BaseHTTPRequestHandler):
 def selftest():
     import tempfile
 
-    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH
+    global APP_ROOT, STATE_DIR, TELEMETRY_DIR, DB_PATH, TOKEN_PATH, PAIR_PATH, MISSION_WATCHDOG_STATE_PATH, MISSION_RESUME_REQUEST_PATH, MISSION_RESUME_REQUEST_LOG
     with tempfile.TemporaryDirectory() as td:
         APP_ROOT = Path(td)
         STATE_DIR = APP_ROOT / "state"
@@ -3325,6 +3556,9 @@ def selftest():
         DB_PATH = STATE_DIR / "bcp.sqlite3"
         TOKEN_PATH = STATE_DIR / "bcp_token.txt"
         PAIR_PATH = STATE_DIR / "paired_edge.json"
+        MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
+        MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
+        MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
         token = ensure_state()
         assert token
         r1 = commit_event(
@@ -3505,7 +3739,43 @@ def selftest():
         )
         assert hold["mission"]["next_step"] == "validate"
         assert mission_next_action(mission_id)["next_action"]["id"] == "validate"
-        assert len(mission_tail(mission_id, 50)) >= 4
+        assert request_mission_resume(mission_id, "SELFTEST").get("result") == "HUMAN_GATE"
+        resumed = append_mission_event(
+            mission_id,
+            "STARTED",
+            "mission-selftest-resume-started",
+            step_id="validate",
+            worker_component="LOCAL",
+            summary="Resume path is again machine-runnable.",
+            status="STARTED",
+            failure_hold_reason="",
+            payload={"next_step": "validate"},
+        )
+        assert resumed["result"] == "RECORDED"
+        # Force only the non-watchdog evidence anchor stale. The watchdog retry
+        # event itself must never be allowed to masquerade as real task progress.
+        old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=20)).replace(microsecond=0).isoformat()
+        with db_connection() as cx:
+            cx.execute(
+                "UPDATE mission_events SET created_at=? WHERE mission_id=? AND idempotency_key=?",
+                (old, mission_id, "mission-selftest-resume-started"),
+            )
+            cx.execute(
+                "UPDATE missions SET last_progress_at=?,updated_at=? WHERE mission_id=?",
+                (old, old, mission_id),
+            )
+        wd1 = mission_watchdog_tick()
+        assert wd1["state"] == "RESUME_REQUESTED"
+        assert wd1["attempt_count"] == 1
+        req1 = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
+        assert req1.get("state") == "QUEUED"
+        assert req1.get("mission_id") == mission_id
+        ack = consume_mission_resume_request()
+        assert ack["result"] == "ACKNOWLEDGED"
+        # Same anchor + cooldown => no duplicate automatic retry.
+        wd2 = mission_watchdog_tick()
+        assert wd2["attempt_count"] == 1
+        assert len(mission_tail(mission_id, 50)) >= 5
         assert provider_call_allowed(0.0, "ACTIVE_FREE_PROVIDER") == (True, "ALLOW")
         assert provider_call_allowed(0.01, "ACTIVE_FREE_PROVIDER") == (False, "COST_HOLD")
         assert provider_call_allowed(0.0, "FIELD_UNVERIFIED") == (False, "FREE_MODEL_CAPACITY_HOLD")
@@ -3526,6 +3796,9 @@ def selftest():
         assert "windows_resource_status" in source
         assert "pc_battery_critical" in source
         assert "pc_memory_load_percent" in source
+        assert "mission_watchdog_tick" in source
+        assert "request_mission_resume" in source
+        assert "MISSION_RESUME_REQUESTS.jsonl" in source
         assert "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS" in source

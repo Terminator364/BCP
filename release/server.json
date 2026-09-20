@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.6.9",
+  "version": "0.7.0",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "dc6131f900662299880b8092c185b590466f7bf86dee2add7a721bd12cb41ba3",
+  "sha256": "b5d92a1fdac8dbcdd689273d401f50745f5938e98376a50a9ed94cd4b71e5832",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.0.0-rc1-evergreen",
-  "requirements_revision": "2026-09-20-R15",
-  "release_train": "BCP-0.6.9_EDGE-2.0.0-rc1",
-  "notes": "Preserves Telegram liveness/watchdog and adds dependency-free Windows RAM, AC/battery percentage and battery-critical telemetry to the external heartbeat so the human cockpit can distinguish alive, memory pressure and critical-power states."
+  "requirements_revision": "2026-09-20-R16",
+  "release_train": "BCP-0.7.0_EDGE-2.0.0-rc1",
+  "notes": "Adds offline-first mission stall watchdog: durable stagnation detection, bounded auto-resume intents, human-gate suppression, Drive/control-plane resume receipts and existing Telegram/runtime watchdogs. No claim that a ChatGPT UI session can self-continue; qualified BCP workers/model broker consume the durable intent when available."
 }

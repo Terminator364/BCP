@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R15
+Revision: 2026-09-20-R16
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -963,3 +963,53 @@ Telegram MUST expose at least four complementary generated PDFs:
 4. technical dossier / audit.
 
 Each report is generated from current durable evidence and is designed to be substantially more complete than the compact live card.
+
+## P0 — Offline mission sentinel, stall detection and bounded resume (R16)
+
+The product MUST remain operationally understandable when the user is away from the PC, the PC loses Internet, Telegram is unreachable from the home Wi-Fi, or the interactive ChatGPT conversation stops producing external evidence.
+
+### Truth boundary
+BCP MUST NOT claim that a standard ChatGPT UI conversation can literally click its own Continue button or execute indefinitely in the background. Instead:
+- durable state/checkpoints remain authoritative outside chat;
+- BCP detects absence of new **external proof**, not hidden model state;
+- BCP creates a durable resume intent that qualified local/edge/model-broker workers can consume when available;
+- Telegram reports what was detected/requested, without inventing hidden ChatGPT activity.
+
+### Stall detector
+For each nonterminal mission, BCP tracks the last **non-watchdog evidence anchor**. A watchdog-generated retry event MUST NOT reset that anchor or masquerade as real task progress.
+
+Default policy:
+- stale threshold: approximately 10 minutes without a new non-watchdog proof;
+- bounded automatic resume requests: maximum 3 per unchanged evidence anchor;
+- increasing cooldowns: approximately 5 min, 15 min, then 60 min;
+- a new genuine proof resets the retry epoch;
+- terminal missions are ignored;
+- explicit human authorization/approval/login/platform gates suppress blind auto-resume.
+
+### Durable resume intent
+A resume request MUST be:
+- atomic and persisted locally before acknowledgement;
+- assigned a deterministic idempotency key derived from mission + evidence anchor + next step;
+- mirrored to the existing control/Drive plane when available;
+- replay-safe across reboot/network loss;
+- zero-paid-spend by default;
+- consumed only by a qualified worker/orchestrator; persistence of the request is not itself proof of task completion.
+
+### Telegram
+The cockpit MUST expose a real **▶️ Continuer** control. It creates the same durable resume intent as the automatic watchdog and MUST deduplicate an already-pending request.
+
+The cockpit SHOULD proactively notify, with deduplication:
+- stalled progress detected;
+- automatic resume requested;
+- retry budget exhausted/escalated;
+- genuine human gate reached.
+
+### Two-sentinel target
+The PC BCP process is the local sentinel while the PC is running. The dedicated old-phone B-EDGE node is the target secondary sentinel for periods where the PC is off/unreachable:
+- B-EDGE preserves mission/outbox/checkpoint metadata;
+- it can receive remote control through the qualified Nexus/Telegram path;
+- it does not invent PC progress;
+- it queues heavy PC work as WAITING_FOR_PC;
+- when the PC returns, state is reconciled by idempotency/revision/fencing before execution.
+
+No duplicate Telegram poller is introduced.
