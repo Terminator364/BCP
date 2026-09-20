@@ -54,7 +54,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/report", "/reporttech",
+    "/tail", "/where", "/missions", "/objective", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -743,6 +743,28 @@ class Service:
         }
 
     @staticmethod
+    def _forecast_micro_labels(action: str) -> list[str]:
+        low = clean(action, 220).lower()
+        labels = [
+            "Lire les preuves et fichiers utiles",
+            "Identifier le prochain changement atomique",
+        ]
+        if any(x in low for x in ("pdf", "fichier", "file", "doc", "rapport")):
+            labels += ["Ouvrir/lire le document ciblé", "Vérifier les données extraites"]
+        if any(x in low for x in ("workflow", "ci", "test", "build", "qualification")):
+            labels += ["Vérifier le workflow ciblé", "Lancer le test", "Lire le résultat et les logs"]
+        if any(x in low for x in ("corrig", "patch", "modifier", "update", "mise à jour", "code")):
+            labels += ["Appliquer la modification ciblée", "Vérifier syntaxe et cohérence"]
+        if any(x in low for x in ("release", "merge", "publ", "déploi", "deploy")):
+            labels += ["Aligner versions et hashes", "Vérifier les contrats de release", "Intégrer après PASS"]
+        labels += ["Sauvegarder un checkpoint durable", "Effectuer le readback de confirmation"]
+        out = []
+        for item in labels:
+            if item not in out:
+                out.append(item)
+        return out[:10]
+
+    @staticmethod
     def _human_ci_explanation(gh: dict) -> str:
         runs = gh.get("runs") or []
         if not runs:
@@ -890,6 +912,18 @@ class Service:
             edge_text = "🔴 Ancien téléphone : serveur non appairé"
 
         human_gate = self._human_gate(ev, next_action)
+        chat_state = self.local.chat(self.project_id).get("state")
+        ci_active = ci_state in {"in_progress", "queued", "requested"}
+        if chat_state == "CHAT_PLATFORM_HOLD_REPORTED":
+            execution_text = "🟠 Exécution : interruption plateforme signalée · reprise depuis le dernier checkpoint"
+        elif ci_active:
+            execution_text = "🔄 Exécution : travail distant encore actif (tests/qualification)"
+        elif isinstance(age, int) and age >= 900:
+            execution_text = "⏸️ Exécution : pause apparente · aucune nouvelle micro-action confirmée depuis " + age_label
+        elif isinstance(age, int) and age < 120:
+            execution_text = "▶️ Exécution : activité récente confirmée"
+        else:
+            execution_text = "🔵 Exécution : suivi actif · prochaine preuve attendue"
         rendered_at = utc_now()
         refresh_seconds = 60 if mission_state not in {"DONE", "CANCELLED"} else 300
         refresh_bucket = int(time.time() // refresh_seconds)
@@ -919,6 +953,7 @@ class Service:
             "🎯 Objectif actuel : " + objective,
             "📈 Avancement estimé : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
             "🧭 Étape en cours : " + action,
+            execution_text,
         ]
         if last_completed and "Aucune étape" not in last_completed:
             lines.append("✅ Dernière action confirmée : " + last_completed)
@@ -1166,6 +1201,34 @@ class Service:
             body, title = self.report_summary(), "BCP Situation humaine complete"
         return text_pdf_bytes(title, body)
 
+    def objective(self) -> str:
+        ctx = self._mission_context()
+        events = [
+            e for e in self.local.mission_events(160)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        mission = (ctx or {}).get("mission") or {}
+        objective = clean(
+            mission.get("objective") or mission.get("title") or
+            (events[-1].get("mission_objective") if events else "") or
+            "Faire avancer l’objectif API/BCP courant jusqu’au prochain état durable vérifié.",
+            260,
+        )
+        current = clean((ctx or {}).get("current") or (events[-1].get("action_summary") if events else "") or "Synchroniser l’état courant.", 220)
+        next_action = self._human_action((ctx or {}).get("next") or (events[-1].get("next_safe_action") if events else ""))
+        lines = [
+            "🎯 OBJECTIF ACTUEL",
+            objective,
+            "",
+            "📈 Avancement estimé : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
+            "🧭 Maintenant : " + current,
+        ]
+        if next_action:
+            lines.append("➡️ Ensuite : " + next_action)
+        lines += ["", self.plan_view()]
+        return "\n".join(lines)
+
     def missions(self) -> str:
         events = self.local.mission_events(200)
         if not events:
@@ -1302,41 +1365,83 @@ class Service:
         return "\n".join(lines)
 
     def where(self, code: str = "") -> str:
+        ctx = self._mission_context()
         events = self.local.mission_events(160)
         if code:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
-        if not events:
-            return "Aucune progression durable observée pour cette mission."
-        return self.progress_event(events[-1])
+        ev = events[-1] if events else {}
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        current = clean(
+            (ctx or {}).get("current") or ev.get("action_summary") or ev.get("step_summary") or
+            ev.get("step_id") or "Synchronisation de l’étape courante.",
+            220,
+        )
+        next_action = self._human_action((ctx or {}).get("next") or ev.get("next_safe_action") or "")
+        state = str(((ctx or {}).get("mission") or {}).get("status") or ev.get("state") or "EN_COURS").upper()
+        human_state = {
+            "DONE": "terminée",
+            "COMMITTED": "étape enregistrée",
+            "VALIDATING": "vérification en cours",
+            "STARTED": "travail en cours",
+            "DISPATCHED": "action lancée",
+            "HOLD": "en attente",
+            "BLOCKED": "bloquée",
+        }.get(state, state.replace("_", " ").lower())
+        lines = [
+            "🔵 OÙ EN EST-ON ?",
+            "État : " + human_state,
+            "Progression estimée : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
+            "Étape actuelle : " + current,
+        ]
+        if next_action:
+            lines.append("Étape suivante : " + next_action)
+        lines.append("ℹ️ Le total ≈ est recalculé si de nouvelles micro-actions deviennent nécessaires.")
+        return "\n".join(lines)
 
     def tail(self, code: str = "") -> str:
         ctx = self._mission_context()
-        if ctx:
-            mission = ctx.get("mission") or {}
-            mission_id = str(mission.get("mission_id") or "")
-            rows = self.local.mission_event_tail(mission_id, 10) if mission_id else []
-            if rows:
-                lines = ["📋 Journal des micro-actions vérifiables"]
-                label_by_id = ctx.get("label_by_id") or {}
-                for pos, row in enumerate(rows, 1):
-                    step_id = clean(row.get("step_id"), 80)
-                    label = clean(label_by_id.get(step_id) or row.get("summary") or step_id or "Micro-action", 170)
-                    state = str(row.get("status") or row.get("event_type") or "EVENT").upper()
-                    icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED", "VERIFIED"} else ("🔴" if state in HOLD_STATES or "FAIL" in state else "•")
-                    when = clean(row.get("created_at"), 40)
-                    lines.append(str(pos) + ". " + icon + " " + label + ((" · " + when) if when else ""))
-                return "\n".join(lines)
-
         events = self.local.mission_events(160)
         if code:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
-        if not events:
-            return "📋 Journal des micro-actions\nAucun événement durable observé."
-        lines = ["📋 Journal des micro-actions vérifiables"]
-        for pos, ev in enumerate(events[-10:], 1):
-            state = clean(ev.get("state") or "EVENT", 30)
-            step = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "Micro-action", 140)
-            lines.append(str(pos) + ". " + state + " — " + step)
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        lines = [
+            "⚙️ ACTIVITÉ FINE",
+            "Compteur prévisionnel : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
+            "",
+            "Micro-actions confirmées récemment :",
+        ]
+        durable_rows = []
+        if ctx:
+            mission = ctx.get("mission") or {}
+            mission_id = str(mission.get("mission_id") or "")
+            durable_rows = self.local.mission_event_tail(mission_id, 8) if mission_id else []
+        if durable_rows:
+            label_by_id = ctx.get("label_by_id") or {}
+            for pos, row in enumerate(durable_rows, 1):
+                step_id = clean(row.get("step_id"), 80)
+                label = clean(label_by_id.get(step_id) or row.get("summary") or step_id or "Micro-action", 170)
+                state = str(row.get("status") or row.get("event_type") or "EVENT").upper()
+                icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED", "VERIFIED"} else ("🟠" if state in HOLD_STATES or "FAIL" in state else "•")
+                lines.append(str(pos) + ". " + icon + " " + label)
+        elif events:
+            for pos, ev in enumerate(events[-8:], 1):
+                state = str(ev.get("state") or "EVENT").upper()
+                icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED"} else "•"
+                step = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "Micro-action", 160)
+                lines.append(str(pos) + ". " + icon + " " + step)
+        else:
+            lines.append("• Aucun reçu fin récent; la prévision ci-dessous reste disponible.")
+
+        current = clean((ctx or {}).get("current") or (events[-1].get("action_summary") if events else "") or "Continuer la mission courante", 220)
+        predicted = self._forecast_micro_labels(current)
+        base = int(forecast["done"])
+        lines += ["", "Prochaines micro-actions prévues (≈) :"]
+        for offset, label in enumerate(predicted[:6], 1):
+            number = base + offset
+            if number > forecast["total"]:
+                break
+            lines.append("≈" + str(number) + "/" + str(forecast["total"]) + " ⬜ " + label)
+        lines.append("ℹ️ Prévision ≠ preuve : les numéros peuvent être recalculés si le travail révèle de nouvelles sous-actions.")
         return "\n".join(lines)
 
     def holds(self) -> str:
@@ -1360,7 +1465,7 @@ class Service:
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
-            "/status — situation actuelle\n/missions — objectifs/missions\n/details — vue technique\n"
+            "/status — situation actuelle\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -1383,6 +1488,8 @@ class Service:
             return self.status()
         if cmd == "/missions":
             return self.missions()
+        if cmd == "/objective":
+            return self.objective()
         if cmd == "/details":
             return self.details()
         if cmd == "/project":
@@ -1537,7 +1644,7 @@ class Telegram:
             "bcp:status": ("/status", "Actualisation"),
             "bcp:where": ("/where", "Position"),
             "bcp:tail": ("/tail", "Micro-actions"),
-            "bcp:missions": ("/missions", "Missions"),
+            "bcp:missions": ("/objective", "Objectif"),
             "bcp:details": ("/details", "Détails"),
         }
         return mapping.get(data, ("", ""))
@@ -1575,7 +1682,7 @@ class Telegram:
         self.answer_callback(callback_id, label)
         response = self.service.dispatch(command)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/where", "/tail", "/missions", "/details"}:
+        if message_id and command in {"/status", "/where", "/tail", "/missions", "/objective", "/details"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -2138,9 +2245,9 @@ def selftest() -> int:
         assert "48273195" in svc.job("48273195")
         assert "Vérifier le commit de la PR" in svc.tail()
         assert "Lancer le test Windows Bootstrap" in svc.tail()
-        assert "étape enregistrée" in svc.where("48273195")
+        assert "OÙ EN EST-ON" in svc.where("48273195") and "≈" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
-        assert "Missions récentes" in svc.missions()
+        assert "Missions récentes" in svc.missions() and "OBJECTIF ACTUEL" in svc.objective()
         assert "Lecture seule" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
