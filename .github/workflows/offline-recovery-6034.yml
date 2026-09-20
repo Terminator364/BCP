@@ -1,0 +1,49 @@
+name: BCP Offline Recovery 6034 Qualification
+
+on:
+  pull_request:
+    paths:
+      - "windows/offline_recovery_6034/**"
+      - "tools/test_offline_recovery_6034.py"
+      - ".github/workflows/offline-recovery-6034.yml"
+  push:
+    branches: [main]
+    paths:
+      - "windows/offline_recovery_6034/**"
+      - "tools/test_offline_recovery_6034.py"
+      - ".github/workflows/offline-recovery-6034.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-11-shaped:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile installer and adversarial tests
+        shell: pwsh
+        run: |
+          python -m py_compile windows/offline_recovery_6034/offline_install_6034.py
+          python -m py_compile tools/test_offline_recovery_6034.py
+      - name: Run offline recovery adversarial suite
+        shell: pwsh
+        run: |
+          python tools/test_offline_recovery_6034.py
+      - name: Enforce manual-first / no-network contract
+        shell: pwsh
+        run: |
+          $s = Get-Content -Raw windows/offline_recovery_6034/offline_install_6034.py
+          foreach ($bad in @("urllib","requests","http://","https://","drive.google","G:\Mon Drive")) {
+            if ($s.Contains($bad)) { throw "NETWORK_OR_DRIVEFS_DEPENDENCY=$bad" }
+          }
+          if (-not $s.Contains("LOW_MEMORY_PREMUTATION")) { throw "LOW_MEMORY_GATE_MISSING" }
+          if (-not $s.Contains("INSTALL_ALREADY_RUNNING")) { throw "IDEMPOTENCY_LOCK_MISSING" }
+          if (-not $s.Contains("TARGET_SUPERSEDED")) { throw "NO_DOWNGRADE_GATE_MISSING" }
+          if (-not $s.Contains("RUNNER_DRIVEFS_FAILOPEN_CONTRACT")) { throw "DRIVEFS_REGRESSION_GATE_MISSING" }
+          Write-Host "OFFLINE_MANUAL_FIRST_CONTRACT=PASS"
