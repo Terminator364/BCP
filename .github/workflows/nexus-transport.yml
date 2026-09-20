@@ -87,6 +87,12 @@ jobs:
           assert "BCP_NEXUS_AUTH_DEVICE_FLOW=HUMAN_AUTH_REQUIRED_OR_EXPIRED" in bootstrap
           assert '@("login") -AllowFailure' not in bootstrap
           assert "DEFERRED_FALLBACK_BROWSER" not in bootstrap
+          server = pathlib.Path("windows/bcp_server.py").read_text(encoding="utf-8")
+          assert "/v1/system/nexus/retry-auth" in server
+          assert "EXPLICIT_FRESH_DEVICE_FLOW_RETRY" in server
+          assert "explicit_retry_nonce" in server
+          assert "previous_receipt_archived" in server
+          assert "explicit_confirm_required" in server
           print("BCP_NEXUS_SECURITY_CONTRACT=PASS")
 
   pc-client:
