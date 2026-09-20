@@ -1990,6 +1990,44 @@ class Telegram:
         except Exception:
             return None
 
+    def send_rich(self, rich_html: str, fallback_text: str) -> int | None:
+        """Prefer Bot API 10.3 Rich Messages; V9 plain text is mandatory fallback."""
+        try:
+            obj = self.api("sendRichMessage", {
+                "chat_id": self.chat_id,
+                "rich_message": {
+                    "html": redact_text(rich_html)[:30000],
+                    "skip_entity_detection": True,
+                },
+            }, 20)
+            result = obj.get("result") or {}
+            append_log("RICH_MESSAGE_SENT", mode="BOT_API_10_3")
+            try:
+                return int(result.get("message_id"))
+            except Exception:
+                return None
+        except Exception as e:
+            append_log("RICH_MESSAGE_SEND_FALLBACK",
+                       error_class=type(e).__name__, detail=clean(e, 140))
+            return self.send(fallback_text, with_keyboard=True)
+
+    def edit_rich(self, message_id: int, rich_html: str, fallback_text: str) -> bool:
+        try:
+            self.api("editMessageText", {
+                "chat_id": self.chat_id,
+                "message_id": int(message_id),
+                "rich_message": {
+                    "html": redact_text(rich_html)[:30000],
+                    "skip_entity_detection": True,
+                },
+            }, 20)
+            append_log("RICH_MESSAGE_EDITED", mode="BOT_API_10_3")
+            return True
+        except Exception as e:
+            append_log("RICH_MESSAGE_EDIT_FALLBACK",
+                       error_class=type(e).__name__, detail=clean(e, 140))
+            return self.edit(message_id, fallback_text, with_keyboard=True)
+
     def edit(self, message_id: int, text: str, with_keyboard: bool = True) -> bool:
         try:
             payload = {
@@ -2102,7 +2140,14 @@ class Telegram:
         response = self.service.dispatch(command)
         self.service.mark_user_seen("TELEGRAM_CALLBACK:" + data)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/since", "/why", "/risks", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
+        if command == "/status":
+            rich_html = self.service.rich_status_html()
+            if message_id:
+                if not self.edit_rich(int(message_id), rich_html, response):
+                    self.send(response)
+            else:
+                self.send_rich(rich_html, response)
+        elif message_id and command in {"/since", "/why", "/risks", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -2228,18 +2273,20 @@ class Telegram:
             return
         message_id = prior.get("message_id")
         updated = False
+        rich_html = self.service.rich_status_html()
         if message_id:
             try:
-                updated = self.edit(int(message_id), str(snap["text"]))
+                updated = self.edit_rich(int(message_id), rich_html, str(snap["text"]))
             except Exception:
                 updated = False
         if not updated:
-            message_id = self.send(str(snap["text"]))
+            message_id = self.send_rich(rich_html, str(snap["text"]))
         atomic_json(path, {
-            "schema": "bcp.telegram_system_presence/2",
+            "schema": "bcp.telegram_system_presence/3",
             "fingerprint": snap["fingerprint"],
             "updated_at": utc_now(),
             "transport": "DIRECT_TELEGRAM",
+            "render_mode": "RICH_V10_WITH_V9_FALLBACK",
             "message_id": message_id,
         })
 
@@ -2810,6 +2857,11 @@ def selftest() -> int:
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
+        rich = svc.rich_status_html()
+        assert "<table bordered striped compact>" in rich
+        assert 'style="success"' in rich or 'style="primary"' in rich or 'style="danger"' in rich
+        assert 'type="callback_data"' in rich
+        assert "Fallback V9" in rich
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
