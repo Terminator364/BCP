@@ -68,6 +68,7 @@ jobs:
             if (($out -join "`n") -notmatch '4\.135\.0') { throw 'NODE_DIRECT_NPX_CLI_OUTPUT_MISSING' }
             Write-Host 'BCP_FIELD_WRANGLER_FALLBACK_SHAPE=PASS'
           } finally {
+            if ($originalPath) { $env:PATH = $originalPath }
             Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
           }
 
@@ -96,6 +97,20 @@ jobs:
             $npmCli = Join-Path $nodeHome 'node_modules\npm\bin\npm-cli.js'
             if (-not (Test-Path $node) -or -not (Test-Path $npmCli)) { throw 'PINNED_NODE_LAYOUT_INVALID' }
 
+            # Strip the hosted runner's global Node from PATH so the test
+            # reproduces the user's Windows machine: only the pinned portable
+            # Node may satisfy npm lifecycle child processes such as esbuild.
+            $originalPath = $env:PATH
+            $env:PATH = $nodeHome + ';' + (Join-Path $env:SystemRoot 'System32') + ';' + $env:SystemRoot
+            $resolvedNode = (Get-Command node.exe -ErrorAction Stop).Source
+            if ([IO.Path]::GetFullPath($resolvedNode) -ne [IO.Path]::GetFullPath($node)) {
+              throw ('PORTABLE_NODE_NOT_FIRST_IN_PATH resolved=' + $resolvedNode)
+            }
+            $childProbe = & cmd.exe /d /s /c "node --version" 2>&1
+            if ($LASTEXITCODE -ne 0 -or (($childProbe -join ' ') -notmatch [regex]::Escape($nodeVersion))) {
+              throw 'PORTABLE_NODE_CHILD_PROCESS_PROBE_FAILED'
+            }
+
             $env:NPM_CONFIG_CACHE = Join-Path $root 'npm-cache'
             $env:NPM_CONFIG_AUDIT = 'false'
             $env:NPM_CONFIG_FUND = 'false'
@@ -110,7 +125,7 @@ jobs:
             $oldEap = $ErrorActionPreference
             try {
               $ErrorActionPreference = 'Continue'
-              $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund 2>&1
+              $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund --foreground-scripts 2>&1
               $installCode = $LASTEXITCODE
             } finally {
               $ErrorActionPreference = $oldEap
