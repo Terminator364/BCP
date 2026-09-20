@@ -5,7 +5,18 @@ function jsonResponse(body, status = 200) {
 }
 
 function nowIso() {
+  // Canonical machine time remains UTC.
   return new Date().toISOString();
+}
+
+function humanTimestampKinshasa(value = null, seconds = true) {
+  const d = value ? new Date(String(value)) : new Date();
+  if (Number.isNaN(d.getTime())) return cleanText(value || "heure non observée", 80);
+  const k = new Date(d.getTime() + 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  const base = pad(k.getUTCDate()) + "/" + pad(k.getUTCMonth() + 1) + "/" + k.getUTCFullYear()
+    + " à " + pad(k.getUTCHours()) + ":" + pad(k.getUTCMinutes());
+  return base + (seconds ? ":" + pad(k.getUTCSeconds()) : "") + " (Kinshasa)";
 }
 
 function cleanText(value, max = 3900) {
@@ -349,13 +360,13 @@ async function sendCachedReportPdf(env, reportKey) {
   const meta = {
     summary: ["BCP - Situation humaine complète", "BCP_1_SITUATION.pdf"],
     devices: ["BCP - Appareils, réseau et transports", "BCP_2_APPAREILS_RESEAU.pdf"],
-    mission: ["BCP - Objectif, étapes et micro-actions", "BCP_3_MISSION_MICRO_ACTIONS.pdf"],
+    mission: ["BCP - Objectif, étapes et progression", "BCP_3_MISSION_PROGRESS.pdf"],
     technical: ["BCP - Dossier technique et audit", "BCP_4_AUDIT_TECHNIQUE.pdf"],
   }[reportKey] || ["BCP - Rapport", "BCP_RAPPORT.pdf"];
   const title = meta[0];
   const filename = meta[1];
   const bytes = reportPdfBytes(title, String(row.body_text));
-  await telegramSendDocument(env, filename, bytes, title + " · " + String(row.updated_at || ""));
+  await telegramSendDocument(env, filename, bytes, title + " · " + humanTimestampKinshasa(row.updated_at, true));
   return true;
 }
 
@@ -709,7 +720,7 @@ async function health(env) {
   return jsonResponse({
     schema: "bcp.nexus.health/1",
     service: "BCP_NEXUS",
-    version: "0.2.3",
+    version: "0.2.6",
     status: db === "OK" ? "HEALTHY" : "DEGRADED",
     database: db,
     spend_policy: "ZERO_USD",
