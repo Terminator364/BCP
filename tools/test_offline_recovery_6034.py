@@ -31,8 +31,10 @@ def pack(path:Path,runner:str,duplicates:int=1,version="6.0.34",sequence=6034,fr
   z.writestr("payload/app/marker.txt","fixture")
  return hashlib.sha256(path.read_bytes()).hexdigest()
 
-def invoke(td:Path,pkg:Path,sha:str,mem:int=512,preflight=False):
+def invoke(td:Path,pkg:Path,sha:str,mem:int=512,preflight=False,active_version="6.0.32",active_sequence=6032):
  root=td/"install";root.mkdir(parents=True,exist_ok=True);(root/"state").mkdir(exist_ok=True)
+ if active_version:
+  (root/"state"/"active_release.json").write_text(json.dumps({"version":active_version,"sequence":active_sequence}),encoding="utf-8")
  work=td/"work"
  cmd=[sys.executable,str(INSTALLER),"--test-mode","--package",str(pkg),"--install-root",str(root),
       "--python",sys.executable,"--work-root",str(work),"--expected-sha",sha,
@@ -66,7 +68,8 @@ def main():
  with tempfile.TemporaryDirectory(prefix="r48_") as raw:
   td=Path(raw);pkg=td/"good.zip";sha=pack(pkg,GOOD_RUNNER)
   cp,root,work=invoke(td,pkg,sha,mem=159)
-  check("critical-memory-hold-premutation",cp.returncode==20 and "LOW_MEMORY_PREMUTATION" in cp.stdout and not (root/"state"/"active_release.json").exists())
+  baseline=json.loads((root/"state"/"active_release.json").read_text())
+  check("critical-memory-hold-premutation",cp.returncode==20 and "LOW_MEMORY_PREMUTATION" in cp.stdout and baseline=={"version":"6.0.32","sequence":6032} and not work.exists())
 
  with tempfile.TemporaryDirectory(prefix="r48_") as raw:
   td=Path(raw);pkg=td/"good.zip";sha=pack(pkg,GOOD_RUNNER)
