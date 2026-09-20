@@ -1,3 +1,29 @@
+# R56 Fresh Conversation Handoff — 2026-09-20
+
+Canonical continuation code for a new conversation:
+
+`BCPGO BCP`
+
+On a fresh conversation, this code means:
+- load the current durable `project_state.json`, this file, the canonical requirements, R55 delivery policy, writer-fence policy and CURRENT manifests;
+- do not reconstruct the project from chat history;
+- resume from the next uncommitted action only;
+- preserve the 8–10 minute tranche and email-only detailed checkpoint rule;
+- preserve the single-writer fence and exact-head CI/merge discipline.
+
+Current field truth at the R56 checkpoint:
+- BCP 0.7.12 is UP_TO_DATE on MBMPC;
+- ChatGPT-PC 6.0.34 / 6034 is alive and its command plane is fresh;
+- Telegram is ACTIVE in DIRECT_TELEGRAM mode;
+- Nexus 0.2.6 is not complete: it is in HUMAN_AUTH_REQUIRED because the Cloudflare device authorization is required or expired;
+- the current one-shot helper is `API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip`;
+- do not reuse a stale device code and do not fall back to `localhost:8976`;
+- Nexus may be called complete only after provider-authenticated readback.
+
+Current human gate: one fresh Nexus device authorization. No reboot, reinstall, or old Cloudflare retry should be performed before that gate.
+
+---
+
 # API — Official Project Continuity Handoff
 
 Canonical continuation code: `APIAX07`
