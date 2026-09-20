@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R54_HUMAN_PRESENTATION_AND_PDF_QUALITY_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R54 interface counter-audit completed a deeper human-presentation pass: mail-first checkpoint order and progressive disclosure remain R53 invariants; normal human timestamps are Kinshasa-local while durable machine evidence remains UTC; reports 1-3 hide internal IDs/error-field vocabulary; the local PDF renderer has WinAnsi French accents, Bold hierarchy, pagination, page counts and duplicate-title protection; Nexus fallback was upgraded to the same lightweight PDF presentation contract.",
-  "next_action": "Run exact-head R54 CI for CURRENT, Telegram, Nexus, Field Ecosystem and coordinated qualification. Correct only evidenced failures; then reread main and merge PR123 only if the exact head is green.",
+  "status": "R54_HUMAN_PRESENTATION_DEEP_AUDIT_IMPLEMENTED_CI_PENDING",
+  "last_completed_atomic_action": "R54 deep human-presentation audit implemented across Telegram direct and Nexus: user-visible Kinshasa time, human-first reports 1-3, structured technical report, hierarchical dependency-free PDFs, French WinAnsi glyphs, anti-double-title, Page X/Y, Nexus caption localization, and Nexus worker health version reconciliation to 0.2.6. Representative PDF render inspected visually; field-generated PDFs remain unverified.",
+  "next_action": "Qualify the exact R54 PR head through Telegram, Nexus, CURRENT, Field Ecosystem and coordinated product CI; repair any exact failure. If all required gates are green and main is unchanged, merge serialized. Then observe PC convergence to Telegram V18/Nexus 0.2.6 and render/read all four field PDFs before FIELD_VERIFIED.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1918,5 +1918,55 @@
     "local_pdf_renderer": "WINANSI_BOLD_PAGINATED_LIGHTWEIGHT",
     "nexus_pdf_renderer": "WINANSI_BOLD_PAGINATED_LIGHTWEIGHT",
     "rendered_visual_field_verification": false
+  },
+  "bcp_r54_human_presentation_audit": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R54",
+    "telegram_target_version": "2026.09.20-cadence-telemetry-v18",
+    "telegram_sha256": "ee4a29565f625dd6c0ace7bcb69e09ba0f9661132021ccf4f5cba39788437e11",
+    "nexus_target_version": "0.2.6",
+    "nexus_worker_sha256": "cee0c442efad084bf888418dd641e63acfaace0e40efce770405fe3cf5b4cadd",
+    "nexus_manifest_sha256": "ea3cb82755ddcfb3642f123c45d9e5e11debc10dc4b44ed8531ded53daccb5ae",
+    "human_timezone": "Africa/Kinshasa",
+    "canonical_machine_timezone": "UTC",
+    "pdf_visual_audit": {
+      "representative_before_pages": 2,
+      "representative_after_pages": 1,
+      "before_defects": [
+        "DOUBLE_TITLE",
+        "RAW_UTC",
+        "RAW_INTERNAL_FIELD_NAMES",
+        "BROKEN_FRENCH_GLYPHS",
+        "FLAT_TYPOGRAPHY"
+      ],
+      "after_observed": [
+        "SINGLE_TITLE",
+        "KINSHASA_TIME",
+        "HUMAN_LABELS",
+        "FRENCH_GLYPHS_OK",
+        "SECTION_HIERARCHY",
+        "PAGE_FOOTER"
+      ],
+      "field_pdf_verified": false
+    },
+    "defects_closed_in_candidate": [
+      "H54-01_RAW_UTC_VISIBLE",
+      "H54-02_RAW_DEVICE_FIELD_NAMES",
+      "H54-03_RAW_MISSION_FIELDS",
+      "H54-04_RAW_GITHUB_JSON_DUMP",
+      "H54-05_DOUBLE_PDF_TITLE",
+      "H54-06_FLAT_PDF_LAYOUT",
+      "H54-07_FRENCH_GLYPH_ENCODING",
+      "H54-08_DUAL_PDF_RENDERER_DRIFT",
+      "H54-09_NEXUS_PDF_CAPTION_UTC",
+      "H54-10_NEXUS_HEALTH_VERSION_DRIFT"
+    ],
+    "docs": [
+      "docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md",
+      "docs/BCP_HUMAN_PRESENTATION_AND_PDF_AUDIT_R54.md",
+      "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+    ],
+    "user_feedback_trigger": "Normal user-facing timestamps/PDFs must be Kinshasa-local and understandable without technical knowledge; ChatGPT mobile desynchronization makes mail-first continuity operationally important.",
+    "next_atomic_action": "Exact-head CI qualification and serialized merge if green."
   }
 }
