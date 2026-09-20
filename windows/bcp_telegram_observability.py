@@ -1975,11 +1975,12 @@ class Telegram:
             raise RuntimeError("telegram_api_error:" + desc)
         return obj
 
-    def send(self, text: str, with_keyboard: bool = True) -> int | None:
+    def send(self, text: str, with_keyboard: bool = True, silent: bool = False) -> int | None:
         payload = {
             "chat_id": self.chat_id,
             "text": redact_text(text)[:3900],
             "disable_web_page_preview": True,
+            "disable_notification": bool(silent),
         }
         if with_keyboard:
             payload["reply_markup"] = self.keyboard()
@@ -2225,7 +2226,7 @@ class Telegram:
         prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
         if str(prior.get("key") or "") == key:
             return
-        self.send(text)
+        self.send(text, silent=(wd_state == "RESUME_REQUESTED"))
         atomic_json(WATCHDOG_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_watchdog_notice/1",
             "key": key,
@@ -2248,13 +2249,15 @@ class Telegram:
 
         text = ""
         critical = level in {"CRITICAL", "ACTION"}
-        if level in {"CRITICAL", "ACTION", "WATCH"}:
-            text = self.service._attention_label(level) + "\n" + (root or "Un nouveau signal opérationnel nécessite votre attention.")
-        elif prior_level in {"CRITICAL", "ACTION", "WATCH"} and level in {"ACTIVE", "NORMAL"}:
-            text = "✅ SITUATION RÉTABLIE\nLe signal précédent n’est plus actif. Le suivi automatique continue."
+        if level in {"CRITICAL", "ACTION"}:
+            text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
+        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+            text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
+        # WATCH remains visible in the live card/Radar but is deliberately not
+        # pushed as a page-like alert while automation can still handle it.
         if text and self.service.notifications_allowed(critical):
-            self.send(text)
+            self.send(text, silent=(level in {"ACTIVE", "NORMAL"}))
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_attention_notice/1",
             "key": key,
@@ -2437,13 +2440,14 @@ class Nexus:
             "idempotency_key": idem,
         }, timeout=25)
 
-    def push(self, text: str, idem_seed: str) -> None:
+    def push(self, text: str, idem_seed: str, silent: bool = False) -> None:
         safe_text = redact_text(text)[:3900]
         idem = hashlib.sha256(("push:" + idem_seed).encode("utf-8")).hexdigest()
         self.api("/v1/device/push", method="POST", payload={
             "kind": "MISSION_PROGRESS",
             "text": safe_text,
             "idempotency_key": idem,
+            "silent": bool(silent),
         }, timeout=25)
 
     def live_card(self, text: str, card_key: str = "mission-status",
@@ -2538,7 +2542,7 @@ class Nexus:
         prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
         if str(prior.get("key") or "") == key:
             return
-        self.push(text, "watchdog:" + key)
+        self.push(text, "watchdog:" + key, silent=(wd_state == "RESUME_REQUESTED"))
         atomic_json(WATCHDOG_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_watchdog_notice/1",
             "key": key,
@@ -2561,13 +2565,13 @@ class Nexus:
 
         text = ""
         critical = level in {"CRITICAL", "ACTION"}
-        if level in {"CRITICAL", "ACTION", "WATCH"}:
-            text = self.service._attention_label(level) + "\n" + (root or "Un nouveau signal opérationnel nécessite votre attention.")
-        elif prior_level in {"CRITICAL", "ACTION", "WATCH"} and level in {"ACTIVE", "NORMAL"}:
-            text = "✅ SITUATION RÉTABLIE\nLe signal précédent n’est plus actif. Le suivi automatique continue."
+        if level in {"CRITICAL", "ACTION"}:
+            text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
+        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+            text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
         if text and self.service.notifications_allowed(critical):
-            self.push(text, "attention:" + key)
+            self.push(text, "attention:" + key, silent=(level in {"ACTIVE", "NORMAL"}))
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
             "schema": "bcp.telegram_attention_notice/1",
             "key": key,
