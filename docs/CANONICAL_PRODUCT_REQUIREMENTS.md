@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R17
+Revision: 2026-09-20-R18
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1033,3 +1033,23 @@ Implementation requirements:
 Remote notification while the PC is completely offline requires an independent qualified egress path from B-EDGE. The target path is Nexus/device-authenticated outbound HTTPS. Until that path is provisioned and field-qualified, B-EDGE MUST persist the alert/outbox locally and MUST NOT claim that Telegram was notified.
 
 A source build or unsigned APK is not a deployable field release. The existing installed APK remains authoritative until a same-identity signed candidate is produced, hash/signature verified, and then installed through the normal Android human gate if the OS requires confirmation.
+
+## P0 — Portable Node lifecycle parity and field-shaped CI (R18)
+
+This requirement is additive and preserves R17.
+
+A managed portable runtime MUST be self-contained not only for the top-level executable but also for package-manager child/lifecycle processes.
+
+The Nexus bootstrap MUST:
+- place the pinned portable Node directory first in the bootstrap process `PATH` before any npm installation;
+- prove from a child shell that `node --version` resolves to the exact pinned portable version before running npm lifecycle scripts;
+- fail with a machine-readable runtime-preparation class if that binding cannot be proven;
+- keep npm cache persistent and bounded retries/data-saver semantics;
+- invoke the pinned Wrangler JS entry point directly through the same pinned `node.exe`;
+- never require the user to install Node/Wrangler manually to compensate for this class of failure.
+
+CI MUST explicitly remove the hosted runner's globally installed Node from the relevant PATH and prove that Wrangler plus lifecycle dependencies such as esbuild can install and execute using only the pinned portable runtime. A green test that accidentally relies on the CI image's global Node is invalid evidence.
+
+Field incident bound to this requirement:
+- Nexus 0.1.9 reached the resident PC but npm failed in the `esbuild` lifecycle path while the exact same install passed on GitHub;
+- the correction is Nexus 0.2.0 with explicit portable-child-runtime binding.
