@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R23
+Revision: 2026-09-20-R24
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1258,3 +1258,29 @@ During active human development sessions, checkpoint/report cadence SHOULD be bo
 
 Canonical detailed requirement:
 - `docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md`
+
+## P0 — Delivery Gap Detector / R24
+
+This requirement is additive and preserves R23.
+
+BCP MUST derive a **delivery gap** when an assistant message has a durable BCP receipt but no positive downstream reading evidence after a bounded interval. Default threshold: 5 minutes.
+
+The detector:
+- operates only on durable BCP receipts;
+- MUST NOT infer hidden ChatGPT model state, platform state, or whether the ChatGPT app actually rendered the answer;
+- MUST clear the derived gap once positive `USER_SEEN` evidence exists;
+- MUST remain idempotent and restart-safe because the gap is derived from durable message state;
+- MUST expose an authenticated `/v1/conversations/gaps` read surface;
+- MUST surface active gaps in Telegram as a WATCH-level attention signal, subject to the existing acknowledgement, anti-flap and notification-budget rules;
+- MUST keep message bodies local by default and avoid copying full conversation bodies into GitHub or ordinary external telemetry.
+
+A delivery gap is therefore evidence of **missing positive delivery/reading proof**, not proof of a ChatGPT failure.
+
+The Telegram Conversations view MUST show a human-readable “Réponse potentiellement manquée” indicator with age when the threshold is crossed.
+
+Field acceptance additionally requires:
+- no gap before threshold;
+- gap after threshold when an assistant receipt remains unseen;
+- automatic disappearance after explicit seen evidence;
+- no duplicate notification for an unchanged gap episode;
+- no false “delivered” claim when the UI delivery remains unknown.
