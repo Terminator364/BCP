@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "3fee7fe07232ea2496d5c2e372a0639fe21d2f8f83ffa6553cece0a35ec90001"
+        "sha256": "acc3d86ccaae86d944ba714537180d2fdcaa6ba1a5654439c9ecf7254a1559a8"
       },
       "notes": "Nexus 0.2.5 remains the device-flow-only transport. R51 adds a server-side explicit retry trigger that forces a fresh device-flow attempt rather than reusing expired HUMAN_AUTH_REQUIRED state."
     }
