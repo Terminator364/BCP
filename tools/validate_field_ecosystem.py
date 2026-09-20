@@ -149,6 +149,9 @@ def main() -> int:
         "bcp:quiet:120",
         "report_devices",
         "report_mission",
+        "bcp:conversations",
+        "conversation_threads",
+        "CHATGPT_UI_DELIVERY_UNKNOWN",
     )
     require(
         nexus_worker,
@@ -160,15 +163,32 @@ def main() -> int:
         "bcp:why",
         "bcp:risks",
         "bcp:quiet:120",
+        "bcp:conversations",
         "bcp:pdf:devices",
         "bcp:pdf:mission",
-        'version: "0.2.2"',
+        'version: "0.2.3"',
     )
     assert "allow_paid_broadcast" not in telegram
     assert "allow_paid_broadcast" not in nexus_worker
     assert set(nexus_release["report_exports"]["cached_reports"]) == {
         "summary", "devices", "mission", "technical"
     }
+
+    # Conversation-delivery truth: local ledger exists and UI keeps unknown UI delivery explicit.
+    require(
+        server,
+        "conversation_threads",
+        "conversation_messages",
+        "CHATGPT_UI_DELIVERY_UNKNOWN",
+        "/v1/conversations",
+        "_conversation_safe_text",
+    )
+    require(
+        telegram,
+        "CONVERSATIONS SYNCHRONISÉES",
+        "affichage ChatGPT non confirmé",
+        "/conversation <ID>",
+    )
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
