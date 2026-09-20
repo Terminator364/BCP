@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_7_FIELD_RUNNING_NEXUS_0_1_6_RUNTIME_PROBE_FAILED_TELEGRAM_V5_MERGED",
-  "last_completed_atomic_action": "Exact-head CI for BCP 0.6.7 / Nexus 0.1.6 passed and PR #69 merged. Fresh Drive machine readback at 2026-09-20T00:16:06Z proves resident BCP 0.6.7 UP_TO_DATE on MBMPC, paired, hash-matching CURRENT, with Nexus 0.1.6 installed. Nexus now fails specifically at WRANGLER_VERSION_PROBE after three bounded attempts; no Cloudflare human authorization gate has been reached.",
-  "next_action": "Implement the next bounded Nexus diagnostic/recovery revision so the Wrangler version probe persists sanitized exit code/output and classifies package-fetch/network/runtime causes. Keep automatic resident delivery; do not ask the user to reinstall BCP, re-enter Telegram secrets, shuttle ZIPs, or run PowerShell. Ask for a human click only if durable state becomes CLOUDFLARE_LOGIN_REQUIRED.",
+  "status": "BCP_0_6_7_FIELD_RUNNING_NEXUS_0_1_7_MERGED_RESIDENT_CONVERGENCE_PENDING_TELEGRAM_V5_MERGED",
+  "last_completed_atomic_action": "PR #71 (Nexus 0.1.7 Wrangler probe diagnostics) passed exact-head CI and merged to main at a2f9cdfd4c7538adb9779836ff0b3e8756642438. A fresh one-time Drive readback of BCP_RUNTIME_EVENTS.jsonl shows resident BCP 0.6.7 alive, paired and UP_TO_DATE on MBMPC through 2026-09-20T01:02:16Z, while Nexus is still 0.1.6 with WRANGLER_RUNTIME_PROBE_FAILED at WRANGLER_VERSION_PROBE. Therefore 0.1.7 is merged but not yet resident; Cloudflare human authorization has not been reached.",
+  "next_action": "Do not ask the user to reinstall BCP, re-enter Telegram secrets, shuttle ZIPs, or run PowerShell. Let the existing resident BCP update cycle pick up Nexus 0.1.7. On the next explicit continuation, perform one Drive readback only. If 0.1.7 is resident, use its sanitized probe class/detail to choose the automatic recovery path. If it is still 0.1.6 after a full resident cycle, implement a bounded data-saver fast refresh for unresolved Nexus only. No ChatGPT scheduled monitoring.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -182,12 +182,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-RUNTIME-PROBE-FIELD-067-016-20260920",
-    "status": "FIELD_READBACK_COMMITTED",
-    "last_completed_action": "BCP 0.6.7 resident convergence and Nexus 0.1.6 precise probe-stage failure machine-read from Drive.",
-    "next_atomic_action": "Add bounded sanitized Wrangler probe output/exit diagnostics and retry classification in the next candidate.",
-    "branch": "work/bcp/field-readback-067-016-20260920-0016",
-    "base_main_sha": "55ab95f5159f4b017509dac914b4ed74fbdfe9e4",
+    "checkpoint_id": "BCP-NEXUS-017-MERGED-RESIDENT-CONVERGENCE-PENDING-20260920",
+    "status": "MERGED_FIELD_READBACK_PENDING",
+    "last_completed_action": "Nexus 0.1.7 merged and one-time external runtime readback confirms the PC is healthy but still running Nexus 0.1.6.",
+    "next_atomic_action": "One explicit Drive readback on next continuation; no background ChatGPT monitoring.",
+    "branch": "work/bcp/state-pr71-field-readback-20260920-0159",
+    "base_main_sha": "a2f9cdfd4c7538adb9779836ff0b3e8756642438",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1142,5 +1142,39 @@
     "recovery_result_status": "ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD",
     "lifecycle_registered": true,
     "conclusion": "BCP 0.6.7 and Nexus 0.1.6 converged. The remaining blocker is inside the Wrangler version probe before Cloudflare authorization; user action is not yet required."
+  },
+  "nexus_probe_diagnostics_0_1_7": {
+    "status": "MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
+    "pr": 71,
+    "merged_main_sha": "a2f9cdfd4c7538adb9779836ff0b3e8756642438",
+    "qualified_head_sha": "305736a38d0534f5ac538f35a72c9085b6f44dcc",
+    "nexus_version": "0.1.7",
+    "purpose": "Capture bounded sanitized Wrangler probe exit/output and classify npm network, TLS, cache permission, or launch failures while preferring persistent cache.",
+    "ci": {
+      "current_release_contract": 35478594940,
+      "nexus_transport": 35478594959,
+      "coordinated_product": 35478594943,
+      "result": "PASS"
+    },
+    "scheduled_chatgpt_automation": false,
+    "user_action": "NONE_UNLESS_CLOUDFLARE_LOGIN_REQUIRED",
+    "field_verified": false
+  },
+  "latest_field_evidence_0_6_7_post_pr71": {
+    "observed_at_utc": "2026-09-20T01:02:16+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_EVENTS.jsonl",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.6.7",
+    "pc_name": "MBMPC",
+    "paired": true,
+    "update_state": "UP_TO_DATE",
+    "nexus_bootstrap_bundle_version": "0.1.6",
+    "nexus_bootstrap_state": "WRANGLER_RUNTIME_REQUIRED",
+    "nexus_bootstrap_exit_code": 3,
+    "nexus_bootstrap_receipt_status": "RUNTIME_PROBE_FAILED",
+    "nexus_bootstrap_error_class": "WRANGLER_RUNTIME_PROBE_FAILED",
+    "nexus_bootstrap_error_detail": "Pinned Wrangler could not complete --version after three bounded attempts.",
+    "nexus_bootstrap_stage": "WRANGLER_VERSION_PROBE",
+    "conclusion": "Nexus 0.1.7 has not yet converged to the resident PC. No human gate is active."
   }
 }
