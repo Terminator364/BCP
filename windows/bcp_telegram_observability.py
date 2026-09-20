@@ -37,6 +37,7 @@ MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
 WATCHDOG_NOTIFY_STATE_PATH = STATE_DIR / "telegram_watchdog_notify_state.json"
 USER_SEEN_STATE_PATH = STATE_DIR / "telegram_user_seen.json"
 NOTIFICATION_POLICY_PATH = STATE_DIR / "telegram_notification_policy.json"
+ATTENTION_NOTIFY_STATE_PATH = STATE_DIR / "telegram_attention_notify_state.json"
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -2036,6 +2037,36 @@ class Telegram:
             "transport": "DIRECT_TELEGRAM",
         })
 
+    def _push_attention_transition(self) -> None:
+        snap = self.service.presence_snapshot()
+        state = snap.get("snapshot") or {}
+        level = str(state.get("attention_level") or "NORMAL")
+        reasons = list(state.get("attention_reasons") or [])
+        root = clean(reasons[0] if reasons else level, 180)
+        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
+        prior_level = str(prior.get("level") or "")
+        prior_key = str(prior.get("key") or "")
+        if prior_key == key:
+            return
+
+        text = ""
+        critical = level in {"CRITICAL", "ACTION"}
+        if level in {"CRITICAL", "ACTION", "WATCH"}:
+            text = self.service._attention_label(level) + "\n" + (root or "Un nouveau signal opérationnel nécessite votre attention.")
+        elif prior_level in {"CRITICAL", "ACTION", "WATCH"} and level in {"ACTIVE", "NORMAL"}:
+            text = "✅ SITUATION RÉTABLIE\nLe signal précédent n’est plus actif. Le suivi automatique continue."
+
+        if text and self.service.notifications_allowed(critical):
+            self.send(text)
+        atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
+            "schema": "bcp.telegram_attention_notice/1",
+            "key": key,
+            "level": level,
+            "root": root,
+            "updated_at": utc_now(),
+        })
+
     def _push_system_presence(self) -> None:
         if not self.auto_push:
             return
@@ -2128,6 +2159,7 @@ class Telegram:
                     })
                 self._push_presence()
                 self._push_watchdog_notice()
+                self._push_attention_transition()
                 self._push_system_presence()
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
@@ -2308,6 +2340,37 @@ class Nexus:
             "transport": "NEXUS",
         })
 
+    def _push_attention_transition(self) -> None:
+        snap = self.service.presence_snapshot()
+        state = snap.get("snapshot") or {}
+        level = str(state.get("attention_level") or "NORMAL")
+        reasons = list(state.get("attention_reasons") or [])
+        root = clean(reasons[0] if reasons else level, 180)
+        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
+        prior_level = str(prior.get("level") or "")
+        prior_key = str(prior.get("key") or "")
+        if prior_key == key:
+            return
+
+        text = ""
+        critical = level in {"CRITICAL", "ACTION"}
+        if level in {"CRITICAL", "ACTION", "WATCH"}:
+            text = self.service._attention_label(level) + "\n" + (root or "Un nouveau signal opérationnel nécessite votre attention.")
+        elif prior_level in {"CRITICAL", "ACTION", "WATCH"} and level in {"ACTIVE", "NORMAL"}:
+            text = "✅ SITUATION RÉTABLIE\nLe signal précédent n’est plus actif. Le suivi automatique continue."
+
+        if text and self.service.notifications_allowed(critical):
+            self.push(text, "attention:" + key)
+        atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
+            "schema": "bcp.telegram_attention_notice/1",
+            "key": key,
+            "level": level,
+            "root": root,
+            "updated_at": utc_now(),
+            "transport": "NEXUS",
+        })
+
     def _push_system_presence(self) -> None:
         if not self.auto_push:
             return
@@ -2369,6 +2432,7 @@ class Nexus:
                     append_log("NEXUS_COMMAND_REPLIED", command_id=command_id)
                 self._push_presence()
                 self._push_watchdog_notice()
+                self._push_attention_transition()
                 self._push_system_presence()
                 if not commands:
                     time.sleep(self.poll_seconds)
