@@ -375,8 +375,8 @@ def main() -> int:
         "EMAIL_EXACT_MIRROR", "CHATGPT_FINAL", "TELEGRAM_WITNESS_OPTIONAL"
     ]
     assert delivery_policy["ui_policy"]["progressive_disclosure_required"] is True
-    guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md")
-    require(guide, "mail miroir exact", "d’abord le mail miroir exact", "📚 Rapports & technique")
+    guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md")
+    require(guide, "mail miroir exact", "d’abord le mail miroir exact", "📚 Rapports & technique", "heure de Kinshasa", "Page X/Y", "UTC+1")
     assert delivery_policy["packaging"]["nested_zip_for_user_action_forbidden"] is True
 
     # Release coordination remains explicit.
