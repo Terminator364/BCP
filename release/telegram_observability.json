@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-human-cockpit-v5",
+  "version": "2026.09.20-human-cockpit-v6",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "1f9152945ed5d3e2f648cc5cc16842ed6af93da5415e1841b0bd3170f3a8040f",
-  "minimum_server_version": "0.6.3",
+  "sha256": "3d60065ffba07fb47182733a34dee3d6fe09abb67fd32b0c8160f369c2cb2631",
+  "minimum_server_version": "0.6.8",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first cockpit V5: reads persisted BCP missions/mission_events for concrete numbered micro-actions, shows a truthful progress bar from finite persisted plans, adds a Micro-actions button, and expands human/technical PDF exports. No hidden ChatGPT reasoning is claimed; no ChatGPT scheduled automation is used.",
-  "requirements_revision": "2026-09-20-R11"
+  "notes": "Human-first cockpit V6 preserves V5 controls/PDFs and adds secret-free worker health, successful poll timestamps, callback receive/handle receipts, and degraded retry state so silent button failures are diagnosable without screenshots or user log shuttling.",
+  "requirements_revision": "2026-09-20-R14"
 }
