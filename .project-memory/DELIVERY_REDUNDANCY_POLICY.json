@@ -1,0 +1,42 @@
+{
+  "schema": "bcp.delivery_redundancy_policy/1",
+  "revision": "2026-09-20-R52",
+  "status": "CANONICAL_CANDIDATE",
+  "channels": {
+    "chatgpt": {
+      "role": "PRIMARY_INTERACTIVE_WORK_SURFACE",
+      "delivery_is_not_assumed_reliable": true
+    },
+    "email": {
+      "role": "PRIMARY_CHECKPOINT_FALLBACK",
+      "body_must_equal_chat_checkpoint_exactly": true,
+      "subject_must_include_checkpoint_id": true,
+      "action_instruction_supersession_required": true
+    },
+    "telegram": {
+      "role": "SECONDARY_WITNESS_AND_ALERT_CHANNEL",
+      "must_not_replace_email_exact_mirror": true,
+      "stale_seen_alerts_are_not_runtime_failures": true
+    }
+  },
+  "cadence": {
+    "work_slice_minutes": "5-6",
+    "checkpoint_each_slice": true,
+    "mail_each_slice": true,
+    "blind_retry_loops": false
+  },
+  "action_message_contract": {
+    "one_human_gate_at_a_time": true,
+    "latest_action_instruction_supersedes_older_action_instructions": true,
+    "checkpoint_id_required": true,
+    "manual_first_when_network_is_unreliable": true
+  },
+  "packaging": {
+    "single_extraction_preferred": true,
+    "nested_zip_for_user_action_forbidden": true,
+    "current_folder": "API_BCP/00_INSTALL_CURRENT",
+    "replace_current_in_place": true,
+    "cleanup_superseded_current_artifacts": true
+  },
+  "propagation": "PORT_ON_NEXT_TOUCH_TO_OTHER_PROJECTS"
+}
