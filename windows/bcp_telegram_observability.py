@@ -61,7 +61,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/report", "/reporttech",
+    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -1644,6 +1644,71 @@ class Service:
         ]
         return "\n".join(lines)
 
+    def risk_radar(self) -> str:
+        runtime = self.local.runtime()
+        edge = self.local.edge()
+        gh = self.github.snapshot()
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        risks = []
+
+        nexus = str(runtime.get("nexus_bootstrap_state") or "").upper()
+        telegram_state = str(runtime.get("telegram_companion_state") or "").upper()
+        if nexus == "HUMAN_AUTH_REQUIRED":
+            risks.append(("ÉLEVÉ", "Relais distant", "Nexus est prêt mais non autorisé; si le Wi-Fi PC bloque Telegram, le cockpit distant reste vulnérable."))
+        elif nexus not in {"COMMITTED", "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"}:
+            risks.append(("MOYEN", "Relais distant", "Nexus n’est pas encore totalement qualifié sur le terrain."))
+
+        mem = runtime.get("pc_memory_load_percent")
+        if isinstance(mem, int) and mem >= 90:
+            risks.append(("ÉLEVÉ", "Mémoire PC", "RAM à " + str(mem) + "%; les tâches lourdes doivent rester sérialisées/déportées."))
+        elif isinstance(mem, int) and mem >= 80:
+            risks.append(("MOYEN", "Mémoire PC", "RAM à " + str(mem) + "%; marge locale réduite."))
+
+        battery = runtime.get("pc_battery_percent")
+        source = str(runtime.get("pc_power_source") or "").upper()
+        if source == "BATTERY" and isinstance(battery, int) and battery <= 25:
+            risks.append(("ÉLEVÉ", "Énergie", "PC sur batterie à " + str(battery) + "%; risque de coupure avant checkpoint."))
+        elif source == "BATTERY":
+            risks.append(("FAIBLE", "Énergie", "PC sur batterie; prévoir une reprise durable avant travaux longs."))
+
+        if not edge.get("paired"):
+            risks.append(("ÉLEVÉ", "Sentinelle B-EDGE", "Le téléphone secondaire n’est pas appairé; pas de seconde sentinelle disponible."))
+        elif not (isinstance(edge.get("_age_seconds"), int) and edge.get("_age_seconds") <= 900):
+            risks.append(("MOYEN", "Sentinelle B-EDGE", "B-EDGE est appairé mais sa preuve récente est limitée."))
+
+        runs = gh.get("runs") or []
+        if runs:
+            st = str(runs[0].get("conclusion") or runs[0].get("status") or "").lower()
+            if st == "failure":
+                risks.append(("ÉLEVÉ", "Qualification", "Le dernier workflow GitHub observé est en échec."))
+            elif st in {"queued", "in_progress"}:
+                risks.append(("FAIBLE", "Qualification", "Une qualification GitHub est encore en cours."))
+
+        age = None
+        if mission:
+            age = self._event_age_seconds({"updated_at": mission.get("last_progress_at") or mission.get("updated_at")})
+        if isinstance(age, int) and age >= 900:
+            risks.append(("MOYEN", "Continuité mission", "Aucune preuve nouvelle depuis " + self._age_label(age) + "; le watchdog doit rester attentif."))
+
+        if telegram_state in {"DEGRADED_RETRY", "HOLD"} and nexus not in {"COMMITTED", "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"}:
+            risks.append(("ÉLEVÉ", "Visibilité distante", "Telegram direct est dégradé avant bascule Nexus complète."))
+
+        order = {"ÉLEVÉ": 0, "MOYEN": 1, "FAIBLE": 2}
+        risks.sort(key=lambda x: order.get(x[0], 9))
+        lines = [
+            "🔭 RADAR — risques proches",
+            "Prévision ≠ incident : cette vue anticipe les fragilités à partir des preuves observables.",
+            "",
+        ]
+        if not risks:
+            lines.append("🟢 Aucun risque proche significatif détecté.")
+        else:
+            for level, area, text_value in risks[:8]:
+                icon = "🔴" if level == "ÉLEVÉ" else ("🟠" if level == "MOYEN" else "🟡")
+                lines.append(icon + " " + level + " · " + area + "\n   " + text_value)
+        return "\n".join(lines)
+
     def quiet_mode(self, minutes: int) -> str:
         if minutes <= 0:
             atomic_json(NOTIFICATION_POLICY_PATH, {
@@ -1708,7 +1773,7 @@ class Service:
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
-            "/continue — demander une reprise durable\n/status — situation actuelle\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "/continue — demander une reprise durable\n/status — situation actuelle\n/since — changements depuis votre dernière visite\n/why — expliquer l’état affiché\n/risks — radar des risques proches\n/quiet 120 — mode discret 2h\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
             "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
@@ -1732,7 +1797,7 @@ class Service:
                 return "Usage: /quiet 120 · /quiet off"
             return self.quiet_mode(minutes)
         if cmd not in READ_ONLY_COMMANDS:
-            return "Commandes: /continue /status /since /why /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Commandes: /continue /status /since /why /risks /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -1747,6 +1812,8 @@ class Service:
             return self.why()
         if cmd == "/since":
             return self.since_last_seen()
+        if cmd == "/risks":
+            return self.risk_radar()
         if cmd == "/project":
             return self.project(arg)
         if cmd == "/job":
@@ -1791,18 +1858,21 @@ class Telegram:
                 ],
                 [
                     {"text": "❓ Pourquoi ?", "callback_data": "bcp:why"},
-                    {"text": "📍 Étape actuelle", "callback_data": "bcp:where"},
+                    {"text": "🔭 Radar", "callback_data": "bcp:risks"},
                 ],
                 [
+                    {"text": "📍 Étape actuelle", "callback_data": "bcp:where"},
                     {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
+                ],
+                [
                     {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
+                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
                 ],
                 [
                     {"text": "🔕 Discret 2h", "callback_data": "bcp:quiet:120"},
                     {"text": "🔔 Normal", "callback_data": "bcp:quiet:off"},
                 ],
                 [
-                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
                     {"text": "🧰 Technique", "callback_data": "bcp:details"},
                 ],
                 [
@@ -1908,6 +1978,7 @@ class Telegram:
             "bcp:status": ("/status", "Situation actualisée"),
             "bcp:since": ("/since", "Résumé depuis votre visite"),
             "bcp:why": ("/why", "Explication"),
+            "bcp:risks": ("/risks", "Radar des risques"),
             "bcp:where": ("/where", "Étape actuelle"),
             "bcp:tail": ("/tail", "Activité fine"),
             "bcp:missions": ("/objective", "Objectif"),
@@ -1951,7 +2022,7 @@ class Telegram:
         response = self.service.dispatch(command)
         self.service.mark_user_seen("TELEGRAM_CALLBACK:" + data)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/since", "/why", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
+        if message_id and command in {"/status", "/since", "/why", "/risks", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -2651,13 +2722,14 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:since", "bcp:why", "bcp:where", "bcp:tail", "bcp:missions",
+            "bcp:status", "bcp:since", "bcp:why", "bcp:risks", "bcp:where", "bcp:tail", "bcp:missions",
             "bcp:quiet:120", "bcp:quiet:off", "bcp:details",
             "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
         assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
+        assert "RADAR" in svc.risk_radar()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
