@@ -1781,31 +1781,36 @@ class Telegram:
 
     @staticmethod
     def keyboard() -> dict:
-        # Telegram does not expose arbitrary per-button colours; coloured symbols
-        # provide stable visual semantics without depending on client themes.
+        # Keep the chat surface compact: orientation first, deep reports last.
         return {
             "inline_keyboard": [
                 [
-                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
+                    {"text": "🟢 Situation", "callback_data": "bcp:status"},
+                    {"text": "🕘 Depuis ma visite", "callback_data": "bcp:since"},
                 ],
                 [
-                    {"text": "🟢 Situation", "callback_data": "bcp:status"},
-                    {"text": "🔵 Où en est-on ?", "callback_data": "bcp:where"},
+                    {"text": "❓ Pourquoi ?", "callback_data": "bcp:why"},
+                    {"text": "📍 Étape actuelle", "callback_data": "bcp:where"},
                 ],
                 [
                     {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
                     {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
                 ],
                 [
+                    {"text": "🔕 Discret 2h", "callback_data": "bcp:quiet:120"},
+                    {"text": "🔔 Normal", "callback_data": "bcp:quiet:off"},
+                ],
+                [
+                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
                     {"text": "🧰 Technique", "callback_data": "bcp:details"},
-                    {"text": "📄 1·Suivi", "callback_data": "bcp:pdf:summary"},
                 ],
                 [
-                    {"text": "🖥️ 2·Appareils", "callback_data": "bcp:pdf:devices"},
-                    {"text": "🧭 3·Mission", "callback_data": "bcp:pdf:mission"},
+                    {"text": "📄 Suivi", "callback_data": "bcp:pdf:summary"},
+                    {"text": "🖥️ Appareils", "callback_data": "bcp:pdf:devices"},
                 ],
                 [
-                    {"text": "📚 4·Audit", "callback_data": "bcp:pdf:technical"},
+                    {"text": "🧭 Mission", "callback_data": "bcp:pdf:mission"},
+                    {"text": "📚 Audit", "callback_data": "bcp:pdf:technical"},
                 ],
             ]
         }
@@ -1899,10 +1904,14 @@ class Telegram:
     def _callback_action(self, data: str) -> tuple[str, str]:
         mapping = {
             "bcp:continue": ("/continue", "Reprise demandée"),
-            "bcp:status": ("/status", "Actualisation"),
-            "bcp:where": ("/where", "Position"),
-            "bcp:tail": ("/tail", "Micro-actions"),
+            "bcp:status": ("/status", "Situation actualisée"),
+            "bcp:since": ("/since", "Résumé depuis votre visite"),
+            "bcp:why": ("/why", "Explication"),
+            "bcp:where": ("/where", "Étape actuelle"),
+            "bcp:tail": ("/tail", "Activité fine"),
             "bcp:missions": ("/objective", "Objectif"),
+            "bcp:quiet:120": ("/quiet 120", "Mode discret 2h"),
+            "bcp:quiet:off": ("/quiet off", "Mode normal"),
             "bcp:details": ("/details", "Détails"),
         }
         return mapping.get(data, ("", ""))
@@ -1939,8 +1948,9 @@ class Telegram:
             return
         self.answer_callback(callback_id, label)
         response = self.service.dispatch(command)
+        self.service.mark_user_seen("TELEGRAM_CALLBACK:" + data)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/where", "/tail", "/missions", "/objective", "/details"}:
+        if message_id and command in {"/status", "/since", "/why", "/where", "/tail", "/missions", "/objective", "/details", "/quiet 120", "/quiet off"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -1987,13 +1997,18 @@ class Telegram:
             or e.get("human_action_required") is True
         ]
         if relevant:
+            if not self.service.notifications_allowed(False):
+                urgent = [e for e in relevant if e.get("human_action_required") is True
+                          or str(e.get("state") or "").upper() in {"BLOCKED", "HOLD"}]
+                relevant = urgent
             skipped = max(0, len(relevant) - self.max_events_per_push)
             selected = relevant[-self.max_events_per_push:]
             blocks = []
             if skipped:
                 blocks.append("ℹ️ " + str(skipped) + " micro-actions précédentes regroupées.")
             blocks.extend(self.service.progress_event(e) for e in selected)
-            self.send("\n\n".join(blocks))
+            if blocks:
+                self.send("\n\n".join(blocks))
         atomic_json(PRESENCE_PATH, {
             "schema": "bcp.telegram_presence/1",
             "mission_event_key": newest_key,
@@ -2007,6 +2022,9 @@ class Telegram:
         if not notice:
             return
         key, text = notice
+        wd_state = str((read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}).get("state") or "").upper()
+        if not self.service.notifications_allowed(wd_state in {"HUMAN_GATE", "ESCALATED"}):
+            return
         prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
         if str(prior.get("key") or "") == key:
             return
@@ -2100,6 +2118,7 @@ class Telegram:
                                 self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
                             else:
                                 self.send(result)
+                            self.service.mark_user_seen("TELEGRAM_COMMAND")
                     atomic_json(OFFSET_PATH, {
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
@@ -2275,6 +2294,9 @@ class Nexus:
         if not notice:
             return
         key, text = notice
+        wd_state = str((read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}).get("state") or "").upper()
+        if not self.service.notifications_allowed(wd_state in {"HUMAN_GATE", "ESCALATED"}):
+            return
         prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
         if str(prior.get("key") or "") == key:
             return
@@ -2337,6 +2359,7 @@ class Nexus:
                         self.publish_reports()
                         response = "📚 Rapport technique actualisé. Utilisez le bouton « PDF technique »."
                     self.reply(command_id, response)
+                    self.service.mark_user_seen("NEXUS_COMMAND")
                     cursor = command_id
                     atomic_json(NEXUS_CURSOR_PATH, {
                         "schema": "bcp.nexus_cursor/1",
@@ -2518,9 +2541,9 @@ def selftest() -> int:
             local=LocalTruth(root), github=FakeGitHub()
         )
         status = svc.status()
-        assert "🛰️ Automate de suivi BCP" in status
-        assert "🧭 Étape en cours : Lancer le test Windows Bootstrap" in status
-        assert "📈 Avancement estimé :" in status and "micro-actions" in status
+        assert "🛰️ BCP ·" in status
+        assert "🧭 Maintenant : Lancer le test Windows Bootstrap" in status
+        assert "📈 Progression ≈" in status and "micro-actions" in status
         assert "✅ Dernière action confirmée : Vérifier le commit de la PR" in status
         assert "➡️ Ensuite : Lire le journal du test Windows" in status
         assert "Ancien téléphone" in status
@@ -2532,7 +2555,7 @@ def selftest() -> int:
         assert "3. ▶️ Lancer le test Windows Bootstrap" in svc.plan_view()
         presence = svc.presence_snapshot()
         assert len(presence["fingerprint"]) == 64
-        assert "🛰️ Automate de suivi BCP" in presence["text"]
+        assert "🛰️ BCP ·" in presence["text"]
         assert "Ancien téléphone" in presence["text"]
         details = svc.details()
         assert "État global: EN_COURS" in details
@@ -2564,10 +2587,13 @@ def selftest() -> int:
             for button in row
         }
         assert {
-            "bcp:status", "bcp:where", "bcp:tail", "bcp:missions", "bcp:details",
+            "bcp:status", "bcp:since", "bcp:why", "bcp:where", "bcp:tail", "bcp:missions",
+            "bcp:quiet:120", "bcp:quiet:off", "bcp:details",
             "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
         assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
+        assert "POURQUOI CET ÉTAT" in svc.why()
+        assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
