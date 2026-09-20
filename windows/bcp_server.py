@@ -122,6 +122,7 @@ def chatgpt_control_folder():
 
 
 def _record_telemetry_mirror_hold(event_type: str, exc: Exception) -> None:
+    """Persist local truth when a provider-synchronised telemetry mirror fails."""
     try:
         atomic_json(STATE_DIR / "telemetry_mirror_hold.json", {
             "schema": "bcp.telemetry_mirror_hold/1",
@@ -132,11 +133,17 @@ def _record_telemetry_mirror_hold(event_type: str, exc: Exception) -> None:
             "updated_at": utc_now(),
         })
     except Exception:
+        # A mirror failure must never recursively compromise the local transaction.
         pass
 
 
 def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
-    """Best-effort provider mirror; local transaction truth remains authoritative."""
+    """Best-effort mirror into the provider-synchronised ChatGPT-PC control plane.
+
+    Local BCP state is authoritative for the transaction. DriveFS/provider mirror
+    failure is observable as CLOUD_MIRROR_HOLD and MUST NOT turn a completed local
+    recovery/update action into an API failure.
+    """
     try:
         control = chatgpt_control_folder()
         if control is None:
