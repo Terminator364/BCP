@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R13
+Revision: 2026-09-20-R15
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -902,3 +902,64 @@ Canonical implementation:
 
 Promotion evidence is bound to the exact tested commit SHA and remains subject to the Git writer lease/integration fence.
 
+## P0 — Telegram cockpit field liveness and remote-operability (R14)
+
+This requirement is additive and preserves all prior Telegram/BCP/Nexus requirements.
+
+The Telegram cockpit MUST NOT rely on the user to detect a dead or disconnected poller by repeatedly tapping buttons. The resident stack MUST externalize machine-readable Telegram worker health and make that health observable through the existing BCP external heartbeat/Drive path.
+
+Required invariants:
+- every active Telegram transport worker publishes a small secret-free health record containing mode, process id, state, latest successful poll time, bounded failure count and the most recent callback receipt/handling timestamps;
+- button callbacks such as **Actualiser** produce a machine-readable callback receipt before/after dispatch so a silent user-visible failure can be distinguished from an unreceived update;
+- BCP mirrors Telegram worker health into `BCP_RUNTIME_LATEST.json`; the user is not the telemetry bus;
+- a resident watchdog may restart the companion only when health is genuinely stale, with a restart cooldown to prevent loops;
+- ordinary network timeout/backoff is NOT treated as a dead process, because the worker continues updating health while degraded;
+- single-receiver discipline remains mandatory; duplicate pollers must be suppressed and HTTP 409 conflicts must never be normalized as healthy;
+- direct PC -> Telegram remains opportunistic on the Kinshasa home-Wi-Fi path; Nexus remains the durable remote transport when direct TCP/443 is unavailable;
+- remote work must continue while the user is away from home whenever BCP/Nexus/Drive evidence and bounded jobs are sufficient; only a genuine human authorization gate may require user presence.
+
+Canonical implementation line:
+- BCP server 0.6.8 or later;
+- Telegram cockpit V6 or later;
+- external heartbeat fields `telegram_companion_*`;
+- resident stale-health watchdog with bounded restart cooldown.
+
+## P0 — Human-readable progress, fine micro-actions and complete reports (R15)
+
+This requirement is additive. The Telegram surface is a human operational dashboard, not a dump of internal state names.
+
+### Human-first live card
+- The visible title is an interactive monitoring concept such as **Automate de suivi BCP**, not a bare internal component label.
+- Raw strings such as `NOT_OBSERVED`, workflow implementation names and internal hold codes belong in technical reports, not the primary human card.
+- If no human action is required, the card omits the user-action row instead of displaying a redundant `AUCUNE`.
+- PC, B-EDGE, Drive, Nexus and CI states are translated into clear human sentences.
+
+### Fine-grained micro-action model
+A micro-action is atomic and observable. Examples include reading/opening a file or PDF, checking a workflow, reading logs, changing one file, calculating a hash, launching one test, checking one test result, committing one mutation, performing one readback, or validating one receipt.
+
+The system MUST support a dynamic micro-action forecast. When the exact count is not known, it MAY estimate a total and progress, but MUST mark it explicitly with **≈**. The forecast is planning telemetry, not proof; it may be recalculated as work expands or contracts. Confirmed completed actions remain evidence-backed and distinct from forecast work.
+
+### Two separate progress concepts
+- **Mission progress estimate**: ≈done/total fine micro-actions for the current user objective.
+- **Ecosystem health**: independent percentage derived from observable PC/BCP, B-EDGE, Drive, CI and Nexus availability/qualification signals.
+
+These values MUST NOT be conflated.
+
+### PC power and memory telemetry
+- The resident Windows heartbeat SHOULD expose dependency-free RAM load, available memory, AC/battery source, battery percentage when available, and a battery-critical flag.
+- The human card translates these signals into states such as **PC allumé · secteur · RAM 88%** or **batterie critique**, while raw values stay available in technical reports.
+- This telemetry must remain lightweight enough for the 4 GB Windows target.
+
+### Automatic refresh and intermittent connectivity
+- While a transport is available, the live card refreshes automatically on a bounded adaptive interval; the manual refresh button is a convenience, not the primary update mechanism.
+- Offline periods retain local durable state and do not erase progress. Reconnection resumes synchronization automatically.
+- Automatic refresh must remain data-aware and avoid unnecessary large transfers.
+
+### PDF suite
+Telegram MUST expose at least four complementary generated PDFs:
+1. human situation / executive follow-up;
+2. devices, network and transports;
+3. objective, stages and fine micro-actions;
+4. technical dossier / audit.
+
+Each report is generated from current durable evidence and is designed to be substantially more complete than the compact live card.

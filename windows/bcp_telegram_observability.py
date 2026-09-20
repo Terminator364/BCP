@@ -30,6 +30,7 @@ NEXUS_TOKEN_PATH = STATE_DIR / "nexus_device_token.txt"
 NEXUS_CURSOR_PATH = STATE_DIR / "nexus_command_cursor.json"
 MISSION_EVENT_LOG_PATH = STATE_DIR / "MISSION_EVENT_LOG.jsonl"
 LOG_PATH = APP_ROOT / "logs" / "telegram-observability.jsonl"
+HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -53,7 +54,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/report", "/reporttech",
+    "/tail", "/where", "/missions", "/objective", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -138,6 +139,24 @@ def append_log(event: str, **fields: Any) -> None:
         rec[key] = clean(value, 300) if isinstance(value, str) else value
     with LOG_PATH.open("a", encoding="utf-8") as h:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def write_worker_health(mode: str, state: str, **fields: Any) -> None:
+    rec = {
+        "schema": "bcp.telegram_worker_health/1",
+        "pid": os.getpid(),
+        "mode": clean(mode, 40),
+        "state": clean(state, 80),
+        "updated_at": utc_now(),
+    }
+    for key, value in fields.items():
+        if "token" in key.lower() or "secret" in key.lower():
+            continue
+        rec[key] = clean(value, 300) if isinstance(value, str) else value
+    try:
+        atomic_json(HEALTH_PATH, rec)
+    except Exception:
+        pass
 
 
 def _pdf_escape(text: str) -> str:
@@ -663,6 +682,146 @@ class Service:
         name = clean(r.get("name") or "qualification", 60)
         return labels.get(state, "⚪ tests: " + clean(state, 30)) + " — " + name
 
+    @staticmethod
+    def _micro_weight(label: str) -> int:
+        """Deterministic forecast weight for a high-level step. This is an estimate, never proof."""
+        low = clean(label, 220).lower()
+        weight = 4
+        if any(x in low for x in ("pdf", "fichier", "file", "read", "lire", "ouvrir", "inspect", "vérifier", "verify", "hash", "log")):
+            weight += 2
+        if any(x in low for x in ("modifier", "patch", "corriger", "fix", "code", "implément", "update", "mise à jour")):
+            weight += 4
+        if any(x in low for x in ("workflow", "ci", "build", "test", "qualification", "android", "windows")):
+            weight += 5
+        if any(x in low for x in ("release", "publier", "merge", "déployer", "deploy", "terrain", "field", "readback", "télémétr")):
+            weight += 5
+        return max(2, min(24, weight))
+
+    def _micro_forecast(self, ctx: dict | None, events: list[dict], gh: dict) -> dict:
+        """Estimate fine-grained micro-actions from persisted work. Explicitly approximate."""
+        runs = gh.get("runs") or []
+        if ctx and (ctx.get("plan") or []):
+            plan = [x for x in (ctx.get("plan") or []) if isinstance(x, dict)]
+            total = 0
+            done = 0
+            current_id = clean(((ctx.get("mission") or {}).get("current_step")), 80)
+            for pos, step in enumerate(plan, 1):
+                label = clean(step.get("label") or step.get("id") or ("Étape " + str(pos)), 180)
+                weight = self._micro_weight(label)
+                total += weight
+                state = str(step.get("state") or "").upper()
+                verified = bool(step.get("verified")) or state in {
+                    "VERIFIED", "DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED"
+                }
+                if verified:
+                    done += weight
+                elif clean(step.get("id"), 80) == current_id:
+                    done += max(1, weight // 3)
+            total = max(total, 12)
+        else:
+            observed_events = min(40, len(events))
+            completed_events = sum(
+                1 for e in events
+                if str(e.get("state") or "").upper() in {"COMMITTED", "CHECKPOINTED", "DONE", "RESULT_RECEIVED", "VALIDATING"}
+            )
+            run_count = min(8, len(runs))
+            completed_runs = sum(
+                1 for r in runs
+                if str(r.get("conclusion") or "").lower() == "success"
+            )
+            # Medium BCP engineering work generally spans dozens of atomic reads,
+            # edits, checks, commits and readbacks. Forecast expands as evidence appears.
+            total = max(32, min(1000, 32 + observed_events * 2 + run_count * 6))
+            done = min(total - 1, completed_events * 2 + completed_runs * 4 + min(observed_events, 12))
+        pct = max(0, min(100, int(round(done * 100 / max(1, total)))))
+        return {
+            "done": int(done),
+            "total": int(total),
+            "pct": pct,
+            "bar": self._bar(done, total, 12),
+            "approximate": True,
+        }
+
+    @staticmethod
+    def _forecast_micro_labels(action: str) -> list[str]:
+        low = clean(action, 220).lower()
+        labels = [
+            "Lire les preuves et fichiers utiles",
+            "Identifier le prochain changement atomique",
+        ]
+        if any(x in low for x in ("pdf", "fichier", "file", "doc", "rapport")):
+            labels += ["Ouvrir/lire le document ciblé", "Vérifier les données extraites"]
+        if any(x in low for x in ("workflow", "ci", "test", "build", "qualification")):
+            labels += ["Vérifier le workflow ciblé", "Lancer le test", "Lire le résultat et les logs"]
+        if any(x in low for x in ("corrig", "patch", "modifier", "update", "mise à jour", "code")):
+            labels += ["Appliquer la modification ciblée", "Vérifier syntaxe et cohérence"]
+        if any(x in low for x in ("release", "merge", "publ", "déploi", "deploy")):
+            labels += ["Aligner versions et hashes", "Vérifier les contrats de release", "Intégrer après PASS"]
+        labels += ["Sauvegarder un checkpoint durable", "Effectuer le readback de confirmation"]
+        out = []
+        for item in labels:
+            if item not in out:
+                out.append(item)
+        return out[:10]
+
+    @staticmethod
+    def _human_ci_explanation(gh: dict) -> str:
+        runs = gh.get("runs") or []
+        if not runs:
+            return "Aucun test GitHub récent disponible."
+        r = runs[0]
+        name = str(r.get("name") or "tests")
+        state = str(r.get("conclusion") or r.get("status") or "unknown").lower()
+        state_text = {
+            "success": "terminés avec succès",
+            "in_progress": "en cours",
+            "queued": "en attente de démarrage",
+            "failure": "en échec — correction nécessaire",
+            "cancelled": "interrompus",
+        }.get(state, "état " + clean(state, 30))
+        low = name.lower()
+        if "coordinated product" in low:
+            purpose = "vérifie que PC, B-EDGE, versions et contrats restent compatibles ensemble"
+        elif "field ecosystem" in low:
+            purpose = "reproduit les contraintes réelles Windows/RAM/réseau et le runtime Nexus avant le terrain"
+        elif "telegram" in low:
+            purpose = "vérifie le cockpit Telegram, ses boutons et ses garde-fous"
+        elif "nexus" in low:
+            purpose = "vérifie le relais Nexus utilisé quand le PC ne joint pas directement Telegram"
+        elif "current release" in low:
+            purpose = "vérifie que la version publiée est cohérente, signée par ses hashes et auto-mise-à-jour"
+        else:
+            purpose = "vérifie automatiquement la prochaine version avant déploiement"
+        return "Tests " + state_text + " : " + purpose + "."
+
+    @staticmethod
+    def _nexus_progress(state: str) -> tuple[int, str]:
+        s = str(state or "").upper()
+        table = {
+            "NONE": (5, "Relais Internet pas encore préparé"),
+            "NOT_OBSERVED": (5, "Relais Internet pas encore observé"),
+            "WRANGLER_RUNTIME_REQUIRED": (70, "Préparation du moteur Nexus sur le PC"),
+            "RUNTIME_PROBE_FAILED": (70, "Préparation Nexus à corriger"),
+            "LAUNCHED": (82, "Démarrage et vérification du relais Nexus"),
+            "HUMAN_AUTH_REQUIRED": (90, "Autorisation fournisseur requise"),
+            "COMMITTED": (100, "Relais Nexus opérationnel"),
+            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": (100, "Relais Nexus opérationnel"),
+        }
+        return table.get(s, (50, "Préparation du relais Nexus"))
+
+    def _ecosystem_health(self, heartbeat_ok: bool, edge_ok: bool, edge_paired: bool,
+                          drive_ok: bool, ci_state: str, nexus_state: str) -> tuple[int, str]:
+        score = 0
+        score += 28 if heartbeat_ok else 0
+        score += 18 if edge_ok else (10 if edge_paired else 0)
+        score += 14 if drive_ok else 0
+        score += 20 if ci_state == "success" else (10 if ci_state in {"in_progress", "queued"} else 0)
+        score += 20 if nexus_state in {"COMMITTED", "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"} else (
+            12 if nexus_state in {"LAUNCHED", "HUMAN_AUTH_REQUIRED", "WRANGLER_RUNTIME_REQUIRED"} else 4
+        )
+        score = max(0, min(100, score))
+        return score, self._bar(score, 100, 12)
+
     def presence_snapshot(self) -> dict:
         runtime = self.local.runtime()
         edge = self.local.edge()
@@ -675,129 +834,171 @@ class Service:
         ev = events[-1] if events else {}
         ctx = self._mission_context()
         mission = (ctx or {}).get("mission") or {}
-        mission_state = str(
-            mission.get("status") or ev.get("state") or "NOT_OBSERVED"
-        ).upper()
+        mission_state = str(mission.get("status") or ev.get("state") or "UNKNOWN").upper()
 
         if ctx:
-            action = clean(ctx.get("current"), 180)
-            next_action = self._human_action(ctx.get("next"))
-            last_completed = clean(ctx.get("last"), 180)
-            progress = str(ctx.get("progress") or ("Étape: " + mission_state.replace("_", " ").lower()))
-            age = self._event_age_seconds({
-                "updated_at": mission.get("last_progress_at") or mission.get("updated_at")
-            })
-            evidence_time = clean(
-                mission.get("last_progress_at") or mission.get("updated_at") or "non observée", 64
-            )
-            step_key = [int(ctx.get("verified") or 0), int(ctx.get("total") or 0)] if int(ctx.get("total") or 0) > 0 else None
-        else:
-            action = clean(
-                ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
-                "Aucune micro-action durable récente.",
+            plan_for_objective = ctx.get("plan") or []
+            objective = clean(
+                mission.get("objective") or mission.get("title") or
+                ((plan_for_objective[0].get("label") if isinstance(plan_for_objective[0], dict) else "") if plan_for_objective else "") or
+                "Faire avancer la mission API/BCP",
                 180,
             )
-            next_action = self._human_action(
-                ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
+            action = clean(ctx.get("current") or "Analyse de la prochaine action vérifiable.", 180)
+            next_action = self._human_action(ctx.get("next"))
+            last_completed = clean(ctx.get("last") or "Point de reprise durable conservé.", 180)
+            age = self._event_age_seconds({"updated_at": mission.get("last_progress_at") or mission.get("updated_at")})
+            evidence_time = clean(mission.get("last_progress_at") or mission.get("updated_at") or "", 64)
+        else:
+            objective = clean(
+                ev.get("mission_objective") or ev.get("objective") or
+                ev.get("job_title") or "Faire avancer la mission API/BCP en cours.",
+                180,
             )
-            age = self._event_age_seconds(ev)
-            evidence_time = self._event_timestamp(ev) or "non observée"
+            action = clean(
+                ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
+                "Reconstitution automatique de l’activité à partir des preuves disponibles.",
+                180,
+            )
+            next_action = self._human_action(ev.get("next_safe_action") or "")
             last_completed = self._last_completed_action(events, ev)
-            progress = "Étape: " + mission_state.replace("_", " ").lower()
-            step_key = None
-            try:
-                idx = int(ev.get("step_index"))
-                total = int(ev.get("step_total"))
-                if 0 <= idx <= total and total > 0:
-                    pct = int(round(idx * 100 / total))
-                    progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
-                    step_key = [idx, total]
-            except Exception:
-                pass
+            age = self._event_age_seconds(ev)
+            evidence_time = self._event_timestamp(ev)
 
         if age is None:
             age = self.local.mission_activity_age()
         age_label = self._age_label(age)
-        if isinstance(age, int) and age < 120:
-            activity_band = "RECENT"
-        elif isinstance(age, int) and age < 600:
-            activity_band = "QUIET"
-        elif isinstance(age, int):
-            activity_band = "STALE"
-        else:
-            activity_band = "UNKNOWN"
-        if mission_state in HOLD_STATES or clean(mission.get("hold_reason"), 120):
-            activity_band = "HOLD"
 
+        forecast = self._micro_forecast(ctx, events, gh)
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
         edge_age = edge.get("_age_seconds")
         edge_ok = bool(edge.get("paired")) and isinstance(edge_age, int) and edge_age <= 300
+        edge_paired = bool(edge.get("paired"))
         drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
         runs = gh.get("runs") or []
         run = runs[0] if runs else {}
         ci_state = clean(run.get("conclusion") or run.get("status"), 30).lower()
         nexus = str(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED").upper()
-        nexus_text = {
-            "COMMITTED": "✅ relais Nexus actif",
-            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": "✅ relais Nexus actif",
-            "EXITED_NO_RECEIPT": "🟡 relais Nexus à reprendre",
-            "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation du relais Nexus",
-            "LAUNCHED": "🟡 démarrage du relais Nexus en cours",
-        }.get(nexus, "⚪ relais Nexus non observé")
+        nexus_pct, nexus_stage = self._nexus_progress(nexus)
+        health_pct, health_bar = self._ecosystem_health(
+            heartbeat_ok, edge_ok, edge_paired, drive_ok, ci_state, nexus
+        )
+
+        hold_reason = clean(mission.get("hold_reason") or ev.get("failure_hold_reason"), 120)
+        if mission_state in HOLD_STATES or hold_reason:
+            activity = "🟠 En attente : " + (hold_reason.replace("_", " ").lower() if hold_reason else "un blocage identifié doit être levé.")
+        elif isinstance(age, int) and age < 120:
+            activity = "🟢 Travail actif — nouvelle preuve reçue il y a " + age_label + "."
+        elif isinstance(age, int) and age < 900:
+            activity = "🔵 Travail en cours / attente normale — dernière preuve il y a " + age_label + "."
+        elif isinstance(age, int):
+            activity = "🟡 Travail sans nouvelle preuve depuis " + age_label + " — le suivi automatique continue."
+        else:
+            activity = "🔵 Suivi automatique actif — synchronisation des preuves en cours."
+
+        battery_pct = runtime.get("pc_battery_percent")
+        battery_critical = bool(runtime.get("pc_battery_critical"))
+        power_source = str(runtime.get("pc_power_source") or "UNKNOWN").upper()
+        mem_pct = runtime.get("pc_memory_load_percent")
+        pc_suffix = []
+        if power_source == "AC":
+            pc_suffix.append("secteur")
+        elif power_source == "BATTERY":
+            pc_suffix.append("batterie")
+        if isinstance(battery_pct, int):
+            pc_suffix.append(str(battery_pct) + "%")
+        if isinstance(mem_pct, int):
+            pc_suffix.append("RAM " + str(mem_pct) + "%")
+        suffix = (" · " + " · ".join(pc_suffix)) if pc_suffix else ""
+        if battery_critical:
+            pc_text = "🔴 PC : allumé mais batterie critique" + suffix
+        elif heartbeat_ok:
+            pc_text = "🟢 PC : allumé · BCP en vie" + suffix
+        elif isinstance(hb, int) and hb <= 600:
+            pc_text = "🟡 PC : probablement allumé · télémétrie retardée" + suffix
+        else:
+            pc_text = "🔴 PC : non joignable récemment" + suffix
+
+        if edge_ok:
+            edge_text = "🟢 Ancien téléphone : serveur B-EDGE actif"
+        elif edge_paired:
+            edge_text = "🔵 Ancien téléphone : serveur appairé · veille normale"
+        else:
+            edge_text = "🔴 Ancien téléphone : serveur non appairé"
 
         human_gate = self._human_gate(ev, next_action)
+        chat_state = self.local.chat(self.project_id).get("state")
+        ci_active = ci_state in {"in_progress", "queued", "requested"}
+        if chat_state == "CHAT_PLATFORM_HOLD_REPORTED":
+            execution_text = "🟠 Exécution : interruption plateforme signalée · reprise depuis le dernier checkpoint"
+        elif ci_active:
+            execution_text = "🔄 Exécution : travail distant encore actif (tests/qualification)"
+        elif isinstance(age, int) and age >= 900:
+            execution_text = "⏸️ Exécution : pause apparente · aucune nouvelle micro-action confirmée depuis " + age_label
+        elif isinstance(age, int) and age < 120:
+            execution_text = "▶️ Exécution : activité récente confirmée"
+        else:
+            execution_text = "🔵 Exécution : suivi actif · prochaine preuve attendue"
         rendered_at = utc_now()
+        refresh_seconds = 60 if mission_state not in {"DONE", "CANCELLED"} else 300
+        refresh_bucket = int(time.time() // refresh_seconds)
         stable = {
             "pc_active": heartbeat_ok,
-            "edge_paired": edge_ok,
+            "edge_paired": edge_paired,
+            "edge_active": edge_ok,
             "drive_visible": drive_ok,
             "nexus_state": nexus,
             "ci_state": ci_state,
             "mission_state": mission_state,
             "mission_action": action,
             "mission_next": next_action,
-            "mission_step": step_key,
-            "activity_band": activity_band,
+            "forecast": [forecast["done"], forecast["total"], forecast["pct"]],
+            "health_pct": health_pct,
             "human_gate": human_gate,
-            "evidence_time": evidence_time,
+            "refresh_bucket": refresh_bucket,
         }
         digest = hashlib.sha256(
             json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
 
-        if activity_band == "HOLD":
-            activity = "🟠 La mission attend un élément identifié."
-        elif activity_band == "RECENT":
-            activity = "🟢 Une preuve récente confirme que ça avance."
-        elif activity_band == "QUIET":
-            activity = "🟡 Pas de nouvelle preuve depuis " + age_label + "."
-        elif activity_band == "STALE":
-            activity = "🟠 Pas de nouvelle preuve depuis " + age_label + ". La liaison doit être revérifiée."
-        else:
-            activity = "⚪ Progression récente non observée."
-
         lines = [
-            "🤖 BCP Cockpit — " + self.project_id,
+            "🛰️ Automate de suivi BCP — " + self.project_id,
             activity,
             "",
-            "🎯 Micro-action actuelle: " + action,
-            "📊 Progression: " + progress,
-            "✅ Dernière micro-action terminée: " + last_completed,
-            "➡️ Prochaine micro-action: " + next_action,
-            "👤 Action pour vous: " + human_gate,
-            "",
-            "🕒 Dernière preuve: " + evidence_time + " · âge " + age_label,
-            "",
-            ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
-            ("✅ Ancien téléphone" if edge_ok else ("🟡 Ancien téléphone appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone non observé")),
-            ("✅ Drive" if drive_ok else "⚠️ Drive non observé"),
-            "🌐 " + nexus_text,
-            "🧪 " + self._human_ci(gh),
-            "",
-            "📋 Micro-actions: bouton ci-dessous · 🔧 technique: Détails",
+            "🎯 Objectif actuel : " + objective,
+            "📈 Avancement estimé : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
+            "🧭 Étape en cours : " + action,
+            execution_text,
         ]
-        return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
+        if last_completed and "Aucune étape" not in last_completed:
+            lines.append("✅ Dernière action confirmée : " + last_completed)
+        if next_action:
+            lines.append("➡️ Ensuite : " + next_action)
+        if human_gate != "AUCUNE":
+            lines.append("👤 Votre intervention : " + human_gate)
+
+        lines += [
+            "",
+            "🌡️ État général : " + health_bar + " " + str(health_pct) + "%",
+            pc_text,
+            edge_text,
+            ("🟢 Drive : synchronisation visible" if drive_ok else "🟡 Drive : synchronisation non confirmée"),
+            "🌐 Nexus : " + self._bar(nexus_pct, 100, 10) + " ≈" + str(nexus_pct) + "% · " + nexus_stage,
+            "🧪 " + self._human_ci_explanation(gh),
+            "",
+            "🔄 Actualisation automatique : " + str(refresh_seconds) + " s quand la liaison est disponible · reprise automatique après coupure",
+            ("🕒 Dernière preuve : " + (evidence_time or "horodatage en cours de synchronisation") + " · " + age_label if age is not None else "🕒 Dernière preuve : synchronisation en cours"),
+            "",
+            "Boutons : situation · objectif · activité fine · rapports · technique",
+        ]
+        return {
+            "fingerprint": digest,
+            "text": "\n".join(lines),
+            "snapshot": stable,
+            "rendered_at": rendered_at,
+            "refresh_seconds": refresh_seconds,
+        }
 
     def status(self) -> str:
         return self.presence_snapshot()["text"]
@@ -842,61 +1043,207 @@ class Service:
         ])
 
     def report_summary(self) -> str:
+        snap = self.presence_snapshot()
         return "\n".join([
-            "BCP — Rapport de suivi humain",
+            "BCP — RAPPORT 1/4 — SITUATION HUMAINE COMPLÈTE",
             "Généré: " + utc_now(),
             "",
-            self.status(),
+            snap["text"],
             "",
+            "OBJECTIF ET TRAJECTOIRE",
             self.plan_view(),
             "",
-            self.tail(),
-            "",
-            "LECTURE",
-            "- La barre vient uniquement d’un plan fini enregistré.",
-            "- Une micro-action = une action concrète et vérifiable (ouvrir/lire un fichier, modifier un fichier, lancer un test, vérifier un commit, publier un reçu).",
-            "- L’absence de nouvelle preuve n’est pas présentée comme une réflexion ChatGPT.",
-        ])
-
-    def report_technical(self) -> str:
-        ctx = self._mission_context()
-        mission = (ctx or {}).get("mission") or {}
-        mission_meta = [
-            "MISSION COURANTE",
-            "mission_id: " + clean(mission.get("mission_id") or "NOT_OBSERVED", 120),
-            "status: " + clean(mission.get("status") or "NOT_OBSERVED", 80),
-            "worker_component: " + clean(mission.get("worker_component") or "NOT_OBSERVED", 120),
-            "last_progress_at: " + clean(mission.get("last_progress_at") or "NOT_OBSERVED", 80),
-            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "NOT_OBSERVED", 220),
-            "hold_reason: " + clean(mission.get("hold_reason") or "NONE", 180),
-        ]
-        return "\n".join([
-            "BCP — Rapport technique détaillé",
-            "Généré: " + utc_now(),
-            "",
-            self.details(),
-            "",
-            *mission_meta,
-            "",
-            self.plan_view(),
-            "",
-            "JOURNAL DES MICRO-ACTIONS",
+            "ACTIVITÉ RÉCENTE",
             self.tail(),
             "",
             "MISSIONS",
             self.missions(),
             "",
-            "CONTRAT DE VÉRITÉ",
-            "- progression: seulement plan fini persisté et étapes vérifiées;",
-            "- preuves: SQLite/BCP, GitHub, Drive, B-EDGE, Nexus ou autre reçu externe;",
-            "- aucun accès à la chaîne de pensée privée de ChatGPT;",
-            "- un silence UI n’est jamais converti en progrès inventé.",
+            "COMMENT LIRE LES POURCENTAGES",
+            "- Le compteur de micro-actions marqué ≈ est une prévision dynamique, pas un nombre promis.",
+            "- Une micro-action est atomique: lire/ouvrir un fichier, vérifier un workflow, lire un log, modifier un fichier, calculer un hash, lancer un test, créer un commit, faire un readback, etc.",
+            "- L'estimation se recalcule quand la mission se précise; elle peut donc augmenter ou diminuer.",
+            "- Les actions confirmées restent distinguées des actions seulement prévues.",
         ])
 
-    def report_pdf(self, technical: bool = False) -> bytes:
-        body = self.report_technical() if technical else self.report_summary()
-        title = "BCP Rapport technique detaille" if technical else "BCP Rapport de suivi humain"
+    def report_devices(self) -> str:
+        runtime = self.local.runtime()
+        edge = self.local.edge()
+        drive = self.local.drive()
+        gh = self.github.snapshot()
+        keys = [
+            "server_version", "server_pid", "pc_name", "updated_at", "paired",
+            "update_state", "update_target_version", "nexus_bootstrap_state",
+            "nexus_bootstrap_bundle_version", "nexus_bootstrap_exit_code",
+            "nexus_bootstrap_receipt_status", "nexus_bootstrap_error_class",
+            "nexus_bootstrap_error_detail", "nexus_bootstrap_stage",
+            "telegram_companion_state", "telegram_companion_mode",
+            "telegram_companion_pid", "telegram_companion_health_age_seconds",
+            "telegram_companion_last_poll_at", "telegram_companion_last_callback_data",
+            "telegram_companion_last_callback_received_at",
+            "telegram_companion_last_callback_handled_at",
+            "telegram_companion_error_class", "telegram_companion_error_detail",
+            "chatgpt_pc_active_version", "chatgpt_pc_heartbeat_age_seconds",
+            "chatgpt_pc_command_plane", "chatgpt_pc_command_plane_age_seconds",
+            "recovery_phase", "recovery_result_status",
+        ]
+        lines = [
+            "BCP — RAPPORT 2/4 — APPAREILS, RÉSEAU ET TRANSPORTS",
+            "Généré: " + utc_now(),
+            "",
+            "VUE HUMAINE",
+            self.status(),
+            "",
+            "TÉLÉMÉTRIE PC / BCP",
+        ]
+        for key in keys:
+            if key in runtime:
+                lines.append(key + ": " + clean(runtime.get(key), 260))
+        lines += [
+            "",
+            "B-EDGE / ANCIEN TÉLÉPHONE",
+            "paired: " + str(bool(edge.get("paired"))),
+            "edge_version: " + clean(edge.get("edge_version") or "", 80),
+            "last_event: " + clean(edge.get("last_event") or "", 120),
+            "event_age_seconds: " + str(edge.get("_age_seconds")),
+            "",
+            "DRIVE",
+            "status: " + clean(drive.get("status") or "", 80),
+            "age_seconds: " + str(drive.get("age_seconds")),
+            "",
+            "GITHUB / QUALIFICATION",
+            self.ci(),
+            "",
+            "INTERPRÉTATION",
+            "- Direct PC→Telegram est opportuniste; une coupure TCP/443 ne doit pas arrêter BCP.",
+            "- Nexus est le relais distant robuste quand le chemin direct est indisponible.",
+            "- Le mode hors-ligne conserve l'état local; la synchronisation reprend quand une liaison revient.",
+            "- Un poller Telegram unique est obligatoire pour éviter HTTP 409 getUpdates.",
+        ]
+        return "\n".join(lines)
+
+    def report_mission(self) -> str:
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        events = [
+            e for e in self.local.mission_events(160)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        return "\n".join([
+            "BCP — RAPPORT 3/4 — OBJECTIF, ÉTAPES ET MICRO-ACTIONS",
+            "Généré: " + utc_now(),
+            "",
+            "MISSION COURANTE",
+            "mission_id: " + clean(mission.get("mission_id") or "synthèse depuis preuves externes", 120),
+            "status: " + clean(mission.get("status") or "suivi actif", 80),
+            "current_step: " + clean(mission.get("current_step") or "", 160),
+            "last_committed_step: " + clean(mission.get("last_committed_step") or "", 160),
+            "next_step: " + clean(mission.get("next_step") or "", 160),
+            "last_progress_at: " + clean(mission.get("last_progress_at") or "", 80),
+            "",
+            "PRÉVISION DYNAMIQUE DE MICRO-ACTIONS",
+            forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
+            "Le total est volontairement estimatif et peut être recalculé quand de nouvelles sous-actions apparaissent.",
+            "",
+            self.plan_view(),
+            "",
+            "JOURNAL FIN",
+            self.tail(),
+            "",
+            "BLOCAGES / ATTENTES",
+            self.holds(),
+            "",
+            "MISSIONS RÉCENTES",
+            self.missions(),
+        ])
+
+    def report_technical(self) -> str:
+        ctx = self._mission_context()
+        mission = (ctx or {}).get("mission") or {}
+        head = self._head() or {}
+        gh = self.github.snapshot()
+        return "\n".join([
+            "BCP — RAPPORT 4/4 — DOSSIER TECHNIQUE ET AUDIT",
+            "Généré: " + utc_now(),
+            "",
+            "ÉTAT TECHNIQUE",
+            self.details(),
+            "",
+            "HEAD / CHECKPOINT",
+            "revision: " + str(head.get("revision") or ""),
+            "status: " + clean(head.get("status") or "", 120),
+            "last_completed_action: " + clean(head.get("last_completed_action") or "", 500),
+            "next_action: " + clean(head.get("next_action") or "", 500),
+            "",
+            "MISSION",
+            "mission_id: " + clean(mission.get("mission_id") or "", 120),
+            "worker_component: " + clean(mission.get("worker_component") or "", 120),
+            "receipt_evidence: " + clean(mission.get("receipt_evidence") or "", 500),
+            "hold_reason: " + clean(mission.get("hold_reason") or "", 240),
+            "",
+            "CI / WORKFLOWS",
+            self.ci(),
+            "",
+            "PLAN ET JOURNAL",
+            self.plan_view(),
+            self.tail(),
+            "",
+            "CONTRAT DE VÉRITÉ",
+            "- micro-actions confirmées = preuves externes/durables;",
+            "- total ≈ = estimation de planification, explicitement non exacte;",
+            "- état des appareils = heartbeat/télémétrie, jamais supposition silencieuse;",
+            "- pas d'accès à la chaîne de pensée privée de ChatGPT;",
+            "- absence de preuve ≠ travail inventé;",
+            "- mutations: writer fence, idempotence, hash/readback avant COMMITTED.",
+            "",
+            "SNAPSHOT GITHUB",
+            clean(json.dumps(gh, ensure_ascii=False, sort_keys=True), 5000),
+        ])
+
+    def report_pdf(self, kind: Any = "summary") -> bytes:
+        if kind is True:
+            kind = "technical"
+        elif kind is False:
+            kind = "summary"
+        key = str(kind or "summary").lower()
+        if key == "devices":
+            body, title = self.report_devices(), "BCP Appareils Reseau et Transports"
+        elif key == "mission":
+            body, title = self.report_mission(), "BCP Objectif Etapes et Micro-actions"
+        elif key == "technical":
+            body, title = self.report_technical(), "BCP Dossier technique et audit"
+        else:
+            body, title = self.report_summary(), "BCP Situation humaine complete"
         return text_pdf_bytes(title, body)
+
+    def objective(self) -> str:
+        ctx = self._mission_context()
+        events = [
+            e for e in self.local.mission_events(160)
+            if not e.get("project_id") or str(e.get("project_id")) == self.project_id
+        ]
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        mission = (ctx or {}).get("mission") or {}
+        objective = clean(
+            mission.get("objective") or mission.get("title") or
+            (events[-1].get("mission_objective") if events else "") or
+            "Faire avancer l’objectif API/BCP courant jusqu’au prochain état durable vérifié.",
+            260,
+        )
+        current = clean((ctx or {}).get("current") or (events[-1].get("action_summary") if events else "") or "Synchroniser l’état courant.", 220)
+        next_action = self._human_action((ctx or {}).get("next") or (events[-1].get("next_safe_action") if events else ""))
+        lines = [
+            "🎯 OBJECTIF ACTUEL",
+            objective,
+            "",
+            "📈 Avancement estimé : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
+            "🧭 Maintenant : " + current,
+        ]
+        if next_action:
+            lines.append("➡️ Ensuite : " + next_action)
+        lines += ["", self.plan_view()]
+        return "\n".join(lines)
 
     def missions(self) -> str:
         events = self.local.mission_events(200)
@@ -1034,41 +1381,83 @@ class Service:
         return "\n".join(lines)
 
     def where(self, code: str = "") -> str:
+        ctx = self._mission_context()
         events = self.local.mission_events(160)
         if code:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
-        if not events:
-            return "Aucune progression durable observée pour cette mission."
-        return self.progress_event(events[-1])
+        ev = events[-1] if events else {}
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        current = clean(
+            (ctx or {}).get("current") or ev.get("action_summary") or ev.get("step_summary") or
+            ev.get("step_id") or "Synchronisation de l’étape courante.",
+            220,
+        )
+        next_action = self._human_action((ctx or {}).get("next") or ev.get("next_safe_action") or "")
+        state = str(((ctx or {}).get("mission") or {}).get("status") or ev.get("state") or "EN_COURS").upper()
+        human_state = {
+            "DONE": "terminée",
+            "COMMITTED": "étape enregistrée",
+            "VALIDATING": "vérification en cours",
+            "STARTED": "travail en cours",
+            "DISPATCHED": "action lancée",
+            "HOLD": "en attente",
+            "BLOCKED": "bloquée",
+        }.get(state, state.replace("_", " ").lower())
+        lines = [
+            "🔵 OÙ EN EST-ON ?",
+            "État : " + human_state,
+            "Progression estimée : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
+            "Étape actuelle : " + current,
+        ]
+        if next_action:
+            lines.append("Étape suivante : " + next_action)
+        lines.append("ℹ️ Le total ≈ est recalculé si de nouvelles micro-actions deviennent nécessaires.")
+        return "\n".join(lines)
 
     def tail(self, code: str = "") -> str:
         ctx = self._mission_context()
-        if ctx:
-            mission = ctx.get("mission") or {}
-            mission_id = str(mission.get("mission_id") or "")
-            rows = self.local.mission_event_tail(mission_id, 10) if mission_id else []
-            if rows:
-                lines = ["📋 Journal des micro-actions vérifiables"]
-                label_by_id = ctx.get("label_by_id") or {}
-                for pos, row in enumerate(rows, 1):
-                    step_id = clean(row.get("step_id"), 80)
-                    label = clean(label_by_id.get(step_id) or row.get("summary") or step_id or "Micro-action", 170)
-                    state = str(row.get("status") or row.get("event_type") or "EVENT").upper()
-                    icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED", "VERIFIED"} else ("🔴" if state in HOLD_STATES or "FAIL" in state else "•")
-                    when = clean(row.get("created_at"), 40)
-                    lines.append(str(pos) + ". " + icon + " " + label + ((" · " + when) if when else ""))
-                return "\n".join(lines)
-
         events = self.local.mission_events(160)
         if code:
             events = [x for x in events if str(x.get("job_code") or x.get("job_id") or "") == code]
-        if not events:
-            return "📋 Journal des micro-actions\nAucun événement durable observé."
-        lines = ["📋 Journal des micro-actions vérifiables"]
-        for pos, ev in enumerate(events[-10:], 1):
-            state = clean(ev.get("state") or "EVENT", 30)
-            step = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "Micro-action", 140)
-            lines.append(str(pos) + ". " + state + " — " + step)
+        forecast = self._micro_forecast(ctx, events, self.github.snapshot())
+        lines = [
+            "⚙️ ACTIVITÉ FINE",
+            "Compteur prévisionnel : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]),
+            "",
+            "Micro-actions confirmées récemment :",
+        ]
+        durable_rows = []
+        if ctx:
+            mission = ctx.get("mission") or {}
+            mission_id = str(mission.get("mission_id") or "")
+            durable_rows = self.local.mission_event_tail(mission_id, 8) if mission_id else []
+        if durable_rows:
+            label_by_id = ctx.get("label_by_id") or {}
+            for pos, row in enumerate(durable_rows, 1):
+                step_id = clean(row.get("step_id"), 80)
+                label = clean(label_by_id.get(step_id) or row.get("summary") or step_id or "Micro-action", 170)
+                state = str(row.get("status") or row.get("event_type") or "EVENT").upper()
+                icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED", "VERIFIED"} else ("🟠" if state in HOLD_STATES or "FAIL" in state else "•")
+                lines.append(str(pos) + ". " + icon + " " + label)
+        elif events:
+            for pos, ev in enumerate(events[-8:], 1):
+                state = str(ev.get("state") or "EVENT").upper()
+                icon = "✅" if state in {"DONE", "COMMITTED", "CHECKPOINTED"} else "•"
+                step = clean(ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or "Micro-action", 160)
+                lines.append(str(pos) + ". " + icon + " " + step)
+        else:
+            lines.append("• Aucun reçu fin récent; la prévision ci-dessous reste disponible.")
+
+        current = clean((ctx or {}).get("current") or (events[-1].get("action_summary") if events else "") or "Continuer la mission courante", 220)
+        predicted = self._forecast_micro_labels(current)
+        base = int(forecast["done"])
+        lines += ["", "Prochaines micro-actions prévues (≈) :"]
+        for offset, label in enumerate(predicted[:6], 1):
+            number = base + offset
+            if number > forecast["total"]:
+                break
+            lines.append("≈" + str(number) + "/" + str(forecast["total"]) + " ⬜ " + label)
+        lines.append("ℹ️ Prévision ≠ preuve : les numéros peuvent être recalculés si le travail révèle de nouvelles sous-actions.")
         return "\n".join(lines)
 
     def holds(self) -> str:
@@ -1091,13 +1480,13 @@ class Service:
 
     def help(self) -> str:
         return (
-            "BCP Cockpit — lecture simple\n"
-            "/status — mission actuelle\n/missions — missions récentes\n/details — vue technique\n"
-            "/report — PDF de suivi\n/reporttech — PDF technique\n"
+            "Automate de suivi BCP — lecture simple\n"
+            "/status — situation actuelle\n/objective — objectif courant\n/missions — historique des missions\n/details — vue technique\n"
+            "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
-            "Les boutons du cockpit donnent accès aux vues utiles sans retaper les commandes. "
-            "Les pourcentages portent seulement sur des plans finis et vérifiables. "
-            "Aucun état interne ou chaîne de pensée ChatGPT n’est lu."
+            "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
+            "Le compteur marqué ≈ est une estimation dynamique de micro-actions atomiques; les actions confirmées restent fondées sur des preuves durables. "
+            "Aucun état interne ni chaîne de pensée ChatGPT n’est lu."
         )
 
     def dispatch(self, text: str) -> str:
@@ -1115,6 +1504,8 @@ class Service:
             return self.status()
         if cmd == "/missions":
             return self.missions()
+        if cmd == "/objective":
+            return self.objective()
         if cmd == "/details":
             return self.details()
         if cmd == "/project":
@@ -1152,22 +1543,28 @@ class Telegram:
 
     @staticmethod
     def keyboard() -> dict:
+        # Telegram does not expose arbitrary per-button colours; coloured symbols
+        # provide stable visual semantics without depending on client themes.
         return {
             "inline_keyboard": [
                 [
-                    {"text": "🔄 Actualiser", "callback_data": "bcp:status"},
-                    {"text": "📍 Étape", "callback_data": "bcp:where"},
+                    {"text": "🟢 Situation", "callback_data": "bcp:status"},
+                    {"text": "🔵 Où en est-on ?", "callback_data": "bcp:where"},
                 ],
                 [
-                    {"text": "📋 Micro-actions", "callback_data": "bcp:tail"},
-                    {"text": "🗂 Missions", "callback_data": "bcp:missions"},
+                    {"text": "⚙️ Activité fine", "callback_data": "bcp:tail"},
+                    {"text": "🎯 Objectif", "callback_data": "bcp:missions"},
                 ],
                 [
-                    {"text": "🧾 Détails", "callback_data": "bcp:details"},
-                    {"text": "📄 PDF suivi", "callback_data": "bcp:pdf:summary"},
+                    {"text": "🧰 Technique", "callback_data": "bcp:details"},
+                    {"text": "📄 1·Suivi", "callback_data": "bcp:pdf:summary"},
                 ],
                 [
-                    {"text": "📚 PDF technique", "callback_data": "bcp:pdf:technical"},
+                    {"text": "🖥️ 2·Appareils", "callback_data": "bcp:pdf:devices"},
+                    {"text": "🧭 3·Mission", "callback_data": "bcp:pdf:mission"},
+                ],
+                [
+                    {"text": "📚 4·Audit", "callback_data": "bcp:pdf:technical"},
                 ],
             ]
         }
@@ -1263,7 +1660,7 @@ class Telegram:
             "bcp:status": ("/status", "Actualisation"),
             "bcp:where": ("/where", "Position"),
             "bcp:tail": ("/tail", "Micro-actions"),
-            "bcp:missions": ("/missions", "Missions"),
+            "bcp:missions": ("/objective", "Objectif"),
             "bcp:details": ("/details", "Détails"),
         }
         return mapping.get(data, ("", ""))
@@ -1279,12 +1676,20 @@ class Telegram:
             self.answer_callback(callback_id, "Non autorisé")
             return
         if data == "bcp:pdf:summary":
-            self.answer_callback(callback_id, "Préparation du PDF…")
-            self.send_document("BCP_SUIVI.pdf", self.service.report_pdf(False), "BCP — rapport de suivi")
+            self.answer_callback(callback_id, "Rapport 1/4 en préparation…")
+            self.send_document("BCP_1_SITUATION.pdf", self.service.report_pdf("summary"), "BCP — situation humaine complète")
+            return
+        if data == "bcp:pdf:devices":
+            self.answer_callback(callback_id, "Rapport 2/4 en préparation…")
+            self.send_document("BCP_2_APPAREILS_RESEAU.pdf", self.service.report_pdf("devices"), "BCP — appareils, réseau et transports")
+            return
+        if data == "bcp:pdf:mission":
+            self.answer_callback(callback_id, "Rapport 3/4 en préparation…")
+            self.send_document("BCP_3_MISSION_MICRO_ACTIONS.pdf", self.service.report_pdf("mission"), "BCP — objectif, étapes et micro-actions")
             return
         if data == "bcp:pdf:technical":
-            self.answer_callback(callback_id, "Préparation du PDF technique…")
-            self.send_document("BCP_DETAILS_TECHNIQUES.pdf", self.service.report_pdf(True), "BCP — rapport technique")
+            self.answer_callback(callback_id, "Rapport 4/4 en préparation…")
+            self.send_document("BCP_4_AUDIT_TECHNIQUE.pdf", self.service.report_pdf("technical"), "BCP — dossier technique et audit")
             return
         command, label = self._callback_action(data)
         if not command:
@@ -1293,7 +1698,7 @@ class Telegram:
         self.answer_callback(callback_id, label)
         response = self.service.dispatch(command)
         message_id = msg.get("message_id")
-        if message_id and command in {"/status", "/where", "/tail", "/missions", "/details"}:
+        if message_id and command in {"/status", "/where", "/tail", "/missions", "/objective", "/details"}:
             if not self.edit(int(message_id), response):
                 self.send(response)
         else:
@@ -1383,19 +1788,43 @@ class Telegram:
         backoff = [2, 5, 15, 30, 60]
         failures = 0
         append_log("WORKER_STARTED")
+        write_worker_health("DIRECT_TELEGRAM", "RUNNING", consecutive_failures=0, next_offset=offset)
         while True:
             try:
                 obj = self.api("getUpdates", {
                     "offset": offset, "timeout": 20, "allowed_updates": ["message", "callback_query"]
                 }, 35)
                 failures = 0
-                for upd in obj.get("result") or []:
+                updates = obj.get("result") or []
+                write_worker_health(
+                    "DIRECT_TELEGRAM", "ACTIVE",
+                    consecutive_failures=0,
+                    next_offset=offset,
+                    updates_received=len(updates),
+                    last_poll_at=utc_now(),
+                )
+                for upd in updates:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
                     callback = upd.get("callback_query")
                     if isinstance(callback, dict):
-                        append_log("CALLBACK_UPDATE", update_id=uid, callback_data=clean(callback.get("data"), 80))
+                        callback_data = clean(callback.get("data"), 80)
+                        append_log("CALLBACK_UPDATE", update_id=uid, callback_data=callback_data)
+                        write_worker_health(
+                            "DIRECT_TELEGRAM", "CALLBACK_RECEIVED",
+                            consecutive_failures=0,
+                            update_id=uid,
+                            callback_data=callback_data,
+                            callback_received_at=utc_now(),
+                        )
                         self.handle_callback(callback)
+                        write_worker_health(
+                            "DIRECT_TELEGRAM", "ACTIVE",
+                            consecutive_failures=0,
+                            update_id=uid,
+                            callback_data=callback_data,
+                            callback_handled_at=utc_now(),
+                        )
                     else:
                         msg = upd.get("message") or {}
                         chat = msg.get("chat") or {}
@@ -1422,14 +1851,31 @@ class Telegram:
                 self._push_system_presence()
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
+                write_worker_health("DIRECT_TELEGRAM", "STOPPED", consecutive_failures=failures)
                 return 0
             except (URLError, TimeoutError, OSError, RuntimeError) as e:
                 delay = backoff[min(failures, len(backoff) - 1)]
                 failures += 1
+                detail = clean(e, 180)
                 append_log("RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                write_worker_health(
+                    "DIRECT_TELEGRAM", "DEGRADED_RETRY",
+                    consecutive_failures=failures,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=delay,
+                )
                 time.sleep(delay)
             except Exception as e:
-                append_log("HOLD", error_class=type(e).__name__, detail=clean(e, 140))
+                detail = clean(e, 180)
+                append_log("HOLD", error_class=type(e).__name__, detail=detail)
+                write_worker_health(
+                    "DIRECT_TELEGRAM", "HOLD",
+                    consecutive_failures=failures,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=60,
+                )
                 time.sleep(60)
 
 
@@ -1584,6 +2030,7 @@ class Nexus:
         backoff = [2, 5, 15, 30, 60]
         failures = 0
         append_log("NEXUS_WORKER_STARTED", device_id=self.device_id)
+        write_worker_health("NEXUS", "RUNNING", consecutive_failures=0, last_command_id=cursor)
         while True:
             try:
                 obj = self.api(
@@ -1592,6 +2039,13 @@ class Nexus:
                 )
                 commands = obj.get("commands") or []
                 failures = 0
+                write_worker_health(
+                    "NEXUS", "ACTIVE",
+                    consecutive_failures=0,
+                    last_command_id=cursor,
+                    commands_received=len(commands),
+                    last_poll_at=utc_now(),
+                )
                 for command in commands:
                     command_id = int(command.get("id") or 0)
                     if command_id <= cursor:
@@ -1617,14 +2071,33 @@ class Nexus:
                     time.sleep(self.poll_seconds)
             except KeyboardInterrupt:
                 append_log("NEXUS_WORKER_STOPPED")
+                write_worker_health("NEXUS", "STOPPED", consecutive_failures=failures, last_command_id=cursor)
                 return 0
             except (URLError, TimeoutError, OSError, RuntimeError) as e:
                 delay = backoff[min(failures, len(backoff) - 1)]
                 failures += 1
+                detail = clean(e, 180)
                 append_log("NEXUS_RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                write_worker_health(
+                    "NEXUS", "DEGRADED_RETRY",
+                    consecutive_failures=failures,
+                    last_command_id=cursor,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=delay,
+                )
                 time.sleep(delay)
             except Exception as e:
-                append_log("NEXUS_HOLD", error_class=type(e).__name__, detail=clean(e, 140))
+                detail = clean(e, 180)
+                append_log("NEXUS_HOLD", error_class=type(e).__name__, detail=detail)
+                write_worker_health(
+                    "NEXUS", "HOLD",
+                    consecutive_failures=failures,
+                    last_command_id=cursor,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=60,
+                )
                 time.sleep(60)
 
 
@@ -1765,21 +2238,21 @@ def selftest() -> int:
             local=LocalTruth(root), github=FakeGitHub()
         )
         status = svc.status()
-        assert "🤖 BCP Cockpit" in status
-        assert "🎯 Micro-action actuelle: Lancer le test Windows Bootstrap" in status
-        assert "📊 Progression: █████░░░░░ 50% — 2/4 micro-actions vérifiées" in status
-        assert "✅ Dernière micro-action terminée: Vérifier le commit de la PR" in status
-        assert "➡️ Prochaine micro-action: Lire le journal du test Windows" in status
+        assert "🛰️ Automate de suivi BCP" in status
+        assert "🧭 Étape en cours : Lancer le test Windows Bootstrap" in status
+        assert "📈 Avancement estimé :" in status and "micro-actions" in status
+        assert "✅ Dernière action confirmée : Vérifier le commit de la PR" in status
+        assert "➡️ Ensuite : Lire le journal du test Windows" in status
         assert "Ancien téléphone" in status
         assert "💰 Coût: $0.00" not in status
-        assert "👤 Action pour vous: AUCUNE" in status
-        assert "🕒 Dernière preuve:" in status
-        assert "🧪 ✅ tests réussis" in status
+        assert "Votre intervention" not in status
+        assert "🕒 Dernière preuve :" in status
+        assert "🧪 Tests terminés avec succès" in status
         assert "1. ✅ Lire le cahier des charges courant" in svc.plan_view()
         assert "3. ▶️ Lancer le test Windows Bootstrap" in svc.plan_view()
         presence = svc.presence_snapshot()
         assert len(presence["fingerprint"]) == 64
-        assert "🤖 BCP Cockpit" in presence["text"]
+        assert "🛰️ Automate de suivi BCP" in presence["text"]
         assert "Ancien téléphone" in presence["text"]
         details = svc.details()
         assert "État global: EN_COURS" in details
@@ -1788,18 +2261,19 @@ def selftest() -> int:
         assert "48273195" in svc.job("48273195")
         assert "Vérifier le commit de la PR" in svc.tail()
         assert "Lancer le test Windows Bootstrap" in svc.tail()
-        assert "étape enregistrée" in svc.where("48273195")
+        assert "OÙ EN EST-ON" in svc.where("48273195") and "≈" in svc.where("48273195")
         assert "WAITING_FOR_PC" in svc.holds()
-        assert "Missions récentes" in svc.missions()
+        assert "Missions récentes" in svc.missions() and "OBJECTIF ACTUEL" in svc.objective()
         assert "Lecture seule" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
-        summary_pdf = svc.report_pdf(False)
-        technical_pdf = svc.report_pdf(True)
-        assert summary_pdf.startswith(b"%PDF-1.4")
-        assert technical_pdf.startswith(b"%PDF-1.4")
-        assert summary_pdf.rstrip().endswith(b"%%EOF")
-        assert technical_pdf.rstrip().endswith(b"%%EOF")
+        summary_pdf = svc.report_pdf("summary")
+        devices_pdf = svc.report_pdf("devices")
+        mission_pdf = svc.report_pdf("mission")
+        technical_pdf = svc.report_pdf("technical")
+        for pdf in (summary_pdf, devices_pdf, mission_pdf, technical_pdf):
+            assert pdf.startswith(b"%PDF-1.4")
+            assert pdf.rstrip().endswith(b"%%EOF")
         assert "sk-" not in redact_text("key=sk-abcdefghijklmnopqrstuv")
         assert "ghp_" not in redact_text("ghp_123456789012345678901234567890")
         assert "Bearer abcdefghijklmnop" not in redact_text("Authorization: Bearer abcdefghijklmnop")
@@ -1811,9 +2285,9 @@ def selftest() -> int:
         }
         assert {
             "bcp:status", "bcp:where", "bcp:tail", "bcp:missions", "bcp:details",
-            "bcp:pdf:summary", "bcp:pdf:technical",
+            "bcp:pdf:summary", "bcp:pdf:devices", "bcp:pdf:mission", "bcp:pdf:technical",
         } <= callback_values
-        assert "chaîne de pensée" in svc.help()
+        assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert CHAT_STATES == {
             "OBSERVED_CHAT_ACTION", "CHAT_WAITING",
             "CHAT_PLATFORM_HOLD_REPORTED", "UNKNOWN_INTERNAL_CHAT_STATE",
@@ -1826,6 +2300,7 @@ def selftest() -> int:
         # Nexus transport is opt-in; direct Telegram remains the default.
         assert str((svc.cfg.get("transport") or {}).get("mode") or "DIRECT_TELEGRAM") == "DIRECT_TELEGRAM"
         assert Nexus.__name__ == "Nexus"
+        assert HEALTH_PATH.name == "telegram_worker_health.json"
     print("BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS")
     return 0
 

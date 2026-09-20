@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R13",
+  "requirements_revision": "2026-09-20-R15",
   "zero_usd": true,
   "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.6.7",
+      "version": "0.6.9",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "9ac158600e898c0ac5653ce484827c832c279c4269e678ad2423f377ddc9ad63"
+        "sha256": "dc6131f900662299880b8092c185b590466f7bf86dee2add7a721bd12cb41ba3"
       },
-      "notes": "BCP 0.6.7 preserves 0.6.6 watchdog/recovery and adds secret-free Nexus runtime-preparation failure class/detail/stage to the external machine-readable heartbeat so field failures can be diagnosed without user log shuttling."
+      "notes": "BCP 0.6.9 preserves resident Telegram recovery/watchdog and adds lightweight Windows RAM plus AC/battery telemetry to the external heartbeat."
     },
     "android_b_edge": {
       "version": "2.0.0-rc1-evergreen",
@@ -56,19 +56,24 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-human-cockpit-v5",
+    "version": "2026.09.20-human-cockpit-v7",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
     "features": [
-      "editable live mission card",
-      "inline refresh/current-step/micro-actions/missions/details controls",
-      "concrete numbered micro-action journal from persisted mission evidence",
-      "truthful finite-plan progress bar from persisted mission plan",
-      "expanded human PDF with plan and micro-action journal",
-      "expanded technical PDF with mission metadata/evidence",
+      "Automate de suivi BCP human-first live card",
+      "estimated dynamic fine-grained micro-action counter explicitly marked ≈",
+      "separate ecosystem health percentage and mission progress estimate",
+      "adaptive automatic refresh while connected and state-preserving offline/reconnect behavior",
+      "contextual PC, B-EDGE, Drive, Nexus and CI explanations",
+      "hide user-action line when no human intervention is required",
+      "interactive Situation / Où en est-on / Activité fine / Objectif / Technique controls",
+      "four complementary PDF reports: situation, devices/network, mission/micro-actions, technical audit",
+      "secret-free worker liveness and callback receive/handle receipts",
+      "bounded resident watchdog for genuinely stale companion health",
       "compact low-data presentation",
-      "no ChatGPT scheduled automation"
+      "no ChatGPT scheduled automation",
+      "human PC power/battery/RAM state from BCP 0.6.9 telemetry"
     ]
   }
 }

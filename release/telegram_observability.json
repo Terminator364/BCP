@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-human-cockpit-v5",
+  "version": "2026.09.20-human-cockpit-v7",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "1f9152945ed5d3e2f648cc5cc16842ed6af93da5415e1841b0bd3170f3a8040f",
+  "sha256": "8505c7d274dcff9a2a4aaa6e37c8da94c9e40b3945a6a3736df680c56e4e3bd9",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Human-first cockpit V5: reads persisted BCP missions/mission_events for concrete numbered micro-actions, shows a truthful progress bar from finite persisted plans, adds a Micro-actions button, and expands human/technical PDF exports. No hidden ChatGPT reasoning is claimed; no ChatGPT scheduled automation is used.",
-  "requirements_revision": "2026-09-20-R11"
+  "notes": "Human-first cockpit V7: Automate de suivi card, explicit ≈ fine-grained micro-action forecast, separate ecosystem health, adaptive automatic refresh, objective/activity views, four complementary PDFs, human PC/B-EDGE/Drive/Nexus/CI explanations, and PC power/RAM display when BCP 0.6.9 telemetry is available. Preserves V6 liveness/callback receipts and single-poller safeguards.",
+  "requirements_revision": "2026-09-20-R15"
 }
