@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "d04aaa87f9d95337740ebdc4c8b6e71d6aa1149200c6cf8569f43abcad520608",
+  "sha256": "381df8b51fe2089b66f00e062942b0b590cc188ef1e83f95c9e6ea2a51b843e7",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R24",
-  "release_train": "BCP-0.7.2_EDGE-2.1.0-rc1-sentinel",
-  "notes": "BCP 0.7.2 preserves the R23 conversation ledger and adds a derived delivery-gap detector with 5-minute default threshold and authenticated /v1/conversations/gaps readback; it never claims hidden ChatGPT UI state."
+  "requirements_revision": "2026-09-20-R25",
+  "release_train": "BCP-0.7.3_EDGE-2.1.0-rc1-sentinel",
+  "notes": "BCP 0.7.3 preserves R24 and adds a local append-only conversation receipt bridge with durable cursor, bounded ingestion, producer sequence tracking, dynamic gap detection and late-receipt repair."
 }
