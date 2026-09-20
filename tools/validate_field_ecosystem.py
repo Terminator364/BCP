@@ -37,6 +37,10 @@ def main() -> int:
     edge_db = read("android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java")
     edge_worker = read("android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeReconcileWorker.java")
     edge_scheduler = read("android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeWorkScheduler.java")
+    edge_legacy_worker = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeReconcileWorker.java")
+    edge_app = read("android-b-edge/src/main/java/com/blessing/bcpedge/BcpEdgeApplication.java")
+    edge_manifest = read("android-b-edge/src/main/AndroidManifest.xml")
+    android_candidate = load("release/android_candidate.json")
     rdc = read("docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md")
 
     # Zero-cost + data-saver invariants.
@@ -77,8 +81,31 @@ def main() -> int:
         "sentinelAlertCooldownMs",
     )
     require(edge_db, "EdgeSentinelEntity.class", "Migration(1, 2)", "addMigrations(MIGRATION_1_2)")
-    require(edge_worker, "sentinel_state", "resume_pending", "return Result.success(out);")
-    require(edge_scheduler, "15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES")
+    require(edge_worker, "sentinel_state", "resume_pending", "return Result.success(out);", "EDGE_RECONCILE_START")
+    require(
+        edge_scheduler,
+        "15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES",
+        "NetworkType.CONNECTED",
+        "BackoffPolicy.EXPONENTIAL",
+        "ExistingWorkPolicy.KEEP",
+        "LEGACY_PERIODIC",
+        "LEGACY_NOW",
+    )
+    require(edge_legacy_worker, "Compatibility shim", "work.EdgeReconcileWorker.execute")
+    assert "enqueueUniqueWork" not in edge_legacy_worker
+    assert "enqueueUniquePeriodicWork" not in edge_legacy_worker
+    require(
+        edge_app,
+        "registerDefaultNetworkCallback",
+        "TRANSPORT_WIFI",
+        "NET_CAPABILITY_VALIDATED",
+        "WIFI_VALIDATED_RETURN",
+        "MIN_REENTRY_TRIGGER_MS",
+    )
+    require(edge_manifest, 'android:name=".BcpEdgeApplication"')
+    assert android_candidate["version_code"] > 210
+    assert android_candidate["publication_allowed"] is False
+    assert android_candidate["distribution_status"] == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
 
     # Kinshasa/home-Wi-Fi reality: direct Telegram may fail while DNS still works.
     # Nexus must therefore remain an independent HTTPS control-plane route.
