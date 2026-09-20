@@ -945,6 +945,11 @@ The system MUST support a dynamic micro-action forecast. When the exact count is
 
 These values MUST NOT be conflated.
 
+### PC power and memory telemetry
+- The resident Windows heartbeat SHOULD expose dependency-free RAM load, available memory, AC/battery source, battery percentage when available, and a battery-critical flag.
+- The human card translates these signals into states such as **PC allumé · secteur · RAM 88%** or **batterie critique**, while raw values stay available in technical reports.
+- This telemetry must remain lightweight enough for the 4 GB Windows target.
+
 ### Automatic refresh and intermittent connectivity
 - While a transport is available, the live card refreshes automatically on a bounded adaptive interval; the manual refresh button is a convenience, not the primary update mechanism.
 - Offline periods retain local durable state and do not erase progress. Reconnection resumes synchronization automatically.
