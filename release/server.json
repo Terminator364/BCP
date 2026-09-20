@@ -8,7 +8,7 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.0.0-rc1-evergreen",
-  "requirements_revision": "2026-09-20-R14",
+  "requirements_revision": "2026-09-20-R15",
   "release_train": "BCP-0.6.8_EDGE-2.0.0-rc1",
   "notes": "Adds machine-readable Telegram companion runtime health to external BCP telemetry and a bounded stale-health watchdog. Network degradation remains distinguishable from a dead worker; no user log shuttle is required."
 }
