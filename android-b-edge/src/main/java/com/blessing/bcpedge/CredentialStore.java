@@ -18,6 +18,7 @@ public final class CredentialStore {
     private static final String ALIAS = "bcp-edge-evergreen-v1";
     private static final String PREFS = "bcp_credentials";
     private static final String TOKEN_BLOB = "token_blob";
+    private static final String NEXUS_TOKEN_BLOB = "nexus_token_blob";
     private final SharedPreferences prefs;
 
     public CredentialStore(Context context) {
@@ -25,6 +26,26 @@ public final class CredentialStore {
     }
 
     public synchronized void putToken(String token) throws Exception {
+        putSecret(TOKEN_BLOB, token);
+    }
+
+    public synchronized String getToken() {
+        return getSecret(TOKEN_BLOB);
+    }
+
+    public synchronized void putNexusToken(String token) throws Exception {
+        putSecret(NEXUS_TOKEN_BLOB, token);
+    }
+
+    public synchronized String getNexusToken() {
+        return getSecret(NEXUS_TOKEN_BLOB);
+    }
+
+    public synchronized void clear() {
+        prefs.edit().remove(TOKEN_BLOB).remove(NEXUS_TOKEN_BLOB).commit();
+    }
+
+    private void putSecret(String slot, String token) throws Exception {
         if (token == null || token.isEmpty()) throw new IllegalArgumentException("EMPTY_TOKEN");
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key());
@@ -34,12 +55,12 @@ public final class CredentialStore {
         blob[0] = (byte)iv.length;
         System.arraycopy(iv,0,blob,1,iv.length);
         System.arraycopy(ct,0,blob,1+iv.length,ct.length);
-        prefs.edit().putString(TOKEN_BLOB, Base64.encodeToString(blob, Base64.NO_WRAP)).commit();
+        prefs.edit().putString(slot, Base64.encodeToString(blob, Base64.NO_WRAP)).commit();
     }
 
-    public synchronized String getToken() {
+    private String getSecret(String slot) {
         try {
-            String encoded = prefs.getString(TOKEN_BLOB, "");
+            String encoded = prefs.getString(slot, "");
             if (encoded == null || encoded.isEmpty()) return "";
             byte[] blob = Base64.decode(encoded, Base64.NO_WRAP);
             if (blob.length < 14) return "";
@@ -55,10 +76,6 @@ public final class CredentialStore {
         } catch (Exception ignored) {
             return "";
         }
-    }
-
-    public synchronized void clear() {
-        prefs.edit().remove(TOKEN_BLOB).commit();
     }
 
     private SecretKey key() throws Exception {
