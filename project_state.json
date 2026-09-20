@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_5_TELEGRAM_V16_R27_CHATGPTPC_FLOW_BRIDGE_CANDIDATE",
-  "last_completed_atomic_action": "R27 candidate implemented: BCP 0.7.5 reads ChatGPT-PC flow_ledger.sqlite3 read-only in bounded batches, validates text hashes, imports exact user/assistant turns idempotently, preserves assistant UI-delivery uncertainty, and Telegram V16 shows bridge health/backlog. ChatGPT-PC PR #8 was not modified.",
-  "next_action": "Run exact-head BCP qualification. Fix only evidence-backed failures, merge under writer fence if all five workflows pass, then wait for resident readback before claiming field convergence.",
+  "status": "BCP_0_7_6_TELEGRAM_V17_R28_CADENCE_TELEMETRY_CANDIDATE",
+  "last_completed_atomic_action": "R28 candidate implemented: cadence policy v2 requires about five minutes minimum useful work, separates ChatGPT thinking indicator from end-to-end latency, and BCP/Telegram decompose producer, mirror and explicit seen timing using durable receipts only.",
+  "next_action": "Run exact-head CI for R28. Fix only evidence-backed failures. Merge under writer fence after all five workflows pass and main is unchanged; then field-read back resident versions.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -225,12 +225,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R27-CHATGPTPC-FLOW-BRIDGE-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_READY",
-    "last_completed_action": "R27 code/spec/releases/guards persisted.",
+    "checkpoint_id": "BCP-R28-E2E-CADENCE-TELEMETRY-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_READY",
+    "last_completed_action": "R28 policy/code/spec/releases persisted.",
     "next_atomic_action": "Open PR and exact-head qualification.",
-    "branch": "work/bcp/r27-chatgptpc-flow-bridge-20260920",
-    "base_main_sha": "2469bd1c42dd43718769fd2081bfacb3c7aa13c2",
+    "branch": "work/bcp/r28-end-to-end-cadence-telemetry-20260920",
+    "base_main_sha": "626a0c9055301604af251215c73b63cba6e4352b",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1625,6 +1625,21 @@
     "batch_size": 24,
     "text_sha256_verified": true,
     "chatgpt_pc_pr8_touched": false,
+    "field_verified": false
+  },
+  "cadence_telemetry_r28": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.6",
+    "telegram_version": "2026.09.20-cadence-telemetry-v17",
+    "requirements_revision": "2026-09-20-R28",
+    "minimum_useful_work_minutes": 5,
+    "internal_target_window_minutes": [
+      5,
+      6.5
+    ],
+    "thinking_indicator_authoritative": false,
+    "manual_stopwatch_requires_synced_start_stop": true,
+    "durable_latency_decomposition": true,
     "field_verified": false
   }
 }
