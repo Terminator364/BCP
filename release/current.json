@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R12",
+  "requirements_revision": "2026-09-20-R11",
   "zero_usd": true,
   "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "035cc44020fd6380d6880be791b124b308e31c8d53cd8c1ca56fc50def0cccdd"
+        "sha256": "06047be7d2197aa3ae0b1ac08b96752fc8d412617aff9553b067312d2dd21758"
       },
       "notes": "Nexus 0.1.7 captures bounded Wrangler probe exit/output and classifies npm network, TLS, permission, or launch failures while preferring the persistent npm cache. No manual Node/Wrangler install or secret re-entry."
     }
