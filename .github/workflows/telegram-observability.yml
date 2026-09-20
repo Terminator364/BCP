@@ -101,8 +101,11 @@ jobs:
           assert "conversation_threads" in py
           assert "CHATGPT_UI_DELIVERY_UNKNOWN" in py
           assert "conversation_delivery_gaps" in py
-          assert "Réponse potentiellement manquée" in py
+          assert "Réponse sauvegardée mais lecture non confirmée" in py
           assert "delivery_gap_count" in py
+          assert "📚 Rapports & technique" in py
+          assert "def advanced_keyboard" in py
+          assert "mail miroir d’abord" in py
           assert "conversation_sequence_gaps" in py
           assert "Synchronisation incomplète" in py
           assert "sequence_gap_count" in py
