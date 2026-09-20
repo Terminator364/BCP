@@ -67,4 +67,16 @@ public class EdgePolicyTest {
         assertTrue(EdgePolicy.isCompletionResult("SUCCESS"));
     }
 
+    @Test public void secondarySentinelIsBoundedAndDeterministic() {
+        long now = 2_000_000L;
+        assertEquals("PC_AVAILABLE", EdgePolicy.sentinelState(now, now - 1_000L, 0));
+        assertEquals("PC_TRANSIENT_LOSS", EdgePolicy.sentinelState(now, now - 60_000L, 1));
+        assertEquals("PC_UNAVAILABLE_RECOVERY",
+                EdgePolicy.sentinelState(now, now - EdgePolicy.sentinelStaleMs() - 1L, 2));
+        assertTrue(EdgePolicy.sentinelAlertDue("PC_UNAVAILABLE_RECOVERY", now, 0L));
+        assertFalse(EdgePolicy.sentinelAlertDue("PC_TRANSIENT_LOSS", now, 0L));
+        assertFalse(EdgePolicy.sentinelAlertDue("PC_UNAVAILABLE_RECOVERY", now, now - 1_000L));
+        assertTrue(EdgePolicy.sentinelAlertCooldownMs() >= 60L * 60L * 1000L);
+    }
+
 }
