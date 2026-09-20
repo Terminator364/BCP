@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R25",
+  "requirements_revision": "2026-09-20-R26",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -102,5 +102,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.3 remains R25-compatible. Conversation receipt bodies and sequence repair stay local on BCP; Nexus transports only cockpit commands/replies/live-card state."
+  "notes": "Nexus 0.2.3 remains R26-compatible. Producer watermarks, canonical conversation receipts and local acknowledgements remain on BCP; Nexus transports cockpit interaction, not the canonical transcript."
 }
