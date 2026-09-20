@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import html
 import json
 import os
 from pathlib import Path
@@ -998,6 +999,17 @@ class Service:
             "forecast_confidence_reason": forecast_confidence_reason,
             "evidence_age_label": age_label,
             "evidence_time": evidence_time,
+            "objective": objective,
+            "activity": activity,
+            "execution_text": execution_text,
+            "last_completed": last_completed,
+            "pc_text": pc_text,
+            "edge_text": edge_text,
+            "drive_text": ("🟢 Drive : synchronisation visible" if drive_ok else "🟡 Drive : synchronisation non confirmée"),
+            "nexus_pct": nexus_pct,
+            "nexus_stage": nexus_stage,
+            "ci_text": self._human_ci_explanation(gh),
+            "refresh_seconds": refresh_seconds,
             "refresh_bucket": refresh_bucket,
         }
         digest = hashlib.sha256(
@@ -1055,6 +1067,74 @@ class Service:
 
     def status(self) -> str:
         return self.presence_snapshot()["text"]
+
+    def rich_status_html(self) -> str:
+        """Telegram Bot API 10.3 rich cockpit. Plain V9 remains the fallback."""
+        snap = self.presence_snapshot()
+        s = snap.get("snapshot") or {}
+
+        def esc(value: Any, limit: int = 500) -> str:
+            return html.escape(clean(value, limit), quote=True)
+
+        level = str(s.get("attention_level") or "NORMAL")
+        title = self._attention_label(level)
+        style = "danger" if level in {"CRITICAL", "ACTION"} else ("primary" if level == "WATCH" else "success")
+        forecast = s.get("forecast") or [0, 1, 0]
+        try:
+            done, total, pct = int(forecast[0]), int(forecast[1]), int(forecast[2])
+        except Exception:
+            done, total, pct = 0, 1, 0
+
+        reasons = list(s.get("attention_reasons") or [])
+        why = "".join("<li>" + esc(x, 260) + "</li>" for x in reasons[:6])
+        if not why:
+            why = "<li>Aucun signal prioritaire détecté.</li>"
+
+        human_gate = clean(s.get("human_gate") or "AUCUNE", 220)
+        action_row = ""
+        if human_gate != "AUCUNE":
+            action_row = "<tr><th>Vous</th><td>" + esc(human_gate, 220) + "</td></tr>"
+
+        last_completed = clean(s.get("last_completed") or "", 220)
+        last_html = ("<p>✅ <b>Dernière preuve confirmée</b><br/>" + esc(last_completed, 220) + "</p>") if last_completed else ""
+
+        return (
+            "<h2>🛰️ BCP · " + esc(title, 80) + "</h2>"
+            "<p><b>" + esc(s.get("activity") or "Suivi actif", 240) + "</b></p>"
+            "<table bordered striped compact>"
+            "<tr><th>Objectif</th><td>" + esc(s.get("objective") or self.project_id, 300) + "</td></tr>"
+            "<tr><th>Progression</th><td>≈" + str(pct) + "% · ≈" + str(done) + "/" + str(total) + " micro-actions</td></tr>"
+            "<tr><th>Confiance</th><td>" + esc(str(s.get("forecast_confidence") or "FAIBLE").lower(), 60) + "</td></tr>"
+            "<tr><th>Preuve</th><td>" + esc(s.get("evidence_age_label") or "inconnue", 80) + "</td></tr>"
+            + action_row +
+            "</table>"
+            "<p>🧭 <b>Maintenant</b><br/>" + esc(s.get("mission_action") or "", 260) + "</p>"
+            + last_html +
+            ("<p>➡️ <b>Ensuite</b><br/>" + esc(s.get("mission_next"), 260) + "</p>" if s.get("mission_next") else "") +
+            "<details><summary>❓ Pourquoi cet état ?</summary><ul>" + why + "</ul></details>"
+            "<details><summary>🌐 Appareils, réseau et preuves</summary>"
+            "<table compact>"
+            "<tr><th>PC</th><td>" + esc(s.get("pc_text") or "", 220) + "</td></tr>"
+            "<tr><th>B-EDGE</th><td>" + esc(s.get("edge_text") or "", 220) + "</td></tr>"
+            "<tr><th>Drive</th><td>" + esc(s.get("drive_text") or "", 220) + "</td></tr>"
+            "<tr><th>Nexus</th><td>≈" + str(int(s.get("nexus_pct") or 0)) + "% · " + esc(s.get("nexus_stage") or "", 180) + "</td></tr>"
+            "<tr><th>Tests</th><td>" + esc(s.get("ci_text") or "", 220) + "</td></tr>"
+            "</table></details>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"" + style + "\" data=\"bcp:status\">Situation</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:since\">Depuis ma visite</tg-button>"
+            "</tg-button-row>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:why\">Pourquoi ?</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:risks\">Radar</tg-button>"
+            "</tg-button-row>"
+            "<tg-button-row align=\"center\">"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:where\">Étape</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"primary\" data=\"bcp:tail\">Activité</tg-button>"
+            "<tg-button type=\"callback_data\" style=\"success\" data=\"bcp:continue\">Continuer</tg-button>"
+            "</tg-button-row>"
+            "<footer>Fallback V9 texte actif si Rich Messages n’est pas disponible.</footer>"
+        )
 
     def details(self) -> str:
         head = self._head()
