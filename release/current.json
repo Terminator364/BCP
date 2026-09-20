@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R18",
+  "requirements_revision": "2026-09-20-R20",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -56,7 +56,7 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-human-cockpit-v8",
+    "version": "2026.09.20-human-ops-v9",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -77,7 +77,16 @@
       "real Continue control backed by durable resume intent",
       "proactive deduplicated stalled-mission notifications",
       "bounded automatic resume requests with human-gate suppression",
-      "offline state retention and resume-on-reconnect semantics"
+      "offline state retention and resume-on-reconnect semantics",
+      "orientation-first CRITIQUE / ACTION REQUISE / À SURVEILLER / EN COURS / STABLE attention states",
+      "forecast confidence separated from confirmed evidence",
+      "Depuis ma visite durable change digest",
+      "Pourquoi explainability view based on observable signals",
+      "predictive Radar view explicitly separated from proof",
+      "bounded quiet mode with critical/human-gate bypass",
+      "transition-based grouped alerts with deduplication",
+      "one-shot recovery notification when an attention state clears",
+      "optional future Telegram Mini App with plain-bot low-data fallback"
     ]
   }
 }
