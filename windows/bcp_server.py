@@ -643,7 +643,7 @@ def _write_utf16_recovery_vbs(path: Path, content: str) -> dict:
     raw = path.read_bytes()
     if not raw.startswith((b"\xff\xfe", b"\xfe\xff")):
         raise RuntimeError("recovery_vbs_utf16_bom_missing")
-    if path.read_text(encoding="utf-16") != content:
+    if raw.decode("utf-16") != content:
         raise RuntimeError("recovery_vbs_readback_mismatch")
     return {"path": str(path), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
 
