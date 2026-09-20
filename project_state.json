@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_3_TELEGRAM_V14_R25_RECEIPT_BRIDGE_CANDIDATE",
-  "last_completed_atomic_action": "R25 candidate implemented: BCP 0.7.3 local append-only conversation receipt bridge with durable cursor, bounded ingestion, producer session/sequence metadata, dynamic sequence-gap detection and automatic late-receipt repair; Telegram V14 surfaces incomplete synchronization as WATCH.",
-  "next_action": "Run exact-head CI for R25. Fix only evidence-backed failures. Merge only after all required workflows pass on the same head and main is re-read unchanged; then wait for resident BCP/Telegram convergence and machine readback.",
+  "status": "BCP_0_7_4_TELEGRAM_V15_R26_PRODUCER_WATERMARK_CANDIDATE",
+  "last_completed_atomic_action": "R26 candidate implemented: BCP 0.7.4 producer watermarks + tail/internal sequence-gap truth + durable local receipt acknowledgement; Telegram V15 shows complete-through vs announced synchronization. Interactive technical work cadence standardized to target ~5 min, practical 5–7 min tranches with durable checkpoint.",
+  "next_action": "Open exact-head PR and run CURRENT/Telegram/Nexus/Field/Coordinated CI. Fix only evidence-backed failures; merge only after all five pass and main is unchanged.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -76,7 +76,9 @@
     "telegram_rich_cockpit_v10": "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
     "telegram_attention_lifecycle_v11": "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md",
     "conversation_delivery_ledger": "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md",
-    "conversation_receipt_bridge": "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md"
+    "conversation_receipt_bridge": "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md",
+    "producer_watermark_sync": "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
+    "interactive_work_cadence": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -139,7 +141,9 @@
     "docs/TELEGRAM_RICH_COCKPIT_V10_R21.md",
     "docs/TELEGRAM_ATTENTION_LIFECYCLE_V11_R22.md",
     "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md",
-    "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md"
+    "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md",
+    "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -185,7 +189,10 @@
     "P0_telegram_conversation_inbox": true,
     "P0_bounded_interactive_checkpoint_cadence": true,
     "P0_local_conversation_receipt_bridge": true,
-    "P0_sequence_gap_repair": true
+    "P0_sequence_gap_repair": true,
+    "P0_producer_watermark_sync": true,
+    "P0_receipt_acknowledgement": true,
+    "P0_interactive_work_tranche_5_to_7_minutes": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -215,12 +222,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R25-CONVERSATION-RECEIPT-BRIDGE-20260920",
+    "checkpoint_id": "BCP-R26-PRODUCER-WATERMARK-SYNC-20260920",
     "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_READY",
-    "last_completed_action": "R25 code/spec/releases persisted.",
+    "last_completed_action": "R26 code/spec/releases/cadence policy persisted.",
     "next_atomic_action": "Open PR and exact-head qualification.",
-    "branch": "work/bcp/r25-conversation-receipt-bridge-20260920",
-    "base_main_sha": "d8239df4519702fec86f9ecfdbd99df775e96d8d",
+    "branch": "work/bcp/r26-producer-watermark-sync-20260920",
+    "base_main_sha": "30e56de8abf7d77faaca8e9726c1905d1653bc8f",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1592,6 +1599,17 @@
     "producer_sequence_tracking": true,
     "late_receipt_gap_repair": true,
     "transcript_cloud_upload_default": false,
+    "field_verified": false
+  },
+  "producer_watermark_sync_r26": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.4",
+    "telegram_version": "2026.09.20-producer-watermark-v15",
+    "requirements_revision": "2026-09-20-R26",
+    "producer_heartbeat_schema": "bcp.conversation_producer_heartbeat/1",
+    "durable_ack_file": "conversation_receipt_ack.json",
+    "tail_gap_detection": true,
+    "late_receipt_repair": true,
     "field_verified": false
   }
 }
