@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R31",
+  "requirements_revision": "2026-09-20-R34",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -105,5 +105,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.4 remains the device-flow auth bundle. R31 adds resident manifest-only fast detection while a human auth gate is open; the Nexus bundle itself remains unchanged."
+  "notes": "Nexus 0.2.4 remains the device-flow auth bundle. R34 preserves R31 and makes resident SERVER/TELEGRAM_COMPANION/NEXUS reconciliation independent, so a server-manifest transport failure does not suppress Nexus delivery attempts."
 }
