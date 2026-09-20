@@ -4820,6 +4820,11 @@ def selftest():
         assert "mission_watchdog_tick" in source
         assert "request_mission_resume" in source
         assert "MISSION_RESUME_REQUESTS.jsonl" in source
+        assert "NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS = 2 * 60" in source
+        assert "NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS = 15 * 60" in source
+        assert "start_nexus_human_gate_manifest_watcher" in source
+        assert "HUMAN_GATE_FAST_PATH" in source
+        assert "target_version != current_version" in source
         assert "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS" in source
