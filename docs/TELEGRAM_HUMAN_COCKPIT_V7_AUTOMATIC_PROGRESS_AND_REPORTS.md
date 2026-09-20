@@ -66,6 +66,9 @@ Nexus is presented as a staged remote-relay preparation with an explicitly appro
 
 Raw codes remain available in technical reports.
 
+### Battery/power telemetry
+When BCP 0.6.9+ is resident, the card also consumes Windows-native AC/battery percentage, battery-critical and RAM-load signals without adding a heavyweight dependency.
+
 ## 5. Automatic refresh
 
 The manual Refresh button is secondary.
