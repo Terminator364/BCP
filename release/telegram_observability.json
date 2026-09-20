@@ -3,7 +3,7 @@
   "channel": "stable",
   "version": "2026.09.20-attention-lifecycle-v11",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "aca98eb2506471bdd585bd6c5f4e52a0d98aa6fcb01d12609ba0860eee27aac3",
+  "sha256": "0ab488dbf41e6a2eef877b602cfa605d71631d765f160296c0730fdbd3479c78",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
