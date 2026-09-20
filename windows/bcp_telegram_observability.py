@@ -1764,13 +1764,13 @@ class Service:
             kind = "summary"
         key = str(kind or "summary").lower()
         if key == "devices":
-            body, title = self.report_devices(), "BCP Appareils Reseau et Transports"
+            body, title = self.report_devices(), "BCP - Appareils, réseau et transports"
         elif key == "mission":
-            body, title = self.report_mission(), "BCP Objectif Etapes et Micro-actions"
+            body, title = self.report_mission(), "BCP - Objectif, étapes et progression"
         elif key == "technical":
-            body, title = self.report_technical(), "BCP Dossier technique et audit"
+            body, title = self.report_technical(), "BCP - Dossier technique et audit"
         else:
-            body, title = self.report_summary(), "BCP Situation humaine complete"
+            body, title = self.report_summary(), "BCP - Situation humaine complète"
         return text_pdf_bytes(title, body)
 
     def objective(self) -> str:
@@ -1860,8 +1860,8 @@ class Service:
             "Projet : " + clean(rec.get("project_id") or rec.get("project"), 80),
             "État : " + clean(rec.get("state") or "OBSERVED", 80).replace("_", " ").lower(),
             "Étape : " + clean(rec.get("step_id") or rec.get("kind"), 80).replace("_", " "),
-            "Last event: " + clean(
-                rec.get("timestamp") or rec.get("updated_at") or rec.get("created_at"), 80
+            "Dernier événement : " + human_timestamp(
+                rec.get("timestamp") or rec.get("updated_at") or rec.get("created_at"), seconds=True
             ),
             "Prochaine action sûre : " + clean(
                 rec.get("next_safe_action") or "read durable mission journal", 160
@@ -1872,7 +1872,7 @@ class Service:
     def last(self) -> str:
         events = self.local.mission_events(8) or self.local.events(self.project_id, 8)
         if not events:
-            return "LAST EVENTS\nAucun événement durable observé."
+            return "DERNIERS ÉVÉNEMENTS\nAucun événement durable observé."
         lines = ["DERNIERS ÉVÉNEMENTS"]
         for ev in events[-8:]:
             state = ev.get("state") or ev.get("event_type") or "EVENT"
@@ -2426,7 +2426,7 @@ class Service:
         bridge = self.local.chatgpt_pc_flow_bridge()
         bridge_state = clean(bridge.get("status") or "NOT_OBSERVED", 32)
         backlog = bridge.get("backlog")
-        bridge_line = "🔗 Bridge ChatGPT-PC: " + bridge_state
+        bridge_line = "🔗 Connexion ChatGPT-PC : " + bridge_state.replace("_", " ").lower()
         if isinstance(backlog, int):
             bridge_line += " · attente " + str(backlog)
         lines = [
@@ -2453,7 +2453,7 @@ class Service:
                 )
             elif producer:
                 lines.append(
-                    "   🔄 Sync producteur complète jusqu’à #"
+                    "   🔄 Synchronisation complète jusqu’au message #"
                     + str(producer.get("contiguous_received_sequence") or producer.get("announced_sequence") or 0)
                 )
             msgs = self.local.conversation_messages(cid, 2)
@@ -2462,10 +2462,10 @@ class Service:
                 icon = "👤" if role == "USER" else ("🤖" if role == "ASSISTANT" else "⚙️")
                 preview = clean(msg.get("text"), 180)
                 lines.append("   " + icon + " " + preview)
-            lines.append("   ID: " + cid)
+            lines.append("   Référence technique : " + cid)
         lines += [
             "",
-            "🔎 Pour ouvrir davantage : /conversation <ID>",
+            "🔎 Pour plus de détails : utilisez Messages récents; la référence technique ci-dessus sert seulement au dépannage.",
             "ℹ️ « affichage ChatGPT non confirmé » signifie que BCP possède la réponse mais ne possède pas de preuve que l’app ChatGPT de votre téléphone l’a affichée.",
         ]
         return "\n".join(lines)
