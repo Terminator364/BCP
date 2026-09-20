@@ -3,8 +3,8 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "BCP_0_7_0_NEXUS_AUTH_PENDING_BEDGE_INSTALL_PENDING_TELEGRAM_V10_NEXUS_0_2_1_R21_CANDIDATE",
-  "last_completed_atomic_action": "Telegram Rich Cockpit V10 / R21 candidate implemented on fenced branch: Bot API 10.3 structured rich live card with semantic styled callback controls, mandatory V9 fallback, Direct/Nexus parity, four-report Nexus parity, and no paid/media-heavy dependency. V9/R20 was exact-head CI green and merged at main 1a19a78fe05ea3403c85e4d8cdf53163b2a86e48.",
-  "next_action": "Run exact-head CI for V10/Nexus 0.2.1. If all required workflows pass, re-read main under writer fence, merge serially, verify main SHA, then allow resident BCP 0.7.0 to auto-consume Telegram V10 and Nexus 0.2.1. Cloudflare authorization and B-EDGE 2.1.0 installation remain deferred genuine human gates while user is away.",
+  "last_completed_atomic_action": "Telegram Rich Cockpit V10 / R21 candidate complete on fenced branch: Telegram Bot API 10.3 structured Rich Messages with semantic styled callbacks, mandatory V9 fallback on send/edit failure, DIRECT/NEXUS UI parity, four-report Nexus parity, CURRENT Telegram source/version/hash validation, and field-preflight guards against rich-only failure or paid broadcast.",
+  "next_action": "Open/qualify exact-head V10 PR. Required gates: CURRENT contract incl. Telegram exact hash, Telegram Windows+Ubuntu selftests, Nexus worker syntax/security/fallback guards, coordinated product qualification and field ecosystem preflight. If all green, re-read main, reconcile if moved, merge exact head, read back main, then allow resident update without user action. Cloudflare authorization and B-EDGE install remain deferred human gates.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -200,10 +200,10 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-TELEGRAM-V10-NEXUS-021-R21-CANDIDATE-20260920",
-    "status": "CI_PENDING",
-    "last_completed_action": "V10 rich/fallback code, Nexus 0.2.1 edge parity, R21 specification and release manifests persisted.",
-    "next_atomic_action": "Exact-head CI then serialized merge if green.",
+    "checkpoint_id": "BCP-TELEGRAM-V10-NEXUS-021-R21-FINAL-CANDIDATE-20260920",
+    "status": "PR_AND_CI_PENDING",
+    "last_completed_action": "Rich V10 implementation plus release-integrity and field-shaped regression guards persisted.",
+    "next_atomic_action": "Open PR and run exact-head qualification.",
     "branch": "work/bcp/r21-telegram-rich-cockpit-v10-20260920",
     "base_main_sha": "1a19a78fe05ea3403c85e4d8cdf53163b2a86e48",
     "no_replay": true
@@ -1463,6 +1463,14 @@
     "direct_nexus_parity": true,
     "nexus_version": "0.2.1",
     "nexus_four_report_parity": true,
-    "field_verified": false
+    "field_verified": false,
+    "release_integrity": {
+      "telegram_source_hash_required": true,
+      "telegram_version_manifest_required": true,
+      "component_revision_alignment": true,
+      "v9_fallback_regression_guard": true,
+      "nexus_four_report_regression_guard": true,
+      "paid_broadcast_forbidden": true
+    }
   }
 }
