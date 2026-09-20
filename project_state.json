@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_9_TELEGRAM_V7_R15_CANDIDATE_CI_AND_FIELD_PENDING",
-  "last_completed_atomic_action": "Telegram V7/R15 candidate completed with fine micro-action forecasting, four reports, automatic refresh, V6 liveness/watchdog, and BCP 0.6.9 lightweight Windows RAM/power/battery telemetry.",
-  "next_action": "Run exact-head CI on the final candidate. If all required workflows pass, reconcile main and merge PR #79 serially; then perform resident update/readback for BCP 0.6.9, Telegram V7 and Nexus 0.1.9.",
+  "status": "BCP_0_6_9_TELEGRAM_V7_R15_MERGED_FIELD_CONVERGENCE_PENDING",
+  "last_completed_atomic_action": "PR #79 merged to main as 200c05b16266bcdb30ff54d2f02cb92f294461b9 after exact-head PASS for CURRENT, Nexus, Coordinated Product, Field Ecosystem Preflight and Telegram Observability. Fresh Drive readback then showed the resident PC still on BCP 0.6.7 while Nexus 0.1.9 advanced to LAUNCHED with active error fields cleared.",
+  "next_action": "Do not replay installs or ask the user to touch the PC. Allow the resident normal update cadence to consume BCP 0.6.9 and Telegram V7. Read back Drive after the next normal cycle; verify server_version=0.6.9, resource telemetry, telegram companion V7/health/callback fields, and final Nexus 0.1.9 state. Preserve zero-dollar/data-saver policy and single-poller discipline.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -187,12 +187,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-TELEGRAM-V7-R15-CANDIDATE-20260920",
-    "status": "CI_PENDING",
-    "last_completed_action": "V7 implementation, R15 spec, release manifests and architecture doc persisted on PR #79.",
-    "next_atomic_action": "Exact-head CI then serialized merge if green.",
-    "branch": "work/bcp/telegram-watchdog-068-20260920",
-    "base_main_sha": "2cb0158c2c57c129007de1a9d53d273e1abdf77c",
+    "checkpoint_id": "BCP-V7-069-MERGED-FIELD-CONVERGENCE-PENDING-20260920",
+    "status": "MERGED_FIELD_CONVERGENCE_PENDING",
+    "last_completed_action": "PR #79 exact-head CI all green and merged; Nexus 0.1.9 observed LAUNCHED on resident PC.",
+    "next_atomic_action": "Fresh Drive readback after resident normal update cycle for BCP 0.6.9 / Telegram V7 and Nexus terminal state.",
+    "branch": "work/bcp/state-v7-merged-field-pending-20260920",
+    "base_main_sha": "200c05b16266bcdb30ff54d2f02cb92f294461b9",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1278,7 +1278,7 @@
     "field_verified": false
   },
   "telegram_cockpit_v7": {
-    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "status": "MERGED_CI_QUALIFIED_FIELD_PENDING",
     "version": "2026.09.20-human-cockpit-v7",
     "server_version": "0.6.9",
     "requirements_revision": "2026-09-20-R15",
@@ -1295,6 +1295,32 @@
       "callback_receipts": true,
       "worker_health": true,
       "bounded_watchdog": true
+    },
+    "merge_main_sha": "200c05b16266bcdb30ff54d2f02cb92f294461b9",
+    "exact_head_sha": "e57ec689b236585c014e28178fe5c5c207f0a40f",
+    "exact_head_ci": {
+      "current_release_contract": 35499515065,
+      "nexus_transport": 35499515014,
+      "coordinated_product": 35499515003,
+      "field_ecosystem_preflight": 35499515076,
+      "telegram_observability": 35499515023,
+      "result": "PASS"
     }
+  },
+  "latest_field_evidence_v7_merge": {
+    "observed_at_utc": "2026-09-20T08:29:58+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.6.7",
+    "server_pid": 6444,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "update_state": "UP_TO_DATE",
+    "nexus_bootstrap_bundle_version": "0.1.9",
+    "nexus_bootstrap_state": "LAUNCHED",
+    "nexus_bootstrap_exit_code": null,
+    "nexus_bootstrap_error_class": "",
+    "nexus_bootstrap_error_detail": "",
+    "conclusion": "PC heartbeat alive; Nexus 0.1.9 progressed after transient npm failure; BCP 0.6.9/Telegram V7 merge occurred too recently to claim resident convergence."
   }
 }
