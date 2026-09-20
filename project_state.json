@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R47_BCP_0_7_11_TARGET_BUNDLED_RECOVERY_RUNNER_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R46 merged after field readback proved BCP 0.7.10 active. Pre-Recovery counter-audit found bootstrap-runner skew: BCP 0.7.10 verified the 6.0.34 target ZIP but would launch the older installed recovery runner for the initial transition. R47 implements BCP 0.7.11: after target package SHA verification, it extracts/stages payload/tools/recovery_update_runner.py from that exact target ZIP, enforces exact member/size/UTF-8/syntax and sequence-6034 DriveFS fail-open contracts, performs byte readback/SHA receipt, and launches only the staged target-bundled runner. CURRENT second-pass CI exposed a missing zipfile import in the new staging self-test; import wiring was fixed and the server SHA refreshed. R50 codified the 5–6 minute execution-slice cadence, exact response/email mirroring, manual-first one-shot field rule, and CURRENT folder hygiene as durable project policy.",
-  "next_action": "Qualify exact R47 head across CURRENT, Windows, Android, Nexus, Telegram and Field Ecosystem. If green, serialized merge and post-merge readback. Then field-update BCP once from 0.7.10 to 0.7.11, prove active readback, and invoke Recovery 6.0.34 exactly once.",
+  "status": "R53_HUMAN_COCKPIT_COUNTER_AUDIT_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R53 counter-audit found and corrected two UX/spec inconsistencies: the user guide still placed Messages récents before the email mirror despite the canonical mail-first policy, and the primary Telegram/Nexus keyboard exposed reports/technical diagnostics at the same visual level as orientation/action controls. R53 now enforces EMAIL_EXACT_MIRROR -> CHATGPT_FINAL -> optional Telegram witness, neutral delivery-gap wording, a compact primary cockpit, and a secondary Rapports & technique menu with direct/Nexus parity.",
+  "next_action": "Qualify the new exact R53 head across CURRENT, Telegram, Nexus, Field Ecosystem and coordinated product gates; merge only after exact-head green CI and main-head reread.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1886,5 +1886,20 @@
     "replace_current_in_place": true,
     "cleanup_temporary_uploads": true,
     "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH"
+  },
+  "r53_human_cockpit_counter_audit": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R53",
+    "mail_first_order": [
+      "EMAIL_EXACT_MIRROR",
+      "CHATGPT_FINAL",
+      "TELEGRAM_WITNESS_OPTIONAL"
+    ],
+    "primary_cockpit_compact": true,
+    "advanced_reports_menu": true,
+    "direct_nexus_parity": true,
+    "delivery_gap_wording": "SAVED_RESPONSE_READING_NOT_CONFIRMED",
+    "exact_email_chat_body_required": true,
+    "field_verified": false
   }
 }
