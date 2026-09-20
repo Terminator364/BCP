@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R40",
+  "requirements_revision": "2026-09-20-R43",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -13,18 +13,18 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.9",
+      "version": "0.7.10",
       "source_manifest": "release/server.json",
-      "qualification": "CI_QUALIFIED_FIELD_VERIFIED",
+      "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
-      "field_verified": true,
+      "field_verified": false,
       "auto_update_eligible": true,
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "5035f1d38e6f359024891e49d0ac71275edf57520f197c61421b389ff8961543"
+        "sha256": "ef2871ce04a571bda559e53f52117cda5c812af2c973e3f18b19a791bbdd6622"
       },
-      "notes": "BCP 0.7.9 adds a least-privilege local recovery-launcher bridge for the field-observed ChatGPTPC_RecoveryPlane.vbs encoding failure and Drive-local target drift. It repairs the Startup VBS as UTF-16, readbacks it, and launches the existing recovery plane without claiming the target release installed."
+      "notes": "BCP 0.7.10 preserves R40-R42 and makes DriveFS/control-folder telemetry a best-effort projection. Local recovery/update state is authoritative; mirror failures persist locally as CLOUD_MIRROR_HOLD and do not become HTTP 500."
     },
     "android_b_edge": {
       "version": "2.1.0-rc1-sentinel-evergreen",
@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "66592a44be6cf8dedb064356751f13042a06beb7c8116a45581060d50fed70f9"
+        "sha256": "922b639ea937950695c23ab58be83e1c88c02486fd0724214c47c69d7bddfe73"
       },
       "notes": "Nexus 0.2.5 uses Wrangler device authorization as the sole automatic Cloudflare auth path; expired/uncompleted codes remain HUMAN_AUTH_REQUIRED and are renewed only by an explicit qualified retry. No localhost:8976 fallback, token copy, or auth bypass."
     }
@@ -131,7 +131,8 @@
       "local ChatGPT-PC recovery-launcher bridge when Drive recovery target is stale",
       "UTF-16 Startup VBS repair with readback and no privilege expansion",
       "Cloudflare device-flow-only automatic authorization with no localhost callback fallback",
-      "DriveFS treated as replicated transport, never sole critical recovery authority"
+      "DriveFS treated as replicated transport, never sole critical recovery authority",
+      "provider-synchronised telemetry mirror fail-open with local CLOUD_MIRROR_HOLD"
     ]
   }
 }

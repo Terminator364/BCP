@@ -72,6 +72,9 @@ def main() -> int:
         "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED",
         "PACKAGE_SYNC_PENDING_BRIDGE_STARTED",
         "recovery_vbs_utf16_bom_missing",
+        "CLOUD_MIRROR_HOLD",
+        "_record_telemetry_mirror_hold",
+        "SELFTEST_DRIVEFS_FAIL_OPEN",
     )
     require(edge_policy, "PC_MEMORY_PRESSURE", "WAITING_FOR_PC")
     require(
