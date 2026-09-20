@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.7"
+SERVER_VERSION = "0.7.8"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -52,6 +52,7 @@ NEXUS_BOOTSTRAP_ROOT = APP_ROOT / "nexus-bootstrap"
 NEXUS_BOOTSTRAP_STATE_PATH = STATE_DIR / "nexus_bootstrap_delivery.json"
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
 AUTO_UPDATE_INTERVAL_SECONDS = 30 * 60
+UPDATE_NETWORK_BACKOFF_SECONDS = (2 * 60, 5 * 60, 15 * 60, 30 * 60)
 NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS = 2 * 60
 NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS = 15 * 60
 EXTERNAL_HEARTBEAT_INTERVAL_SECONDS = 45
@@ -146,6 +147,7 @@ def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
     allowed = {
         "accepted", "last_event_type", "last_event_ts", "status", "revision",
         "target_version", "update_result", "auto_update",
+        "error_class", "error_detail", "transport_lane", "retry_seconds",
         "chatgpt_pc_version", "chatgpt_pc_sequence", "recovery_state"
     }
     if isinstance(extra, dict):
@@ -1682,57 +1684,104 @@ def start_nexus_human_gate_manifest_watcher() -> None:
     ).start()
 
 
+def _transport_error_detail(exc: Exception) -> tuple[str, str]:
+    name = type(exc).__name__
+    detail = str(exc).replace("\\r", " ").replace("\\n", " ")[:240]
+    lowered = detail.lower()
+    if "10060" in lowered or "timed out" in lowered or "timeout" in lowered:
+        return "OUTBOUND_TIMEOUT", detail
+    if "11001" in lowered or "name or service not known" in lowered or "getaddrinfo" in lowered:
+        return "DNS_RESOLUTION_FAILED", detail
+    if "certificate" in lowered or "ssl" in lowered or "tls" in lowered:
+        return "TLS_FAILURE", detail
+    if "connection refused" in lowered or "10061" in lowered:
+        return "CONNECTION_REFUSED", detail
+    return name, detail
+
+
 def start_auto_update_worker(http_server, bind: str, port: int) -> None:
     def worker():
         # Give pairing/telemetry priority immediately after startup.
         time.sleep(20)
+        failures = 0
         while True:
+            server_ok = False
             try:
                 st = server_update_status(check_remote=True)
+                server_ok = True
+                failures = 0
                 mirror_telemetry_status("SERVER_UPDATE_CHECK", {
                     "status": "AVAILABLE" if st.get("available") else "UP_TO_DATE",
                     "target_version": st.get("target_version"),
                     "auto_update": True,
+                    "transport_lane": "SERVER",
                 })
                 if st.get("available"):
                     result = apply_server_update()
                     if result.get("restart_required"):
                         schedule_server_restart(http_server, bind, port, result)
                         return
-                else:
-                    # Resident delivery owns small hash-pinned companions and the one-time Nexus bootstrap bundle.
-                    # The only remaining human gate is provider browser authorization when Cloudflare requires it.
-                    try:
-                        apply_telegram_companion_update()
-                    except Exception as companion_error:
-                        mirror_telemetry_status("TELEGRAM_COMPANION_UPDATE_FAILED", {
-                            "status": "DEGRADED", "update_result": type(companion_error).__name__, "auto_update": True,
-                        })
-                    try:
-                        apply_nexus_bootstrap_delivery(auto_launch=True)
-                    except Exception as nexus_error:
-                        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
-                            "schema": "bcp.nexus_bootstrap_delivery/1",
-                            "state": "STAGE_FAILED",
-                            "bundle_version": "",
-                            "updated_at": utc_now(),
-                            "error": str(nexus_error)[:500],
-                            "spend_usd": 0.0,
-                        })
             except Exception as e:
+                failures = min(failures + 1, len(UPDATE_NETWORK_BACKOFF_SECONDS))
+                error_class, error_detail = _transport_error_detail(e)
+                retry_seconds = UPDATE_NETWORK_BACKOFF_SECONDS[failures - 1]
                 _write_update_state({
                     "schema": "bcp.server_update/1",
                     "state": "CHECK_FAILED",
                     "current_version": SERVER_VERSION,
                     "checked_at": utc_now(),
-                    "error": str(e)[:500],
+                    "error_class": error_class,
+                    "error": error_detail,
+                    "retry_seconds": retry_seconds,
                 })
                 mirror_telemetry_status("SERVER_UPDATE_CHECK_FAILED", {
                     "status": "DEGRADED",
                     "update_result": type(e).__name__,
+                    "error_class": error_class,
+                    "error_detail": error_detail,
+                    "transport_lane": "SERVER",
+                    "retry_seconds": retry_seconds,
                     "auto_update": True,
                 })
-            time.sleep(AUTO_UPDATE_INTERVAL_SECONDS)
+
+            # Companion lanes are independent. A raw GitHub failure must not
+            # suppress Telegram/Nexus reconciliation for the whole cycle.
+            try:
+                apply_telegram_companion_update()
+            except Exception as companion_error:
+                error_class, error_detail = _transport_error_detail(companion_error)
+                mirror_telemetry_status("TELEGRAM_COMPANION_UPDATE_FAILED", {
+                    "status": "DEGRADED",
+                    "update_result": type(companion_error).__name__,
+                    "error_class": error_class,
+                    "error_detail": error_detail,
+                    "transport_lane": "TELEGRAM_COMPANION",
+                    "auto_update": True,
+                })
+            try:
+                apply_nexus_bootstrap_delivery(auto_launch=True)
+            except Exception as nexus_error:
+                error_class, error_detail = _transport_error_detail(nexus_error)
+                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+                    "schema": "bcp.nexus_bootstrap_delivery/1",
+                    "state": "STAGE_FAILED",
+                    "bundle_version": "",
+                    "updated_at": utc_now(),
+                    "error_class": error_class,
+                    "error": error_detail,
+                    "spend_usd": 0.0,
+                })
+                mirror_telemetry_status("NEXUS_BOOTSTRAP_UPDATE_FAILED", {
+                    "status": "DEGRADED",
+                    "update_result": type(nexus_error).__name__,
+                    "error_class": error_class,
+                    "error_detail": error_detail,
+                    "transport_lane": "NEXUS",
+                    "auto_update": True,
+                })
+
+            delay = AUTO_UPDATE_INTERVAL_SECONDS if server_ok else UPDATE_NETWORK_BACKOFF_SECONDS[min(max(failures, 1), len(UPDATE_NETWORK_BACKOFF_SECONDS)) - 1]
+            time.sleep(delay)
 
     threading.Thread(target=worker, name="BCP-AutoUpdate", daemon=True).start()
 
