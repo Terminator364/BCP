@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R14
+Revision: 2026-09-20-R15
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -924,3 +924,37 @@ Canonical implementation line:
 - external heartbeat fields `telegram_companion_*`;
 - resident stale-health watchdog with bounded restart cooldown.
 
+## P0 — Human-readable progress, fine micro-actions and complete reports (R15)
+
+This requirement is additive. The Telegram surface is a human operational dashboard, not a dump of internal state names.
+
+### Human-first live card
+- The visible title is an interactive monitoring concept such as **Automate de suivi BCP**, not a bare internal component label.
+- Raw strings such as `NOT_OBSERVED`, workflow implementation names and internal hold codes belong in technical reports, not the primary human card.
+- If no human action is required, the card omits the user-action row instead of displaying a redundant `AUCUNE`.
+- PC, B-EDGE, Drive, Nexus and CI states are translated into clear human sentences.
+
+### Fine-grained micro-action model
+A micro-action is atomic and observable. Examples include reading/opening a file or PDF, checking a workflow, reading logs, changing one file, calculating a hash, launching one test, checking one test result, committing one mutation, performing one readback, or validating one receipt.
+
+The system MUST support a dynamic micro-action forecast. When the exact count is not known, it MAY estimate a total and progress, but MUST mark it explicitly with **≈**. The forecast is planning telemetry, not proof; it may be recalculated as work expands or contracts. Confirmed completed actions remain evidence-backed and distinct from forecast work.
+
+### Two separate progress concepts
+- **Mission progress estimate**: ≈done/total fine micro-actions for the current user objective.
+- **Ecosystem health**: independent percentage derived from observable PC/BCP, B-EDGE, Drive, CI and Nexus availability/qualification signals.
+
+These values MUST NOT be conflated.
+
+### Automatic refresh and intermittent connectivity
+- While a transport is available, the live card refreshes automatically on a bounded adaptive interval; the manual refresh button is a convenience, not the primary update mechanism.
+- Offline periods retain local durable state and do not erase progress. Reconnection resumes synchronization automatically.
+- Automatic refresh must remain data-aware and avoid unnecessary large transfers.
+
+### PDF suite
+Telegram MUST expose at least four complementary generated PDFs:
+1. human situation / executive follow-up;
+2. devices, network and transports;
+3. objective, stages and fine micro-actions;
+4. technical dossier / audit.
+
+Each report is generated from current durable evidence and is designed to be substantially more complete than the compact live card.
