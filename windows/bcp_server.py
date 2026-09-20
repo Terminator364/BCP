@@ -28,7 +28,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.6.8"
+SERVER_VERSION = "0.6.9"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -332,6 +332,64 @@ def external_telemetry_roots() -> list[Path]:
     return dedup
 
 
+def windows_resource_status() -> dict:
+    """Dependency-free Windows RAM and power snapshot for the external heartbeat."""
+    out = {
+        "pc_memory_load_percent": None,
+        "pc_available_memory_mb": None,
+        "pc_power_source": "UNKNOWN",
+        "pc_battery_percent": None,
+        "pc_battery_critical": False,
+    }
+    if os.name != "nt":
+        return out
+    try:
+        import ctypes
+
+        class MEMORYSTATUSEX(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        mem = MEMORYSTATUSEX()
+        mem.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(mem)):
+            out["pc_memory_load_percent"] = int(mem.dwMemoryLoad)
+            out["pc_available_memory_mb"] = int(mem.ullAvailPhys // (1024 * 1024))
+
+        class SYSTEM_POWER_STATUS(ctypes.Structure):
+            _fields_ = [
+                ("ACLineStatus", ctypes.c_ubyte),
+                ("BatteryFlag", ctypes.c_ubyte),
+                ("BatteryLifePercent", ctypes.c_ubyte),
+                ("SystemStatusFlag", ctypes.c_ubyte),
+                ("BatteryLifeTime", ctypes.c_ulong),
+                ("BatteryFullLifeTime", ctypes.c_ulong),
+            ]
+
+        power = SYSTEM_POWER_STATUS()
+        if ctypes.windll.kernel32.GetSystemPowerStatus(ctypes.byref(power)):
+            if int(power.ACLineStatus) == 1:
+                out["pc_power_source"] = "AC"
+            elif int(power.ACLineStatus) == 0:
+                out["pc_power_source"] = "BATTERY"
+            pct = int(power.BatteryLifePercent)
+            if pct != 255:
+                out["pc_battery_percent"] = pct
+                out["pc_battery_critical"] = bool(pct <= 10 and int(power.ACLineStatus) != 1)
+    except Exception:
+        pass
+    return out
+
+
 def telegram_companion_runtime_status() -> dict:
     health = read_json(TELEGRAM_COMPANION_HEALTH_PATH, {}) or {}
     update = read_json(TELEGRAM_COMPANION_STATE_PATH, {}) or {}
@@ -398,6 +456,7 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
     nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
     chat = chatgpt_pc_status()
     telegram = telegram_companion_runtime_status()
+    resources = windows_resource_status()
     rec = {
         "schema": "bcp.external_runtime/1",
         "reason": str(reason)[:80],
@@ -439,6 +498,11 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "recovery_phase": str(chat.get("recovery_phase") or "")[:80],
         "recovery_result_status": str(chat.get("recovery_result_status") or "")[:80],
         "lifecycle_registration": lifecycle_registration_status(),
+        "pc_memory_load_percent": resources.get("pc_memory_load_percent"),
+        "pc_available_memory_mb": resources.get("pc_available_memory_mb"),
+        "pc_power_source": resources.get("pc_power_source"),
+        "pc_battery_percent": resources.get("pc_battery_percent"),
+        "pc_battery_critical": bool(resources.get("pc_battery_critical")),
     }
     written: list[str] = []
     for root in external_telemetry_roots():
@@ -3459,6 +3523,9 @@ def selftest():
         assert "telegram_companion_runtime_status" in source
         assert "TELEGRAM_COMPANION_HEALTH_PATH" in source
         assert "_telegram_companion_watchdog" in source
+        assert "windows_resource_status" in source
+        assert "pc_battery_critical" in source
+        assert "pc_memory_load_percent" in source
         assert "NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS" in source
         assert "NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS" in source
