@@ -31,6 +31,10 @@ NEXUS_CURSOR_PATH = STATE_DIR / "nexus_command_cursor.json"
 MISSION_EVENT_LOG_PATH = STATE_DIR / "MISSION_EVENT_LOG.jsonl"
 LOG_PATH = APP_ROOT / "logs" / "telegram-observability.jsonl"
 HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
+MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
+MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
+MISSION_RESUME_REQUEST_LOG = STATE_DIR / "MISSION_RESUME_REQUESTS.jsonl"
+WATCHDOG_NOTIFY_STATE_PATH = STATE_DIR / "telegram_watchdog_notify_state.json"
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -1478,6 +1482,71 @@ class Service:
             return "HOLDS\nAucun HOLD/BLOCKED durable observé."
         return "HOLDS\n" + "\n".join("- " + x for x in found[:12])
 
+    def request_continue(self, source: str = "TELEGRAM_BUTTON") -> str:
+        mission = self.local.mission_snapshot(self.project_id)
+        if not mission:
+            return "ℹ️ Aucune mission durable active à reprendre."
+        if str(mission.get("status") or "").upper() in {"DONE", "CANCELLED"}:
+            return "✅ La dernière mission durable est déjà terminée."
+        mission_id = str(mission.get("mission_id") or "")
+        anchor = clean(mission.get("last_progress_at") or mission.get("updated_at") or utc_now(), 80)
+        step = clean(mission.get("next_step") or mission.get("current_step") or "RESUME", 100)
+        request_id = hashlib.sha256(
+            ("mission-resume:" + mission_id + ":" + anchor + ":" + step).encode("utf-8")
+        ).hexdigest()[:32]
+        rec = {
+            "schema": "bcp.mission_resume_request/1",
+            "request_id": request_id,
+            "mission_id": mission_id,
+            "project_id": self.project_id,
+            "source": clean(source, 40),
+            "state": "QUEUED",
+            "step_id": step,
+            "created_at": utc_now(),
+            "zero_paid_spend_usd": 0.0,
+        }
+        old = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
+        if old.get("request_id") == request_id and old.get("state") in {"QUEUED", "ACKNOWLEDGED"}:
+            return "▶️ Reprise déjà demandée. Le watchdog attend la prochaine preuve sans dupliquer l’action."
+        atomic_json(MISSION_RESUME_REQUEST_PATH, rec)
+        MISSION_RESUME_REQUEST_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with MISSION_RESUME_REQUEST_LOG.open("a", encoding="utf-8") as h:
+            h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+        return "▶️ Continuer demandé. La reprise est enregistrée durablement et sera consommée par BCP dès que le moteur/transport qualifié est disponible."
+
+    def watchdog_notice(self) -> tuple[str, str] | None:
+        wd = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
+        state = str(wd.get("state") or "").upper()
+        if state not in {"RESUME_REQUESTED", "ESCALATED", "HUMAN_GATE"}:
+            return None
+        mission_id = clean(wd.get("mission_id") or "", 100)
+        attempt = int(wd.get("attempt_count") or 0)
+        stale = int(wd.get("stale_seconds") or 0)
+        key = hashlib.sha256(
+            (state + ":" + mission_id + ":" + str(attempt) + ":" + str(wd.get("anchor_key") or "")).encode("utf-8")
+        ).hexdigest()
+        if state == "RESUME_REQUESTED":
+            text = (
+                "🔄 BCP a détecté une interruption de progression.\n"
+                "Mission: " + (mission_id or "courante") + "\n"
+                "Aucune nouvelle preuve depuis ≈" + str(max(1, stale // 60)) + " min.\n"
+                "Reprise automatique demandée (" + str(attempt) + "/3).\n"
+                "Vous n’avez rien à faire; le prochain reçu mettra la carte à jour."
+            )
+        elif state == "HUMAN_GATE":
+            text = (
+                "👤 BCP a atteint une étape qui nécessite réellement votre intervention.\n"
+                "Mission: " + (mission_id or "courante") + "\n"
+                "Le système conserve l’état et n’effectue pas de retries aveugles."
+            )
+        else:
+            text = (
+                "⚠️ BCP a tenté les reprises automatiques prévues sans nouvelle preuve.\n"
+                "Mission: " + (mission_id or "courante") + "\n"
+                "L’état est conservé. Utilisez ▶️ Continuer quand vous voulez relancer une demande de reprise."
+            )
+        return key, text
+
     def help(self) -> str:
         return (
             "Automate de suivi BCP — lecture simple\n"
@@ -1496,8 +1565,10 @@ class Service:
         first, *rest = raw.split(maxsplit=1)
         cmd = first.split("@", 1)[0].lower()
         arg = rest[0].strip() if rest else ""
+        if cmd == "/continue":
+            return self.request_continue("TELEGRAM_COMMAND")
         if cmd not in READ_ONLY_COMMANDS:
-            return "Lecture seule: /status /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Commandes: /continue /status /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -1547,6 +1618,9 @@ class Telegram:
         # provide stable visual semantics without depending on client themes.
         return {
             "inline_keyboard": [
+                [
+                    {"text": "▶️ Continuer", "callback_data": "bcp:continue"},
+                ],
                 [
                     {"text": "🟢 Situation", "callback_data": "bcp:status"},
                     {"text": "🔵 Où en est-on ?", "callback_data": "bcp:where"},
@@ -1758,6 +1832,24 @@ class Telegram:
             "updated_at": utc_now(),
         })
 
+    def _push_watchdog_notice(self) -> None:
+        if not self.auto_push:
+            return
+        notice = self.service.watchdog_notice()
+        if not notice:
+            return
+        key, text = notice
+        prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
+        if str(prior.get("key") or "") == key:
+            return
+        self.send(text)
+        atomic_json(WATCHDOG_NOTIFY_STATE_PATH, {
+            "schema": "bcp.telegram_watchdog_notice/1",
+            "key": key,
+            "updated_at": utc_now(),
+            "transport": "DIRECT_TELEGRAM",
+        })
+
     def _push_system_presence(self) -> None:
         if not self.auto_push:
             return
@@ -1848,6 +1940,7 @@ class Telegram:
                         "schema": "bcp.telegram_offset/1", "next_offset": offset, "updated_at": utc_now()
                     })
                 self._push_presence()
+                self._push_watchdog_notice()
                 self._push_system_presence()
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
@@ -2007,6 +2100,24 @@ class Nexus:
             "transport": "NEXUS",
         })
 
+    def _push_watchdog_notice(self) -> None:
+        if not self.auto_push:
+            return
+        notice = self.service.watchdog_notice()
+        if not notice:
+            return
+        key, text = notice
+        prior = read_json(WATCHDOG_NOTIFY_STATE_PATH, {}) or {}
+        if str(prior.get("key") or "") == key:
+            return
+        self.push(text, "watchdog:" + key)
+        atomic_json(WATCHDOG_NOTIFY_STATE_PATH, {
+            "schema": "bcp.telegram_watchdog_notice/1",
+            "key": key,
+            "updated_at": utc_now(),
+            "transport": "NEXUS",
+        })
+
     def _push_system_presence(self) -> None:
         if not self.auto_push:
             return
@@ -2066,6 +2177,7 @@ class Nexus:
                     })
                     append_log("NEXUS_COMMAND_REPLIED", command_id=command_id)
                 self._push_presence()
+                self._push_watchdog_notice()
                 self._push_system_presence()
                 if not commands:
                     time.sleep(self.poll_seconds)
@@ -2301,6 +2413,8 @@ def selftest() -> int:
         assert str((svc.cfg.get("transport") or {}).get("mode") or "DIRECT_TELEGRAM") == "DIRECT_TELEGRAM"
         assert Nexus.__name__ == "Nexus"
         assert HEALTH_PATH.name == "telegram_worker_health.json"
+        assert MISSION_WATCHDOG_STATE_PATH.name == "mission_watchdog.json"
+        assert "bcp:continue" in json.dumps(Telegram.keyboard(), ensure_ascii=False)
     print("BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS")
     return 0
 
