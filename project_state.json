@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_7_FIELD_RUNNING_NEXUS_0_1_7_MERGED_RESIDENT_CONVERGENCE_PENDING_TELEGRAM_V5_MERGED",
-  "last_completed_atomic_action": "PR #71 (Nexus 0.1.7 Wrangler probe diagnostics) passed exact-head CI and merged to main at a2f9cdfd4c7538adb9779836ff0b3e8756642438. A fresh one-time Drive readback of BCP_RUNTIME_EVENTS.jsonl shows resident BCP 0.6.7 alive, paired and UP_TO_DATE on MBMPC through 2026-09-20T01:02:16Z, while Nexus is still 0.1.6 with WRANGLER_RUNTIME_PROBE_FAILED at WRANGLER_VERSION_PROBE. Therefore 0.1.7 is merged but not yet resident; Cloudflare human authorization has not been reached.",
-  "next_action": "Do not ask the user to reinstall BCP, re-enter Telegram secrets, shuttle ZIPs, or run PowerShell. Let the existing resident BCP update cycle pick up Nexus 0.1.7. On the next explicit continuation, perform one Drive readback only. If 0.1.7 is resident, use its sanitized probe class/detail to choose the automatic recovery path. If it is still 0.1.6 after a full resident cycle, implement a bounded data-saver fast refresh for unresolved Nexus only. No ChatGPT scheduled monitoring.",
+  "status": "BCP_0_6_7_FIELD_RUNNING_NEXUS_0_1_8_MERGED_RESIDENT_CONVERGENCE_PENDING_TELEGRAM_V5_MERGED",
+  "last_completed_atomic_action": "ACTIVE takeover verified Nexus 0.1.7 resident on MBMPC at 2026-09-20T01:27:18Z with WRANGLER_PROBE_EXIT_1 and no stdout/stderr. PR #73 (Nexus 0.1.8 automatic managed runtime fallback) had exact-head CI PASS across CURRENT release contract, Telegram observability, Nexus transport, and coordinated product; main was re-read unchanged at c090522a4d299e141c08da66f0bc8d04e02e21d9, then PR #73 merged with expected head d1a3c5342cd623d5b5e1584478a855cf6f9e18f2 to main cdcb5645b05c0ccdc0d00217243c21fbf7fd0ed3 and readback confirmed the merge.",
+  "next_action": "Allow the existing resident BCP update cycle to pick up Nexus 0.1.8. On the next explicit continuation, perform one fresh Drive runtime readback. If 0.1.8 is resident, inspect its managed portable Node/npm npx-cli fallback receipt and continue automatically toward Cloudflare authorization or the next classified blocker. Do not ask the user to reinstall BCP, re-enter Telegram secrets, move ZIPs, install Node/Wrangler manually, or run PowerShell.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -182,12 +182,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-NEXUS-017-MERGED-RESIDENT-CONVERGENCE-PENDING-20260920",
+    "checkpoint_id": "BCP-NEXUS-018-MERGED-RESIDENT-CONVERGENCE-PENDING-20260920",
     "status": "MERGED_FIELD_READBACK_PENDING",
-    "last_completed_action": "Nexus 0.1.7 merged and one-time external runtime readback confirms the PC is healthy but still running Nexus 0.1.6.",
-    "next_atomic_action": "One explicit Drive readback on next continuation; no background ChatGPT monitoring.",
-    "branch": "work/bcp/state-pr71-field-readback-20260920-0159",
-    "base_main_sha": "a2f9cdfd4c7538adb9779836ff0b3e8756642438",
+    "last_completed_action": "PR #73 merged to main at cdcb5645b05c0ccdc0d00217243c21fbf7fd0ed3 after exact-head CI PASS; immediately preceding field readback confirmed Nexus 0.1.7 resident and classified the Wrangler probe failure.",
+    "next_atomic_action": "One fresh Drive readback after the resident update cycle has had time to consume Nexus 0.1.8.",
+    "branch": "work/bcp/takeover-pr73-state-20260920",
+    "base_main_sha": "cdcb5645b05c0ccdc0d00217243c21fbf7fd0ed3",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1176,5 +1176,37 @@
     "nexus_bootstrap_error_detail": "Pinned Wrangler could not complete --version after three bounded attempts.",
     "nexus_bootstrap_stage": "WRANGLER_VERSION_PROBE",
     "conclusion": "Nexus 0.1.7 has not yet converged to the resident PC. No human gate is active."
+  },
+  "nexus_managed_fallback_0_1_8": {
+    "status": "MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
+    "pr": 73,
+    "qualified_head_sha": "d1a3c5342cd623d5b5e1584478a855cf6f9e18f2",
+    "merged_main_sha": "cdcb5645b05c0ccdc0d00217243c21fbf7fd0ed3",
+    "field_precondition_readback": {
+      "observed_at_utc": "2026-09-20T01:27:18+00:00",
+      "server_version": "0.6.7",
+      "nexus_version": "0.1.7",
+      "state": "WRANGLER_RUNTIME_REQUIRED",
+      "receipt_status": "RUNTIME_PROBE_FAILED",
+      "error_class": "WRANGLER_RUNTIME_PROBE_FAILED",
+      "error_detail": "WRANGLER_PROBE_EXIT_1 no stdout/stderr captured",
+      "stage": "WRANGLER_VERSION_PROBE"
+    },
+    "behavior": [
+      "SYSTEM_NPX_WRANGLER_FIRST",
+      "AUTOMATIC_PINNED_PORTABLE_NODE_FALLBACK",
+      "DIRECT_NPM_NPX_CLI_VIA_NODE_EXE",
+      "NO_MANUAL_RUNTIME_INSTALL",
+      "NO_TELEGRAM_SECRET_REENTRY",
+      "ZERO_USD"
+    ],
+    "ci": {
+      "current_release_contract": 35481188757,
+      "telegram_observability": 35481188820,
+      "nexus_transport": 35481188733,
+      "coordinated_product": 35481188736,
+      "result": "PASS"
+    },
+    "field_verified": false
   }
 }
