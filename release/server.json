@@ -8,7 +8,7 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R17",
+  "requirements_revision": "2026-09-20-R21",
   "release_train": "BCP-0.7.0_EDGE-2.1.0-rc1-sentinel",
   "notes": "BCP 0.7.0 mission watchdog coordinated with B-EDGE 2.1.0 secondary sentinel candidate. Server payload is unchanged; Android adds Room-backed PC reachability/recovery state and bounded WorkManager reconciliation."
 }
