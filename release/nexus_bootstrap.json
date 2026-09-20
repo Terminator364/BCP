@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R13",
+  "requirements_revision": "2026-09-20-R18",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "d5f66da2ce1026548564c93cb3044a036aa64f6182787e6bcdf0afe3b57f7428",
+      "sha256": "482588bcdcd977e8280cfd042da2e71756d251cb270001ebdaa8512245700609",
       "max_bytes": 300000
     },
     {
@@ -34,7 +34,7 @@
     }
   ],
   "runtime": {
-    "strategy": "SYSTEM_FIRST_THEN_PINNED_PORTABLE_NODE_PERSISTENT_WRANGLER_DIRECT_JS",
+    "strategy": "SYSTEM_FIRST_THEN_PINNED_PORTABLE_NODE_PERSISTENT_WRANGLER_NO_SCRIPTS_DIRECT_JS",
     "node_version": "24.21.0",
     "node_win_x64_zip_sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
     "wrangler_version": "4.135.0",
@@ -49,7 +49,10 @@
     "persistent_wrangler_package": true,
     "direct_node_wrangler_cli": true,
     "field_ecosystem_exact_runtime_ci": true,
-    "windows_powershell_native_stderr_captured": true
+    "windows_powershell_native_stderr_captured": true,
+    "npm_ignore_scripts": true,
+    "esbuild_platform_binary_required": true,
+    "field_failure_target": "ESBUILD_POSTINSTALL_FAILURE"
   },
   "live_card": {
     "enabled": true,
@@ -74,5 +77,5 @@
     ],
     "field_verified": false
   },
-  "notes": "Nexus 0.1.9 replaces field-fragile ephemeral npx execution with a persistent app-owned pinned Wrangler package installed through the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. Windows PowerShell 5.1 native stderr is captured as data instead of terminating on harmless npm/Wrangler warnings. Exact portable Node archive + npm install + direct Wrangler execution is exercised on Windows CI. Zero-dollar, no manual runtime install, no secret re-entry, no ZIP shuttle."
+  "notes": "Nexus 0.1.10 targets the field-proven esbuild npm postinstall failure. The pinned portable Node/npm install now uses --ignore-scripts, requires the Windows @esbuild/win32-x64 binary to exist, then invokes Wrangler's JS entry directly through node.exe. Failed partial package trees are removed before bounded retries. Exact Node archive + no-scripts install + platform-binary presence + Wrangler --version are exercised on Windows CI. Zero-dollar; no manual Node/Wrangler install, secret re-entry, PowerShell or ZIP shuttle."
 }
