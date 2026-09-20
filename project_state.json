@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_8_R34_OUTBOUND_UPDATE_TRANSPORT_HARDENING_CANDIDATE",
-  "last_completed_atomic_action": "R34 candidate implemented BCP 0.7.8 with independent SERVER/TELEGRAM_COMPANION/NEXUS update lanes, bounded outbound backoff, and machine-readable network error classification. Windows installer and final acceptance targets were aligned to 0.7.8 to prevent recurrence of R32 version drift.",
-  "next_action": "Run exact-head R34 CI. Merge only if release-contract, Windows bootstrap/final acceptance, coordinated product, and field ecosystem gates pass. Then read fresh resident telemetry for 0.7.8 convergence without reinstall replay.",
+  "status": "BCP_0_7_8_R34_MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
+  "last_completed_atomic_action": "R34 merged to main at ee8c1b0b68c510336998b2563c96438567a9a561. Exact-head and post-merge qualification passed across CURRENT, Windows bootstrap, managed server update, final acceptance, coordinated PC/product, Android, Telegram, Nexus, PC sanity and Field Ecosystem including real managed Wrangler.",
+  "next_action": "Observe fresh resident telemetry for convergence from BCP 0.7.6 to 0.7.8. Do not reinstall. If outbound transport recovers, verify server 0.7.8 hash/readback and independent Telegram/Nexus lane behavior; if CHECK_FAILED persists, continue transport diagnosis from machine-readable R34 error_class/error_detail once 0.7.8 is resident.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,29 +229,53 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R34-OUTBOUND-UPDATE-TRANSPORT-HARDENING-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
-    "branch": "work/bcp/r34-outbound-update-transport-hardening-20260920",
-    "base_main_sha": "d0dad7d8acce150ed021dfc977ca1fc99c8710b7",
+    "checkpoint_id": "BCP-R35-POST-R34-STATE-RECONCILE-20260920",
+    "status": "R34_MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
+    "branch": "work/bcp/r35-post-r34-state-reconcile-20260920",
+    "base_main_sha": "ee8c1b0b68c510336998b2563c96438567a9a561",
+    "r34_pr": 100,
+    "r34_exact_head": "62759329f206af77925cd67ef9597cda4175cb45",
+    "r34_merge_sha": "ee8c1b0b68c510336998b2563c96438567a9a561",
     "target_server_version": "0.7.8",
     "server_sha256": "976d536e322a44518c472997a0646432b19f3d944a72430a802b4c1923e6f691",
-    "field_trigger": {
-      "resident_server_version": "0.7.6",
-      "resident_update_state": "CHECK_FAILED",
-      "telegram_error": "WinError 10060 outbound timeout",
-      "telegram_consecutive_failures": 152,
-      "nexus_version": "0.2.3",
-      "nexus_state": "HUMAN_AUTH_REQUIRED"
+    "premerge_ci": {
+      "current_release_contract": 35522516746,
+      "telegram_observability": 35522516870,
+      "nexus_transport": 35522516891,
+      "coordinated_product": 35522516778,
+      "field_ecosystem_exact_head_push": 35522513557,
+      "result": "PASS"
     },
-    "behavior": [
-      "INDEPENDENT_SERVER_TELEGRAM_NEXUS_UPDATE_LANES",
-      "BOUNDED_NETWORK_BACKOFF_2_5_15_30_MIN",
-      "MACHINE_READABLE_OUTBOUND_TIMEOUT_DNS_TLS_CLASSIFICATION",
-      "SERVER_MANIFEST_FAILURE_DOES_NOT_SUPPRESS_COMPANION_RECONCILIATION",
-      "NO_INSTALL_REPLAY"
-    ],
-    "next_atomic_action": "Exact-head CI qualification and serialized merge if green.",
-    "no_replay": true
+    "postmerge_ci": {
+      "managed_server_update": 35522688941,
+      "android_build": 35522688970,
+      "coordinated_product": 35522688968,
+      "field_ecosystem": 35522688948,
+      "current_release_contract": 35522688863,
+      "pc_sanity": 35522689148,
+      "coordinated_pc_package": 35522688932,
+      "windows_bootstrap": 35522688924,
+      "telegram_observability": 35522688957,
+      "final_acceptance": 35522688947,
+      "nexus_transport": 35522689001,
+      "result": "PASS"
+    },
+    "latest_field_truth": {
+      "observed_at_utc": "2026-09-20T16:25:07+00:00",
+      "resident_server_version": "0.7.6",
+      "update_state": "CHECK_FAILED",
+      "nexus_version": "0.2.3",
+      "nexus_state": "HUMAN_AUTH_REQUIRED",
+      "telegram_state": "DEGRADED_RETRY",
+      "telegram_error_class": "URLError",
+      "telegram_error": "WinError 10060 outbound timeout",
+      "telegram_consecutive_failures": 163,
+      "pc_memory_load_percent": 90,
+      "pc_available_memory_mb": 340,
+      "field_convergence": "PENDING"
+    },
+    "no_replay": true,
+    "next_atomic_action": "Read fresh BCP_RUNTIME_LATEST.json for 0.7.8 convergence; no install replay."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1743,7 +1767,7 @@
     }
   },
   "bcp_0_7_8_r34": {
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "status": "MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
     "requirements_revision": "2026-09-20-R34",
     "server_version": "0.7.8",
     "server_sha256": "976d536e322a44518c472997a0646432b19f3d944a72430a802b4c1923e6f691",
@@ -1754,6 +1778,9 @@
       900,
       1800
     ],
+    "exact_head": "62759329f206af77925cd67ef9597cda4175cb45",
+    "merge_sha": "ee8c1b0b68c510336998b2563c96438567a9a561",
+    "ci_result": "PASS",
     "field_verified": false
   }
 }
