@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-human-cockpit-v8",
+  "version": "2026.09.20-human-ops-v9",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "832e4e361f8f88d172b1345752d7f49f6023e23368c918ed57019663690db1ec",
+  "sha256": "6a20571e259289f5a80d76a1ee32f30d7eccb53ab0397d4284ca1fc71a24673b",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Cockpit V8 preserves V7 human progress/reports and adds a real Continue control plus proactive deduplicated notifications when the resident BCP mission watchdog detects stalled observable progress, requests bounded recovery, escalates, or reaches a human gate.",
-  "requirements_revision": "2026-09-20-R16"
+  "notes": "Human Ops V9: orientation-first attention states, forecast confidence, Since-my-last-visit digest, Why explanation, predictive risk radar, bounded quiet mode with critical bypass, transition/deduplicated alerts and one-shot recovery notification. Preserves V8 durable Continue/watchdog, V7 reports, low-data/offline semantics and single-receiver discipline.",
+  "requirements_revision": "2026-09-20-R20"
 }
