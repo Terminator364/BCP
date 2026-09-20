@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
+        android:name=".BcpEdgeApplication"
         android:allowBackup="false"
         android:label="BCP Edge Evergreen"
         android:theme="@style/AppTheme"
