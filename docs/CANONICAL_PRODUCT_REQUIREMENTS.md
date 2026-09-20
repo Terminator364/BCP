@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R18
+Revision: 2026-09-20-R20
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1053,3 +1053,51 @@ CI MUST explicitly remove the hosted runner's globally installed Node from the r
 Field incident bound to this requirement:
 - Nexus 0.1.9 reached the resident PC but npm failed in the `esbuild` lifecycle path while the exact same install passed on GitHub;
 - the correction is Nexus 0.2.0 with explicit portable-child-runtime binding.
+
+## P0 — Telegram Human Ops Cockpit V9 / R20
+
+This requirement is additive and preserves R18.
+
+The Telegram human surface MUST prioritize **orientation before detail**. The top of the live card MUST expose one human attention state:
+- CRITIQUE;
+- ACTION REQUISE;
+- À SURVEILLER;
+- EN COURS;
+- STABLE.
+
+The headline is derived only from observable evidence and declared human gates. Raw internal state strings remain behind technical views.
+
+### Return-after-absence UX
+The cockpit MUST provide:
+- **Depuis ma visite**: durable changes since the previous human interaction;
+- **Pourquoi ?**: observable reasons behind the current attention state;
+- **Radar**: explicitly predictive near-term operational risks, never represented as proof.
+
+### Forecast confidence
+Every approximate micro-action forecast SHOULD carry a confidence label. Confidence is based on plan/evidence structure and MUST NOT convert approximate work into confirmed progress.
+
+### Notification lifecycle
+Notifications MUST be transition-driven rather than heartbeat-driven:
+- repeated unchanged conditions are deduplicated;
+- related mission events are grouped;
+- CRITIQUE / ACTION / À SURVEILLER may notify on meaningful transition;
+- when such a state clears, one recovery notification is emitted;
+- monitoring/evaluation continues even when notifications are muted.
+
+### Quiet mode
+A bounded local quiet mode MUST suppress routine notifications while allowing genuine critical/human-action gates through. Quiet mode MUST NOT disable watchdog evaluation, durable state, or recovery logic.
+
+### Optional Cockpit+ Mini App
+A richer Telegram Mini App MAY be added after the Nexus field gate, but it is never a critical dependency. The plain bot/card interface remains the mandatory low-data fallback.
+
+A Mini App MUST:
+- be mobile-first and low-resource;
+- adapt optional animation/effects to device performance capability;
+- validate Telegram initialization data server-side;
+- contain no embedded operational secret;
+- treat client storage as UI/cache state, not canonical project state;
+- remain zero-paid-spend by default;
+- degrade cleanly to the standard bot surface.
+
+Canonical detailed requirement:
+- `docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md`
