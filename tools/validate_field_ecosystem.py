@@ -223,7 +223,7 @@ def main() -> int:
         "bcp:conversations",
         "bcp:pdf:devices",
         "bcp:pdf:mission",
-        'version: "0.2.3"',
+        'version: "0.2.6"',
     )
     # R53 human cockpit: primary labels must be self-explanatory and identical across direct/Nexus.
     require(
@@ -292,6 +292,8 @@ def main() -> int:
         "Page ",
         "Heure affichée : Kinshasa",
         "%BCP-HUMAN-PDF",
+        "humanTimestampKinshasa",
+        'version: "0.2.6"',
     )
     for human_fn_start, human_fn_end in (
         ("def report_summary", "def report_devices"),
