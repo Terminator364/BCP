@@ -71,6 +71,74 @@ jobs:
             Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
           }
 
+  real-managed-wrangler-probe:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise exact pinned portable Node + persistent Wrangler package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $nodeVersion = '24.21.0'
+          $wranglerVersion = '4.135.0'
+          $expectedSha = '158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541'
+          $root = Join-Path $env:RUNNER_TEMP ('bcp-real-managed-' + [guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          try {
+            $zip = Join-Path $root ('node-v' + $nodeVersion + '-win-x64.zip')
+            Invoke-WebRequest -UseBasicParsing -Uri ('https://nodejs.org/download/release/v' + $nodeVersion + '/node-v' + $nodeVersion + '-win-x64.zip') -OutFile $zip -TimeoutSec 120
+            $actualSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
+            if ($actualSha -ne $expectedSha) { throw ('PINNED_NODE_SHA_MISMATCH actual=' + $actualSha) }
+            Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+            $nodeHome = Join-Path $root ('node-v' + $nodeVersion + '-win-x64')
+            $node = Join-Path $nodeHome 'node.exe'
+            $npmCli = Join-Path $nodeHome 'node_modules\npm\bin\npm-cli.js'
+            if (-not (Test-Path $node) -or -not (Test-Path $npmCli)) { throw 'PINNED_NODE_LAYOUT_INVALID' }
+
+            $env:NPM_CONFIG_CACHE = Join-Path $root 'npm-cache'
+            $env:NPM_CONFIG_AUDIT = 'false'
+            $env:NPM_CONFIG_FUND = 'false'
+            $env:NPM_CONFIG_UPDATE_NOTIFIER = 'false'
+            $env:NPM_CONFIG_FETCH_RETRIES = '5'
+            $env:NPM_CONFIG_FETCH_RETRY_MINTIMEOUT = '2000'
+            $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = '30000'
+            $env:NPM_CONFIG_FETCH_TIMEOUT = '120000'
+            $env:NPM_CONFIG_PREFER_OFFLINE = 'true'
+
+            $wranglerRoot = Join-Path $root ('wrangler-package-' + $wranglerVersion)
+            $oldEap = $ErrorActionPreference
+            try {
+              $ErrorActionPreference = 'Continue'
+              $installOut = & $node $npmCli install --prefix $wranglerRoot ('wrangler@' + $wranglerVersion) --no-audit --no-fund 2>&1
+              $installCode = $LASTEXITCODE
+            } finally {
+              $ErrorActionPreference = $oldEap
+            }
+            Write-Host ('BCP_REAL_MANAGED_INSTALL_EXIT=' + $installCode)
+            if ($installCode -ne 0) {
+              Write-Host ('BCP_REAL_MANAGED_INSTALL_DETAIL=' + (($installOut -join ' ') -replace '[\r\n]+',' '))
+              throw 'REAL_MANAGED_WRANGLER_INSTALL_FAILED'
+            }
+            $wranglerCli = Join-Path $wranglerRoot 'node_modules\wrangler\bin\wrangler.js'
+            if (-not (Test-Path $wranglerCli)) { throw 'REAL_MANAGED_WRANGLER_CLI_MISSING' }
+
+            $stdout = Join-Path $root 'probe.stdout.txt'
+            $stderr = Join-Path $root 'probe.stderr.txt'
+            $args = @($wranglerCli, '--version')
+            $p = Start-Process -FilePath $node -ArgumentList $args -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            $out = if (Test-Path $stdout) { Get-Content -Raw $stdout } else { '' }
+            $err = if (Test-Path $stderr) { Get-Content -Raw $stderr } else { '' }
+            Write-Host ('BCP_REAL_MANAGED_PROBE_EXIT=' + $p.ExitCode)
+            Write-Host ('BCP_REAL_MANAGED_PROBE_STDOUT=' + ($out -replace '[\r\n]+',' '))
+            Write-Host ('BCP_REAL_MANAGED_PROBE_STDERR=' + ($err -replace '[\r\n]+',' '))
+            if ($p.ExitCode -ne 0) { throw 'REAL_MANAGED_WRANGLER_PROBE_FAILED' }
+            if (($out + $err) -notmatch [regex]::Escape($wranglerVersion)) { throw 'REAL_MANAGED_WRANGLER_VERSION_NOT_OBSERVED' }
+            Write-Host 'BCP_REAL_MANAGED_WRANGLER_PROBE=PASS'
+          } finally {
+            Remove-Item -Recurse -Force -LiteralPath $root -ErrorAction SilentlyContinue
+          }
+
   low-resource-build-contract:
     runs-on: ubuntu-latest
     steps:

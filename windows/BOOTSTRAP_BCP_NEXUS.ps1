@@ -25,6 +25,7 @@ $NodeArchiveUrl = "https://nodejs.org/download/release/v24.21.0/node-v24.21.0-wi
 $NodeArchiveSha256 = "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541"
 $WranglerVersion = "4.135.0"
 $script:ManagedRuntimeFailure = ""
+$script:ManagedInstallDetail = ""
 
 function UtcNow { [DateTime]::UtcNow.ToString("o") }
 
@@ -167,7 +168,46 @@ function Ensure-ManagedWranglerLauncher {
     $env:NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT = "30000"
     $env:NPM_CONFIG_FETCH_TIMEOUT = "120000"
     $env:NPM_CONFIG_PREFER_OFFLINE = "true"
-    return [pscustomobject]@{ File = $nodeExe; Prefix = @($npxCli, "--yes", ("wrangler@" + $WranglerVersion)); Managed = $true; Invocation = "NODE_DIRECT_NPX_CLI" }
+
+    # Do not rely on npx's ephemeral package execution in the field. Install the
+    # pinned Wrangler package into a persistent app-owned prefix once, then call
+    # Wrangler's JS entry point directly through the pinned portable node.exe.
+    $npmCli = Join-Path $nodeHome "node_modules\npm\bin\npm-cli.js"
+    $wranglerRoot = Join-Path $toolRoot ("wrangler-package-" + $WranglerVersion)
+    $wranglerCli = Join-Path $wranglerRoot "node_modules\wrangler\bin\wrangler.js"
+    if (-not (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
+        New-Item -ItemType Directory -Force -Path $wranglerRoot | Out-Null
+        $installed = $false
+        $lastInstallText = ""
+        for ($attempt = 1; $attempt -le 4; $attempt++) {
+            $oldEap = $ErrorActionPreference
+            try {
+                # Windows PowerShell 5.1 can turn ordinary native stderr warnings
+                # into NativeCommandError when the script-wide preference is Stop.
+                # Capture native exit/output explicitly instead.
+                $ErrorActionPreference = "Continue"
+                $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" 2>&1
+                $code = $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $oldEap
+            }
+            $lastInstallText = (($out | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
+            if ($code -eq 0 -and (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
+                $installed = $true
+                break
+            }
+            if ($attempt -lt 4) { Start-Sleep -Seconds ([Math]::Min(30, [Math]::Pow(2, $attempt + 1))) }
+        }
+        if (-not $installed) {
+            $script:ManagedInstallDetail = Get-SafeFailureDetail $lastInstallText
+            if (-not $script:ManagedInstallDetail) { $script:ManagedInstallDetail = "no npm install stdout/stderr captured" }
+            throw ("MANAGED_WRANGLER_INSTALL_FAILED " + $script:ManagedInstallDetail)
+        }
+    }
+    if (-not (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
+        throw "MANAGED_WRANGLER_CLI_MISSING_AFTER_INSTALL"
+    }
+    return [pscustomobject]@{ File = $nodeExe; Prefix = @($wranglerCli); Managed = $true; Invocation = "NODE_DIRECT_WRANGLER_CLI" }
 }
 
 function Find-WranglerLauncher {
@@ -202,8 +242,16 @@ function Invoke-Wrangler($Launcher, [string[]]$Arguments, [switch]$AllowFailure)
     $all = @()
     foreach ($p in @($Launcher.Prefix)) { $all += [string]$p }
     foreach ($a in @($Arguments)) { $all += [string]$a }
-    $out = & $Launcher.File @all 2>&1
-    $code = $LASTEXITCODE
+    $oldEap = $ErrorActionPreference
+    try {
+        # Treat native stderr as data. Windows PowerShell 5.1 otherwise promotes
+        # harmless npm/Wrangler warnings to terminating NativeCommandError under Stop.
+        $ErrorActionPreference = "Continue"
+        $out = & $Launcher.File @all 2>&1
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldEap
+    }
     $text = (($out | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
     if ($code -ne 0 -and -not $AllowFailure) { throw ("WRANGLER_FAILED exit=" + $code) }
     return [pscustomobject]@{ ExitCode = $code; Text = $text }
@@ -239,8 +287,15 @@ function Invoke-WranglerSecret($Launcher, [string]$ConfigPath, [string]$Name, [s
     $all = @()
     foreach ($p in @($Launcher.Prefix)) { $all += [string]$p }
     $all += @("secret","put",$Name,"--config",$ConfigPath)
-    $Value | & $Launcher.File @all 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw ("WRANGLER_SECRET_PUT_FAILED name=" + $Name) }
+    $oldEap = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $Value | & $Launcher.File @all 2>&1 | Out-Null
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $oldEap
+    }
+    if ($code -ne 0) { throw ("WRANGLER_SECRET_PUT_FAILED name=" + $Name) }
 }
 
 function Get-D1Database($Launcher, [string]$Name) {
@@ -295,7 +350,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }

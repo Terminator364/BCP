@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R12",
+  "requirements_revision": "2026-09-20-R13",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "3cb90ee26978946afcb1211db3fe055268c143387c33e2e18485cb236df62431",
+      "sha256": "d5f66da2ce1026548564c93cb3044a036aa64f6182787e6bcdf0afe3b57f7428",
       "max_bytes": 300000
     },
     {
@@ -34,7 +34,7 @@
     }
   ],
   "runtime": {
-    "strategy": "SYSTEM_FIRST_THEN_PINNED_PORTABLE_NODE_DIRECT_NPX_CLI",
+    "strategy": "SYSTEM_FIRST_THEN_PINNED_PORTABLE_NODE_PERSISTENT_WRANGLER_DIRECT_JS",
     "node_version": "24.21.0",
     "node_win_x64_zip_sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
     "wrangler_version": "4.135.0",
@@ -45,7 +45,11 @@
     "failure_receipt": true,
     "failure_receipt_secret_free": true,
     "system_probe_failure_auto_fallback": true,
-    "direct_node_npx_cli": true
+    "direct_node_npx_cli": false,
+    "persistent_wrangler_package": true,
+    "direct_node_wrangler_cli": true,
+    "field_ecosystem_exact_runtime_ci": true,
+    "windows_powershell_native_stderr_captured": true
   },
   "live_card": {
     "enabled": true,
@@ -70,5 +74,5 @@
     ],
     "field_verified": false
   },
-  "notes": "Automatically falls back from a failing system npx/wrangler probe to the pinned portable Node runtime, invoking npx-cli.js directly through node.exe to avoid cmd-wrapper fragility. Keeps bounded retries, sanitized receipts, zero-dollar policy, and requires no manual Node/Wrangler install, Telegram token re-entry, PowerShell, or ZIP shuttle."
+  "notes": "Nexus 0.1.9 replaces field-fragile ephemeral npx execution with a persistent app-owned pinned Wrangler package installed through the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. Windows PowerShell 5.1 native stderr is captured as data instead of terminating on harmless npm/Wrangler warnings. Exact portable Node archive + npm install + direct Wrangler execution is exercised on Windows CI. Zero-dollar, no manual runtime install, no secret re-entry, no ZIP shuttle."
 }

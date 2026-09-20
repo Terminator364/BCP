@@ -41,7 +41,7 @@
       "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
     },
     "nexus": {
-      "version": "0.1.8",
+      "version": "0.1.9",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "619f2de9d04c673f1252879e3411c82ccc5513b89476d7e6b5a7d580d1013f96"
+        "sha256": "c5e471b54b039deb4e1fc494fe2900df2007ee67e90e7b6d8cc513d2ad591a92"
       },
-      "notes": "Nexus 0.1.8 automatically falls back from failing system npx/wrangler to a pinned portable Node runtime using direct node.exe -> npx-cli.js invocation. No manual runtime install, secret re-entry, PowerShell, or ZIP shuttle."
+      "notes": "Nexus 0.1.9 replaces ephemeral npx execution with a persistent app-owned Wrangler package installed by the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. Windows PowerShell 5.1 native stderr is captured as data so ordinary npm/Wrangler warnings do not become false terminating errors. Exact pinned Node archive, npm install and direct Wrangler execution are exercised on Windows CI. No manual runtime install, secret re-entry, PowerShell, ZIP shuttle, or paid service."
     }
   },
   "telegram_cockpit": {
