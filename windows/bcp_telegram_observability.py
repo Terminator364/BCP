@@ -3671,7 +3671,7 @@ def selftest() -> int:
         assert "État global: EN_COURS" in details
         assert "GitHub CI: Windows=SUCCESS [work/test]" in details
         assert "B-EDGE: PAIRED / PHONE_HEARTBEAT" in details
-        assert "48273195" in svc.job("48273195")
+        assert "48273195" in svc.job("48273195") and "Kinshasa" in svc.job("48273195")
         assert "Vérifier le commit de la PR" in svc.tail()
         assert "Lancer le test Windows Bootstrap" in svc.tail()
         assert "OÙ EN EST-ON" in svc.where("48273195") and "≈" in svc.where("48273195")
@@ -3680,6 +3680,20 @@ def selftest() -> int:
         assert "Commandes:" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
+        assert human_timestamp("2026-09-20T21:51:24+00:00", seconds=True) == "20/09/2026 à 22:51:24 (Kinshasa)"
+        summary_text = svc.report_summary()
+        devices_text = svc.report_devices()
+        mission_text = svc.report_mission()
+        technical_text = svc.report_technical()
+        for human_report in (summary_text, devices_text, mission_text):
+            assert "Kinshasa" in human_report
+            assert "+00:00" not in human_report
+            assert "nexus_bootstrap_error_class" not in human_report
+            assert "mission_id:" not in human_report
+        assert "les reçus machine restent conservés en UTC" in technical_text
+        assert "SNAPSHOT GITHUB" not in technical_text
+        assert "TRAVAIL RÉCENT" in summary_text
+        assert "ACTION POUR VOUS" in summary_text
         summary_pdf = svc.report_pdf("summary")
         devices_pdf = svc.report_pdf("devices")
         mission_pdf = svc.report_pdf("mission")
@@ -3687,6 +3701,9 @@ def selftest() -> int:
         for pdf in (summary_pdf, devices_pdf, mission_pdf, technical_pdf):
             assert pdf.startswith(b"%PDF-1.4")
             assert pdf.rstrip().endswith(b"%%EOF")
+            assert b"/BaseFont /Helvetica-Bold" in pdf
+            assert b"/Encoding /WinAnsiEncoding" in pdf
+            assert b"Heure affich" in pdf
         assert "sk-" not in redact_text("key=sk-abcdefghijklmnopqrstuv")
         assert "ghp_" not in redact_text("ghp_123456789012345678901234567890")
         assert "Bearer abcdefghijklmnop" not in redact_text("Authorization: Bearer abcdefghijklmnop")
@@ -3703,7 +3720,7 @@ def selftest() -> int:
         } <= callback_values
         assert "chaîne de pensée" in svc.help() and "estimation dynamique" in svc.help()
         assert "POURQUOI CET ÉTAT" in svc.why()
-        assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
+        assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen() and "Kinshasa" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
         cx = sqlite3.connect(db)
         old_gap = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
@@ -3714,7 +3731,7 @@ def selftest() -> int:
         assert len(gaps) == 1 and gaps[0]["derived_state"] == "DELIVERY_GAP_DETECTED"
         inbox = svc.conversations_inbox()
         assert "CONVERSATIONS SYNCHRONISÉES" in inbox
-        assert "Bridge ChatGPT-PC: CAUGHT_UP" in inbox
+        assert "Connexion ChatGPT-PC : caught up" in inbox
         assert "Conversation principale" in inbox
         assert "affichage ChatGPT non confirmé" in inbox
         assert "Réponse sauvegardée mais lecture non confirmée" in inbox
