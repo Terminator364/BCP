@@ -4,7 +4,7 @@
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "BCP_0_7_0_TELEGRAM_V8_R16_MISSION_WATCHDOG_CANDIDATE_CI_PENDING",
   "last_completed_atomic_action": "Implemented R16 offline mission sentinel candidate: BCP 0.7.0 detects stalled nonterminal missions from non-watchdog evidence, creates bounded idempotent durable resume intents, suppresses blind retries at human gates, mirrors resume state to the control plane, and Telegram V8 adds proactive alerts plus a real Continue button.",
-  "next_action": "Run exact-head CI for BCP 0.7.0 / Telegram V8. If green, reconcile main and merge serially, then wait for resident convergence and read Drive telemetry. In parallel, treat Nexus 0.1.9 esbuild install failure as a separate field blocker; do not ask the user to repair Node/Wrangler manually.",
+  "next_action": "Run exact-head CI for BCP 0.7.0 / Telegram V8 R16. If green, re-read main and merge under the single-writer fence, then verify resident convergence through Drive. After that, continue hardening the separate Nexus 0.1.9 esbuild field failure and implement the B-EDGE secondary offline sentinel.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -70,7 +70,8 @@
     "telegram_human_cockpit_v3": "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md",
     "telegram_human_cockpit_v4": "docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md",
     "telegram_human_cockpit_v5": "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md",
-    "telegram_human_cockpit_v7": "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md"
+    "telegram_human_cockpit_v7": "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
+    "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -127,7 +128,8 @@
     "release/current.json",
     "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md",
     "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md",
-    "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md"
+    "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
+    "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
