@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.10",
+  "version": "0.7.11",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "ef2871ce04a571bda559e53f52117cda5c812af2c973e3f18b19a791bbdd6622",
+  "sha256": "a1f1d08c4da69a536f3feab03670328376a9d0e94242bc779c887ac264c8e09b",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R43",
-  "release_train": "BCP-0.7.10_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.5",
-  "notes": "BCP 0.7.10 preserves R40-R42 and makes provider-synchronised telemetry mirroring fail-open: local recovery/update truth remains authoritative, DriveFS mirror failures persist locally as CLOUD_MIRROR_HOLD, and a mirror error cannot convert a completed local transaction into an API failure."
+  "requirements_revision": "2026-09-20-R47",
+  "release_train": "BCP-0.7.11_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.5",
+  "notes": "BCP 0.7.11 preserves R43-R46 and stages ChatGPT-PC recovery_update_runner.py from the hash-verified target ZIP itself. Recovery no longer trusts the old installed runner for the initial upgrade to a newer recovery package; the staged runner is exact-member, size-bounded, UTF-8 decoded, syntax-checked, readback-hashed, and locally receipted before launch."
 }
