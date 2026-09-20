@@ -176,23 +176,36 @@ function Ensure-ManagedWranglerLauncher {
     $wranglerRoot = Join-Path $toolRoot ("wrangler-package-" + $WranglerVersion)
     $wranglerCli = Join-Path $wranglerRoot "node_modules\wrangler\bin\wrangler.js"
     if (-not (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
+        # A previous failed npm/postinstall can leave a partial tree that looks
+        # installed but is not runnable. The directory is app-owned and safe to
+        # rebuild atomically for this pinned Wrangler version.
+        Remove-Item -Recurse -Force -LiteralPath $wranglerRoot -ErrorAction SilentlyContinue
         New-Item -ItemType Directory -Force -Path $wranglerRoot | Out-Null
         $installed = $false
         $lastInstallText = ""
         for ($attempt = 1; $attempt -le 4; $attempt++) {
+            if ($attempt -gt 1) {
+                Remove-Item -Recurse -Force -LiteralPath $wranglerRoot -ErrorAction SilentlyContinue
+                New-Item -ItemType Directory -Force -Path $wranglerRoot | Out-Null
+            }
             $oldEap = $ErrorActionPreference
             try {
-                # Windows PowerShell 5.1 can turn ordinary native stderr warnings
-                # into NativeCommandError when the script-wide preference is Stop.
-                # Capture native exit/output explicitly instead.
+                # Field evidence showed esbuild's npm postinstall failing on the
+                # home PC although the same package works on GitHub Windows.
+                # Wrangler/esbuild ship a platform-specific optional package, so
+                # skip lifecycle scripts and verify the exact binary + Wrangler
+                # CLI before accepting this runtime.
                 $ErrorActionPreference = "Continue"
-                $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" 2>&1
+                $out = & $nodeExe $npmCli "install" "--prefix" $wranglerRoot ("wrangler@" + $WranglerVersion) "--no-audit" "--no-fund" "--ignore-scripts" 2>&1
                 $code = $LASTEXITCODE
             } finally {
                 $ErrorActionPreference = $oldEap
             }
             $lastInstallText = (($out | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
-            if ($code -eq 0 -and (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
+            $esbuildExe = Join-Path $wranglerRoot "node_modules\@esbuild\win32-x64\esbuild.exe"
+            if ($code -eq 0 -and
+                (Test-Path -LiteralPath $wranglerCli -PathType Leaf) -and
+                (Test-Path -LiteralPath $esbuildExe -PathType Leaf)) {
                 $installed = $true
                 break
             }
@@ -201,7 +214,7 @@ function Ensure-ManagedWranglerLauncher {
         if (-not $installed) {
             $script:ManagedInstallDetail = Get-SafeFailureDetail $lastInstallText
             if (-not $script:ManagedInstallDetail) { $script:ManagedInstallDetail = "no npm install stdout/stderr captured" }
-            throw ("MANAGED_WRANGLER_INSTALL_FAILED " + $script:ManagedInstallDetail)
+            throw ("MANAGED_WRANGLER_NO_SCRIPTS_INSTALL_FAILED " + $script:ManagedInstallDetail)
         }
     }
     if (-not (Test-Path -LiteralPath $wranglerCli -PathType Leaf)) {
@@ -350,7 +363,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","MANAGED_WRANGLER_NO_SCRIPTS_INSTALL_FAILED","--ignore-scripts","@esbuild\\win32-x64\\esbuild.exe","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
