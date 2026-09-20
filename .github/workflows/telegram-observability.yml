@@ -109,6 +109,8 @@ jobs:
           assert "conversation_producer_sync" in py
           assert "Sync producteur complète" in py
           assert "announced_sequence" in py
+          assert "chatgpt_pc_flow_bridge" in py
+          assert "Bridge ChatGPT-PC" in py
           assert "MISSION_RESUME_REQUESTS.jsonl" in py
           assert "watchdog_notice" in py
           assert "WATCHDOG_NOTIFY_STATE_PATH" in py
