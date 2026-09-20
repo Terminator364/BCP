@@ -11,7 +11,7 @@
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "dcb90637a74205cfba55cae9e0c9f7a24babe0fb7fb75f722eaad6f9d640e434",
+      "sha256": "d5f66da2ce1026548564c93cb3044a036aa64f6182787e6bcdf0afe3b57f7428",
       "max_bytes": 300000
     },
     {
@@ -48,7 +48,8 @@
     "direct_node_npx_cli": false,
     "persistent_wrangler_package": true,
     "direct_node_wrangler_cli": true,
-    "field_ecosystem_exact_runtime_ci": true
+    "field_ecosystem_exact_runtime_ci": true,
+    "windows_powershell_native_stderr_captured": true
   },
   "live_card": {
     "enabled": true,
@@ -73,5 +74,5 @@
     ],
     "field_verified": false
   },
-  "notes": "Replaces field-fragile ephemeral npx execution with a persistent app-owned pinned Wrangler package installed through the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. Exact portable Node archive + npm install + direct Wrangler execution is exercised on Windows CI. Keeps bounded retries, secret-free diagnostics, zero-dollar policy, and no manual runtime install, Telegram token re-entry, PowerShell, or ZIP shuttle."
+  "notes": "Nexus 0.1.9 replaces field-fragile ephemeral npx execution with a persistent app-owned pinned Wrangler package installed through the pinned portable Node/npm runtime, then invokes wrangler.js directly through node.exe. Windows PowerShell 5.1 native stderr is captured as data instead of terminating on harmless npm/Wrangler warnings. Exact portable Node archive + npm install + direct Wrangler execution is exercised on Windows CI. Zero-dollar, no manual runtime install, no secret re-entry, no ZIP shuttle."
 }
