@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R34",
+  "requirements_revision": "2026-09-20-R38",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -105,5 +105,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.4 remains the device-flow auth bundle. R34 preserves R31 and makes resident SERVER/TELEGRAM_COMPANION/NEXUS reconciliation independent, so a server-manifest transport failure does not suppress Nexus delivery attempts."
+  "notes": "Nexus 0.2.4 remains the device-flow-first auth bundle. R38 preserves the Cloudflare human gate and records the field-observed classic localhost callback failure separately from device-flow authorization; no auth bypass is introduced."
 }

@@ -62,6 +62,12 @@ def main() -> int:
         "start_nexus_human_gate_manifest_watcher",
         "HUMAN_GATE_FAST_PATH",
         "WAITING_FOR_PC",
+        "_write_utf16_recovery_vbs",
+        "ChatGPTPC_RecoveryPlane.vbs",
+        "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED",
+        "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED",
+        "PACKAGE_SYNC_PENDING_BRIDGE_STARTED",
+        "recovery_vbs_utf16_bom_missing",
     )
     require(edge_policy, "PC_MEMORY_PRESSURE", "WAITING_FOR_PC")
     require(

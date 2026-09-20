@@ -535,3 +535,16 @@ Expected: BCP/ChatGPT-PC recovery remains foreground-friendly, low-concurrency, 
 Field origin:
 - 2026-09-20 real user test after leaving home with the B-EDGE phone, returning to the home Wi-Fi, rebooting/unlocking the PC, observing B-EDGE PC_NOT_FOUND and a Windows Security prompt for Python inbound network access.
 - This is now a permanent regression vector, not a one-off support incident.
+
+
+W8. Recovery target is ACTIVE in cloud Drive but the PC-local DriveFS copy is missing/stale/inactive after reboot.
+Expected: B-EDGE recovery does not report a generic HTTP_500. BCP starts the bounded local recovery-launcher bridge, explicitly reports bridge-vs-release-install truth, and waits for the normal hash-pinned target/package path to converge.
+
+W9. ChatGPTPC_RecoveryPlane.vbs is valid VBScript text encoded as UTF-8 with BOM and Windows Script Host returns 800A0408 at line 1 character 1.
+Expected: bridge reconstructs only the known launcher as UTF-16, readbacks exact content/hash, starts the existing recovery runner, and records no privilege/network expansion.
+
+W10. A recovery receipt is mirrored to a provider-synchronised DriveFS path whose temporary-file/os.replace semantics reject the local atomic-write primitive.
+Expected: local canonical recovery evidence is preserved; cloud mirror becomes HOLD/deferred; local recovery must not roll back solely because the provider mirror rejected atomic replace.
+
+W11. Cloudflare classic browser OAuth callback reaches localhost after the callback listener has exited while a separate device-authorization page is/was present.
+Expected: localhost failure and device-flow state remain distinct. No auth success is claimed until provider-authenticated whoami/readback succeeds.
