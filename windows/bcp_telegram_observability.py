@@ -2424,9 +2424,19 @@ class Service:
                 "Les conversations apparaissent ici dès qu’un client BCP/ChatGPT-PC/OpenAI API publie un reçu de message durable."
             )
         bridge = self.local.chatgpt_pc_flow_bridge()
-        bridge_state = clean(bridge.get("status") or "NOT_OBSERVED", 32)
+        bridge_state = str(bridge.get("status") or "NOT_OBSERVED").upper()
+        bridge_labels = {
+            "CAUGHT_UP": "à jour",
+            "RUNNING": "synchronisation en cours",
+            "DEGRADED": "dégradée",
+            "HOLD": "en attente",
+            "ERROR": "problème détecté",
+            "NOT_OBSERVED": "non observée",
+        }
         backlog = bridge.get("backlog")
-        bridge_line = "🔗 Connexion ChatGPT-PC : " + bridge_state.replace("_", " ").lower()
+        bridge_line = "🔗 Connexion ChatGPT-PC : " + bridge_labels.get(
+            bridge_state, clean(bridge_state.replace("_", " ").lower(), 48)
+        )
         if isinstance(backlog, int):
             bridge_line += " · attente " + str(backlog)
         lines = [
@@ -2437,7 +2447,13 @@ class Service:
         for pos, thread in enumerate(threads, 1):
             cid = clean(thread.get("conversation_id"), 64)
             alias = clean(thread.get("alias") or cid, 80)
-            source = clean(thread.get("source_kind") or "BCP", 30)
+            raw_source = str(thread.get("source_kind") or "BCP").upper()
+            source = {
+                "CHATGPT_UI": "application ChatGPT",
+                "CHATGPT_PC": "ChatGPT-PC",
+                "OPENAI_API": "API OpenAI",
+                "BCP_AGENT": "BCP",
+            }.get(raw_source, clean(raw_source.replace("_", " ").lower(), 30))
             state = str(thread.get("last_delivery_state") or "")
             gap = gap_by_thread.get(cid)
             lines += ["", str(pos) + ". " + alias + " · " + source,
@@ -2480,7 +2496,7 @@ class Service:
         if not thread and not messages:
             return "Conversation BCP introuvable : " + cid
         alias = clean((thread or {}).get("alias") or cid, 100)
-        lines = ["💬 " + alias, "ID: " + cid]
+        lines = ["💬 " + alias, "Référence dépannage : " + cid]
         for msg in messages:
             role = str(msg.get("role") or "").upper()
             who = "Vous" if role == "USER" else ("Assistant" if role == "ASSISTANT" else role.title())
@@ -2511,7 +2527,10 @@ class Service:
                     + " · session " + clean(item.get("producer_session_id"), 36)
                     + " · reçu #" + str(item.get("contiguous_received_sequence") or 0)
                     + " / annoncé #" + str(item.get("announced_sequence") or 0)
-                    + " · " + clean(item.get("sync_state"), 20)
+                    + " · " + {
+                        "COMPLETE": "complète",
+                        "INCOMPLETE": "incomplète",
+                    }.get(str(item.get("sync_state") or "").upper(), clean(item.get("sync_state") or "état inconnu", 20).lower())
                 )
         seq_gaps = self.local.conversation_sequence_gaps(cid, 10)
         if seq_gaps:
@@ -3753,7 +3772,7 @@ def selftest() -> int:
         assert len(gaps) == 1 and gaps[0]["derived_state"] == "DELIVERY_GAP_DETECTED"
         inbox = svc.conversations_inbox()
         assert "CONVERSATIONS SYNCHRONISÉES" in inbox
-        assert "Connexion ChatGPT-PC : caught up" in inbox
+        assert "Connexion ChatGPT-PC : à jour" in inbox
         assert "Conversation principale" in inbox
         assert "affichage ChatGPT non confirmé" in inbox
         assert "Réponse sauvegardée mais lecture non confirmée" in inbox
