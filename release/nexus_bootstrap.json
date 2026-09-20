@@ -6,12 +6,12 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R12",
+  "requirements_revision": "2026-09-20-R11",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "e7c2ba3e838931a71742fe3139513dce0cc12e384706fe1123054e91eae1e852",
+      "sha256": "fcfefabc0943288f45266f9d787092127da8e6c664cfee85b1595831f0fe806e",
       "max_bytes": 300000
     },
     {
