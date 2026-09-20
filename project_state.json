@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_8_R34_CI_QUALIFIED_CROSS_PLANE_LIVENESS_HOLD",
-  "last_completed_atomic_action": "Cross-plane diagnosis proved the resident convergence blocker is not a missing BCP/ChatGPT-PC package: BCP telemetry stopped after 2026-09-20T16:25:07Z; four fresh R0 ChatGPT-PC Drive commands remain unconsumed; ChatGPT-PC recovery target is valid 6.0.32 with exact package Drive ID/hash; BOOTSTRAP_SENTINEL last log shows repeated ACTIVE_POINTER_RUNTIME_MISMATCH_HOLD, restart_not_alive failures and stale-process reaper failures before the recovery executor stopped publishing.",
-  "next_action": "Do not rebuild, reinstall, or duplicate probes. Restore local ChatGPT-PC Recovery/Command Plane liveness first. Once a fresh command-plane cycle consumes the existing R0 probes, use their receipts to classify raw.githubusercontent.com / api.telegram.org / drive.google.com connectivity, then allow BCP 0.7.6->0.7.8 convergence and verify R34 independent lanes.",
+  "status": "BCP_R37_OFFSITE_RETURN_FIREWALL_RECOVERY_FIELD_GATE",
+  "last_completed_atomic_action": "Converted the 2026-09-20 real offsite-return/reboot failure into a permanent B-EDGE/Windows regression vector. Field observation: old B-EDGE phone left the LAN, rejoined home Wi-Fi automatically, still reported PC_NOT_FOUND; after PC reboot/unlock Windows Security prompted for Python inbound network access. Existing BCP runtime heartbeat remained stale and queued R0 probes were unconsumed.",
+  "next_action": "After user authorizes Python on Private network only, observe one bounded B-EDGE reconnect attempt. If discovery returns, verify same pairing/project revision and telemetry flush. If not, classify network profile/firewall/server-listener state without reinstall or repeated taps.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1788,5 +1788,18 @@
     "remote_drive_write_path_working": true,
     "local_drive_command_consumption_working": false,
     "field_verified_resolution": false
+  },
+  "r37_field_incident": {
+    "incident_id": "BCP-R37-OFFSITE-RETURN-FIREWALL-20260920",
+    "observed_local_time": "2026-09-20T18:11:00+01:00",
+    "phone_state": "PC_NOT_FOUND",
+    "phone_wifi_rejoined": true,
+    "pc_rebooted_and_unlocked": true,
+    "windows_firewall_prompt": "PYTHON_INBOUND_NETWORK_ACCESS",
+    "required_user_action": "ALLOW_PRIVATE_NETWORK_ONLY",
+    "public_network_access_required": false,
+    "repeated_taps_prohibited": true,
+    "regression_matrix_section": "W",
+    "field_resolution_verified": false
   }
 }
