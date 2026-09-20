@@ -4,7 +4,7 @@ from pathlib import Path
 
 VERSION="6.0.34"; SEQUENCE=6034
 PACKAGE="Tunnel_PC_G6_6.0.34_2003_RECOVERY_DRIVEFS_RESULT_HOTFIX.zip"
-SHA256="53dbc2e38bf7d1759b95195954189e974cb0489215def0c6d85411a285880e26"
+SHA256="bc5ec66720cbbdde70e1978e9e90ec9e766c7d23755ef5d67eb72e93b89a6a77"
 RUNNER_MEMBER="payload/tools/recovery_update_runner.py"
 
 def sha256(path:Path)->str:
@@ -124,6 +124,18 @@ def main()->int:
 
         try:
             with zipfile.ZipFile(staged,"r") as z:
+                try:
+                    manifest=json.loads(z.read("manifest.json").decode("utf-8-sig"))
+                except Exception as e:
+                    print("HOLD PACKAGE_MANIFEST_UNREADABLE",repr(e));return 20
+                if str(manifest.get("version") or "")!=a.target_version:
+                    print("HOLD PACKAGE_MANIFEST_VERSION_MISMATCH",manifest.get("version"),a.target_version);return 20
+                if int(manifest.get("sequence") or 0)!=a.target_sequence:
+                    print("HOLD PACKAGE_MANIFEST_SEQUENCE_MISMATCH",manifest.get("sequence"),a.target_sequence);return 20
+                allowed=[str(x) for x in (manifest.get("from_versions") or ([manifest.get("from_version")] if manifest.get("from_version") else []))]
+                active_version=str(active.get("version") or "")
+                if allowed and active_version not in allowed:
+                    print("HOLD PACKAGE_MANIFEST_SOURCE_MISMATCH",active_version,allowed);return 20
                 matches=[i for i in z.infolist() if i.filename==RUNNER_MEMBER]
                 if len(matches)!=1:
                     print("HOLD RUNNER_MEMBER_COUNT",len(matches));return 20
