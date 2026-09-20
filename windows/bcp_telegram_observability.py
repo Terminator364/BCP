@@ -2123,7 +2123,7 @@ def selftest() -> int:
         assert "Ancien téléphone" in status
         assert "💰 Coût: $0.00" not in status
         assert "Votre intervention" not in status
-        assert "🕒 Dernière preuve:" in status
+        assert "🕒 Dernière preuve :" in status
         assert "🧪 Tests terminés avec succès" in status
         assert "1. ✅ Lire le cahier des charges courant" in svc.plan_view()
         assert "3. ▶️ Lancer le test Windows Bootstrap" in svc.plan_view()
