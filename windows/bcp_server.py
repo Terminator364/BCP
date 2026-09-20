@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.8"
+SERVER_VERSION = "0.7.9"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -624,6 +624,90 @@ def _process_alive(pid: int) -> bool:
         return False
 
 
+def _chatgpt_pc_recovery_launcher_content(pythonw: Path, runner: Path) -> str:
+    command = f'"{pythonw}" "{runner}"'
+    escaped = command.replace('"', '""')
+    return (
+        'Option Explicit\r\n'
+        'Dim sh\r\n'
+        'Set sh = CreateObject("WScript.Shell")\r\n'
+        f'sh.Run "{escaped}", 0, False\r\n'
+    )
+
+
+def _write_utf16_recovery_vbs(path: Path, content: str) -> dict:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".bcp-repair.tmp")
+    tmp.write_text(content, encoding="utf-16")
+    os.replace(tmp, path)
+    raw = path.read_bytes()
+    if not raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+        raise RuntimeError("recovery_vbs_utf16_bom_missing")
+    if path.read_text(encoding="utf-16") != content:
+        raise RuntimeError("recovery_vbs_readback_mismatch")
+    return {"path": str(path), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
+
+
+def repair_chatgpt_pc_recovery_launcher() -> dict:
+    if os.name != "nt":
+        raise RuntimeError("chatgpt_pc_recovery_requires_windows")
+    local = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    root = local / "Tunnel_PC_G4"
+    pythonw = root / "runtime" / "pythonw.exe"
+    runner = root / "recovery_plane_runner.py"
+    if not pythonw.is_file():
+        raise FileNotFoundError("chatgpt_pc_pythonw_missing")
+    if not runner.is_file():
+        raise FileNotFoundError("chatgpt_pc_recovery_plane_runner_missing")
+    appdata = os.environ.get("APPDATA", "").strip()
+    if not appdata:
+        raise RuntimeError("appdata_missing")
+    startup = (
+        Path(appdata)
+        / "Microsoft"
+        / "Windows"
+        / "Start Menu"
+        / "Programs"
+        / "Startup"
+        / "ChatGPTPC_RecoveryPlane.vbs"
+    )
+    content = _chatgpt_pc_recovery_launcher_content(pythonw, runner)
+    proof = _write_utf16_recovery_vbs(startup, content)
+    wscript = Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "wscript.exe"
+    if not wscript.is_file():
+        raise FileNotFoundError("wscript_missing")
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    proc = subprocess.Popen(
+        [str(wscript), str(startup)],
+        cwd=str(root),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        shell=False,
+        creationflags=flags,
+        close_fds=True,
+    )
+    rec = {
+        "schema": "bcp.chatgpt_pc_recovery_launcher_bridge/1",
+        "status": "STARTED",
+        "pid": int(proc.pid),
+        "started_at": utc_now(),
+        "startup_path": str(startup),
+        "startup_sha256": proof["sha256"],
+        "encoding": "UTF-16",
+        "runner": str(runner),
+        "pythonw": str(pythonw),
+        "privilege_expansion": False,
+        "network_policy_broadened": False,
+    }
+    atomic_json(STATE_DIR / "chatgpt_pc_recovery_launcher_bridge.json", rec)
+    mirror_telemetry_status("CHATGPT_PC_RECOVERY_LAUNCHER_BRIDGE_STARTED", {
+        "status": "RECOVERY_STARTED",
+        "recovery_state": "LAUNCHER_BRIDGE_STARTED",
+    })
+    return {"ok": True, "result": "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED", **rec}
+
+
 def request_chatgpt_pc_recovery() -> dict:
     if os.name != "nt":
         raise RuntimeError("chatgpt_pc_recovery_requires_windows")
@@ -634,12 +718,25 @@ def request_chatgpt_pc_recovery() -> dict:
     if not py.is_file():
         raise FileNotFoundError("chatgpt_pc_runtime_missing")
     if control is None:
-        raise FileNotFoundError("chatgpt_pc_control_folder_missing")
+        bridge = repair_chatgpt_pc_recovery_launcher()
+        return {
+            **bridge,
+            "recovery_state": "CONTROL_FOLDER_UNAVAILABLE_BRIDGE_STARTED",
+            "target_version": "",
+            "target_sequence": 0,
+        }
 
     target_path = control / "00_CONTEXT" / "RECOVERY_BOOTSTRAP_TARGET.json"
     target = read_json(target_path, {}) or {}
     if target.get("status") != "ACTIVE":
-        raise RuntimeError("recovery_target_not_active")
+        bridge = repair_chatgpt_pc_recovery_launcher()
+        return {
+            **bridge,
+            "recovery_state": "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED",
+            "target_version": str(target.get("version") or ""),
+            "target_sequence": int(target.get("sequence") or 0),
+            "local_target_status": str(target.get("status") or "MISSING"),
+        }
     target_version = str(target.get("version") or "")
     target_sequence = int(target.get("sequence") or 0)
     package_file = str(target.get("package_file") or "")
@@ -648,7 +745,14 @@ def request_chatgpt_pc_recovery() -> dict:
         raise ValueError("recovery_target_invalid")
     package = control / "02_UPDATES" / "AGENT" / package_file
     if not package.is_file():
-        raise FileNotFoundError("recovery_package_not_synced")
+        bridge = repair_chatgpt_pc_recovery_launcher()
+        return {
+            **bridge,
+            "recovery_state": "PACKAGE_SYNC_PENDING_BRIDGE_STARTED",
+            "target_version": target_version,
+            "target_sequence": target_sequence,
+            "local_target_status": "ACTIVE",
+        }
     actual = hashlib.sha256(package.read_bytes()).hexdigest()
     if len(package_sha) != 64 or not hmac.compare_digest(actual, package_sha):
         raise ValueError("recovery_package_sha256_mismatch")
@@ -4570,6 +4674,19 @@ def selftest():
         assert "API_BCP" in source and "02_TELEMETRY" in source
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
+        assert "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED" in source
+        assert "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED" in source
+        sample_vbs = _chatgpt_pc_recovery_launcher_content(
+            Path(r"C:\\Users\\Lenovo\\AppData\\Local\\Tunnel_PC_G4\\runtime\\pythonw.exe"),
+            Path(r"C:\\Users\\Lenovo\\AppData\\Local\\Tunnel_PC_G4\\recovery_plane_runner.py"),
+        )
+        assert sample_vbs.startswith("Option Explicit\r\n")
+        assert 'CreateObject("WScript.Shell")' in sample_vbs
+        assert "recovery_plane_runner.py" in sample_vbs
+        probe_vbs = APP_ROOT / "ChatGPTPC_RecoveryPlane.vbs"
+        probe = _write_utf16_recovery_vbs(probe_vbs, sample_vbs)
+        assert probe_vbs.read_bytes().startswith((b"\xff\xfe", b"\xfe\xff"))
+        assert probe["bytes"] > 16 and len(probe["sha256"]) == 64
         assert "shell=False" in source
         assert "/v1/orchestrator/status" in source
         assert 'parts[3] == "context"' in source
