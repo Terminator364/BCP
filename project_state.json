@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_6_8_TELEGRAM_V7_R15_CANDIDATE_CI_AND_FIELD_PENDING",
-  "last_completed_atomic_action": "Telegram Human Cockpit V7/R15 candidate implemented on fenced PR #79: human-first Automate de suivi card, explicit approximate fine micro-action forecast, separate ecosystem health, automatic adaptive refresh, objective/activity views, four PDF reports, V6 liveness/callback receipts and BCP 0.6.8 watchdog preserved.",
-  "next_action": "Run exact-head CI for final PR #79 head. If all required workflows pass, re-read main for writer-fence reconciliation, merge serially, verify merged SHA, then wait for resident BCP updater and perform Drive readback for BCP 0.6.8 / Telegram V7 / Nexus 0.1.9. No user intervention unless a true human authorization gate appears.",
+  "status": "BCP_0_6_9_TELEGRAM_V7_R15_CANDIDATE_CI_AND_FIELD_PENDING",
+  "last_completed_atomic_action": "Telegram V7/R15 candidate completed with fine micro-action forecasting, four reports, automatic refresh, V6 liveness/watchdog, and BCP 0.6.9 lightweight Windows RAM/power/battery telemetry.",
+  "next_action": "Run exact-head CI on the final candidate. If all required workflows pass, reconcile main and merge PR #79 serially; then perform resident update/readback for BCP 0.6.9, Telegram V7 and Nexus 0.1.9.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1280,7 +1280,7 @@
   "telegram_cockpit_v7": {
     "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
     "version": "2026.09.20-human-cockpit-v7",
-    "server_version": "0.6.8",
+    "server_version": "0.6.9",
     "requirements_revision": "2026-09-20-R15",
     "features": {
       "human_title": true,
