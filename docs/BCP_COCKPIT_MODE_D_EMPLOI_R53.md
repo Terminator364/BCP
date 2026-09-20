@@ -101,6 +101,9 @@ Quitte le mode discret et remet le fonctionnement habituel.
 ### ❔ Aide / mode d’emploi
 Affiche directement un résumé des boutons et commandes utiles.
 
+### 📚 Rapports & technique
+Ouvre le niveau secondaire du cockpit. Les quatre PDF et les diagnostics techniques restent disponibles sans encombrer l’écran principal.
+
 ## 4. Rapports PDF
 
 ### 📄 Résumé PDF
@@ -146,8 +149,8 @@ Quand votre action est réellement nécessaire, le cockpit doit dire:
 2. Si vous revenez après une absence: **🕘 Nouveautés**
 3. Si quelque chose est incompréhensible: **❓ Pourquoi cet état ?**
 4. Si une action humaine est demandée: faire uniquement l’action indiquée.
-5. En cas de doute sur ChatGPT mobile: **💬 Messages récents** puis le mail miroir.
-6. Utiliser **🧰 Détails techniques** seulement pour diagnostic approfondi.
+5. En cas de doute sur ChatGPT mobile: consulter **d’abord le mail miroir exact**, puis **💬 Messages récents** si nécessaire.
+6. Utiliser **📚 Rapports & technique** seulement pour approfondir; **🧰 Détails techniques** reste le dernier niveau de diagnostic.
 
 ## 8. Ce que le cockpit ne doit jamais vous demander
 
@@ -166,7 +169,10 @@ Pour les tranches de travail interactives:
 - cible courante: 8–10 minutes de travail utile;
 - fin de tranche: checkpoint visible;
 - le corps du mail miroir doit être textuellement identique au message final ChatGPT;
-- le mail sert de canal de secours quand l’application ChatGPT mobile est en retard ou se recharge mal.
+- quand Gmail est disponible, le mail miroir est envoyé **avant** l’affichage du checkpoint final ChatGPT;
+- ordre de livraison du checkpoint: **mail exact → ChatGPT final → Telegram témoin éventuel**;
+- si l’envoi du mail échoue, le système ne doit jamais prétendre qu’il a été envoyé et le checkpoint ChatGPT doit afficher explicitement le hold de livraison;
+- le mail sert de canal de continuité prioritaire quand l’application ChatGPT mobile est en retard ou se recharge mal.
 
 ## 10. Lecture de l’alerte “réponse sauvegardée mais non lue”
 
