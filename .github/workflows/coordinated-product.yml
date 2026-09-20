@@ -9,6 +9,7 @@ on:
       - "android-b-edge/**"
       - "release/server.json"
       - "release/android.json"
+      - "release/android_candidate.json"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
       - ".github/workflows/coordinated-product.yml"
       - ".github/workflows/coordinated-pc-package.yml"
@@ -57,7 +58,8 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import json, pathlib, re
-          ar=json.loads(pathlib.Path('release/android.json').read_text(encoding='utf-8'))
+          candidate_path=pathlib.Path('release/android_candidate.json')
+          ar=json.loads((candidate_path if candidate_path.is_file() else pathlib.Path('release/android.json')).read_text(encoding='utf-8'))
           sr=json.loads(pathlib.Path('release/server.json').read_text(encoding='utf-8'))
           gradle=pathlib.Path('android-b-edge/build.gradle').read_text(encoding='utf-8')
           client=pathlib.Path('android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java').read_text(encoding='utf-8')
@@ -67,9 +69,12 @@ jobs:
           assert f'private static final String EDGE_VERSION = "{edge_core}";' in client, 'BcpClient EDGE_VERSION drift'
           def version_tuple(value): return tuple(int(x) if x.isdigit() else 0 for x in str(value).split('-', 1)[0].split('.'))
           assert version_tuple(sr['version']) >= version_tuple(ar['minimum_server_version']), 'Android minimum server compatibility drift'
-          assert ar['coordinated_server_version'] == sr['version'], 'Android/current coordinated server drift'
-          assert sr['coordinated_edge_version'] == name, 'server/edge version contract drift'
-          if sr.get('release_train') or ar.get('release_train'): assert sr.get('release_train') == ar.get('release_train'), 'release train drift'
+          assert ar['coordinated_server_version'] == sr['version'], 'Android candidate coordinated server drift'
+          if ar.get('publication_allowed', True):
+              assert sr['coordinated_edge_version'] == name, 'server/edge version contract drift'
+              if sr.get('release_train') or ar.get('release_train'): assert sr.get('release_train') == ar.get('release_train'), 'release train drift'
+          else:
+              assert ar.get('distribution_status') == 'UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED'
           PY
           grep -F 'EdgeOrchestrator' android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java
           grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java

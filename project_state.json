@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R40_MERGED_POSTMERGE_CI_GREEN_FIELD_RECOVERY_6033_PENDING",
-  "last_completed_atomic_action": "R40 merged to main at 025ef70a223c554a71f210b650a631e50f578dfb. Exact-head and post-merge qualification are green across CURRENT, Managed Server Update, Windows Bootstrap, Final Acceptance, PC Sanity, Coordinated PC/Product, Android, Telegram, Nexus and Field Ecosystem including real managed Wrangler and low-resource contracts. Private B-EDGE signing materials are confirmed present in a non-shared Drive folder, but secret contents were not read or exposed.",
-  "next_action": "User is away from field devices: do not invoke Recovery 6.0.33, Cloudflare, server update or reinstall. Continue preproduction only. Prepare the next separately versioned B-EDGE source candidate with unified reconcile worker / bounded Wi-Fi-return one-shot; do not publish as CURRENT until same-certificate signing and artifact readback are proven.",
+  "status": "R42_BEDGE_ZERO_TOUCH_REENTRY_SUCCESSOR_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R41 post-R40 reconciliation is merged on current main. R42 continues only non-human work: B-EDGE 2.1.1-rc1-reentry source/CI candidate with one authoritative connected WorkManager scheduler, exponential bounded backoff, KEEP-coalesced one-shot work, process-level validated Wi-Fi return trigger, explicit v1/v2 legacy work cancellation, and compatibility-only legacy worker shim. Stable distributed B-EDGE 2.1.0 remains unchanged.",
+  "next_action": "Qualify exact R42 head. If green, merge source/CI candidate only. Do not publish or replace Drive CURRENT until a newly signed 2.1.1 APK exists with pinned certificate, v2/v3 verification, SHA-256 readback, and in-place update proof. Do not invoke Cloudflare or ChatGPT-PC Recovery while the user is away.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,44 +229,39 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R41-POST-R40-RECONCILE-20260920",
-    "status": "R40_MERGED_POSTMERGE_CI_GREEN_PREPRODUCTION_CONTINUES",
-    "base_main_sha": "025ef70a223c554a71f210b650a631e50f578dfb",
-    "r40_pr": 106,
-    "r40_exact_head": "0ca9fc58ef05768cb3b6d16efec122934537184a",
-    "r40_merge_sha": "025ef70a223c554a71f210b650a631e50f578dfb",
-    "postmerge_ci": {
-      "current_release": 35529419812,
-      "managed_server_update": 35529419751,
-      "windows_bootstrap": 35529419736,
-      "final_acceptance": 35529419757,
-      "pc_sanity": 35529419727,
-      "coordinated_pc_package": 35529419720,
-      "coordinated_product": 35529419765,
-      "android_build": 35529419726,
-      "telegram": 35529419783,
-      "nexus": 35529419733,
-      "field_ecosystem": 35529419730,
-      "result": "PASS"
+    "checkpoint_id": "BCP-R42-BEDGE-ZERO-TOUCH-REENTRY-SUCCESSOR-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/r42-bedge-reentry-unification-20260920",
+    "base_main_sha": "34a60159af13a95db025f5b1ab5934d5460719f4",
+    "r40_postmerge_ci": "ALL_GREEN",
+    "prior_main_reconciliation": "R41_POST_R40_STATE_RECONCILIATION_MERGED",
+    "stable_distributed_android": {
+      "version_code": 210,
+      "version_name": "2.1.0-rc1-sentinel-evergreen",
+      "mutation_allowed": false
     },
-    "field_gate_preserved": {
-      "server_version": "0.7.9",
-      "recovery_target": "6.0.33",
-      "recovery_sequence": 6033,
-      "recovery_request_invoked": false,
-      "cloudflare_retry_allowed_now": false,
-      "user_near_devices": false
+    "candidate_android": {
+      "version_code": 211,
+      "version_name": "2.1.1-rc1-reentry-evergreen",
+      "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
+      "publication_allowed": false
     },
-    "signing_path": {
-      "private_drive_material_present": true,
-      "pkcs12_present": true,
-      "public_certificate_present": true,
-      "private_config_present": true,
-      "shared": false,
-      "secret_content_read": false,
-      "public_repo_contains_private_key": false
-    },
-    "next_atomic_action": "Prepare separately-versioned B-EDGE re-entry candidate without publishing CURRENT; field Recovery remains untouched."
+    "implementation": [
+      "ONE_AUTHORITATIVE_WORK_SCHEDULER",
+      "ONE_AUTHORITATIVE_RECONCILE_EXECUTION",
+      "LEGACY_WORKER_COMPATIBILITY_SHIM_ONLY",
+      "CANCEL_LEGACY_V1_AND_V2_UNIQUE_WORK",
+      "PERIODIC_15_MIN_CONNECTED_SAFETY_NET",
+      "ONE_SHOT_CONNECTED_KEEP_COALESCING",
+      "EXPONENTIAL_BACKOFF_30_SECONDS_MAX_THREE_WORKER_ATTEMPTS",
+      "PROCESS_LEVEL_VALIDATED_WIFI_RETURN_TRIGGER",
+      "15_SECOND_LOCAL_REENTRY_DEDUP",
+      "APPLICATION_SOLE_SCHEDULER_OWNER"
+    ],
+    "field_devices_touched": false,
+    "cloudflare_touched": false,
+    "recovery_6033_invoked": false,
+    "next_atomic_action": "Exact-head R42 CI then serialized merge if green."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1840,5 +1835,14 @@
     "device_flow_only": true,
     "drivefs_critical_authority": false,
     "field_verified_nexus": false
+  },
+  "b_edge_2_1_1_r42": {
+    "status": "SOURCE_CANDIDATE_CI_PENDING_NOT_PUBLISHED",
+    "version_code": 211,
+    "version_name": "2.1.1-rc1-reentry-evergreen",
+    "same_package_id": true,
+    "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+    "field_verified": false,
+    "publication_allowed": false
   }
 }
