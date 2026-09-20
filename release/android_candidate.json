@@ -6,8 +6,8 @@
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
-  "coordinated_server_version": "0.7.11",
-  "requirements_revision": "2026-09-20-R47",
+  "coordinated_server_version": "0.7.12",
+  "requirements_revision": "2026-09-20-R51",
   "base_distributed_version_code": 210,
   "base_distributed_version_name": "2.1.0-rc1-sentinel-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -28,5 +28,6 @@
     "unique KEEP one-shot reconciliation",
     "process-level validated Wi-Fi return trigger",
     "15-minute periodic safety net"
-  ]
+  ],
+  "release_train": "BCP-0.7.12_EDGE-2.1.1-candidate_NEXUS-0.2.5"
 }

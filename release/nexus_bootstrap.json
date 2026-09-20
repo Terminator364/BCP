@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R47",
+  "requirements_revision": "2026-09-20-R51",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 makes Wrangler OAuth device authorization the sole automatic Cloudflare login path. Device-code expiry/non-completion remains a truthful HUMAN_AUTH_REQUIRED gate and a later explicit attempt generates a fresh code; BCP never silently falls back to localhost:8976. No API token copy or auth bypass is introduced."
+  "notes": "Nexus 0.2.5 remains device-flow-only. R51 adds explicit fresh retry semantics at the BCP server: stale HUMAN_AUTH_REQUIRED receipts are archived, a new retry nonce is recorded, and a new device-flow process must be launched. No localhost:8976 fallback or token copy."
 }

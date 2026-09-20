@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R47
+Revision: 2026-09-20-R51
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1569,3 +1569,20 @@ For Recovery sequence 6034 and later, the runner contract MUST preserve DriveFS 
 No UAC elevation, credential transfer, generic process kill, OAuth bypass, or network-policy broadening is introduced by this bootstrap rule.
 
 Target server release: BCP 0.7.11.
+
+
+## R51 — Explicit fresh Nexus device-flow retry
+
+When Nexus is in `HUMAN_AUTH_REQUIRED` because a Cloudflare device authorization expired or was not completed, BCP MUST NOT treat an ordinary apply call as a fresh retry.
+
+A fresh retry MUST be an explicit human-confirmed action and MUST:
+- archive and remove the stale Nexus auth receipt before relaunch;
+- record a new explicit retry nonce;
+- relaunch the device-only Wrangler path so a new device code is generated;
+- never reuse an expired device code;
+- never fall back automatically to classic `wrangler login` / `localhost:8976`;
+- preserve zero-USD and existing local Telegram authorization;
+- refuse deployment success until provider-authenticated `whoami` or equivalent readback succeeds.
+
+The explicit retry endpoint is `/v1/system/nexus/retry-auth` and requires `{"confirm": true}`.
+Ordinary `/v1/system/nexus/apply` remains non-escalating when the current state is already `HUMAN_AUTH_REQUIRED`.

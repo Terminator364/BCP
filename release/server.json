@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.11",
+  "version": "0.7.12",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "8eb1cb124b9703f1b3db62aabe5b14b72278f7098b49dbd14d8d6c013353efa7",
+  "sha256": "2d9df519f53fef94326f417e371ee8f1c54cf2f4c37b5c26940073b11e4c4b83",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R47",
-  "release_train": "BCP-0.7.11_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.5",
-  "notes": "BCP 0.7.11 preserves R43-R46 and stages ChatGPT-PC recovery_update_runner.py from the hash-verified target ZIP itself. Recovery no longer trusts the old installed runner for the initial upgrade to a newer recovery package; the staged runner is exact-member, size-bounded, UTF-8 decoded, syntax-checked, readback-hashed, and locally receipted before launch."
+  "requirements_revision": "2026-09-20-R51",
+  "release_train": "BCP-0.7.12_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.5",
+  "notes": "BCP 0.7.12 adds explicit fresh Cloudflare device-flow retry semantics. A user-confirmed retry archives the stale auth receipt, writes an explicit retry nonce, relaunches the device-flow path, and never reuses localhost:8976 or an expired code."
 }
