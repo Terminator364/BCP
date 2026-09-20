@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R28",
+  "requirements_revision": "2026-09-20-R29",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -41,7 +41,7 @@
       "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
     },
     "nexus": {
-      "version": "0.2.3",
+      "version": "0.2.4",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "8caf7b93256cbca1778d9df3eb0b13d54c406018ad1bf50e375a175182e66e12"
+        "sha256": "610b50fe41b1343216d06016781b3420aee69376d52b2432700d502b6aa3340e"
       },
-      "notes": "Nexus 0.2.3 remains R28-compatible; cadence timing decomposition is computed from durable local receipts and Nexus is not treated as a UI-delivery oracle."
+      "notes": "Nexus 0.2.4 prefers Wrangler OAuth device authorization to avoid localhost callback fragility on unstable networks, with automatic browser OAuth fallback and no API-token copy."
     }
   },
   "telegram_cockpit": {

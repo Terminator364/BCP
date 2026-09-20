@@ -92,6 +92,8 @@ def main() -> int:
         "NPM_CONFIG_FETCH_RETRIES",
         "MANAGED_NODE_PATH_BINDING_FAILED",
         "MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED",
+        '@("login","--device")',
+        "BCP_NEXUS_AUTH_DEVICE_FLOW",
         "$env:PATH = $nodeHome + ';'",
         '--foreground-scripts',
     )

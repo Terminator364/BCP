@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R28
+Revision: 2026-09-20-R29
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1379,3 +1379,22 @@ Telegram conversation detail SHOULD expose the measured decomposition with an ex
 
 Canonical cadence policy:
 - `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`
+
+## P0 — Cloudflare OAuth Device-Flow Resilience / R29
+
+This requirement is additive and preserves R28.
+
+The one-time Nexus Cloudflare human authorization gate MUST prefer Wrangler OAuth Device Authorization when available, because it does not depend on the localhost callback path used by classic browser OAuth.
+
+The bootstrap MUST:
+- prefer `wrangler login --device`;
+- keep classic `wrangler login` only as an automatic fallback;
+- never ask the user to paste a Cloudflare API token into chat;
+- preserve the existing no-secret logging contract;
+- re-check `wrangler whoami --json` after authorization before any D1/Worker mutation;
+- preserve idempotent deployment and single Telegram receiver ownership;
+- remain zero-dollar and never select a paid plan automatically.
+
+Wrangler 4.135.0 is pinned by this project and is newer than the provider's documented 4.119.0 minimum for device authorization.
+
+If authorization expires or the user does not complete it in time, BCP records `HUMAN_AUTH_REQUIRED` and retries through the normal resident recovery path rather than inventing deployment success.
