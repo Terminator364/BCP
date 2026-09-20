@@ -1,0 +1,46 @@
+name: BCP R52 Nexus One-Shot Qualification
+
+on:
+  pull_request:
+    paths:
+      - "windows/NEXUS_AUTH_RETRY_CURRENT.ps1"
+      - "windows/NEXUS_AUTH_RETRY_CURRENT.cmd"
+      - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      - "tools/test_nexus_auth_retry_helper.py"
+      - ".github/workflows/r52-nexus-one-shot.yml"
+  push:
+    branches: [main]
+    paths:
+      - "windows/NEXUS_AUTH_RETRY_CURRENT.ps1"
+      - "windows/NEXUS_AUTH_RETRY_CURRENT.cmd"
+      - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      - "tools/test_nexus_auth_retry_helper.py"
+      - ".github/workflows/r52-nexus-one-shot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-helper:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Static helper contract
+        shell: pwsh
+        run: python tools/test_nexus_auth_retry_helper.py
+      - name: PowerShell parse
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "windows/NEXUS_AUTH_RETRY_CURRENT.ps1"),
+            [ref]$null,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
+          Write-Host "R52_POWERSHELL_PARSE=PASS"
