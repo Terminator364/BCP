@@ -1,0 +1,35 @@
+{
+  "schema": "bcp.android_candidate/1",
+  "channel": "SOURCE_CANDIDATE",
+  "candidate_revision": "2026-09-20-R42",
+  "inherits_requirements_revision": "2026-09-20-R40",
+  "version_code": 211,
+  "version_name": "2.1.1-rc1-reentry-evergreen",
+  "package_id": "com.blessing.bcpedge.evergreen",
+  "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "minimum_server_version": "0.7.9",
+  "coordinated_server_version": "0.7.9",
+  "stable_current_version_code": 210,
+  "stable_current_version_name": "2.1.0-rc1-sentinel-evergreen",
+  "distribution_status": "UNSIGNED_CI_CANDIDATE",
+  "publication_allowed": false,
+  "uninstall_required": false,
+  "re_pair_required": false,
+  "required_behaviors": [
+    "SINGLE_RECONCILE_WORKER",
+    "UNIQUE_ONE_SHOT_WIFI_REENTRY",
+    "CONNECTED_NETWORK_CONSTRAINT",
+    "EXPONENTIAL_BACKOFF_30_SECONDS",
+    "PERIODIC_15_MINUTE_SAFETY_NET",
+    "NO_DUPLICATE_IMMEDIATE_WORK",
+    "SAME_PACKAGE_AND_SIGNING_CERT_FOR_PROMOTION"
+  ],
+  "signed_artifact": {
+    "url": "",
+    "sha256": "",
+    "cert_sha256": "",
+    "v2_verified": false,
+    "v3_verified": false,
+    "drive_readback_verified": false
+  }
+}
