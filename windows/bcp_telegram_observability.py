@@ -897,12 +897,28 @@ class Service:
         else:
             activity = "🔵 Suivi automatique actif — synchronisation des preuves en cours."
 
-        if heartbeat_ok:
-            pc_text = "🟢 PC : allumé · BCP en vie"
+        battery_pct = runtime.get("pc_battery_percent")
+        battery_critical = bool(runtime.get("pc_battery_critical"))
+        power_source = str(runtime.get("pc_power_source") or "UNKNOWN").upper()
+        mem_pct = runtime.get("pc_memory_load_percent")
+        pc_suffix = []
+        if power_source == "AC":
+            pc_suffix.append("secteur")
+        elif power_source == "BATTERY":
+            pc_suffix.append("batterie")
+        if isinstance(battery_pct, int):
+            pc_suffix.append(str(battery_pct) + "%")
+        if isinstance(mem_pct, int):
+            pc_suffix.append("RAM " + str(mem_pct) + "%")
+        suffix = (" · " + " · ".join(pc_suffix)) if pc_suffix else ""
+        if battery_critical:
+            pc_text = "🔴 PC : allumé mais batterie critique" + suffix
+        elif heartbeat_ok:
+            pc_text = "🟢 PC : allumé · BCP en vie" + suffix
         elif isinstance(hb, int) and hb <= 600:
-            pc_text = "🟡 PC : probablement allumé · télémétrie retardée"
+            pc_text = "🟡 PC : probablement allumé · télémétrie retardée" + suffix
         else:
-            pc_text = "🔴 PC : non joignable récemment"
+            pc_text = "🔴 PC : non joignable récemment" + suffix
 
         if edge_ok:
             edge_text = "🟢 Ancien téléphone : serveur B-EDGE actif"
