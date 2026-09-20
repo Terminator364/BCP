@@ -93,6 +93,30 @@ def main() -> int:
         "_terminate_nexus_process_tree",
     )
 
+    # Mission stall watchdog: absence of proof must not be confused with progress,
+    # retries are bounded, and Telegram exposes a real durable Continue request.
+    require(
+        server,
+        "MISSION_STALE_SECONDS = 10 * 60",
+        "MISSION_WATCHDOG_MAX_AUTO_REQUESTS = 3",
+        "MISSION_WATCHDOG_COOLDOWNS = (5 * 60, 15 * 60, 60 * 60)",
+        "_mission_watchdog_anchor",
+        "NOT (event_type='RETRY_SCHEDULED' AND summary LIKE 'Watchdog:%')",
+        "request_mission_resume",
+        "consume_mission_resume_request",
+        "MISSION_RESUME_REQUESTS.jsonl",
+        "HUMAN_GATE",
+        "NO_CLAIM_OF_CHATGPT_UI_SELF_CONTINUATION" if "NO_CLAIM_OF_CHATGPT_UI_SELF_CONTINUATION" in server else "MISSION_RESUME_REQUEST_PATH",
+    )
+    require(
+        telegram,
+        "bcp:continue",
+        "/continue",
+        "watchdog_notice",
+        "Reprise automatique demandée",
+        "WATCHDOG_NOTIFY_STATE_PATH",
+    )
+
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
     assert current["components"]["nexus"]["version"] == nexus_release["version"]
