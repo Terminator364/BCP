@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "0b3733ca68cb05bacf62c7ee7eeac29d97714d682e7fd61c1b6b153d469a30b2"
+        "sha256": "e9c114ba199623afcf0a6e4c73dae35955d2518473ad476b7042ac84a32d441c"
       },
       "notes": "Nexus 0.2.3 remains R26-compatible; canonical producer receipts/watermarks/acks remain local."
     }
