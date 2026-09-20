@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R34
+Revision: 2026-09-20-R38
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1435,3 +1435,54 @@ BCP MUST:
 - never replay a completed install merely because convergence telemetry is delayed.
 
 The target BCP release for this requirement is 0.7.8. Windows installer, acceptance runner, server manifest and CURRENT metadata MUST remain version-aligned to prevent recurrence of the R32 drift class.
+
+
+## P0 — Recovery Launcher Bridge / DriveFS Separation / R38
+
+This requirement is additive and preserves R34.
+
+### Field evidence
+A real Windows 11 / B-EDGE recovery sequence on 2026-09-20 exposed a compound failure:
+- B-EDGE left the home LAN and later rejoined the same Wi-Fi;
+- after PC reboot/unlock, Windows Firewall blocked the Python-hosted BCP listener until Private-network consent was granted;
+- B-EDGE then reconnected to the same paired PC without re-pairing;
+- the ChatGPT-PC Startup fallback failed with Windows Script Host error `800A0408` at line 1 / character 1 because the generated VBS was UTF-8 with BOM;
+- the cloud recovery target was updated while the PC-local Control Folder remained stale, causing `recovery_target_not_active`;
+- prior recovery logs also proved that temporary-file + `os.replace` assumptions against `G:\\Mon Drive` can fail with `OSError: [Errno 22] Invalid argument`;
+- Cloudflare classic browser OAuth produced a localhost callback failure while a separate device-authorization page existed. These are distinct auth paths and neither is proof that the other succeeded.
+
+### Mandatory architecture
+BCP/ChatGPT-PC MUST distinguish:
+- local NTFS state, suitable for atomic critical state transitions;
+- provider-synchronised DriveFS state, suitable for replicated exchange but not assumed to provide identical rename/fsync semantics;
+- cloud provider state;
+- human browser authorization state.
+
+Critical local recovery truth MUST NOT depend on a successful atomic replace directly on DriveFS.
+
+BCP MUST provide a least-privilege local recovery-launcher bridge when:
+- the ChatGPT-PC runtime exists locally;
+- the Drive-backed recovery target is missing/stale/inactive, or its package has not yet synchronised;
+- the known local Recovery Startup launcher can be reconstructed from the existing local runtime.
+
+The bridge MUST:
+- reconstruct only the known `ChatGPTPC_RecoveryPlane.vbs` launcher;
+- write it as UTF-16 and perform local readback;
+- launch the existing local recovery runner consolelessly;
+- require no UAC elevation, no generic process kill, no credential copy, and no network-policy broadening;
+- record a machine-readable local receipt;
+- return `BRIDGE_STARTED` semantics rather than claiming the target ChatGPT-PC release installed;
+- preserve the later hash-pinned recovery-target/package verification before any actual release promotion.
+
+### Provider-synchronised file semantics
+When DriveFS cannot support the local atomic-write primitive:
+- preserve canonical local evidence first;
+- mirror/synchronise provider state best-effort;
+- surface `CLOUD_MIRROR_HOLD` or equivalent rather than failing the local recovery transaction;
+- never use provider-synchronised folders as the sole authoritative location for watchdog/lease/critical recovery state.
+
+### Cloudflare auth truth
+Device authorization is preferred. Classic localhost callback failure is diagnostic evidence only.
+After any human consent, Wrangler `whoami --json` or an equivalent provider-authenticated readback is mandatory before deployment is declared authorized.
+
+Target server release for this requirement: BCP 0.7.9.
