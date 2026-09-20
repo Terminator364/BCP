@@ -1,9 +1,9 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R16",
+  "requirements_revision": "2026-09-20-R17",
   "zero_usd": true,
-  "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
+  "overall_state": "CI_QUALIFIED_DISTRIBUTION_INCOMPLETE",
   "update_policy": {
     "unchanged_version_zero_download": true,
     "metered_large_download_default": false,
@@ -27,18 +27,18 @@
       "notes": "BCP 0.7.0 adds offline-first mission stall detection and bounded durable resume intents while preserving low-resource lifecycle, telemetry, Telegram watchdog, and hash-pinned self-update."
     },
     "android_b_edge": {
-      "version": "2.0.0-rc1-evergreen",
+      "version": "2.1.0-rc1-sentinel-evergreen",
       "source_manifest": "release/android.json",
-      "qualification": "CI_QUALIFIED",
-      "distribution_ready": true,
+      "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
+      "distribution_ready": false,
       "field_verified": false,
-      "auto_update_eligible": true,
+      "auto_update_eligible": false,
       "artifact": {
-        "transport": "DRIVE_LOCAL_AUTHENTICATED_RELAY",
-        "url": "/v1/edge/update/apk",
-        "sha256": "c1640260cbaafdd92bb69c98f6780b5b03d26ad4bf1553bce393dbaf33c8c389"
+        "transport": "SIGNED_APK_PENDING",
+        "url": "",
+        "sha256": ""
       },
-      "notes": "Fresh phone telemetry at 2026-09-19T18:15:29Z proves Samsung SM-A217F is connected and reporting edge_version 2.0.0-rc1 to BCP 0.6.1. Exact installed APK SHA/signature attestation is still required before artifact-level FIELD_VERIFIED."
+      "notes": "B-EDGE 2.1.0 secondary-sentinel source candidate. Distribution remains intentionally disabled until a same-identity signed APK is produced and verified; installed 2.0.0-rc1 remains authoritative on the old phone."
     },
     "nexus": {
       "version": "0.1.9",

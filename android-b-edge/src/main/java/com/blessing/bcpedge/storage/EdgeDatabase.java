@@ -5,6 +5,8 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.migration.Migration;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
 @Database(
         entities = {
@@ -12,13 +14,30 @@ import androidx.room.RoomDatabase;
                 EdgeJobEntity.class,
                 EdgeMemoryEntity.class,
                 EdgeReceiptEntity.class,
-                EdgeDependencyEntity.class
+                EdgeDependencyEntity.class,
+                EdgeSentinelEntity.class
         },
-        version = 1,
+        version = 2,
         exportSchema = false
 )
 public abstract class EdgeDatabase extends RoomDatabase {
     private static volatile EdgeDatabase INSTANCE;
+
+    private static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override
+        public void migrate(SupportSQLiteDatabase db) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS edge_sentinel (" +
+                    "projectId TEXT NOT NULL PRIMARY KEY, " +
+                    "state TEXT NOT NULL, " +
+                    "lastPcSuccessAt INTEGER NOT NULL, " +
+                    "lastCheckAt INTEGER NOT NULL, " +
+                    "consecutiveFailures INTEGER NOT NULL, " +
+                    "lastAlertKey TEXT NOT NULL, " +
+                    "lastAlertAt INTEGER NOT NULL, " +
+                    "resumePending INTEGER NOT NULL, " +
+                    "resumeRequestId TEXT NOT NULL)");
+        }
+    };
 
     public abstract EdgeDao edgeDao();
 
@@ -33,6 +52,7 @@ public abstract class EdgeDatabase extends RoomDatabase {
                                 EdgeDatabase.class,
                                 "bcp-edge-v2-shadow.db")
                         .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
+                        .addMigrations(MIGRATION_1_2)
                         .build();
                 INSTANCE = local;
             }

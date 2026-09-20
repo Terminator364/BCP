@@ -26,6 +26,22 @@ public final class EdgePolicy {
     }
 
     public static long defaultReconcileIntervalMs() { return 5L * 60L * 1000L; }
+    public static long sentinelStaleMs() { return 10L * 60L * 1000L; }
+    public static long sentinelAlertCooldownMs() { return 60L * 60L * 1000L; }
+
+    public static String sentinelState(long nowMs, long lastPcSuccessAt, int consecutiveFailures) {
+        if (consecutiveFailures <= 0) return "PC_AVAILABLE";
+        if (lastPcSuccessAt <= 0L) return consecutiveFailures >= 2 ? "PC_UNAVAILABLE_RECOVERY" : "PC_TRANSIENT_LOSS";
+        long age = Math.max(0L, nowMs - lastPcSuccessAt);
+        if (consecutiveFailures >= 2 && age >= sentinelStaleMs()) return "PC_UNAVAILABLE_RECOVERY";
+        return "PC_TRANSIENT_LOSS";
+    }
+
+    public static boolean sentinelAlertDue(String state, long nowMs, long lastAlertAt) {
+        if (!"PC_UNAVAILABLE_RECOVERY".equals(state)) return false;
+        return lastAlertAt <= 0L || nowMs < lastAlertAt
+                || (nowMs - lastAlertAt) >= sentinelAlertCooldownMs();
+    }
 
     public static String resourceClass(boolean requiresPc, boolean semantic, boolean bulk) {
         if (semantic) return "REMOTE_AI";

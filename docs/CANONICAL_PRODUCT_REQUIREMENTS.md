@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R16
+Revision: 2026-09-20-R17
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1013,3 +1013,23 @@ The PC BCP process is the local sentinel while the PC is running. The dedicated 
 - when the PC returns, state is reconciled by idempotency/revision/fencing before execution.
 
 No duplicate Telegram poller is introduced.
+
+## P0 — B-EDGE independent secondary sentinel (R17)
+
+The dedicated old Android phone MUST become the independent continuity sentinel for periods where the PC is absent.
+
+Implementation requirements:
+- durable per-project sentinel state lives in Room/SQLite, never process-only RAM;
+- WorkManager performs a low-duty periodic reconcile (15-minute Android minimum baseline with flex), so process death/reboot does not erase monitoring;
+- PC offline is a valid state, not a worker failure/retry storm;
+- one transient failure remains distinct from confirmed `PC_UNAVAILABLE_RECOVERY`;
+- confirmed PC absence requires at least two failures plus a stale last-success interval;
+- the phone creates a stable durable `resume_request_id` / resume-pending state while PC work is unavailable;
+- PC-only jobs remain `WAITING_FOR_PC`; B-EDGE MUST NOT fabricate completion;
+- alert emission is deduplicated and bounded (minimum one-hour repeat cooldown for an unchanged PC-loss epoch);
+- when the PC returns, reachability state reconciles to `PC_AVAILABLE` and stale resume-pending state is cleared only by an observed successful PC contact;
+- Room schema upgrades MUST use an explicit migration; destructive migration is forbidden for canonical/offline state.
+
+Remote notification while the PC is completely offline requires an independent qualified egress path from B-EDGE. The target path is Nexus/device-authenticated outbound HTTPS. Until that path is provisioned and field-qualified, B-EDGE MUST persist the alert/outbox locally and MUST NOT claim that Telegram was notified.
+
+A source build or unsigned APK is not a deployable field release. The existing installed APK remains authoritative until a same-identity signed candidate is produced, hash/signature verified, and then installed through the normal Android human gate if the OS requires confirmation.

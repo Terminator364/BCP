@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_TELEGRAM_V8_R16_MISSION_WATCHDOG_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "Implemented R16 offline mission sentinel candidate: BCP 0.7.0 detects stalled nonterminal missions from non-watchdog evidence, creates bounded idempotent durable resume intents, suppresses blind retries at human gates, mirrors resume state to the control plane, and Telegram V8 adds proactive alerts plus a real Continue button.",
-  "next_action": "Run exact-head CI for BCP 0.7.0 / Telegram V8 R16. If green, re-read main and merge under the single-writer fence, then verify resident convergence through Drive. After that, continue hardening the separate Nexus 0.1.9 esbuild field failure and implement the B-EDGE secondary offline sentinel.",
+  "status": "B_EDGE_2_1_0_SECONDARY_SENTINEL_R17_CANDIDATE_CI_PENDING_SIGNED_ARTIFACT_GATE",
+  "last_completed_atomic_action": "Implemented B-EDGE 2.1.0 secondary sentinel source candidate: Room schema v2 with explicit migration, persisted PC reachability/recovery state, bounded alert identity, resume-pending ID, 15-minute WorkManager reconcile, and offline-as-valid-state semantics.",
+  "next_action": "Run exact-head coordinated Android/unit/lint/build tests. If source candidate passes, inspect APK artifacts and signing path. Do not mark distribution_ready or replace installed B-EDGE 2.0.0 until a same-identity signed APK exists and passes signature/hash gates. Separately wait for BCP 0.7.0/Telegram V8 resident convergence.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1344,5 +1344,19 @@
     "proactive_deduplicated_notifications": true,
     "secondary_bedge_sentinel_target": true,
     "truth_boundary": "NO_CLAIM_OF_CHATGPT_UI_SELF_CONTINUATION"
+  },
+  "bedge_secondary_sentinel_r17": {
+    "status": "IMPLEMENTED_SOURCE_CANDIDATE_FIELD_UNVERIFIED",
+    "target_version": "2.1.0-rc1-sentinel-evergreen",
+    "room_schema_version": 2,
+    "explicit_migration_1_2": true,
+    "workmanager_periodic_minutes": 15,
+    "pc_absence_min_failures": 2,
+    "pc_stale_threshold_minutes": 10,
+    "alert_repeat_cooldown_minutes": 60,
+    "durable_resume_pending": true,
+    "pc_offline_is_valid_state": true,
+    "remote_notification_path": "NEXUS_DEVICE_AUTH_REQUIRED_FIELD_GATE",
+    "signed_apk_ready": false
   }
 }

@@ -34,6 +34,9 @@ def main() -> int:
     telegram = read("windows/bcp_telegram_observability.py")
     bootstrap = read("windows/BOOTSTRAP_BCP_NEXUS.ps1")
     edge_policy = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java")
+    edge_db = read("android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java")
+    edge_worker = read("android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeReconcileWorker.java")
+    edge_scheduler = read("android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeWorkScheduler.java")
     rdc = read("docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md")
 
     # Zero-cost + data-saver invariants.
@@ -48,6 +51,15 @@ def main() -> int:
     # explicit pressure handling must remain represented.
     require(server, "AUTO_UPDATE_INTERVAL_SECONDS", "WAITING_FOR_PC")
     require(edge_policy, "PC_MEMORY_PRESSURE", "WAITING_FOR_PC")
+    require(
+        edge_policy,
+        "PC_UNAVAILABLE_RECOVERY",
+        "sentinelStaleMs",
+        "sentinelAlertCooldownMs",
+    )
+    require(edge_db, "EdgeSentinelEntity.class", "Migration(1, 2)", "addMigrations(MIGRATION_1_2)")
+    require(edge_worker, "sentinel_state", "resume_pending", "return Result.success(out);")
+    require(edge_scheduler, "15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES")
 
     # Kinshasa/home-Wi-Fi reality: direct Telegram may fail while DNS still works.
     # Nexus must therefore remain an independent HTTPS control-plane route.

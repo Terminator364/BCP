@@ -75,6 +75,11 @@ jobs:
           grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
           grep -F 'PC_MEMORY_PRESSURE' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
           grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
+          grep -F 'EdgeSentinelEntity.class' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java
+          grep -F 'Migration(1, 2)' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java
+          grep -F 'PC_UNAVAILABLE_RECOVERY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java
+          grep -F '15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES' android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeWorkScheduler.java
+          grep -F 'return Result.success(out);' android-b-edge/src/main/java/com/blessing/bcpedge/work/EdgeReconcileWorker.java
       - name: Unit tests
         run: gradle :android-b-edge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
       - name: Lint
