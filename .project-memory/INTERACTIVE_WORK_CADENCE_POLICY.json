@@ -1,0 +1,23 @@
+{
+  "schema": "bcp.interactive_work_cadence_policy/1",
+  "status": "ACTIVE_DEFAULT",
+  "scope": "TECHNICAL_PROJECT_WORK_WHERE_CONTEXT_IS_AVAILABLE",
+  "target_minutes": 5,
+  "acceptable_window_minutes": [
+    5,
+    7
+  ],
+  "principles": [
+    "Prefer one bounded, high-value tranche over long silent reasoning/execution.",
+    "Do not stop at 3-4 minutes merely to report unless a true gate or failure requires immediate return.",
+    "Do not extend beyond about 7 minutes merely to chase optional work; checkpoint first.",
+    "Each tranche ends with a durable checkpoint: what changed, evidence/tests, next atomic action, and any real human gate.",
+    "If a blocking verification/tool failure occurs, report it as the gate instead of pretending continued execution.",
+    "Resume from the durable checkpoint on the next Continue invocation."
+  ],
+  "limitations": [
+    "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
+    "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
+  ],
+  "updated_at": "2026-09-20"
+}
