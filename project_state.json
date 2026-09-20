@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R42_BEDGE_ZERO_TOUCH_REENTRY_SUCCESSOR_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R41 post-R40 reconciliation is merged on current main. R42 continues only non-human work: B-EDGE 2.1.1-rc1-reentry source/CI candidate with one authoritative connected WorkManager scheduler, exponential bounded backoff, KEEP-coalesced one-shot work, process-level validated Wi-Fi return trigger, explicit v1/v2 legacy work cancellation, and compatibility-only legacy worker shim. Stable distributed B-EDGE 2.1.0 remains unchanged.",
-  "next_action": "Qualify exact R42 head. If green, merge source/CI candidate only. Do not publish or replace Drive CURRENT until a newly signed 2.1.1 APK exists with pinned certificate, v2/v3 verification, SHA-256 readback, and in-place update proof. Do not invoke Cloudflare or ChatGPT-PC Recovery while the user is away.",
+  "status": "BCP_0_7_10_R39_DRIVEFS_MIRROR_FAILOPEN_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R39 implemented after post-merge R38 counter-audit: provider-synchronised telemetry mirroring can no longer convert a successful local recovery/update transaction into an API failure. BCP 0.7.10 records CLOUD_MIRROR_HOLD locally and returns mirror failure as best-effort false.",
+  "next_action": "Qualify exact R39 head through CURRENT, Windows, Android, Nexus, Telegram and Field Ecosystem; merge only if exact-head CI green and main unchanged. Cloudflare human authorization remains deferred until local recovery convergence is restored.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,39 +229,22 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R42-BEDGE-ZERO-TOUCH-REENTRY-SUCCESSOR-20260920",
+    "checkpoint_id": "BCP-R39-DRIVEFS-MIRROR-FAILOPEN-20260920",
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
-    "branch": "work/bcp/r42-bedge-reentry-unification-20260920",
-    "base_main_sha": "34a60159af13a95db025f5b1ab5934d5460719f4",
-    "r40_postmerge_ci": "ALL_GREEN",
-    "prior_main_reconciliation": "R41_POST_R40_STATE_RECONCILIATION_MERGED",
-    "stable_distributed_android": {
-      "version_code": 210,
-      "version_name": "2.1.0-rc1-sentinel-evergreen",
-      "mutation_allowed": false
-    },
-    "candidate_android": {
-      "version_code": 211,
-      "version_name": "2.1.1-rc1-reentry-evergreen",
-      "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
-      "publication_allowed": false
-    },
-    "implementation": [
-      "ONE_AUTHORITATIVE_WORK_SCHEDULER",
-      "ONE_AUTHORITATIVE_RECONCILE_EXECUTION",
-      "LEGACY_WORKER_COMPATIBILITY_SHIM_ONLY",
-      "CANCEL_LEGACY_V1_AND_V2_UNIQUE_WORK",
-      "PERIODIC_15_MIN_CONNECTED_SAFETY_NET",
-      "ONE_SHOT_CONNECTED_KEEP_COALESCING",
-      "EXPONENTIAL_BACKOFF_30_SECONDS_MAX_THREE_WORKER_ATTEMPTS",
-      "PROCESS_LEVEL_VALIDATED_WIFI_RETURN_TRIGGER",
-      "15_SECOND_LOCAL_REENTRY_DEDUP",
-      "APPLICATION_SOLE_SCHEDULER_OWNER"
+    "branch": "work/bcp/r39-drivefs-mirror-failopen-20260920",
+    "base_main_sha": "30146245d22fa414572c6118db44ec66a3c374f8",
+    "target_server_version": "0.7.10",
+    "server_sha256": "ef2871ce04a571bda559e53f52117cda5c812af2c973e3f18b19a791bbdd6622",
+    "human_gate": "CLOUDFLARE_AUTH_DEFERRED",
+    "non_human_work_completed": [
+      "POST_MERGE_R38_11_WORKFLOWS_PASS",
+      "DRIVEFS_MIRROR_FAILOPEN_IMPLEMENTED",
+      "LOCAL_CLOUD_MIRROR_HOLD_RECEIPT",
+      "FIELD_PREFLIGHT_REGRESSION_ADDED",
+      "WINDOWS_INSTALLER_VERSION_ALIGNED",
+      "FINAL_ACCEPTANCE_VERSION_ALIGNED"
     ],
-    "field_devices_touched": false,
-    "cloudflare_touched": false,
-    "recovery_6033_invoked": false,
-    "next_atomic_action": "Exact-head R42 CI then serialized merge if green."
+    "next_atomic_action": "Exact-head R39 CI qualification."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1844,5 +1827,14 @@
     "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
     "field_verified": false,
     "publication_allowed": false
+  },
+  "bcp_0_7_10_r39": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R39",
+    "server_version": "0.7.10",
+    "server_sha256": "ef2871ce04a571bda559e53f52117cda5c812af2c973e3f18b19a791bbdd6622",
+    "drivefs_mirror_failopen": true,
+    "local_mirror_hold": true,
+    "field_verified": false
   }
 }
