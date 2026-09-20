@@ -38,11 +38,25 @@ function bearer(request) {
   return raw.startsWith("Bearer ") ? raw.slice(7) : "";
 }
 
-function deviceAuthorized(request, env) {
+async function hmacSha256Hex(secret, text) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(String(secret)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(String(text)));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function deviceAuthorized(request, env, scope = "FULL") {
   const token = bearer(request);
   const id = request.headers.get("x-bcp-device-id") || "";
-  return safeEqual(token, requireEnv(env, "BCP_DEVICE_TOKEN"))
-    && safeEqual(id, requireEnv(env, "BCP_DEVICE_ID"));
+  const root = requireEnv(env, "BCP_DEVICE_TOKEN");
+  if (safeEqual(token, root) && safeEqual(id, requireEnv(env, "BCP_DEVICE_ID"))) {
+    return true;
+  }
+  if (scope !== "EDGE_PUSH" || !/^edge-[a-f0-9]{24}$/.test(id)) return false;
+  const derived = await hmacSha256Hex(root, "B-EDGE-DERIVED/1\n" + id);
+  return safeEqual(token, derived);
 }
 
 async function telegramCall(env, method, payload) {
@@ -288,7 +302,7 @@ async function acceptTelegramWebhook(request, env) {
 }
 
 async function pullCommands(request, env) {
-  if (!deviceAuthorized(request, env)) return jsonResponse({ ok: false }, 401);
+  if (!(await deviceAuthorized(request, env))) return jsonResponse({ ok: false }, 401);
   const url = new URL(request.url);
   const after = Math.max(0, Number.parseInt(url.searchParams.get("after") || "0", 10) || 0);
   const limit = Math.max(1, Math.min(20, Number.parseInt(url.searchParams.get("limit") || "8", 10) || 8));
@@ -313,7 +327,7 @@ async function pullCommands(request, env) {
 }
 
 async function replyToCommand(request, env) {
-  if (!deviceAuthorized(request, env)) return jsonResponse({ ok: false }, 401);
+  if (!(await deviceAuthorized(request, env))) return jsonResponse({ ok: false }, 401);
   let body;
   try { body = await request.json(); }
   catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
@@ -373,7 +387,7 @@ async function replyToCommand(request, env) {
 }
 
 async function pushEvent(request, env) {
-  if (!deviceAuthorized(request, env)) return jsonResponse({ ok: false }, 401);
+  if (!(await deviceAuthorized(request, env, "EDGE_PUSH"))) return jsonResponse({ ok: false }, 401);
   let body;
   try { body = await request.json(); }
   catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
@@ -422,7 +436,7 @@ async function pushEvent(request, env) {
 
 
 async function liveCard(request, env) {
-  if (!deviceAuthorized(request, env)) return jsonResponse({ ok: false }, 401);
+  if (!(await deviceAuthorized(request, env))) return jsonResponse({ ok: false }, 401);
   let body;
   try { body = await request.json(); }
   catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
@@ -487,7 +501,7 @@ async function liveCard(request, env) {
 }
 
 async function storeReports(request, env) {
-  if (!deviceAuthorized(request, env)) return jsonResponse({ ok: false }, 401);
+  if (!(await deviceAuthorized(request, env))) return jsonResponse({ ok: false }, 401);
   let body;
   try { body = await request.json(); }
   catch (_) { return jsonResponse({ ok: false, error: "invalid_json" }, 400); }
