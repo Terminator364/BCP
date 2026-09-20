@@ -418,6 +418,7 @@ async function pushEvent(request, env) {
   const text = cleanText(body?.text || "");
   const idem = cleanText(body?.idempotency_key || "", 128);
   const kind = cleanText(body?.kind || "EVENT", 40);
+  const silent = Boolean(body?.silent);
   if (!text || !idem) return jsonResponse({ ok: false, error: "invalid_event" }, 400);
 
   const bodyHash = await sha256Hex(kind + "\n" + text);
@@ -443,6 +444,7 @@ async function pushEvent(request, env) {
       chat_id: requireEnv(env, "ALLOWED_CHAT_ID"),
       text,
       disable_web_page_preview: true,
+      disable_notification: silent,
     });
     const messageId = String(result?.message_id ?? "");
     await env.DB.prepare(
