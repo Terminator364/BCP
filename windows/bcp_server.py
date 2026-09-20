@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.9"
+SERVER_VERSION = "0.7.10"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -121,45 +121,58 @@ def chatgpt_control_folder():
     return p if p.exists() else None
 
 
+def _record_telemetry_mirror_hold(event_type: str, exc: Exception) -> None:
+    try:
+        atomic_json(STATE_DIR / "telemetry_mirror_hold.json", {
+            "schema": "bcp.telemetry_mirror_hold/1",
+            "state": "CLOUD_MIRROR_HOLD",
+            "event_type": str(event_type)[:80],
+            "error_class": type(exc).__name__[:120],
+            "error_detail": str(exc)[:240],
+            "updated_at": utc_now(),
+        })
+    except Exception:
+        pass
+
+
 def mirror_telemetry_status(event_type: str, extra: dict | None = None) -> bool:
-    """Mirror a sanitized BCP status into ChatGPT-PC's Drive control plane.
-
-    Never writes bearer tokens, raw request bodies, or arbitrary telemetry detail.
-    This is the machine-readable path ChatGPT can read without screenshots.
-    """
-    control = chatgpt_control_folder()
-    if control is None:
+    """Best-effort provider mirror; local transaction truth remains authoritative."""
+    try:
+        control = chatgpt_control_folder()
+        if control is None:
+            return False
+        root = control / "03_TELEMETRY" / "BCP"
+        root.mkdir(parents=True, exist_ok=True)
+        pair = read_json(PAIR_PATH, {}) or {}
+        rec = {
+            "schema": "bcp.telemetry.bridge/1",
+            "event_type": str(event_type)[:80],
+            "server_version": SERVER_VERSION,
+            "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
+            "updated_at": utc_now(),
+            "paired": bool(pair),
+            "device_name": str(pair.get("device_name") or "")[:120],
+            "edge_version": str(pair.get("edge_version") or "")[:40],
+            "project": str(pair.get("project") or "")[:128],
+        }
+        allowed = {
+            "accepted", "last_event_type", "last_event_ts", "status", "revision",
+            "target_version", "update_result", "auto_update",
+            "error_class", "error_detail", "transport_lane", "retry_seconds",
+            "chatgpt_pc_version", "chatgpt_pc_sequence", "recovery_state"
+        }
+        if isinstance(extra, dict):
+            for k in allowed:
+                if k in extra:
+                    v = extra[k]
+                    rec[k] = v if isinstance(v, (bool, int, float)) or v is None else str(v)[:160]
+        atomic_json(root / "BCP_LATEST.json", rec)
+        with (root / "BCP_EVENTS.jsonl").open("a", encoding="utf-8") as h:
+            h.write(canonical_json(rec) + "\n")
+        return True
+    except Exception as exc:
+        _record_telemetry_mirror_hold(event_type, exc)
         return False
-    root = control / "03_TELEMETRY" / "BCP"
-    root.mkdir(parents=True, exist_ok=True)
-    pair = read_json(PAIR_PATH, {}) or {}
-    rec = {
-        "schema": "bcp.telemetry.bridge/1",
-        "event_type": str(event_type)[:80],
-        "server_version": SERVER_VERSION,
-        "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
-        "updated_at": utc_now(),
-        "paired": bool(pair),
-        "device_name": str(pair.get("device_name") or "")[:120],
-        "edge_version": str(pair.get("edge_version") or "")[:40],
-        "project": str(pair.get("project") or "")[:128],
-    }
-    allowed = {
-        "accepted", "last_event_type", "last_event_ts", "status", "revision",
-        "target_version", "update_result", "auto_update",
-        "error_class", "error_detail", "transport_lane", "retry_seconds",
-        "chatgpt_pc_version", "chatgpt_pc_sequence", "recovery_state"
-    }
-    if isinstance(extra, dict):
-        for k in allowed:
-            if k in extra:
-                v = extra[k]
-                rec[k] = v if isinstance(v, (bool, int, float)) or v is None else str(v)[:160]
-    atomic_json(root / "BCP_LATEST.json", rec)
-    with (root / "BCP_EVENTS.jsonl").open("a", encoding="utf-8") as f:
-        f.write(canonical_json(rec) + "\n")
-    return True
-
 
 
 def lifecycle_registration_status() -> dict:
@@ -4676,6 +4689,8 @@ def selftest():
         assert "recovery_package_sha256_mismatch" in source
         assert "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED" in source
         assert "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED" in source
+        assert "CLOUD_MIRROR_HOLD" in source
+        assert "_record_telemetry_mirror_hold" in source
         sample_vbs = _chatgpt_pc_recovery_launcher_content(
             Path(r"C:\\Users\\Lenovo\\AppData\\Local\\Tunnel_PC_G4\\runtime\\pythonw.exe"),
             Path(r"C:\\Users\\Lenovo\\AppData\\Local\\Tunnel_PC_G4\\recovery_plane_runner.py"),
@@ -4687,6 +4702,20 @@ def selftest():
         probe = _write_utf16_recovery_vbs(probe_vbs, sample_vbs)
         assert probe_vbs.read_bytes().startswith((b"\xff\xfe", b"\xfe\xff"))
         assert probe["bytes"] > 16 and len(probe["sha256"]) == 64
+        previous_control = os.environ.get("BCP_CONTROL_FOLDER")
+        blocked_control = APP_ROOT / "blocked-control-file"
+        blocked_control.write_text("not-a-directory", encoding="utf-8")
+        os.environ["BCP_CONTROL_FOLDER"] = str(blocked_control)
+        try:
+            assert mirror_telemetry_status("SELFTEST_DRIVEFS_FAIL_OPEN", {"status": "TEST"}) is False
+            hold = read_json(STATE_DIR / "telemetry_mirror_hold.json", {}) or {}
+            assert hold.get("state") == "CLOUD_MIRROR_HOLD"
+            assert hold.get("event_type") == "SELFTEST_DRIVEFS_FAIL_OPEN"
+        finally:
+            if previous_control is None:
+                os.environ.pop("BCP_CONTROL_FOLDER", None)
+            else:
+                os.environ["BCP_CONTROL_FOLDER"] = previous_control
         assert "shell=False" in source
         assert "/v1/orchestrator/status" in source
         assert 'parts[3] == "context"' in source
