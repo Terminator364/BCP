@@ -41,7 +41,7 @@
       "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
     },
     "nexus": {
-      "version": "0.2.5",
+      "version": "0.2.6",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "acfbed4d9263b89bef0da0d13ae270e514c1c4fc636d0ffdfa09fd8106b27973"
+        "sha256": "ea3cb82755ddcfb3642f123c45d9e5e11debc10dc4b44ed8531ded53daccb5ae"
       },
-      "notes": "Nexus 0.2.5 remains device-flow-only and now mirrors the human-first R53 cockpit labels/help surface across the remote path."
+      "notes": "Nexus 0.2.6 aligns Worker health version with its bundle and delivers the same R54 human-readable cached PDFs with Kinshasa-time captions."
     }
   },
   "telegram_cockpit": {
