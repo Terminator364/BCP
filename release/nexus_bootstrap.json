@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R11",
+  "requirements_revision": "2026-09-20-R12",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "fcfefabc0943288f45266f9d787092127da8e6c664cfee85b1595831f0fe806e",
+      "sha256": "e25ee71d9326e0a63d2ada4bec3ed0f07c1dd500bf5e9b6d5da361e4fdaf1fcf",
       "max_bytes": 300000
     },
     {
@@ -34,7 +34,7 @@
     }
   ],
   "runtime": {
-    "strategy": "PINNED_PORTABLE_NODE_NPX",
+    "strategy": "SYSTEM_FIRST_THEN_PINNED_PORTABLE_NODE_DIRECT_NPX_CLI",
     "node_version": "24.21.0",
     "node_win_x64_zip_sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
     "wrangler_version": "4.135.0",
@@ -43,7 +43,9 @@
     "npm_cache_persistent": true,
     "network_retries": true,
     "failure_receipt": true,
-    "failure_receipt_secret_free": true
+    "failure_receipt_secret_free": true,
+    "system_probe_failure_auto_fallback": true,
+    "direct_node_npx_cli": true
   },
   "live_card": {
     "enabled": true,
@@ -68,5 +70,5 @@
     ],
     "field_verified": false
   },
-  "notes": "Adds bounded sanitized Wrangler probe exit/output diagnostics and cause classification while preferring the existing npm cache on constrained Kinshasa links. No manual Node/Wrangler install or secret re-entry."
+  "notes": "Automatically falls back from a failing system npx/wrangler probe to the pinned portable Node runtime, invoking npx-cli.js directly through node.exe to avoid cmd-wrapper fragility. Keeps bounded retries, sanitized receipts, zero-dollar policy, and requires no manual Node/Wrangler install, Telegram token re-entry, PowerShell, or ZIP shuttle."
 }
