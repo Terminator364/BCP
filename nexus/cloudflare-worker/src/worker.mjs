@@ -85,7 +85,17 @@ function cockpitKeyboard() {
         { text: "🔕 Pause 2h", callback_data: "bcp:quiet:120" },
         { text: "🔔 Alertes normales", callback_data: "bcp:quiet:off" },
       ],
-      [{ text: "❔ Aide / mode d’emploi", callback_data: "bcp:help" }],
+      [
+        { text: "❔ Aide / mode d’emploi", callback_data: "bcp:help" },
+        { text: "📚 Rapports & technique", callback_data: "bcp:advanced" },
+      ],
+    ],
+  };
+}
+
+function advancedCockpitKeyboard() {
+  return {
+    inline_keyboard: [
       [
         { text: "📄 Résumé PDF", callback_data: "bcp:pdf:summary" },
         { text: "🖥️ État appareils", callback_data: "bcp:pdf:devices" },
@@ -95,6 +105,7 @@ function cockpitKeyboard() {
         { text: "📚 Audit PDF", callback_data: "bcp:pdf:technical" },
       ],
       [{ text: "🧰 Détails techniques", callback_data: "bcp:details" }],
+      [{ text: "↩️ Retour au cockpit", callback_data: "bcp:status" }],
     ],
   };
 }
@@ -287,6 +298,15 @@ async function acceptTelegramWebhook(request, env) {
       });
     } catch (_) {}
 
+    if (data === "bcp:advanced") {
+      await telegramCall(env, "sendMessage", {
+        chat_id: allowedChatId,
+        text: "📚 Rapports & technique\nCes outils sont secondaires : utilisez-les pour approfondir une situation déjà comprise.",
+        reply_markup: advancedCockpitKeyboard(),
+        disable_web_page_preview: true,
+      });
+      return jsonResponse({ ok: true, callback: data, advanced_menu: true });
+    }
     if (data === "bcp:pdf:summary") {
       await sendCachedReportPdf(env, "summary");
       return jsonResponse({ ok: true, callback: data });
