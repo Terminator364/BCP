@@ -1,7 +1,7 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
@@ -23,7 +23,7 @@
     {
       "path": "nexus/cloudflare-worker/src/worker.mjs",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/nexus/cloudflare-worker/src/worker.mjs",
-      "sha256": "f4941c4a102817656eb263f6d7f177ab79fd8e7c3b2f1bc11723fd51758f88b1",
+      "sha256": "cee0c442efad084bf888418dd641e63acfaace0e40efce770405fe3cf5b4cadd",
       "max_bytes": 500000
     },
     {
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.5 R54 remains device-flow-only and now preserves progressive cockpit disclosure plus a dependency-free WinAnsi/Bold/paginated PDF fallback with Kinshasa footer parity."
+  "notes": "Nexus 0.2.6 reconciles Worker health version with the bundle, preserves device-flow-only Cloudflare auth, and aligns cached PDF delivery with R54 human presentation: readable hierarchy, WinAnsi French glyphs, page numbering and Kinshasa-time captions."
 }
