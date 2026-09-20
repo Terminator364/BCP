@@ -64,38 +64,37 @@ function cockpitKeyboard() {
   return {
     inline_keyboard: [
       [
-        { text: "🟢 Situation", callback_data: "bcp:status" },
-        { text: "🕘 Depuis ma visite", callback_data: "bcp:since" },
+        { text: "🟢 Où en sommes-nous ?", callback_data: "bcp:status" },
+        { text: "🕘 Nouveautés", callback_data: "bcp:since" },
       ],
       [
-        { text: "💬 Conversations", callback_data: "bcp:conversations" },
-        { text: "❓ Pourquoi ?", callback_data: "bcp:why" },
+        { text: "💬 Messages récents", callback_data: "bcp:conversations" },
+        { text: "❓ Pourquoi cet état ?", callback_data: "bcp:why" },
       ],
       [
-        { text: "🔭 Radar", callback_data: "bcp:risks" },
-        { text: "📍 Étape", callback_data: "bcp:where" },
+        { text: "📍 Étape actuelle", callback_data: "bcp:where" },
+        { text: "🎯 Objectif & plan", callback_data: "bcp:missions" },
       ],
       [
-        { text: "⚙️ Activité", callback_data: "bcp:tail" },
-        { text: "🎯 Objectif", callback_data: "bcp:missions" },
+        { text: "⚙️ Travail récent", callback_data: "bcp:tail" },
+        { text: "🔭 Risques à venir", callback_data: "bcp:risks" },
+      ],
+      [{ text: "▶️ Reprendre maintenant", callback_data: "bcp:continue" }],
+      [
+        { text: "✅ Vu / compris", callback_data: "bcp:ack" },
+        { text: "🔕 Pause 2h", callback_data: "bcp:quiet:120" },
+        { text: "🔔 Alertes normales", callback_data: "bcp:quiet:off" },
+      ],
+      [{ text: "❔ Aide / mode d’emploi", callback_data: "bcp:help" }],
+      [
+        { text: "📄 Résumé PDF", callback_data: "bcp:pdf:summary" },
+        { text: "🖥️ État appareils", callback_data: "bcp:pdf:devices" },
       ],
       [
-        { text: "▶️ Continuer", callback_data: "bcp:continue" },
+        { text: "🧭 Plan mission", callback_data: "bcp:pdf:mission" },
+        { text: "📚 Audit PDF", callback_data: "bcp:pdf:technical" },
       ],
-      [
-        { text: "✅ J’ai vu", callback_data: "bcp:ack" },
-        { text: "🔕 Discret 2h", callback_data: "bcp:quiet:120" },
-        { text: "🔔 Normal", callback_data: "bcp:quiet:off" },
-      ],
-      [
-        { text: "📄 Suivi", callback_data: "bcp:pdf:summary" },
-        { text: "🖥️ Appareils", callback_data: "bcp:pdf:devices" },
-      ],
-      [
-        { text: "🧭 Mission", callback_data: "bcp:pdf:mission" },
-        { text: "📚 Audit", callback_data: "bcp:pdf:technical" },
-      ],
-      [{ text: "🧰 Technique", callback_data: "bcp:details" }],
+      [{ text: "🧰 Détails techniques", callback_data: "bcp:details" }],
     ],
   };
 }
@@ -115,6 +114,7 @@ function callbackToCommand(data) {
     "bcp:quiet:120": "/quiet 120",
     "bcp:quiet:off": "/quiet off",
     "bcp:details": "/details",
+    "bcp:help": "/help",
   };
   return map[String(data || "")] || "";
 }
