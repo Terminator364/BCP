@@ -2337,10 +2337,7 @@ class Telegram:
     def _push_attention_transition(self) -> None:
         snap = self.service.presence_snapshot()
         state = snap.get("snapshot") or {}
-        level = str(state.get("attention_level") or "NORMAL")
-        reasons = list(state.get("attention_reasons") or [])
-        root = clean(reasons[0] if reasons else level, 180)
-        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        key, level, root = self.service._attention_key(state)
         prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
         prior_level = str(prior.get("level") or "")
         prior_key = str(prior.get("key") or "")
@@ -2349,21 +2346,40 @@ class Telegram:
 
         text = ""
         critical = level in {"CRITICAL", "ACTION"}
+        recovery = prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}
+
+        # Human-action/critical transitions are immediate. Recovery must be seen
+        # twice (or remain stable for 60s) before notifying, which damps flapping.
+        if recovery and not self.service.recovery_transition_stable(key, level):
+            return
+
+        acknowledged = self.service.attention_is_acknowledged(key)
         if level in {"CRITICAL", "ACTION"}:
             text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
-        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+        elif recovery:
             text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
-        # WATCH remains visible in the live card/Radar but is deliberately not
-        # pushed as a page-like alert while automation can still handle it.
-        if text and self.service.notifications_allowed(critical):
-            self.send(text, silent=(level in {"ACTIVE", "NORMAL"}))
+        allowed = (
+            bool(text)
+            and not acknowledged
+            and self.service.notifications_allowed(critical)
+            and self.service.consume_notification_budget(
+                "attention:" + ("critical" if critical else "recovery"),
+                critical=critical,
+            )
+        )
+        # WATCH remains dashboard/Radar-only while safe automation is available.
+        if allowed:
+            self.send(text, silent=recovery)
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
-            "schema": "bcp.telegram_attention_notice/1",
+            "schema": "bcp.telegram_attention_notice/2",
             "key": key,
             "level": level,
             "root": root,
+            "acknowledged": acknowledged,
+            "notified": bool(allowed),
             "updated_at": utc_now(),
+            "transport": "DIRECT_TELEGRAM",
         })
 
     def _push_system_presence(self) -> None:
@@ -2653,10 +2669,7 @@ class Nexus:
     def _push_attention_transition(self) -> None:
         snap = self.service.presence_snapshot()
         state = snap.get("snapshot") or {}
-        level = str(state.get("attention_level") or "NORMAL")
-        reasons = list(state.get("attention_reasons") or [])
-        root = clean(reasons[0] if reasons else level, 180)
-        key = hashlib.sha256((level + "\n" + root).encode("utf-8")).hexdigest()
+        key, level, root = self.service._attention_key(state)
         prior = read_json(ATTENTION_NOTIFY_STATE_PATH, {}) or {}
         prior_level = str(prior.get("level") or "")
         prior_key = str(prior.get("key") or "")
@@ -2665,18 +2678,34 @@ class Nexus:
 
         text = ""
         critical = level in {"CRITICAL", "ACTION"}
+        recovery = prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}
+        if recovery and not self.service.recovery_transition_stable(key, level):
+            return
+
+        acknowledged = self.service.attention_is_acknowledged(key)
         if level in {"CRITICAL", "ACTION"}:
             text = self.service._attention_label(level) + "\n" + (root or "Une action humaine est requise.")
-        elif prior_level in {"CRITICAL", "ACTION"} and level in {"ACTIVE", "NORMAL"}:
+        elif recovery:
             text = "✅ SITUATION RÉTABLIE\nLe signal qui nécessitait votre attention n’est plus actif."
 
-        if text and self.service.notifications_allowed(critical):
-            self.push(text, "attention:" + key, silent=(level in {"ACTIVE", "NORMAL"}))
+        allowed = (
+            bool(text)
+            and not acknowledged
+            and self.service.notifications_allowed(critical)
+            and self.service.consume_notification_budget(
+                "attention:" + ("critical" if critical else "recovery"),
+                critical=critical,
+            )
+        )
+        if allowed:
+            self.push(text, "attention:" + key, silent=recovery)
         atomic_json(ATTENTION_NOTIFY_STATE_PATH, {
-            "schema": "bcp.telegram_attention_notice/1",
+            "schema": "bcp.telegram_attention_notice/2",
             "key": key,
             "level": level,
             "root": root,
+            "acknowledged": acknowledged,
+            "notified": bool(allowed),
             "updated_at": utc_now(),
             "transport": "NEXUS",
         })
