@@ -211,7 +211,7 @@ function Invoke-Wrangler($Launcher, [string[]]$Arguments, [switch]$AllowFailure)
 function Classify-WranglerProbeFailure($Probe) {
     if (-not $Probe) { return "WRANGLER_RUNTIME_PROBE_FAILED" }
     $raw = [string]$Probe.Text
-    if ($raw -match '(?i)ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENETUNREACH|network|registry\\.npmjs\\.org') {
+    if ($raw -match '(?i)ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENETUNREACH|network|registry\.npmjs\.org') {
         return "NPM_NETWORK_OR_REGISTRY_UNAVAILABLE"
     }
     if ($raw -match '(?i)CERT_|SELF_SIGNED_CERT|UNABLE_TO_VERIFY_LEAF_SIGNATURE|certificate') {
