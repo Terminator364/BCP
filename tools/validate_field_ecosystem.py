@@ -90,6 +90,10 @@ def main() -> int:
         "MANAGED_NODE_SHA256_MISMATCH",
         "NPM_CONFIG_PREFER_OFFLINE",
         "NPM_CONFIG_FETCH_RETRIES",
+        "MANAGED_NODE_PATH_BINDING_FAILED",
+        "MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED",
+        "$env:PATH = $nodeHome + ';'",
+        '--foreground-scripts',
     )
     assert re.search(r'\$NodeVersion\s*=\s*"24\.21\.0"', bootstrap)
     assert re.search(r'\$WranglerVersion\s*=\s*"4\.135\.0"', bootstrap)
