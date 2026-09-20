@@ -29,7 +29,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.10"
+SERVER_VERSION = "0.7.11"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -728,6 +728,65 @@ def repair_chatgpt_pc_recovery_launcher() -> dict:
     return {"ok": True, "result": "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED", **rec}
 
 
+def _stage_target_recovery_runner(
+    package: Path,
+    target_version: str,
+    target_sequence: int,
+    package_sha256: str,
+) -> dict:
+    member = "payload/tools/recovery_update_runner.py"
+    try:
+        with zipfile.ZipFile(package, "r") as zf:
+            matches = [info for info in zf.infolist() if info.filename == member]
+            if len(matches) != 1:
+                raise ValueError("recovery_target_runner_member_count")
+            info = matches[0]
+            if int(info.file_size) < 64 or int(info.file_size) > 512_000:
+                raise ValueError("recovery_target_runner_size")
+            raw = zf.read(info)
+    except zipfile.BadZipFile as e:
+        raise ValueError("recovery_target_package_bad_zip") from e
+
+    try:
+        source = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as e:
+        raise ValueError("recovery_target_runner_encoding") from e
+    compile(source, member, "exec")
+    if "def main(" not in source or "__main__" not in source:
+        raise ValueError("recovery_target_runner_contract")
+    if int(target_sequence) >= 6034:
+        if "publish_result(root,result,rec)" not in source or "atomic(result,rec)" in source:
+            raise ValueError("recovery_target_runner_drivefs_failopen_contract")
+
+    stage_dir = STATE_DIR / "recovery_runners"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    safe_version = re.sub(r"[^0-9A-Za-z._-]+", "_", str(target_version))[:48] or "unknown"
+    final_path = stage_dir / f"recovery_update_runner-{safe_version}-{int(target_sequence)}.py"
+    tmp = final_path.with_name(final_path.name + ".tmp")
+    normalized = source.encode("utf-8")
+    tmp.write_bytes(normalized)
+    os.replace(tmp, final_path)
+    readback = final_path.read_bytes()
+    if readback != normalized:
+        raise RuntimeError("recovery_target_runner_readback_mismatch")
+    runner_sha = hashlib.sha256(readback).hexdigest()
+    proof = {
+        "schema": "bcp.chatgpt_pc_target_runner/1",
+        "status": "STAGED",
+        "target_version": str(target_version),
+        "target_sequence": int(target_sequence),
+        "package_sha256": str(package_sha256).lower(),
+        "member": member,
+        "runner_sha256": runner_sha,
+        "runner_path": str(final_path),
+        "staged_at": utc_now(),
+        "source": "HASH_VERIFIED_TARGET_PACKAGE",
+        "privilege_expansion": False,
+    }
+    atomic_json(STATE_DIR / "chatgpt_pc_target_runner.json", proof)
+    return proof
+
+
 def request_chatgpt_pc_recovery() -> dict:
     if os.name != "nt":
         raise RuntimeError("chatgpt_pc_recovery_requires_windows")
@@ -778,15 +837,13 @@ def request_chatgpt_pc_recovery() -> dict:
         raise ValueError("recovery_package_sha256_mismatch")
 
     active = read_json(root / "state" / "active_release.json", {}) or {}
-    release_root = Path(str(active.get("release_root") or ""))
-    candidates = [
-        control / "RECOVERY" / "recovery_update_runner_hotfix_6026.py",
-        root / "recovery_update_runner.py",
-        release_root / "tools" / "recovery_update_runner.py",
-    ]
-    runner = next((p for p in candidates if p.is_file()), None)
-    if runner is None:
-        raise FileNotFoundError("recovery_update_runner_missing")
+    runner_proof = _stage_target_recovery_runner(
+        package,
+        target_version,
+        target_sequence,
+        actual,
+    )
+    runner = Path(str(runner_proof["runner_path"]))
 
     state_path = STATE_DIR / "chatgpt_pc_recovery_request.json"
     prior = read_json(state_path, {}) or {}
@@ -818,6 +875,8 @@ def request_chatgpt_pc_recovery() -> dict:
         "pid": int(proc.pid),
         "started_at": utc_now(),
         "runner": str(runner),
+        "runner_origin": "HASH_VERIFIED_TARGET_PACKAGE",
+        "runner_sha256": str(runner_proof.get("runner_sha256") or ""),
         "target_version": target_version,
         "target_sequence": target_sequence,
         "package_sha256": actual,
@@ -4696,6 +4755,8 @@ def selftest():
         assert "recovery_package_sha256_mismatch" in source
         assert "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED" in source
         assert "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED" in source
+        assert "HASH_VERIFIED_TARGET_PACKAGE" in source
+        assert "recovery_target_runner_drivefs_failopen_contract" in source
         assert "CLOUD_MIRROR_HOLD" in source
         assert "_record_telemetry_mirror_hold" in source
         sample_vbs = _chatgpt_pc_recovery_launcher_content(
@@ -4709,6 +4770,24 @@ def selftest():
         probe = _write_utf16_recovery_vbs(probe_vbs, sample_vbs)
         assert probe_vbs.read_bytes().startswith((b"\xff\xfe", b"\xfe\xff"))
         assert probe["bytes"] > 16 and len(probe["sha256"]) == 64
+        probe_zip = APP_ROOT / "recovery-target-probe.zip"
+        probe_runner_source = (
+            "def publish_result(root,result,rec): return True\n"
+            "def main():\n"
+            "    root=result=None; rec={}\n"
+            "    publish_result(root,result,rec)\n"
+            "    return 0\n"
+            "if __name__ == '__main__': raise SystemExit(main())\n"
+        )
+        with zipfile.ZipFile(probe_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("payload/tools/recovery_update_runner.py", probe_runner_source)
+        probe_pkg_sha = hashlib.sha256(probe_zip.read_bytes()).hexdigest()
+        runner_proof = _stage_target_recovery_runner(probe_zip, "6.0.34", 6034, probe_pkg_sha)
+        staged_runner = Path(str(runner_proof["runner_path"]))
+        assert staged_runner.is_file()
+        assert runner_proof["source"] == "HASH_VERIFIED_TARGET_PACKAGE"
+        assert runner_proof["package_sha256"] == probe_pkg_sha
+        assert hashlib.sha256(staged_runner.read_bytes()).hexdigest() == runner_proof["runner_sha256"]
         previous_control = os.environ.get("BCP_CONTROL_FOLDER")
         blocked_control = APP_ROOT / "blocked-control-file"
         blocked_control.write_text("not-a-directory", encoding="utf-8")
