@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R20
+Revision: 2026-09-20-R21
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1101,3 +1101,60 @@ A Mini App MUST:
 
 Canonical detailed requirement:
 - `docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md`
+
+## P0 — Telegram Rich Cockpit V10 / R21
+
+This requirement is additive and preserves R20.
+
+BCP SHOULD use Telegram Bot API Rich Messages when available to improve the human operations surface, but Rich Messages MUST NOT become a critical dependency.
+
+### Preferred rich presentation
+The primary live card MAY use structured Rich Message content with:
+- human attention heading;
+- compact table for objective, ≈progress, forecast confidence, proof age and human gate;
+- current/next action;
+- collapsible explanation and subsystem details;
+- styled callback buttons.
+
+### Styled control semantics
+Semantic button style MUST preserve meaning:
+- `success` for healthy/safe action;
+- `primary` for normal navigation/inspection;
+- `danger` only for a real critical/human-action state;
+- `link` for informational navigation when appropriate.
+
+Exact client colors MUST NOT be assumed; style is semantic.
+
+### Mandatory V9 fallback
+For every rich send/edit:
+1. try the rich API;
+2. on sanitized failure, fall back immediately to the V9 plain-text card and InlineKeyboard;
+3. do not require user intervention;
+4. do not lose the live-card cursor/fingerprint.
+
+DIRECT_TELEGRAM and NEXUS MUST expose the same functional controls. Nexus carries both plain text and optional rich HTML and performs the same rich-first/fallback decision at the edge.
+
+### Four-report transport parity
+Nexus MUST support the same four report snapshots as direct mode:
+- summary;
+- devices/network;
+- mission/micro-actions;
+- technical audit.
+
+Older summary+technical publishers remain accepted during rolling transition.
+
+### Resource/cost/security constraints
+- normal rich payload target <= 30000 characters;
+- no media in the default card;
+- edit one live card rather than spam;
+- no heavy local browser/runtime;
+- `allow_paid_broadcast` MUST NOT be enabled;
+- rich content is escaped/redacted and MUST contain no secret;
+- callback data remains allowlisted/bounded;
+- DEFAULT_PAID_SPEND=0 USD.
+
+### Truth boundary
+Rich formatting changes presentation only. Approximate progress, prediction confidence, risk radar and durable proof MUST remain semantically distinct. Rich drafts, if later introduced, are transient UX and never evidence of work.
+
+Canonical detailed requirement:
+- `docs/TELEGRAM_RICH_COCKPIT_V10_R21.md`
