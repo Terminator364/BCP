@@ -3,8 +3,8 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R54_HUMAN_PRESENTATION_DEEP_AUDIT_IMPLEMENTED_CI_PENDING",
-  "last_completed_atomic_action": "R54 deep human-presentation audit implemented across Telegram direct and Nexus: user-visible Kinshasa time, human-first reports 1-3, structured technical report, hierarchical dependency-free PDFs, French WinAnsi glyphs, anti-double-title, Page X/Y, Nexus caption localization, and Nexus worker health version reconciliation to 0.2.6. Representative PDF render inspected visually; field-generated PDFs remain unverified. R54 CI counter-audit caught a case-sensitive selftest oracle; it now verifies the required Kinshasa/UTC semantics rather than exact sentence casing. Telegram V18 hash refreshed. R54 selftest now preserves missing-time truth: no Kinshasa timestamp is invented when last-visit time is absent; when a timestamp is present it is localized. Telegram V18 release hash/notes reconciled. Final Telegram V18 source byte hash pinned to e18c4d3e... after the concurrent last-visit truth-test commit. H54-11 closed: normal Messages récents no longer exposes caught up/CHATGPT_UI/COMPLETE as primary human text. Telegram V18 SHA pinned to 04b35117...",
-  "next_action": "Run exact-head R54 CI after final human-state translation; merge only if CURRENT, Telegram, Nexus, Field Ecosystem and Coordinated Product are green on the same head; then field-converge and inspect all four real PDFs.",
+  "last_completed_atomic_action": "R54 deep human-presentation audit implemented across Telegram direct and Nexus: user-visible Kinshasa time, human-first reports 1-3, structured technical report, hierarchical dependency-free PDFs, French WinAnsi glyphs, anti-double-title, Page X/Y, Nexus caption localization, and Nexus worker health version reconciliation to 0.2.6. Representative PDF render inspected visually; field-generated PDFs remain unverified. R54 CI counter-audit caught a case-sensitive selftest oracle; it now verifies the required Kinshasa/UTC semantics rather than exact sentence casing. Telegram V18 hash refreshed. R54 selftest now preserves missing-time truth: no Kinshasa timestamp is invented when last-visit time is absent; when a timestamp is present it is localized. Telegram V18 release hash/notes reconciled. Final Telegram V18 source byte hash pinned to e18c4d3e... after the concurrent last-visit truth-test commit. H54-11 closed: normal Messages récents no longer exposes caught up/CHATGPT_UI/COMPLETE as primary human text. Telegram V18 SHA pinned to 04b35117... R55 changed the human checkpoint contract: email is the sole detailed checkpoint surface; ChatGPT becomes pointer-only after a positively sent email; BCP interactive tranche target is 8–10 minutes.",
+  "next_action": "Qualify R55 exact head, merge through the single-writer fence, then continue the next uncommitted BCP product action under the 8–10 minute email-first checkpoint rule.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -80,7 +80,8 @@
     "producer_watermark_sync": "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
     "interactive_work_cadence": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
     "chatgpt_pc_flow_bridge": "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
-    "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+    "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    "delivery_redundancy_policy": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -147,7 +148,8 @@
     "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
     ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
     "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
-    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -199,7 +201,9 @@
     "P0_interactive_work_tranche_5_to_7_minutes": true,
     "P0_chatgpt_pc_local_flow_bridge": true,
     "P0_universal_continuation_registry": true,
-    "P0_global_5_to_7_minute_tranche_cadence": true
+    "P0_global_5_to_7_minute_tranche_cadence": true,
+    "P0_email_only_detailed_checkpoint": true,
+    "P0_interactive_work_tranche_8_to_10_minutes": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -1969,5 +1973,19 @@
     ],
     "user_feedback_trigger": "Normal user-facing timestamps/PDFs must be Kinshasa-local and understandable without technical knowledge; ChatGPT mobile desynchronization makes mail-first continuity operationally important.",
     "next_atomic_action": "Exact-head CI qualification and serialized merge if green."
+  },
+  "r55_delivery_policy": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "revision": "2026-09-20-R55",
+    "detailed_human_surface": "EMAIL_ONLY",
+    "chatgpt_after_mail": "POINTER_ONLY",
+    "telegram_role": "SECONDARY_WITNESS_ALERT_RECOVERY_NAVIGATION",
+    "tranche_minutes": "8-10",
+    "mail_before_chat_pointer": true,
+    "email_failure_behavior": "EMAIL_DELIVERY_HOLD_MINIMUM_RECOVERY_ONLY",
+    "supersedes": [
+      "R53_CHATGPT_SECOND_FULL_CHECKPOINT_COPY",
+      "EARLIER_5_6_OR_5_7_MINUTE_BCP_CHECKPOINT_CADENCE"
+    ]
   }
 }
