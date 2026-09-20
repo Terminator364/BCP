@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_NEXUS_AUTH_PENDING_BEDGE_INSTALL_PENDING_TELEGRAM_V10_NEXUS_0_2_1_R21_CANDIDATE",
-  "last_completed_atomic_action": "Telegram Rich Cockpit V10 / Nexus 0.2.1 R21 final candidate persisted: rich-first structured card, mandatory V9 fallback, Direct/Nexus four-report parity, exact Telegram release hash validation, field-shaped fallback guards, and actionability-aware notification tiers (human-action normal, auto-resume silent, WATCH dashboard-only).",
-  "next_action": "Open exact-head PR and run all qualification workflows. Merge only after CURRENT, Telegram Windows+Ubuntu, Nexus, coordinated Android/server, and field ecosystem preflight all pass on the same head SHA; then re-read main and merge under writer fence. User action remains unnecessary while away.",
+  "status": "BCP_0_7_0_NEXUS_0_2_2_TELEGRAM_V11_R22_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "Merged Rich Cockpit V10/R21 to main after five exact-head CI PASS, then implemented R22/V11 attention lifecycle on a fresh fenced branch: J’ai vu acknowledgement, recovery anti-flapping, bounded routine notification budget, and Nexus callback parity.",
+  "next_action": "Run exact-head qualification for R22/V11. If green, re-read main, reconcile if moved, merge serially, then allow resident auto-update. Field Cloudflare authorization and signed B-EDGE install remain genuine deferred human gates.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -200,12 +200,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-RICH-V10-NEXUS-021-R21-QUALIFICATION-20260920",
-    "status": "PR_AND_CI_PENDING",
-    "last_completed_action": "Final code/manifests/spec/CI guards aligned; source and manifest hashes updated.",
-    "next_atomic_action": "Open exact-head PR and qualify.",
-    "branch": "work/bcp/r21-telegram-rich-cockpit-v10-20260920",
-    "base_main_sha": "1a19a78fe05ea3403c85e4d8cdf53163b2a86e48",
+    "checkpoint_id": "BCP-TELEGRAM-V11-R22-ATTENTION-LIFECYCLE-20260920",
+    "status": "CI_PENDING",
+    "last_completed_action": "R22 code, Nexus parity, release manifests and canonical requirement persisted.",
+    "next_atomic_action": "Exact-head CI then serialized merge if green.",
+    "branch": "work/bcp/r22-attention-ack-flap-budget-20260920",
+    "base_main_sha": "eac7db76711877031def7dee82e5493a98c54e5c",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1480,5 +1480,22 @@
     },
     "telegram_source_sha256": "04217df121ab51d5bff58278adb17487d164e1af275aa8310cb5b0f9da835c7b",
     "nexus_manifest_sha256": "5257f050b45255ff59deb38d27270e7d25a8418ac8f03f237c209d126aa09727"
+  },
+  "telegram_attention_lifecycle_v11": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "version": "2026.09.20-attention-lifecycle-v11",
+    "requirements_revision": "2026-09-20-R22",
+    "acknowledgement": true,
+    "recovery_flap_damping": {
+      "minimum_observations": 2,
+      "minimum_seconds": 60
+    },
+    "routine_notification_budget": {
+      "window_minutes": 30,
+      "limit": 3,
+      "critical_bypass": true
+    },
+    "nexus_callback_parity": true,
+    "field_verified": false
   }
 }
