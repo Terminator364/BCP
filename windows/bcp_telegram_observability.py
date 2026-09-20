@@ -2459,9 +2459,13 @@ class Nexus:
 
     def publish_reports(self) -> None:
         summary = redact_text(self.service.report_summary())[:18000]
+        devices = redact_text(self.service.report_devices())[:22000]
+        mission = redact_text(self.service.report_mission())[:24000]
         technical = redact_text(self.service.report_technical())[:26000]
         self.api("/v1/device/report", method="POST", payload={
             "summary": summary,
+            "devices": devices,
+            "mission": mission,
             "technical": technical,
         }, timeout=30)
 
