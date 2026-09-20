@@ -183,7 +183,7 @@ def main() -> int:
         "/v1/conversations",
         "_conversation_safe_text",
         "conversation_delivery_gaps",
-        "/v1/conversations/gaps",
+        '["v1", "conversations", "gaps"]',
         "DERIVED_FROM_BCP_RECEIPTS_NOT_CHATGPT_INTERNAL_STATE",
     )
     require(
