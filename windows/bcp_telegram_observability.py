@@ -682,6 +682,124 @@ class Service:
         name = clean(r.get("name") or "qualification", 60)
         return labels.get(state, "⚪ tests: " + clean(state, 30)) + " — " + name
 
+    @staticmethod
+    def _micro_weight(label: str) -> int:
+        """Deterministic forecast weight for a high-level step. This is an estimate, never proof."""
+        low = clean(label, 220).lower()
+        weight = 4
+        if any(x in low for x in ("pdf", "fichier", "file", "read", "lire", "ouvrir", "inspect", "vérifier", "verify", "hash", "log")):
+            weight += 2
+        if any(x in low for x in ("modifier", "patch", "corriger", "fix", "code", "implément", "update", "mise à jour")):
+            weight += 4
+        if any(x in low for x in ("workflow", "ci", "build", "test", "qualification", "android", "windows")):
+            weight += 5
+        if any(x in low for x in ("release", "publier", "merge", "déployer", "deploy", "terrain", "field", "readback", "télémétr")):
+            weight += 5
+        return max(2, min(24, weight))
+
+    def _micro_forecast(self, ctx: dict | None, events: list[dict], gh: dict) -> dict:
+        """Estimate fine-grained micro-actions from persisted work. Explicitly approximate."""
+        runs = gh.get("runs") or []
+        if ctx and (ctx.get("plan") or []):
+            plan = [x for x in (ctx.get("plan") or []) if isinstance(x, dict)]
+            total = 0
+            done = 0
+            current_id = clean(((ctx.get("mission") or {}).get("current_step")), 80)
+            for pos, step in enumerate(plan, 1):
+                label = clean(step.get("label") or step.get("id") or ("Étape " + str(pos)), 180)
+                weight = self._micro_weight(label)
+                total += weight
+                state = str(step.get("state") or "").upper()
+                verified = bool(step.get("verified")) or state in {
+                    "VERIFIED", "DONE", "COMMITTED", "CHECKPOINTED", "SUCCESS", "COMPLETED"
+                }
+                if verified:
+                    done += weight
+                elif clean(step.get("id"), 80) == current_id:
+                    done += max(1, weight // 3)
+            total = max(total, 12)
+        else:
+            observed_events = min(40, len(events))
+            completed_events = sum(
+                1 for e in events
+                if str(e.get("state") or "").upper() in {"COMMITTED", "CHECKPOINTED", "DONE", "RESULT_RECEIVED", "VALIDATING"}
+            )
+            run_count = min(8, len(runs))
+            completed_runs = sum(
+                1 for r in runs
+                if str(r.get("conclusion") or "").lower() == "success"
+            )
+            # Medium BCP engineering work generally spans dozens of atomic reads,
+            # edits, checks, commits and readbacks. Forecast expands as evidence appears.
+            total = max(32, min(1000, 32 + observed_events * 2 + run_count * 6))
+            done = min(total - 1, completed_events * 2 + completed_runs * 4 + min(observed_events, 12))
+        pct = max(0, min(100, int(round(done * 100 / max(1, total)))))
+        return {
+            "done": int(done),
+            "total": int(total),
+            "pct": pct,
+            "bar": self._bar(done, total, 12),
+            "approximate": True,
+        }
+
+    @staticmethod
+    def _human_ci_explanation(gh: dict) -> str:
+        runs = gh.get("runs") or []
+        if not runs:
+            return "Aucun test GitHub récent disponible."
+        r = runs[0]
+        name = str(r.get("name") or "tests")
+        state = str(r.get("conclusion") or r.get("status") or "unknown").lower()
+        state_text = {
+            "success": "terminés avec succès",
+            "in_progress": "en cours",
+            "queued": "en attente de démarrage",
+            "failure": "en échec — correction nécessaire",
+            "cancelled": "interrompus",
+        }.get(state, "état " + clean(state, 30))
+        low = name.lower()
+        if "coordinated product" in low:
+            purpose = "vérifie que PC, B-EDGE, versions et contrats restent compatibles ensemble"
+        elif "field ecosystem" in low:
+            purpose = "reproduit les contraintes réelles Windows/RAM/réseau et le runtime Nexus avant le terrain"
+        elif "telegram" in low:
+            purpose = "vérifie le cockpit Telegram, ses boutons et ses garde-fous"
+        elif "nexus" in low:
+            purpose = "vérifie le relais Nexus utilisé quand le PC ne joint pas directement Telegram"
+        elif "current release" in low:
+            purpose = "vérifie que la version publiée est cohérente, signée par ses hashes et auto-mise-à-jour"
+        else:
+            purpose = "vérifie automatiquement la prochaine version avant déploiement"
+        return "Tests " + state_text + " : " + purpose + "."
+
+    @staticmethod
+    def _nexus_progress(state: str) -> tuple[int, str]:
+        s = str(state or "").upper()
+        table = {
+            "NONE": (5, "Relais Internet pas encore préparé"),
+            "NOT_OBSERVED": (5, "Relais Internet pas encore observé"),
+            "WRANGLER_RUNTIME_REQUIRED": (70, "Préparation du moteur Nexus sur le PC"),
+            "RUNTIME_PROBE_FAILED": (70, "Préparation Nexus à corriger"),
+            "LAUNCHED": (82, "Démarrage et vérification du relais Nexus"),
+            "HUMAN_AUTH_REQUIRED": (90, "Autorisation fournisseur requise"),
+            "COMMITTED": (100, "Relais Nexus opérationnel"),
+            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": (100, "Relais Nexus opérationnel"),
+        }
+        return table.get(s, (50, "Préparation du relais Nexus"))
+
+    def _ecosystem_health(self, heartbeat_ok: bool, edge_ok: bool, edge_paired: bool,
+                          drive_ok: bool, ci_state: str, nexus_state: str) -> tuple[int, str]:
+        score = 0
+        score += 28 if heartbeat_ok else 0
+        score += 18 if edge_ok else (10 if edge_paired else 0)
+        score += 14 if drive_ok else 0
+        score += 20 if ci_state == "success" else (10 if ci_state in {"in_progress", "queued"} else 0)
+        score += 20 if nexus_state in {"COMMITTED", "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING"} else (
+            12 if nexus_state in {"LAUNCHED", "HUMAN_AUTH_REQUIRED", "WRANGLER_RUNTIME_REQUIRED"} else 4
+        )
+        score = max(0, min(100, score))
+        return score, self._bar(score, 100, 12)
+
     def presence_snapshot(self) -> dict:
         runtime = self.local.runtime()
         edge = self.local.edge()
@@ -694,129 +812,141 @@ class Service:
         ev = events[-1] if events else {}
         ctx = self._mission_context()
         mission = (ctx or {}).get("mission") or {}
-        mission_state = str(
-            mission.get("status") or ev.get("state") or "NOT_OBSERVED"
-        ).upper()
+        mission_state = str(mission.get("status") or ev.get("state") or "UNKNOWN").upper()
 
         if ctx:
-            action = clean(ctx.get("current"), 180)
-            next_action = self._human_action(ctx.get("next"))
-            last_completed = clean(ctx.get("last"), 180)
-            progress = str(ctx.get("progress") or ("Étape: " + mission_state.replace("_", " ").lower()))
-            age = self._event_age_seconds({
-                "updated_at": mission.get("last_progress_at") or mission.get("updated_at")
-            })
-            evidence_time = clean(
-                mission.get("last_progress_at") or mission.get("updated_at") or "non observée", 64
-            )
-            step_key = [int(ctx.get("verified") or 0), int(ctx.get("total") or 0)] if int(ctx.get("total") or 0) > 0 else None
-        else:
-            action = clean(
-                ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
-                "Aucune micro-action durable récente.",
+            objective = clean(
+                mission.get("objective") or mission.get("title") or
+                (ctx.get("plan") or [{}])[0].get("label") if (ctx.get("plan") or []) else
+                "Faire avancer la mission API/BCP",
                 180,
             )
-            next_action = self._human_action(
-                ev.get("next_safe_action") or "Relire l’état sauvegardé avant de reprendre."
+            action = clean(ctx.get("current") or "Analyse de la prochaine action vérifiable.", 180)
+            next_action = self._human_action(ctx.get("next"))
+            last_completed = clean(ctx.get("last") or "Point de reprise durable conservé.", 180)
+            age = self._event_age_seconds({"updated_at": mission.get("last_progress_at") or mission.get("updated_at")})
+            evidence_time = clean(mission.get("last_progress_at") or mission.get("updated_at") or "", 64)
+        else:
+            objective = clean(
+                ev.get("mission_objective") or ev.get("objective") or
+                ev.get("job_title") or "Faire avancer la mission API/BCP en cours.",
+                180,
             )
-            age = self._event_age_seconds(ev)
-            evidence_time = self._event_timestamp(ev) or "non observée"
+            action = clean(
+                ev.get("action_summary") or ev.get("step_summary") or ev.get("step_id") or
+                "Reconstitution automatique de l’activité à partir des preuves disponibles.",
+                180,
+            )
+            next_action = self._human_action(ev.get("next_safe_action") or "")
             last_completed = self._last_completed_action(events, ev)
-            progress = "Étape: " + mission_state.replace("_", " ").lower()
-            step_key = None
-            try:
-                idx = int(ev.get("step_index"))
-                total = int(ev.get("step_total"))
-                if 0 <= idx <= total and total > 0:
-                    pct = int(round(idx * 100 / total))
-                    progress = self._bar(idx, total) + " " + str(pct) + "% — étape " + str(idx) + "/" + str(total)
-                    step_key = [idx, total]
-            except Exception:
-                pass
+            age = self._event_age_seconds(ev)
+            evidence_time = self._event_timestamp(ev)
 
         if age is None:
             age = self.local.mission_activity_age()
         age_label = self._age_label(age)
-        if isinstance(age, int) and age < 120:
-            activity_band = "RECENT"
-        elif isinstance(age, int) and age < 600:
-            activity_band = "QUIET"
-        elif isinstance(age, int):
-            activity_band = "STALE"
-        else:
-            activity_band = "UNKNOWN"
-        if mission_state in HOLD_STATES or clean(mission.get("hold_reason"), 120):
-            activity_band = "HOLD"
 
+        forecast = self._micro_forecast(ctx, events, gh)
         hb = runtime.get("_age_seconds")
         heartbeat_ok = isinstance(hb, int) and hb <= 180
         edge_age = edge.get("_age_seconds")
         edge_ok = bool(edge.get("paired")) and isinstance(edge_age, int) and edge_age <= 300
+        edge_paired = bool(edge.get("paired"))
         drive_ok = str(drive.get("status") or "").upper() == "OBSERVED"
         runs = gh.get("runs") or []
         run = runs[0] if runs else {}
         ci_state = clean(run.get("conclusion") or run.get("status"), 30).lower()
         nexus = str(runtime.get("nexus_bootstrap_state") or "NOT_OBSERVED").upper()
-        nexus_text = {
-            "COMMITTED": "✅ relais Nexus actif",
-            "NEXUS_DEPLOYED_LOCAL_WORKER_RUNNING": "✅ relais Nexus actif",
-            "EXITED_NO_RECEIPT": "🟡 relais Nexus à reprendre",
-            "WRANGLER_RUNTIME_REQUIRED": "🟡 préparation du relais Nexus",
-            "LAUNCHED": "🟡 démarrage du relais Nexus en cours",
-        }.get(nexus, "⚪ relais Nexus non observé")
+        nexus_pct, nexus_stage = self._nexus_progress(nexus)
+        health_pct, health_bar = self._ecosystem_health(
+            heartbeat_ok, edge_ok, edge_paired, drive_ok, ci_state, nexus
+        )
+
+        hold_reason = clean(mission.get("hold_reason") or ev.get("failure_hold_reason"), 120)
+        if mission_state in HOLD_STATES or hold_reason:
+            activity = "🟠 En attente : " + (hold_reason.replace("_", " ").lower() if hold_reason else "un blocage identifié doit être levé.")
+        elif isinstance(age, int) and age < 120:
+            activity = "🟢 Travail actif — nouvelle preuve reçue il y a " + age_label + "."
+        elif isinstance(age, int) and age < 900:
+            activity = "🔵 Travail en cours / attente normale — dernière preuve il y a " + age_label + "."
+        elif isinstance(age, int):
+            activity = "🟡 Travail sans nouvelle preuve depuis " + age_label + " — le suivi automatique continue."
+        else:
+            activity = "🔵 Suivi automatique actif — synchronisation des preuves en cours."
+
+        if heartbeat_ok:
+            pc_text = "🟢 PC : allumé · BCP en vie"
+        elif isinstance(hb, int) and hb <= 600:
+            pc_text = "🟡 PC : probablement allumé · télémétrie retardée"
+        else:
+            pc_text = "🔴 PC : non joignable récemment"
+
+        if edge_ok:
+            edge_text = "🟢 Ancien téléphone : serveur B-EDGE actif"
+        elif edge_paired:
+            edge_text = "🔵 Ancien téléphone : serveur appairé · veille normale"
+        else:
+            edge_text = "🔴 Ancien téléphone : serveur non appairé"
 
         human_gate = self._human_gate(ev, next_action)
         rendered_at = utc_now()
+        refresh_seconds = 60 if mission_state not in {"DONE", "CANCELLED"} else 300
+        refresh_bucket = int(time.time() // refresh_seconds)
         stable = {
             "pc_active": heartbeat_ok,
-            "edge_paired": edge_ok,
+            "edge_paired": edge_paired,
+            "edge_active": edge_ok,
             "drive_visible": drive_ok,
             "nexus_state": nexus,
             "ci_state": ci_state,
             "mission_state": mission_state,
             "mission_action": action,
             "mission_next": next_action,
-            "mission_step": step_key,
-            "activity_band": activity_band,
+            "forecast": [forecast["done"], forecast["total"], forecast["pct"]],
+            "health_pct": health_pct,
             "human_gate": human_gate,
-            "evidence_time": evidence_time,
+            "refresh_bucket": refresh_bucket,
         }
         digest = hashlib.sha256(
             json.dumps(stable, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
 
-        if activity_band == "HOLD":
-            activity = "🟠 La mission attend un élément identifié."
-        elif activity_band == "RECENT":
-            activity = "🟢 Une preuve récente confirme que ça avance."
-        elif activity_band == "QUIET":
-            activity = "🟡 Pas de nouvelle preuve depuis " + age_label + "."
-        elif activity_band == "STALE":
-            activity = "🟠 Pas de nouvelle preuve depuis " + age_label + ". La liaison doit être revérifiée."
-        else:
-            activity = "⚪ Progression récente non observée."
-
         lines = [
-            "🤖 BCP Cockpit — " + self.project_id,
+            "🛰️ Automate de suivi BCP — " + self.project_id,
             activity,
             "",
-            "🎯 Micro-action actuelle: " + action,
-            "📊 Progression: " + progress,
-            "✅ Dernière micro-action terminée: " + last_completed,
-            "➡️ Prochaine micro-action: " + next_action,
-            "👤 Action pour vous: " + human_gate,
-            "",
-            "🕒 Dernière preuve: " + evidence_time + " · âge " + age_label,
-            "",
-            ("✅ PC/BCP" if heartbeat_ok else "⚠️ PC/BCP — preuve récente absente"),
-            ("✅ Ancien téléphone" if edge_ok else ("🟡 Ancien téléphone appairé, preuve récente absente" if edge.get("paired") else "⚠️ Ancien téléphone non observé")),
-            ("✅ Drive" if drive_ok else "⚠️ Drive non observé"),
-            "🌐 " + nexus_text,
-            "🧪 " + self._human_ci(gh),
-            "",
-            "📋 Micro-actions: bouton ci-dessous · 🔧 technique: Détails",
+            "🎯 Objectif actuel : " + objective,
+            "📈 Avancement estimé : " + forecast["bar"] + " ≈" + str(forecast["pct"]) + "% · ≈" + str(forecast["done"]) + "/" + str(forecast["total"]) + " micro-actions",
+            "🧭 Étape en cours : " + action,
         ]
-        return {"fingerprint": digest, "text": "\n".join(lines), "snapshot": stable}
+        if last_completed and "Aucune étape" not in last_completed:
+            lines.append("✅ Dernière action confirmée : " + last_completed)
+        if next_action:
+            lines.append("➡️ Ensuite : " + next_action)
+        if human_gate != "AUCUNE":
+            lines.append("👤 Votre intervention : " + human_gate)
+
+        lines += [
+            "",
+            "🌡️ État général : " + health_bar + " " + str(health_pct) + "%",
+            pc_text,
+            edge_text,
+            ("🟢 Drive : synchronisation visible" if drive_ok else "🟡 Drive : synchronisation non confirmée"),
+            "🌐 Nexus : " + self._bar(nexus_pct, 100, 10) + " ≈" + str(nexus_pct) + "% · " + nexus_stage,
+            "🧪 " + self._human_ci_explanation(gh),
+            "",
+            "🔄 Actualisation automatique : " + str(refresh_seconds) + " s quand la liaison est disponible · reprise automatique après coupure",
+            ("🕒 Dernière preuve : " + (evidence_time or "horodatage en cours de synchronisation") + " · " + age_label if age is not None else "🕒 Dernière preuve : synchronisation en cours"),
+            "",
+            "Boutons : situation · objectif · activité fine · rapports · technique",
+        ]
+        return {
+            "fingerprint": digest,
+            "text": "\n".join(lines),
+            "snapshot": stable,
+            "rendered_at": rendered_at,
+            "refresh_seconds": refresh_seconds,
+        }
 
     def status(self) -> str:
         return self.presence_snapshot()["text"]
