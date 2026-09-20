@@ -1192,7 +1192,9 @@ Routine noncritical notifications MUST be rate-bounded independently of monitori
 - default routine interruption budget: 3;
 - CRITICAL and genuine human-action gates bypass this budget;
 - WATCH remains dashboard/Radar-first and does not page while safe automation exists;
-- budget exhaustion suppresses notification delivery only, never evaluation, watchdogs, state persistence, or recovery.
+- budget exhaustion suppresses notification delivery only, never evaluation, watchdogs, state persistence, or recovery;
+- budget is consumed only after positive notification delivery;
+- a transport failure MUST NOT mark an alert as delivered, and critical/action-required alerts remain retryable after reconnect.
 
 ### Operational semantics
 The cockpit MUST distinguish:
