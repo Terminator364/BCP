@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-producer-watermark-v15",
+  "version": "2026.09.20-chatgptpc-flow-bridge-v16",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "62b37ba7c05d39158d61d9737fdf6a262066ba57bad768354f964fceaf010e8e",
+  "sha256": "97812c063b6b9c9301d2a0b99972f6a7b6566146dc62715b4d152a7cb2965832",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V15 preserves V14 and adds producer watermark sync visibility: complete-through sequence, announced watermark, and incomplete tail/internal gap WATCH state.",
-  "requirements_revision": "2026-09-20-R26"
+  "notes": "Telegram V16 preserves V15 producer-sync UX and shows ChatGPT-PC local flow bridge state/backlog in Conversations.",
+  "requirements_revision": "2026-09-20-R27"
 }
