@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_7_R31_ADAPTIVE_NEXUS_HUMAN_GATE_WATCH_CANDIDATE",
-  "last_completed_atomic_action": "R31 candidate implemented: resident BCP keeps the normal 30-minute data-saving update cadence but adds a manifest-only 2-minute fast path while Nexus is HUMAN_AUTH_REQUIRED; unchanged versions cause zero artifact download, network failures back off to 15 minutes.",
-  "next_action": "Run exact-head CURRENT/Field/Coordinated/Telegram/Nexus CI. Merge only if all required workflows pass and main is unchanged; then wait for resident BCP 0.7.7 and Nexus 0.2.4 readback.",
+  "status": "BCP_0_7_7_R32_WINDOWS_VERSION_DRIFT_REPAIR_CANDIDATE",
+  "last_completed_atomic_action": "R32 candidate repaired post-R31 Windows release drift: INSTALL_BCP_FINAL.ps1 InstallerVersion and BCP_FINAL_ACCEPTANCE_CURRENT.ps1 TargetVersion now match release/server.json 0.7.7.",
+  "next_action": "Run exact-head R32 CI on the repair branch. Merge only if required Windows/Coordinated/Final Acceptance and existing release-contract gates pass, then re-read main and update durable state/readback.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,12 +229,18 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R31-ADAPTIVE-NEXUS-HUMAN-GATE-WATCH-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_READY",
-    "last_completed_action": "R31 runtime/spec/release alignment persisted.",
-    "next_atomic_action": "Open PR and exact-head qualification.",
-    "branch": "work/bcp/r31-adaptive-nexus-manifest-watch-20260920",
-    "base_main_sha": "06541659d6f79c8fbcc5b312d0bad874bb87b258",
+    "checkpoint_id": "BCP-R32-WINDOWS-VERSION-DRIFT-REPAIR-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "last_completed_action": "Aligned Windows installer and final acceptance target to BCP 0.7.7 after post-merge R31 CI exposed stale 0.6.2 constants.",
+    "next_atomic_action": "Exact-head CI qualification, then serialized PR integration if green.",
+    "branch": "work/bcp/r32-windows-version-drift-repair-20260920",
+    "base_main_sha": "87ad65617cdc8b5b8ad9ff0fb7ed2c0e71f9efd0",
+    "root_cause": "STALE_WINDOWS_VERSION_CONSTANTS_0_6_2_VS_RELEASE_0_7_7",
+    "failed_main_runs": [
+      35516602176,
+      35516602228,
+      35516602175
+    ],
     "no_replay": true
   },
   "runtime_verification": {
