@@ -271,6 +271,38 @@ def main() -> int:
     assert "📚 Rapports & technique" in telegram_primary
     assert "📚 Rapports & technique" in nexus_primary
 
+    # R54 human presentation / PDF parity.
+    require(
+        telegram,
+        "KINSHASA_TZ",
+        "human_timestamp",
+        "/Encoding /WinAnsiEncoding",
+        "/BaseFont /Helvetica-Bold",
+        "Page {page_no}/{total_pages}",
+        "Heure affichée : Kinshasa",
+        "Créé le : ",
+        "ACTION POUR VOUS",
+    )
+    require(
+        nexus_worker,
+        "pdfWinAnsiEscape",
+        "function advancedCockpitKeyboard",
+        "/Encoding /WinAnsiEncoding",
+        "/BaseFont /Helvetica-Bold",
+        "Page ",
+        "Heure affichée : Kinshasa",
+        "%BCP-HUMAN-PDF",
+    )
+    for human_fn_start, human_fn_end in (
+        ("def report_summary", "def report_devices"),
+        ("def report_devices", "def report_mission"),
+        ("def report_mission", "def report_technical"),
+    ):
+        block = telegram.split(human_fn_start, 1)[1].split(human_fn_end, 1)[0]
+        assert "utc_now()" not in block
+        assert "nexus_bootstrap_error_class" not in block
+        assert "mission_id:" not in block
+
     assert "allow_paid_broadcast" not in telegram
     assert "allow_paid_broadcast" not in nexus_worker
     assert set(nexus_release["report_exports"]["cached_reports"]) == {
