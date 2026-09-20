@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "976d536e322a44518c472997a0646432b19f3d944a72430a802b4c1923e6f691",
+  "sha256": "cc07534cf3e6608a0988f00d9f149a7080728649c55cfb4d32528a62fb538ae2",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R34",
-  "release_train": "BCP-0.7.8_EDGE-2.1.0-rc1-sentinel",
-  "notes": "BCP 0.7.8 preserves R31 and hardens outbound update convergence: independent SERVER/TELEGRAM_COMPANION/NEXUS lanes, bounded network backoff, machine-readable transport error classification, and no companion suppression when the server manifest check fails."
+  "requirements_revision": "2026-09-20-R38",
+  "release_train": "BCP-0.7.9_EDGE-2.1.0-rc1-sentinel",
+  "notes": "BCP 0.7.9 preserves R34 and adds a least-privilege local ChatGPT-PC recovery-launcher bridge: if the Drive-backed recovery target/package is locally stale or unavailable, BCP repairs the known Startup VBS as UTF-16, readbacks it, launches the existing recovery plane, and reports BRIDGE_STARTED without claiming the target release installed."
 }
