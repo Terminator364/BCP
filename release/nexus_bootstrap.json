@@ -1,17 +1,17 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R28",
+  "requirements_revision": "2026-09-20-R29",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "daeeed68d26a096a0d8953ae79181d715d06c8a45cd26daa12be1c4ca9d3d711",
+      "sha256": "8348fa27e4b3cfd810b93b397c434b264665b473dd22567a5e48b3effe021ae3",
       "max_bytes": 300000
     },
     {
@@ -52,7 +52,10 @@
     "windows_powershell_native_stderr_captured": true,
     "portable_node_path_binding": true,
     "npm_lifecycle_child_node_probe": true,
-    "system_node_independent_ci": true
+    "system_node_independent_ci": true,
+    "cloudflare_auth_strategy": "DEVICE_FLOW_FIRST_THEN_BROWSER_FALLBACK",
+    "cloudflare_device_flow": true,
+    "cloudflare_device_flow_min_wrangler": "4.119.0"
   },
   "live_card": {
     "enabled": true,
@@ -102,5 +105,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.3 remains R28-compatible. Cadence timing decomposition is computed from local durable BCP/ChatGPT-PC receipts; Nexus is not treated as a canonical transcript or UI-delivery oracle."
+  "notes": "Nexus 0.2.4 hardens the one-time Cloudflare human gate for unstable networks: prefer Wrangler OAuth device authorization (no localhost callback), then fall back to classic browser OAuth if the device flow is unavailable. No API token or BCP secret is copied into chat."
 }
