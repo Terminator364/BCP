@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "9ac158600e898c0ac5653ce484827c832c279c4269e678ad2423f377ddc9ad63",
+  "sha256": "c272885cf356497b6cace85f84eb07903f195129e789d5d676c4889c833ce297",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.0.0-rc1-evergreen",
-  "requirements_revision": "2026-09-20-R11",
-  "release_train": "BCP-0.6.7_EDGE-2.0.0-rc1",
-  "notes": "Adds secret-free Nexus managed-runtime failure class/detail/stage to durable external telemetry so home-WiFi field failures can be diagnosed without user log shuttling."
+  "requirements_revision": "2026-09-20-R14",
+  "release_train": "BCP-0.6.8_EDGE-2.0.0-rc1",
+  "notes": "Adds machine-readable Telegram companion runtime health to external BCP telemetry and a bounded stale-health watchdog. Network degradation remains distinguishable from a dead worker; no user log shuttle is required."
 }
