@@ -507,3 +507,31 @@ Promotion note:
 - current BCP 0.6.4 payload is intentionally unchanged by R4;
 - runtime closure requires a coordinated next release with exact hash/version/Android compatibility gates;
 - this avoids a same-version payload mutation while still making the gray-health defect and regression obligations canonical.
+
+
+## W. Field regression — offsite return + reboot + Windows firewall recovery
+
+W1. B-EDGE leaves the trusted home LAN, accumulates failed reconnect attempts, then later rejoins the same Wi-Fi while the paired PC has rebooted.
+Expected: the app does not require re-pairing, manual IP, token entry, or repeated taps. Saved pairing identity remains authoritative; discovery/reconnect resumes automatically with bounded retries.
+
+W2. After PC reboot/unlock, Windows presents an inbound firewall consent for the Python-hosted BCP listener.
+Expected: BCP requires only Private/Domain + LocalSubnet access on TCP 8765. Public-network access is not required and must not be the default recovery path.
+
+W3. B-EDGE is on the same LAN and reports PC_NOT_FOUND while the PC-side Python listener is blocked by Windows Firewall.
+Expected: diagnostics distinguish generic PC_NOT_FOUND from WINDOWS_FIREWALL_BLOCK_SUSPECTED when corroborating evidence exists. The user must not be asked to infer the network cause from repeated failed taps.
+
+W4. The user taps CONNECTER AUTOMATIQUEMENT repeatedly while the PC is unavailable.
+Expected: taps coalesce into one bounded discovery/reconnect transaction; no thread/socket storm, battery drain, duplicate pairing, or unbounded /24 scans.
+
+W5. Firewall access becomes available after an initial PC_NOT_FOUND.
+Expected: one subsequent automatic or explicit reconnect reaches the already-paired PC, flushes queued phone telemetry, and continues the same project revision without reinstallation.
+
+W6. PC network category is Public after reconnect to the home Wi-Fi.
+Expected: BCP does not silently broaden exposure. Recovery either restores the trusted Private profile or reports a precise NETWORK_PROFILE_NOT_TRUSTED / FIREWALL gate.
+
+W7. The PC reboots under >90% RAM pressure and high thermal load.
+Expected: BCP/ChatGPT-PC recovery remains foreground-friendly, low-concurrency, bounded-memory, and avoids simultaneous heavy restart/update/discovery work.
+
+Field origin:
+- 2026-09-20 real user test after leaving home with the B-EDGE phone, returning to the home Wi-Fi, rebooting/unlocking the PC, observing B-EDGE PC_NOT_FOUND and a Windows Security prompt for Python inbound network access.
+- This is now a permanent regression vector, not a one-off support incident.
