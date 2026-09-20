@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "e9c114ba199623afcf0a6e4c73dae35955d2518473ad476b7042ac84a32d441c"
+        "sha256": "8caf7b93256cbca1778d9df3eb0b13d54c406018ad1bf50e375a175182e66e12"
       },
-      "notes": "Nexus 0.2.3 remains R26-compatible; canonical producer receipts/watermarks/acks remain local."
+      "notes": "Nexus 0.2.3 remains R28-compatible; cadence timing decomposition is computed from durable local receipts and Nexus is not treated as a UI-delivery oracle."
     }
   },
   "telegram_cockpit": {
