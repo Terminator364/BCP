@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_4_TELEGRAM_V15_R26_PRODUCER_WATERMARK_CANDIDATE",
-  "last_completed_atomic_action": "R26 candidate implemented: BCP 0.7.4 producer watermarks + tail/internal sequence-gap truth + durable local receipt acknowledgement; Telegram V15 shows complete-through vs announced synchronization. Interactive technical work cadence standardized to target ~5 min, practical 5–7 min tranches with durable checkpoint.",
-  "next_action": "Open exact-head PR and run CURRENT/Telegram/Nexus/Field/Coordinated CI. Fix only evidence-backed failures; merge only after all five pass and main is unchanged.",
+  "status": "BCP_0_7_5_TELEGRAM_V16_R27_CHATGPTPC_FLOW_BRIDGE_CANDIDATE",
+  "last_completed_atomic_action": "R27 candidate implemented: BCP 0.7.5 reads ChatGPT-PC flow_ledger.sqlite3 read-only in bounded batches, validates text hashes, imports exact user/assistant turns idempotently, preserves assistant UI-delivery uncertainty, and Telegram V16 shows bridge health/backlog. ChatGPT-PC PR #8 was not modified.",
+  "next_action": "Run exact-head BCP qualification. Fix only evidence-backed failures, merge under writer fence if all five workflows pass, then wait for resident readback before claiming field convergence.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -78,7 +78,8 @@
     "conversation_delivery_ledger": "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md",
     "conversation_receipt_bridge": "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md",
     "producer_watermark_sync": "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
-    "interactive_work_cadence": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
+    "interactive_work_cadence": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    "chatgpt_pc_flow_bridge": "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -143,7 +144,8 @@
     "docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md",
     "docs/CONVERSATION_RECEIPT_BRIDGE_AND_SEQUENCE_REPAIR_R25.md",
     "docs/PRODUCER_WATERMARK_SYNC_AND_RECEIPT_ACK_R26.md",
-    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -192,7 +194,8 @@
     "P0_sequence_gap_repair": true,
     "P0_producer_watermark_sync": true,
     "P0_receipt_acknowledgement": true,
-    "P0_interactive_work_tranche_5_to_7_minutes": true
+    "P0_interactive_work_tranche_5_to_7_minutes": true,
+    "P0_chatgpt_pc_local_flow_bridge": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -222,12 +225,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R26-PRODUCER-WATERMARK-SYNC-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_GUARDS_READY",
-    "last_completed_action": "R26 code/spec/releases/cadence policy persisted.",
+    "checkpoint_id": "BCP-R27-CHATGPTPC-FLOW-BRIDGE-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_READY",
+    "last_completed_action": "R27 code/spec/releases/guards persisted.",
     "next_atomic_action": "Open PR and exact-head qualification.",
-    "branch": "work/bcp/r26-producer-watermark-sync-20260920",
-    "base_main_sha": "30e56de8abf7d77faaca8e9726c1905d1653bc8f",
+    "branch": "work/bcp/r27-chatgptpc-flow-bridge-20260920",
+    "base_main_sha": "2469bd1c42dd43718769fd2081bfacb3c7aa13c2",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1610,6 +1613,18 @@
     "durable_ack_file": "conversation_receipt_ack.json",
     "tail_gap_detection": true,
     "late_receipt_repair": true,
+    "field_verified": false
+  },
+  "chatgpt_pc_flow_bridge_r27": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.5",
+    "telegram_version": "2026.09.20-chatgptpc-flow-bridge-v16",
+    "requirements_revision": "2026-09-20-R27",
+    "source_db": "%LOCALAPPDATA%\\\\Tunnel_PC_G4\\\\state\\\\flow_ledger.sqlite3",
+    "read_only": true,
+    "batch_size": 24,
+    "text_sha256_verified": true,
+    "chatgpt_pc_pr8_touched": false,
     "field_verified": false
   }
 }
