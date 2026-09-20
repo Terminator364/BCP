@@ -3690,7 +3690,7 @@ def selftest() -> int:
             assert "+00:00" not in human_report
             assert "nexus_bootstrap_error_class" not in human_report
             assert "mission_id:" not in human_report
-        assert "les reçus machine restent conservés en UTC" in technical_text
+        assert "Kinshasa" in technical_text and "reçus machine" in technical_text and "UTC" in technical_text
         assert "SNAPSHOT GITHUB" not in technical_text
         assert "TRAVAIL RÉCENT" in summary_text
         assert "ACTION POUR VOUS" in summary_text
