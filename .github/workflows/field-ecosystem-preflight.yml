@@ -1,4 +1,5 @@
 name: BCP Field Ecosystem Preflight
+# R54 exact-head qualification fence: human presentation + mail-first + Kinshasa PDF parity
 
 on:
   workflow_dispatch:
