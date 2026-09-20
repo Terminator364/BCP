@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-cadence-telemetry-v17",
+  "version": "2026.09.20-cadence-telemetry-v18",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
   "sha256": "6ef74e5602ef1924c5e53f66e670a04697826ea69610c743af68529344023b25",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V17 R53 humanizes the cockpit, applies progressive disclosure (primary cockpit + Rapports & technique), makes delivery-gap guidance mail-first, and preserves bounded no-spam behavior.",
-  "requirements_revision": "2026-09-20-R53"
+  "notes": "Telegram V18 extends the R53 human cockpit with a strict human-time boundary (Africa/Kinshasa), human-first PDF content, hierarchical dependency-free PDF rendering, French WinAnsi glyph correctness, page numbering, and regression guards against raw UTC/internal fields in reports 1–3.",
+  "requirements_revision": "2026-09-20-R54"
 }
