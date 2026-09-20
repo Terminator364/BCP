@@ -30,6 +30,7 @@ NEXUS_TOKEN_PATH = STATE_DIR / "nexus_device_token.txt"
 NEXUS_CURSOR_PATH = STATE_DIR / "nexus_command_cursor.json"
 MISSION_EVENT_LOG_PATH = STATE_DIR / "MISSION_EVENT_LOG.jsonl"
 LOG_PATH = APP_ROOT / "logs" / "telegram-observability.jsonl"
+HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -138,6 +139,24 @@ def append_log(event: str, **fields: Any) -> None:
         rec[key] = clean(value, 300) if isinstance(value, str) else value
     with LOG_PATH.open("a", encoding="utf-8") as h:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def write_worker_health(mode: str, state: str, **fields: Any) -> None:
+    rec = {
+        "schema": "bcp.telegram_worker_health/1",
+        "pid": os.getpid(),
+        "mode": clean(mode, 40),
+        "state": clean(state, 80),
+        "updated_at": utc_now(),
+    }
+    for key, value in fields.items():
+        if "token" in key.lower() or "secret" in key.lower():
+            continue
+        rec[key] = clean(value, 300) if isinstance(value, str) else value
+    try:
+        atomic_json(HEALTH_PATH, rec)
+    except Exception:
+        pass
 
 
 def _pdf_escape(text: str) -> str:
@@ -1383,19 +1402,43 @@ class Telegram:
         backoff = [2, 5, 15, 30, 60]
         failures = 0
         append_log("WORKER_STARTED")
+        write_worker_health("DIRECT_TELEGRAM", "RUNNING", consecutive_failures=0, next_offset=offset)
         while True:
             try:
                 obj = self.api("getUpdates", {
                     "offset": offset, "timeout": 20, "allowed_updates": ["message", "callback_query"]
                 }, 35)
                 failures = 0
-                for upd in obj.get("result") or []:
+                updates = obj.get("result") or []
+                write_worker_health(
+                    "DIRECT_TELEGRAM", "ACTIVE",
+                    consecutive_failures=0,
+                    next_offset=offset,
+                    updates_received=len(updates),
+                    last_poll_at=utc_now(),
+                )
+                for upd in updates:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
                     callback = upd.get("callback_query")
                     if isinstance(callback, dict):
-                        append_log("CALLBACK_UPDATE", update_id=uid, callback_data=clean(callback.get("data"), 80))
+                        callback_data = clean(callback.get("data"), 80)
+                        append_log("CALLBACK_UPDATE", update_id=uid, callback_data=callback_data)
+                        write_worker_health(
+                            "DIRECT_TELEGRAM", "CALLBACK_RECEIVED",
+                            consecutive_failures=0,
+                            update_id=uid,
+                            callback_data=callback_data,
+                            callback_received_at=utc_now(),
+                        )
                         self.handle_callback(callback)
+                        write_worker_health(
+                            "DIRECT_TELEGRAM", "ACTIVE",
+                            consecutive_failures=0,
+                            update_id=uid,
+                            callback_data=callback_data,
+                            callback_handled_at=utc_now(),
+                        )
                     else:
                         msg = upd.get("message") or {}
                         chat = msg.get("chat") or {}
@@ -1422,14 +1465,31 @@ class Telegram:
                 self._push_system_presence()
             except KeyboardInterrupt:
                 append_log("WORKER_STOPPED")
+                write_worker_health("DIRECT_TELEGRAM", "STOPPED", consecutive_failures=failures)
                 return 0
             except (URLError, TimeoutError, OSError, RuntimeError) as e:
                 delay = backoff[min(failures, len(backoff) - 1)]
                 failures += 1
+                detail = clean(e, 180)
                 append_log("RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                write_worker_health(
+                    "DIRECT_TELEGRAM", "DEGRADED_RETRY",
+                    consecutive_failures=failures,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=delay,
+                )
                 time.sleep(delay)
             except Exception as e:
-                append_log("HOLD", error_class=type(e).__name__, detail=clean(e, 140))
+                detail = clean(e, 180)
+                append_log("HOLD", error_class=type(e).__name__, detail=detail)
+                write_worker_health(
+                    "DIRECT_TELEGRAM", "HOLD",
+                    consecutive_failures=failures,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=60,
+                )
                 time.sleep(60)
 
 
@@ -1584,6 +1644,7 @@ class Nexus:
         backoff = [2, 5, 15, 30, 60]
         failures = 0
         append_log("NEXUS_WORKER_STARTED", device_id=self.device_id)
+        write_worker_health("NEXUS", "RUNNING", consecutive_failures=0, last_command_id=cursor)
         while True:
             try:
                 obj = self.api(
@@ -1592,6 +1653,13 @@ class Nexus:
                 )
                 commands = obj.get("commands") or []
                 failures = 0
+                write_worker_health(
+                    "NEXUS", "ACTIVE",
+                    consecutive_failures=0,
+                    last_command_id=cursor,
+                    commands_received=len(commands),
+                    last_poll_at=utc_now(),
+                )
                 for command in commands:
                     command_id = int(command.get("id") or 0)
                     if command_id <= cursor:
@@ -1617,14 +1685,33 @@ class Nexus:
                     time.sleep(self.poll_seconds)
             except KeyboardInterrupt:
                 append_log("NEXUS_WORKER_STOPPED")
+                write_worker_health("NEXUS", "STOPPED", consecutive_failures=failures, last_command_id=cursor)
                 return 0
             except (URLError, TimeoutError, OSError, RuntimeError) as e:
                 delay = backoff[min(failures, len(backoff) - 1)]
                 failures += 1
+                detail = clean(e, 180)
                 append_log("NEXUS_RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                write_worker_health(
+                    "NEXUS", "DEGRADED_RETRY",
+                    consecutive_failures=failures,
+                    last_command_id=cursor,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=delay,
+                )
                 time.sleep(delay)
             except Exception as e:
-                append_log("NEXUS_HOLD", error_class=type(e).__name__, detail=clean(e, 140))
+                detail = clean(e, 180)
+                append_log("NEXUS_HOLD", error_class=type(e).__name__, detail=detail)
+                write_worker_health(
+                    "NEXUS", "HOLD",
+                    consecutive_failures=failures,
+                    last_command_id=cursor,
+                    error_class=type(e).__name__,
+                    error_detail=detail,
+                    retry_seconds=60,
+                )
                 time.sleep(60)
 
 
@@ -1826,6 +1913,7 @@ def selftest() -> int:
         # Nexus transport is opt-in; direct Telegram remains the default.
         assert str((svc.cfg.get("transport") or {}).get("mode") or "DIRECT_TELEGRAM") == "DIRECT_TELEGRAM"
         assert Nexus.__name__ == "Nexus"
+        assert HEALTH_PATH.name == "telegram_worker_health.json"
     print("BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS")
     return 0
 
