@@ -2,7 +2,7 @@
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
   "version": "0.1.6",
-  "minimum_server_version": "0.6.7",
+  "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
