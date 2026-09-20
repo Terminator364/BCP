@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R38",
+  "requirements_revision": "2026-09-20-R40",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -15,9 +15,9 @@
     "windows_bcp": {
       "version": "0.7.9",
       "source_manifest": "release/server.json",
-      "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
+      "qualification": "CI_QUALIFIED_FIELD_VERIFIED",
       "distribution_ready": true,
-      "field_verified": false,
+      "field_verified": true,
       "auto_update_eligible": true,
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
@@ -41,7 +41,7 @@
       "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
     },
     "nexus": {
-      "version": "0.2.4",
+      "version": "0.2.5",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "038e53963b8ac28b845671aa14709b2114751ff4912599b085298baab03f6412"
+        "sha256": "66592a44be6cf8dedb064356751f13042a06beb7c8116a45581060d50fed70f9"
       },
-      "notes": "Nexus 0.2.4 remains the device-flow bundle; BCP 0.7.7 detects newer human-gate bundles without waiting for the normal 30-minute resident cycle."
+      "notes": "Nexus 0.2.5 uses Wrangler device authorization as the sole automatic Cloudflare auth path; expired/uncompleted codes remain HUMAN_AUTH_REQUIRED and are renewed only by an explicit qualified retry. No localhost:8976 fallback, token copy, or auth bypass."
     }
   },
   "telegram_cockpit": {
@@ -129,7 +129,9 @@
       "machine-readable outbound transport error classification",
       "bounded resident update backoff after timeout/DNS/TLS failures",
       "local ChatGPT-PC recovery-launcher bridge when Drive recovery target is stale",
-      "UTF-16 Startup VBS repair with readback and no privilege expansion"
+      "UTF-16 Startup VBS repair with readback and no privilege expansion",
+      "Cloudflare device-flow-only automatic authorization with no localhost callback fallback",
+      "DriveFS treated as replicated transport, never sole critical recovery authority"
     ]
   }
 }
