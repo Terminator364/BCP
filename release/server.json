@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "381df8b51fe2089b66f00e062942b0b590cc188ef1e83f95c9e6ea2a51b843e7",
+  "sha256": "a2f0765c160a533f15510c34d20ba15d6785109c238ce489ac8f19fdf44df4b3",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R25",
-  "release_train": "BCP-0.7.3_EDGE-2.1.0-rc1-sentinel",
-  "notes": "BCP 0.7.3 preserves R24 and adds a local append-only conversation receipt bridge with durable cursor, bounded ingestion, producer sequence tracking, dynamic gap detection and late-receipt repair."
+  "requirements_revision": "2026-09-20-R26",
+  "release_train": "BCP-0.7.4_EDGE-2.1.0-rc1-sentinel",
+  "notes": "BCP 0.7.4 preserves R25 and adds producer high-water marks, tail/internal sync-gap derivation, durable local receipt acknowledgement, and authenticated producer-sync readback."
 }
