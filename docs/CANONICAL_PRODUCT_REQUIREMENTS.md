@@ -1276,7 +1276,7 @@ The detector:
 
 A delivery gap is therefore evidence of **missing positive delivery/reading proof**, not proof of a ChatGPT failure.
 
-The Telegram Conversations view MUST show a human-readable “Réponse potentiellement manquée” indicator with age when the threshold is crossed.
+The Telegram Conversations view MUST show a human-readable “Réponse sauvegardée mais lecture non confirmée” indicator with age when the threshold is crossed. R53 supersedes the older “Réponse potentiellement manquée” display wording because missing seen evidence is not proof that generation or delivery failed.
 
 Field acceptance additionally requires:
 - no gap before threshold;
