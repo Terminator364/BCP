@@ -3,8 +3,8 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "BCP_R37_OFFSITE_RETURN_FIREWALL_RECOVERY_FIELD_GATE",
-  "last_completed_atomic_action": "Converted the 2026-09-20 real offsite-return/reboot failure into a permanent B-EDGE/Windows regression vector. Field observation: old B-EDGE phone left the LAN, rejoined home Wi-Fi automatically, still reported PC_NOT_FOUND; after PC reboot/unlock Windows Security prompted for Python inbound network access. Existing BCP runtime heartbeat remained stale and queued R0 probes were unconsumed.",
-  "next_action": "After user authorizes Python on Private network only, observe one bounded B-EDGE reconnect attempt. If discovery returns, verify same pairing/project revision and telemetry flush. If not, classify network profile/firewall/server-listener state without reinstall or repeated taps.",
+  "last_completed_atomic_action": "Real field recovery advanced: B-EDGE reconnected to MBMPC after Private-network firewall authorization; Windows Script Host then exposed a deterministic ChatGPTPC_RecoveryPlane.vbs line-1-char-1 800A0408 failure. Exact 6.0.32 package inspection proved recovery launcher/startup VBS were written as UTF-8 with BOM. A minimal 6.0.33 hotfix was built, package-audited 73/73, fast-tested 80/80, full-tested 250/250, deterministically zipped, uploaded to Drive, byte-readback verified, and armed as RECOVERY_BOOTSTRAP_TARGET with rollback 6.0.32. Field install is not yet proven.",
+  "next_action": "User closes the WSH error and completes the already-open Cloudflare consent gate. Then observe recovery target consumption/readback 6.0.33, two fresh command-plane cycles, consume existing network probes without duplication, verify BCP 0.7.8 convergence, and reconcile B-EDGE field version drift (phone UI reports 2.0.0-rc1).",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1800,6 +1800,22 @@
     "public_network_access_required": false,
     "repeated_taps_prohibited": true,
     "regression_matrix_section": "W",
-    "field_resolution_verified": false
+    "field_resolution_verified": false,
+    "lan_recovered": true,
+    "bedge_connected_pc": "MBMPC",
+    "bedge_field_version": "2.0.0-rc1",
+    "windows_script_host_error": "800A0408_LINE1_CHAR1",
+    "recovery_root_cause": "UTF8_BOM_VBS_IN_G6_0_32",
+    "recovery_hotfix_target": "6.0.33",
+    "recovery_hotfix_sequence": 6033,
+    "recovery_hotfix_sha256": "6963d08c0754762fe38763b4ee99fae9fdf59f2a31bd99579cf4cce79c5ef380",
+    "recovery_hotfix_drive_file_id": "13JwWrVE4_hluWfBvwDvhxazydzs4R2Y_",
+    "package_audit": "73/73 PASS",
+    "fast_tests": "80/80 PASS",
+    "full_tests": "250/250 PASS",
+    "drive_readback": "BYTE_IDENTICAL",
+    "recovery_target_armed": true,
+    "field_install_verified": false,
+    "cloudflare_gate": "CONSENT_PAGE_VISIBLE_HUMAN_ACTION_REQUIRED"
   }
 }
