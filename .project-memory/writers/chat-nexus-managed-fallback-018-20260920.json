@@ -8,7 +8,8 @@
     "windows/BOOTSTRAP_BCP_NEXUS.ps1",
     "release/nexus_bootstrap.json",
     "release/current.json",
-    ".project-memory/writers/chat-nexus-managed-fallback-018-20260920.json"
+    ".project-memory/writers/chat-nexus-managed-fallback-018-20260920.json",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
   ],
   "expected_ci_gates": [
     "BCP Nexus Transport Qualification",
@@ -18,5 +19,5 @@
   ],
   "direct_main_write": false,
   "merge_requires_main_reread": true,
-  "status": "WORK_BRANCH_ACTIVE"
+  "status": "WORK_BRANCH_ACTIVE_CI_REQUALIFY"
 }
