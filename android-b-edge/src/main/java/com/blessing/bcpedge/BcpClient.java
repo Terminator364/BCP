@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.0-rc1-sentinel";
+    private static final String EDGE_VERSION = "2.2.0-rc1-nexus-sentinel";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -262,6 +262,7 @@ public final class BcpClient {
         telemetry.add("PAIRING_PASS", server);
         progress.onStage("CONNECTED", "Appairé à " + pair.optString("pc_name", "BCP PC"));
         heartbeat("PAIRING_PASS");
+        try { refreshNexusProvisioning(); } catch (Exception ignored) {}
         JSONObject promoted = autoPromoteServerIfNeeded(progress);
         if (promoted != null) {
             String fp = promoted.optString("identity_fingerprint", "");
@@ -562,6 +563,103 @@ public final class BcpClient {
         } catch (Exception ignored) {}
     }
 
+    public JSONObject refreshNexusProvisioning() throws Exception {
+        ensureConnected();
+        JSONObject cfg = requestJson("GET",
+                getServer() + "/v1/system/nexus/edge-config",
+                null, getToken(), null, 1800, 3500);
+        if (!cfg.optBoolean("ready", false)) {
+            JSONObject out = new JSONObject();
+            out.put("ready", false);
+            out.put("state", cfg.optString("state", "NOT_READY"));
+            out.put("reason", cfg.optString("reason", ""));
+            return out;
+        }
+        String url = cfg.optString("nexus_url", "").trim();
+        String deviceId = cfg.optString("device_id", "").trim();
+        String deviceToken = cfg.optString("device_token", "").trim();
+        credentials.putNexusCredentials(url, deviceId, deviceToken);
+        telemetry.add("NEXUS_EDGE_PROVISIONED", "encrypted_local_credentials_ready");
+        JSONObject out = new JSONObject();
+        out.put("ready", true);
+        out.put("nexus_url", url);
+        out.put("device_id", deviceId);
+        out.put("credential", "stored_in_android_keystore");
+        return out;
+    }
+
+    public JSONObject nexusProvisioningStatus() throws Exception {
+        JSONObject out = new JSONObject();
+        out.put("configured", credentials.hasNexusCredentials());
+        out.put("nexus_url", credentials.getNexusUrl());
+        out.put("device_id", credentials.getNexusDeviceId());
+        out.put("pending_alert", !prefs.getString("pending_nexus_alert_idem", "").isEmpty());
+        return out;
+    }
+
+    private void stageNexusSentinelAlert(JSONObject sentinel) {
+        if (sentinel == null || !sentinel.optBoolean("alert_due", false)) return;
+        String alertKey = sentinel.optString("last_alert_key", "");
+        String resumeId = sentinel.optString("resume_request_id", "");
+        if (alertKey.isEmpty()) alertKey = resumeId;
+        if (alertKey.isEmpty()) return;
+        String idem = "edge-sentinel-" + alertKey;
+        String state = sentinel.optString("state", "PC_UNAVAILABLE");
+        String text = "🛡️ B-EDGE : PC indisponible détecté. État=" + state
+                + (resumeId.isEmpty() ? "" : " · reprise=" + resumeId)
+                + ". La demande est conservée hors-ligne et sera rejouée sans doublon.";
+        prefs.edit()
+                .putString("pending_nexus_alert_idem", idem)
+                .putString("pending_nexus_alert_text", text)
+                .putLong("pending_nexus_alert_created_at", System.currentTimeMillis())
+                .commit();
+        telemetry.add("NEXUS_ALERT_STAGED", "sentinel_event");
+    }
+
+    public JSONObject flushPendingNexusAlert() {
+        JSONObject out = new JSONObject();
+        try {
+            String idem = prefs.getString("pending_nexus_alert_idem", "");
+            String text = prefs.getString("pending_nexus_alert_text", "");
+            if (idem.isEmpty() || text.isEmpty()) {
+                out.put("state", "EMPTY");
+                return out;
+            }
+            if (!credentials.hasNexusCredentials()) {
+                out.put("state", "WAITING_FOR_NEXUS_PROVISIONING");
+                return out;
+            }
+            JSONObject payload = new JSONObject();
+            payload.put("kind", "EDGE_SENTINEL");
+            payload.put("text", text);
+            payload.put("idempotency_key", idem);
+            JSONObject receipt = requestNexusJson(
+                    credentials.getNexusUrl() + "/v1/device/push",
+                    payload.toString(),
+                    credentials.getNexusDeviceToken(),
+                    credentials.getNexusDeviceId(),
+                    2500, 5000);
+            if (receipt.optBoolean("ok", false)) {
+                prefs.edit()
+                        .remove("pending_nexus_alert_idem")
+                        .remove("pending_nexus_alert_text")
+                        .remove("pending_nexus_alert_created_at")
+                        .commit();
+                telemetry.add("NEXUS_ALERT_SENT", receipt.optBoolean("duplicate", false) ? "duplicate_ack" : "sent");
+                out.put("state", "SENT");
+                out.put("duplicate", receipt.optBoolean("duplicate", false));
+                return out;
+            }
+            out.put("state", "DEFERRED");
+            return out;
+        } catch (Exception ex) {
+            telemetry.add("NEXUS_ALERT_DEFERRED", ex.getClass().getSimpleName());
+            try { out.put("state", "DEFERRED"); out.put("error", ex.getClass().getSimpleName()); }
+            catch (Exception ignored) {}
+            return out;
+        }
+    }
+
     public JSONObject syncOrchestrationState() {
         JSONObject out = new JSONObject();
         try {
@@ -569,18 +667,30 @@ public final class BcpClient {
             JSONObject sentinel = observePcSentinel(true);
             out.put("mode", orchestrator.getMode());
             out.put("sentinel", sentinel);
+            try {
+                JSONObject nexus = refreshNexusProvisioning();
+                out.put("nexus_provisioned", nexus.optBoolean("ready", false));
+            } catch (Exception ignored) {
+                out.put("nexus_provisioned", credentials.hasNexusCredentials());
+            }
             JSONObject ctx = contextPack();
             out.put("context_cached", ctx.length() > 0);
             flushQueuedJobs();
+            JSONObject alert = flushPendingNexusAlert();
+            out.put("nexus_alert_state", alert.optString("state", ""));
             out.put("queued_jobs_remaining", orchestrator.pendingCount());
             orchestrator.putMemory(getProject(), "OPERATING_STATE", "last_sync", out, "MACHINE_READBACK", false, null);
             telemetry.add("ORCHESTRATOR_SYNC_PASS", orchestrator.getMode());
         } catch (Exception ex) {
             JSONObject sentinel = observePcSentinel(false);
+            stageNexusSentinelAlert(sentinel);
+            JSONObject alert = flushPendingNexusAlert();
             try {
                 out.put("mode", orchestrator.getMode());
                 out.put("offline", true);
                 out.put("sentinel", sentinel);
+                out.put("nexus_alert_state", alert.optString("state", ""));
+                out.put("nexus_provisioned", credentials.hasNexusCredentials());
                 out.put("queued_jobs_remaining", orchestrator.pendingCount());
             } catch (Exception ignored) {}
             telemetry.add("ORCHESTRATOR_SYNC_DEGRADED", ex.getClass().getSimpleName());
@@ -701,6 +811,28 @@ public final class BcpClient {
         InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
         String raw = readAll(in);
         if (code >= 400) throw new IOException("HTTP_" + code + ": " + raw);
+        return raw.isEmpty() ? new JSONObject() : new JSONObject(raw);
+    }
+
+    private static JSONObject requestNexusJson(String url, String body, String token,
+                                                String deviceId, int connectMs, int readMs) throws Exception {
+        if (url == null || !url.startsWith("https://")) throw new IOException("NEXUS_HTTPS_REQUIRED");
+        HttpURLConnection c = (HttpURLConnection)new URL(url).openConnection();
+        c.setRequestMethod("POST");
+        c.setConnectTimeout(connectMs);
+        c.setReadTimeout(readMs);
+        c.setRequestProperty("Accept", "application/json");
+        c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        c.setRequestProperty("Authorization", "Bearer " + token);
+        c.setRequestProperty("X-BCP-Device-ID", deviceId);
+        c.setDoOutput(true);
+        try (OutputStream os = c.getOutputStream()) {
+            os.write(body.getBytes(StandardCharsets.UTF_8));
+        }
+        int code = c.getResponseCode();
+        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+        String raw = readAll(in);
+        if (code >= 400) throw new IOException("NEXUS_HTTP_" + code);
         return raw.isEmpty() ? new JSONObject() : new JSONObject(raw);
     }
 
