@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-conversation-inbox-v12",
+  "version": "2026.09.20-delivery-gap-v13",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "b5fda091c7f8e169a2bfebc31529763ebfe1d5a341fc0c9a7efdf988e5b54805",
+  "sha256": "6a0cf3d7145b8b668c6026d847be02321b4408850ef3e732ac95a4668ffa2f51",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V12 preserves V11 attention acknowledgement/anti-flap/budget behavior and adds a low-data Conversations inbox showing recent BCP-aware threads, message previews and explicit delivery evidence including ChatGPT UI delivery unknown.",
-  "requirements_revision": "2026-09-20-R23"
+  "notes": "Telegram V13 preserves V12 Conversations and V11 alert controls, adds derived response-delivery gap detection after 5 minutes without positive seen evidence, surfaces it as WATCH attention, and labels potentially missed responses without asserting ChatGPT UI failure.",
+  "requirements_revision": "2026-09-20-R24"
 }
