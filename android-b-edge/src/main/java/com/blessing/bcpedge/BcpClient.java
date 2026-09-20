@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.0.0-rc1";
+    private static final String EDGE_VERSION = "2.1.0-rc1-sentinel";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -45,6 +45,20 @@ public final class BcpClient {
     }
     public JSONArray projectRegistry() { return orchestrator.projectRegistry(); }
     public String getEdgeVersion() { return EDGE_VERSION; }
+    public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
+
+    public JSONObject observePcSentinel(boolean reachable) {
+        JSONObject s = orchestrator.observePcReachability(getProject(), reachable);
+        if (s.optBoolean("transitioned", false)) {
+            telemetry.add("EDGE_SENTINEL_TRANSITION",
+                    s.optString("previous_state", "") + "->" + s.optString("state", ""));
+        }
+        if (s.optBoolean("alert_due", false)) {
+            telemetry.add("EDGE_SENTINEL_PC_UNAVAILABLE",
+                    "resume=" + s.optString("resume_request_id", ""));
+        }
+        return s;
+    }
 
     public void recordEvent(String type, String detail) {
         telemetry.add(type, detail);
@@ -552,7 +566,9 @@ public final class BcpClient {
         JSONObject out = new JSONObject();
         try {
             JSONObject st = orchestratorStatus();
+            JSONObject sentinel = observePcSentinel(true);
             out.put("mode", orchestrator.getMode());
+            out.put("sentinel", sentinel);
             JSONObject ctx = contextPack();
             out.put("context_cached", ctx.length() > 0);
             flushQueuedJobs();
@@ -560,10 +576,11 @@ public final class BcpClient {
             orchestrator.putMemory(getProject(), "OPERATING_STATE", "last_sync", out, "MACHINE_READBACK", false, null);
             telemetry.add("ORCHESTRATOR_SYNC_PASS", orchestrator.getMode());
         } catch (Exception ex) {
-            orchestrator.setMode("EDGE_ONLY");
+            JSONObject sentinel = observePcSentinel(false);
             try {
-                out.put("mode", "EDGE_ONLY");
+                out.put("mode", orchestrator.getMode());
                 out.put("offline", true);
+                out.put("sentinel", sentinel);
                 out.put("queued_jobs_remaining", orchestrator.pendingCount());
             } catch (Exception ignored) {}
             telemetry.add("ORCHESTRATOR_SYNC_DEGRADED", ex.getClass().getSimpleName());
@@ -610,6 +627,7 @@ public final class BcpClient {
 
         JSONObject orch = syncOrchestrationState();
         out.put("orchestration_mode", orch.optString("mode", ""));
+        out.put("sentinel", sentinelStatus());
         out.put("context_cached", orch.optBoolean("context_cached", false));
         out.put("queued_jobs_remaining", orch.optInt("queued_jobs_remaining", 0));
         out.put("paired", !getToken().isEmpty());
