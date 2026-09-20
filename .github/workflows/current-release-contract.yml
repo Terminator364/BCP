@@ -70,6 +70,10 @@ jobs:
           client = pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text(encoding="utf-8")
           required_server = [
               "AUTO_UPDATE_INTERVAL_SECONDS",
+              "NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS",
+              "NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS",
+              "start_nexus_human_gate_manifest_watcher",
+              "HUMAN_GATE_FAST_PATH",
               "start_auto_update_worker",
               "update_sha256_mismatch",
               "candidate_selftest_failed",
