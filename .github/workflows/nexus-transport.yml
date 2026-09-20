@@ -70,11 +70,11 @@ jobs:
           assert "bcp:pdf:summary" in worker
           assert "bcp:pdf:technical" in worker
           assert "reports" in worker
-          assert 'version: "0.2.2"' in worker
+          assert 'version: "0.2.3"' in worker
           assert "live_cards" in worker
           for rich_guard in [
               "sendRichMessage", "rich_message", "RICH_V10", "V9_PLAIN_FALLBACK",
-              "bcp:since", "bcp:why", "bcp:risks", "bcp:continue", "bcp:ack",
+              "bcp:since", "bcp:why", "bcp:risks", "bcp:continue", "bcp:ack", "bcp:conversations",
               "bcp:pdf:devices", "bcp:pdf:mission", "disable_notification",
           ]:
               assert rich_guard in joined, rich_guard
