@@ -606,6 +606,11 @@ class LocalTruth:
                 prev = cur
         return out
 
+    def chatgpt_pc_flow_bridge(self) -> dict:
+        return read_json(self.state / "chatgpt_pc_flow_bridge_status.json", {}) or {
+            "status": "NOT_OBSERVED", "backlog": None, "read_only": True
+        }
+
     def buildhub(self) -> dict:
         raw = os.environ.get("BCP_BUILDHUB_RECEIPT", "").strip()
         if raw:
@@ -2181,9 +2186,16 @@ class Service:
                 "Important : le cockpit ne prétend pas lire magiquement l’historique privé de l’interface ChatGPT. "
                 "Les conversations apparaissent ici dès qu’un client BCP/ChatGPT-PC/OpenAI API publie un reçu de message durable."
             )
+        bridge = self.local.chatgpt_pc_flow_bridge()
+        bridge_state = clean(bridge.get("status") or "NOT_OBSERVED", 32)
+        backlog = bridge.get("backlog")
+        bridge_line = "🔗 Bridge ChatGPT-PC: " + bridge_state
+        if isinstance(backlog, int):
+            bridge_line += " · attente " + str(backlog)
         lines = [
             "💬 CONVERSATIONS SYNCHRONISÉES",
             "Derniers échanges connus par BCP · état de livraison séparé de l’état du travail.",
+            bridge_line,
         ]
         for pos, thread in enumerate(threads, 1):
             cid = clean(thread.get("conversation_id"), 64)
@@ -3322,6 +3334,10 @@ def selftest() -> int:
         ))
         cx.commit()
         cx.close()
+        atomic_json(root / "state" / "chatgpt_pc_flow_bridge_status.json", {
+            "schema": "bcp.chatgpt_pc_flow_bridge/1", "status": "CAUGHT_UP",
+            "backlog": 0, "read_only": True, "updated_at": utc_now()
+        })
         atomic_json(root / "state" / "paired_edge.json", {"edge_version": "2.0"})
         (root / "telemetry" / "phone-events.jsonl").write_text(
             json.dumps({"event_type": "PHONE_HEARTBEAT", "ts": utc_now()}) + "\n",
@@ -3414,6 +3430,7 @@ def selftest() -> int:
         assert len(gaps) == 1 and gaps[0]["derived_state"] == "DELIVERY_GAP_DETECTED"
         inbox = svc.conversations_inbox()
         assert "CONVERSATIONS SYNCHRONISÉES" in inbox
+        assert "Bridge ChatGPT-PC: CAUGHT_UP" in inbox
         assert "Conversation principale" in inbox
         assert "affichage ChatGPT non confirmé" in inbox
         assert "Réponse potentiellement manquée" in inbox
