@@ -3,11 +3,11 @@
   "channel": "stable",
   "version": "2026.09.20-rich-cockpit-v10",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "d126ac241371077fa77e49fccf97c97f2f6ecc46966579c52ff87274a464c0d3",
+  "sha256": "04217df121ab51d5bff58278adb17487d164e1af275aa8310cb5b0f9da835c7b",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Rich Cockpit V10: Bot API 10.3 rich tables/details/styled callback controls with automatic V9 plain-text fallback, while preserving V9 attention states, Since/Why/Radar, quiet mode, recovery notifications, V8 durable Continue/watchdog and four reports.",
+  "notes": "Rich Cockpit V10: Bot API 10.3 rich tables/details/styled callbacks with mandatory V9 fallback; action-required alerts are normal, auto-resume notices are silent, WATCH remains dashboard-only. Preserves V9 Since/Why/Radar/quiet/recovery, V8 durable Continue/watchdog and four reports.",
   "requirements_revision": "2026-09-20-R21"
 }
