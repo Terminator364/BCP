@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-20-R29",
+  "requirements_revision": "2026-09-20-R31",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
@@ -105,5 +105,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.4 hardens the one-time Cloudflare human gate for unstable networks: prefer Wrangler OAuth device authorization (no localhost callback), then fall back to classic browser OAuth if the device flow is unavailable. No API token or BCP secret is copied into chat."
+  "notes": "Nexus 0.2.4 remains the device-flow auth bundle. R31 adds resident manifest-only fast detection while a human auth gate is open; the Nexus bundle itself remains unchanged."
 }

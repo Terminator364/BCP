@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "ec969c162d8a2f5ea3444f23657bee5bb286a94cb545e4fb56cbd829998e288b",
+  "sha256": "e9d9832bad19264117650c118b8dd39d966418ec7d4a757052e88b2f080cf6ac",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R29",
-  "release_train": "BCP-0.7.6_EDGE-2.1.0-rc1-sentinel",
-  "notes": "BCP 0.7.6 preserves R27 and adds evidence-based conversation latency decomposition: producer response, producer-to-BCP mirror, mirror-to-seen, and request-to-seen where durable timestamps exist."
+  "requirements_revision": "2026-09-20-R31",
+  "release_train": "BCP-0.7.7_EDGE-2.1.0-rc1-sentinel",
+  "notes": "BCP 0.7.7 preserves R30 and adds a low-data Nexus manifest fast path while HUMAN_AUTH_REQUIRED: 2-minute version checks, no download when unchanged, exponential backoff to 15 minutes on network failure."
 }

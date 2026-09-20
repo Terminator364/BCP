@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R30_UNIVERSAL_CONTINUATION_REGISTRY_CANDIDATE",
-  "last_completed_atomic_action": "R30 continuity hardening: universal BCPGO continuation registry persisted, project aliases centralized, 5–7 minute useful-work cadence promoted to global technical-project default, and both are mandatory recovery inputs.",
-  "next_action": "Open and qualify the R30 continuity-only PR. Merge under the writer fence if exact-head checks pass. Then read back resident Nexus 0.2.4 authorization state; user action is only Cloudflare Allow/Authorize if the new device-flow page appears.",
+  "status": "BCP_0_7_7_R31_ADAPTIVE_NEXUS_HUMAN_GATE_WATCH_CANDIDATE",
+  "last_completed_atomic_action": "R31 candidate implemented: resident BCP keeps the normal 30-minute data-saving update cadence but adds a manifest-only 2-minute fast path while Nexus is HUMAN_AUTH_REQUIRED; unchanged versions cause zero artifact download, network failures back off to 15 minutes.",
+  "next_action": "Run exact-head CURRENT/Field/Coordinated/Telegram/Nexus CI. Merge only if all required workflows pass and main is unchanged; then wait for resident BCP 0.7.7 and Nexus 0.2.4 readback.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,12 +229,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R30-UNIVERSAL-CONTINUATION-REGISTRY-20260920",
-    "status": "POLICY_CANDIDATE_PR_PENDING",
-    "last_completed_action": "Registry, context-fabric binding, cadence v3, session-survival and continuity bindings persisted.",
-    "next_atomic_action": "PR + exact-head qualification.",
-    "branch": "work/bcp/r30-universal-continuation-registry-20260920",
-    "base_main_sha": "be92b058c9be55f8abdd93c0713cd476c167220d",
+    "checkpoint_id": "BCP-R31-ADAPTIVE-NEXUS-HUMAN-GATE-WATCH-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_READY",
+    "last_completed_action": "R31 runtime/spec/release alignment persisted.",
+    "next_atomic_action": "Open PR and exact-head qualification.",
+    "branch": "work/bcp/r31-adaptive-nexus-manifest-watch-20260920",
+    "base_main_sha": "06541659d6f79c8fbcc5b312d0bad874bb87b258",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1666,5 +1666,16 @@
     "cadence_policy": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
     "future_projects_inherit": true,
     "past_chats_retroactively_rewritten": false
+  },
+  "adaptive_nexus_human_gate_watch_r31": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "server_version": "0.7.7",
+    "requirements_revision": "2026-09-20-R31",
+    "active_state": "HUMAN_AUTH_REQUIRED",
+    "manifest_watch_seconds": 120,
+    "max_network_backoff_seconds": 900,
+    "unchanged_version_artifact_download": false,
+    "normal_idle_update_seconds": 1800,
+    "field_verified": false
   }
 }

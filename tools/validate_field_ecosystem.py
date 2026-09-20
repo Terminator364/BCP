@@ -49,7 +49,15 @@ def main() -> int:
 
     # Real Windows/4 GB ecosystem: serialized/low-footprint orchestration and
     # explicit pressure handling must remain represented.
-    require(server, "AUTO_UPDATE_INTERVAL_SECONDS", "WAITING_FOR_PC")
+    require(
+        server,
+        "AUTO_UPDATE_INTERVAL_SECONDS",
+        "NEXUS_HUMAN_GATE_MANIFEST_WATCH_SECONDS",
+        "NEXUS_HUMAN_GATE_MANIFEST_WATCH_MAX_BACKOFF_SECONDS",
+        "start_nexus_human_gate_manifest_watcher",
+        "HUMAN_GATE_FAST_PATH",
+        "WAITING_FOR_PC",
+    )
     require(edge_policy, "PC_MEMORY_PRESSURE", "WAITING_FOR_PC")
     require(
         edge_policy,

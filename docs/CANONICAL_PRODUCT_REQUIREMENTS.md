@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R29
+Revision: 2026-09-20-R31
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1398,3 +1398,20 @@ The bootstrap MUST:
 Wrangler 4.135.0 is pinned by this project and is newer than the provider's documented 4.119.0 minimum for device authorization.
 
 If authorization expires or the user does not complete it in time, BCP records `HUMAN_AUTH_REQUIRED` and retries through the normal resident recovery path rather than inventing deployment success.
+
+## P0 — Adaptive Nexus Human-Gate Manifest Watch / R31
+
+This requirement is additive and preserves R30.
+
+The normal resident update cadence remains data-saving and low-frequency. However, when Nexus is already blocked on a genuine `HUMAN_AUTH_REQUIRED` Cloudflare gate, BCP MUST use a lightweight manifest-only fast path so a newly qualified auth-resilience bundle is not delayed by the normal 30-minute update cycle.
+
+The watcher MUST:
+- poll only the small Nexus release manifest while the local Nexus state is `HUMAN_AUTH_REQUIRED`;
+- use a 2-minute normal interval while that gate is active;
+- perform no artifact download or relaunch when the bundle version is unchanged;
+- launch the normal hash-pinned Nexus delivery path only when a different qualified bundle version is observed;
+- back off on network failures up to 15 minutes;
+- return to the normal long cadence outside the human-gate state;
+- preserve zero-dollar, secret hygiene, idempotence, and single-receiver semantics.
+
+This is an optimization of update detection, not a bypass of Cloudflare authorization.
