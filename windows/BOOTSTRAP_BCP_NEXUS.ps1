@@ -365,7 +365,7 @@ if ($SelfTest) {
     if ($a.Length -lt 40 -or $b.Length -lt 60) { throw "SELFTEST_SECRET_LENGTH" }
     if ($a -notmatch '^[A-Za-z0-9_-]+$' -or $b -notmatch '^[A-Za-z0-9_-]+$') { throw "SELFTEST_SECRET_ALPHABET" }
     $raw = [IO.File]::ReadAllText($PSCommandPath)
-    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","MANAGED_NODE_PATH_BINDING_FAILED","MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK","BCP_NEXUS_AUTH_DEVICE_FLOW","--device")) {
+    foreach ($required in @("CLOUDFLARE_LOGIN_REQUIRED","TELEGRAM_BOT_TOKEN","TELEGRAM_WEBHOOK_SECRET","BCP_DEVICE_TOKEN","ALLOWED_CHAT_ID","--remote","setWebhook","CONFIGURE_BCP_NEXUS","WRANGLER_OUTPUT_FILE_PATH","nexus_bootstrap_receipt.json","24.21.0","4.135.0","MANAGED_NODE_SHA256_MISMATCH","NPM_CONFIG_FETCH_RETRIES","NPM_CONFIG_PREFER_OFFLINE","RUNTIME_PREP_DEFERRED","error_detail","MANAGED_RUNTIME_DOWNLOAD_OR_EXTRACT","WRANGLER_PROBE_EXIT","NPM_NETWORK_OR_REGISTRY_UNAVAILABLE","NODE_DIRECT_NPX_CLI","NODE_DIRECT_WRANGLER_CLI","MANAGED_WRANGLER_INSTALL_FAILED","MANAGED_NODE_PATH_BINDING_FAILED","MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED","BCP_NEXUS_MANAGED_RUNTIME_FALLBACK","BCP_NEXUS_AUTH_DEVICE_FLOW","--device","CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED","BCP_NEXUS_AUTH_DEVICE_FLOW=HUMAN_AUTH_REQUIRED_OR_EXPIRED")) {
         if ($raw -notmatch [regex]::Escape($required)) { throw ("SELFTEST_CONTRACT_MISSING " + $required) }
     }
     if ($raw -match '\b\d{6,12}:[A-Za-z0-9_-]{20,}\b') { throw "SELFTEST_HARDCODED_TELEGRAM_TOKEN" }
@@ -378,7 +378,7 @@ trap {
     $safeError = ($rawError -replace '[^A-Za-z0-9_: .-]', '_')
     if ($safeError.Length -gt 180) { $safeError = $safeError.Substring(0, 180) }
     $failureStatus = "NEXUS_BOOTSTRAP_FAILED"
-    if ($safeError -match '^CLOUDFLARE_BROWSER_AUTHORIZATION_FAILED_OR_CANCELLED' -or $safeError -match '^CLOUDFLARE_AUTHORIZATION_NOT_CONFIRMED') {
+    if ($safeError -match '^CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED' -or $safeError -match '^CLOUDFLARE_AUTHORIZATION_NOT_CONFIRMED') {
         $failureStatus = "HUMAN_AUTH_REQUIRED"
     }
     $failure = [ordered]@{
@@ -473,15 +473,16 @@ if ($who.ExitCode -ne 0) {
 
     $login = Invoke-Wrangler $launcher @("login","--device") -AllowFailure
     if ($login.ExitCode -ne 0) {
-        Write-Host "BCP_NEXUS_AUTH_DEVICE_FLOW=DEFERRED_FALLBACK_BROWSER"
-        $login = Invoke-Wrangler $launcher @("login") -AllowFailure
-    } else {
-        Write-Host "BCP_NEXUS_AUTH_DEVICE_FLOW=PASS"
+        $deviceDetail = Get-SafeFailureDetail ([string]$login.Text)
+        try {
+            Write-RuntimePrepReceipt "HUMAN_AUTH_REQUIRED" "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED" "CLOUDFLARE_DEVICE_FLOW" $deviceDetail
+        } catch {}
+        Write-Host "BCP_NEXUS_AUTH_DEVICE_FLOW=HUMAN_AUTH_REQUIRED_OR_EXPIRED"
+        Write-Host "BCP_NEXUS_AUTH_CLASS=CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED"
+        Write-Host "Device authorization did not complete in its bounded window. A fresh device code will be generated on the next explicit qualified attempt; BCP will not fall back to localhost:8976 automatically."
+        throw "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED"
     }
-
-    if ($login.ExitCode -ne 0) {
-        throw "CLOUDFLARE_BROWSER_AUTHORIZATION_FAILED_OR_CANCELLED"
-    }
+    Write-Host "BCP_NEXUS_AUTH_DEVICE_FLOW=PASS"
     $who = Invoke-Wrangler $launcher @("whoami","--json") -AllowFailure
     if ($who.ExitCode -ne 0) {
         throw "CLOUDFLARE_AUTHORIZATION_NOT_CONFIRMED"

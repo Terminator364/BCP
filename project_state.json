@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_9_R38_FIELD_VERIFIED_RECOVERY_6033_PENDING",
-  "last_completed_atomic_action": "Field readback from paired B-EDGE on MBMPC proved BCP server 0.7.9 active after the prior APPLIED_RESTART_PENDING transition. R38 post-merge CI is fully green across CURRENT, managed update, Windows bootstrap, final acceptance, PC sanity, coordinated PC/product, Android, Telegram, Nexus and Field Ecosystem. Recovery cloud target remains ACTIVE 6.0.33/6033 while Drive-backed sentinel evidence is stale; next gate is one bounded ChatGPT-PC recovery request through the now-field-verified BCP 0.7.9 local bridge.",
-  "next_action": "From connected B-EDGE 2.0.0-rc1, invoke Réparer ChatGPT-PC maintenant exactly once. Expected R38 behavior: if the local DriveFS target/package is stale, BCP returns RECOVERY_LAUNCHER_REPAIRED_AND_STARTED with a BRIDGE_STARTED recovery_state instead of HTTP_500 recovery_target_not_active. Do not repeat the request; then readback Recovery/command-plane evidence before any Cloudflare action.",
+  "status": "R40_ZERO_TOUCH_REENTRY_HARDENING_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R40 research-driven hardening implemented without touching the field devices: Nexus automatic Cloudflare auth is device-flow-only with no localhost:8976 fallback; provider-synchronised DriveFS is explicitly non-authoritative for critical local recovery state; canonical/test architecture now requires fresh LAN machine readback to outrank stale Drive telemetry; B-EDGE next signed release is required to unify duplicate reconcile workers and add unique bounded one-shot Wi-Fi-return reconciliation while preserving the 15-minute WorkManager safety net.",
+  "next_action": "Qualify exact R40 branch head. If green, merge under single-writer fence. Do not invoke field Recovery 6.0.33 or Cloudflare while user is away from PC/old phone. After merge, prepare a separately versioned/signed B-EDGE successor; never mutate the already distributed 2.1.0 APK identity.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,39 +229,53 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R39-FIELD-VERIFY-079-RECOVERY-GATE-20260920",
-    "status": "BCP_0_7_9_FIELD_VERIFIED_RECOVERY_6033_PENDING",
-    "branch": "work/bcp/r39-field-verify-079-recovery-gate-20260920",
-    "base_main_sha": "30146245d22fa414572c6118db44ec66a3c374f8",
-    "field_server": {
-      "pc_name": "MBMPC",
-      "bedge_version": "2.0.0-rc1",
-      "server_version": "0.7.9",
-      "paired": true,
-      "evidence": "B-EDGE post-restart /health readback",
-      "field_verified": true
+    "checkpoint_id": "BCP-R40-ZERO-TOUCH-REENTRY-HARDENING-20260920",
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/r40-zero-touch-reentry-hardening-20260920",
+    "base_main_sha": "e20aa78b773222e4d21572115935d7b9748a290e",
+    "field_state_preserved": {
+      "bcp_server_version": "0.7.9",
+      "bcp_field_verified": true,
+      "recovery_target_version": "6.0.33",
+      "recovery_target_sequence": 6033,
+      "recovery_request_invoked": false,
+      "field_devices_untouched": true
     },
-    "recovery_target": {
-      "version": "6.0.33",
-      "sequence": 6033,
-      "status": "ACTIVE",
-      "package_file": "Tunnel_PC_G6_6.0.33_2003_RECOVERY_VBS_ENCODING_HOTFIX.zip",
-      "package_sha256": "6963d08c0754762fe38763b4ee99fae9fdf59f2a31bd99579cf4cce79c5ef380",
-      "rollback_version": "6.0.32",
-      "field_install_verified": false
+    "nexus": {
+      "target_version": "0.2.5",
+      "auth_strategy": "DEVICE_FLOW_ONLY_AUTOMATIC_NO_LOCALHOST_FALLBACK",
+      "device_code_window_minutes": 5,
+      "localhost_8976_auto_fallback": false,
+      "post_auth_whoami_required": true
     },
-    "expected_next_result": [
-      "RECOVERY_LAUNCHER_REPAIRED_AND_STARTED",
-      "LOCAL_TARGET_NOT_ACTIVE_BRIDGE_STARTED",
-      "PACKAGE_SYNC_PENDING_BRIDGE_STARTED"
+    "provider_mirror_policy": {
+      "critical_state_authority": "LOCAL_NTFS",
+      "drivefs_role": "REPLICATION_EXCHANGE_ONLY",
+      "stale_drive_can_override_fresh_lan_readback": false,
+      "mirror_failure_state": "CLOUD_MIRROR_HOLD"
+    },
+    "bedge_next_release_requirements": [
+      "NEW_VERSION_CODE_AND_NAME_REQUIRED",
+      "SAME_SIGNING_CERTIFICATE_REQUIRED",
+      "UNIFY_DUPLICATE_RECONCILE_WORKERS",
+      "UNIQUE_ONE_SHOT_REENTRY_WORK",
+      "CONNECTED_CONSTRAINT_AND_BOUNDED_BACKOFF",
+      "WIFI_AVAILABILITY_TRIGGER_WHILE_PROCESS_ALIVE",
+      "15_MIN_PERIODIC_SAFETY_NET",
+      "NO_UNINSTALL_NO_REPAIRING"
+    ],
+    "research_basis": [
+      "Google Drive for desktop streaming uses a virtual drive and depends on Drive for desktop/connectivity; mirror mode provides local files",
+      "Wrangler device authorization avoids localhost:8976 and uses a bounded short-lived user code",
+      "Android WorkManager periodic work minimum is 15 minutes; faster recovery should be one-shot constrained work"
     ],
     "prohibited_replay": [
+      "NO_FIELD_RECOVERY_WHILE_USER_AWAY",
+      "NO_CLOUDFLARE_RETRY_WHILE_USER_AWAY",
       "NO_REPEAT_SERVER_UPDATE",
-      "NO_DUPLICATE_RECOVERY_REQUEST",
-      "NO_CLOUDFLARE_RETRY_BEFORE_RECOVERY_READBACK",
-      "NO_REINSTALL"
+      "NO_SAME_VERSION_ANDROID_REPUBLISH"
     ],
-    "next_atomic_action": "One bounded B-EDGE ChatGPT-PC recovery request, then readback before any other action."
+    "next_atomic_action": "Exact-head R40 CI, then serialized merge if green."
   },
   "runtime_verification": {
     "checked_at": "2026-09-19T02:00:00+01:00",
@@ -1819,5 +1833,13 @@
     "field_verified": true,
     "field_verified_pc": "MBMPC",
     "field_verified_via": "B-EDGE post-restart health readback"
+  },
+  "nexus_0_2_5_r40": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "version": "0.2.5",
+    "requirements_revision": "2026-09-20-R40",
+    "device_flow_only_automatic": true,
+    "classic_localhost_fallback_automatic": false,
+    "field_verified": false
   }
 }

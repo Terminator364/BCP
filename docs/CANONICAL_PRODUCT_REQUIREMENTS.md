@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-20-R38
+Revision: 2026-09-20-R40
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1486,3 +1486,43 @@ Device authorization is preferred. Classic localhost callback failure is diagnos
 After any human consent, Wrangler `whoami --json` or an equivalent provider-authenticated readback is mandatory before deployment is declared authorized.
 
 Target server release for this requirement: BCP 0.7.9.
+
+
+## P0 — Zero-touch re-entry, local authority and human-gate singularity / R40
+
+This requirement is additive and preserves R38/R39.
+
+### Operating environment is nominal, not exceptional
+The supported field baseline includes Windows 11 with 4 GB RAM, sustained memory pressure above 90%, rapid thermal rise, unstable AC/network, Android B-EDGE leaving and later rejoining the home Wi-Fi, and periods where Google Drive for desktop is stopped, stale or disconnected. Correctness must survive these states without restart storms, duplicate heavy work, repeated user taps or ambiguous success claims.
+
+### Local-first critical state
+Critical recovery, watchdog, lease, active-release pointer and command-consumer state MUST have a canonical local NTFS copy under the app-owned local state root. A provider-synchronised filesystem such as DriveFS is a replication/exchange transport only.
+- No critical transaction may require atomic rename/fsync semantics on a virtual Drive mount.
+- Drive mirror failure is a separately observable CLOUD_MIRROR_HOLD and must not roll back a locally successful recovery.
+- Fresh LAN/B-EDGE machine readback outranks a stale Drive heartbeat for current field truth.
+- Cloud mirrors remain useful for remote readback, audit and recovery payload distribution, but staleness must be explicit.
+
+### Cloudflare human gate singularity
+For supported Wrangler versions, OAuth device authorization is the sole automatic Cloudflare login path.
+- No automatic fallback to classic localhost:8976 OAuth is permitted after device flow starts or expires.
+- Device-code non-completion/expiry remains HUMAN_AUTH_REQUIRED.
+- A later explicit qualified attempt generates a fresh code.
+- Authorization is not considered complete until a post-login authenticated `whoami --json` readback succeeds.
+- No API token, Telegram token or device secret is copied through chat.
+
+### B-EDGE re-entry scheduling
+The Android periodic sentinel remains at the platform-valid 15-minute minimum. Faster recovery MUST use bounded unique one-shot work triggered by foreground/network-return signals rather than sub-15-minute polling.
+The next signed B-EDGE release MUST:
+- converge all production reconciliation calls onto one worker implementation;
+- eliminate the duplicate legacy/new EdgeReconcileWorker policy split;
+- require a connected-network constraint for one-shot reconciliation;
+- use explicit bounded exponential backoff;
+- coalesce duplicate immediate requests under one unique-work key;
+- trigger a one-shot reconciliation on Wi-Fi availability while the app process is alive;
+- preserve the 15-minute periodic safety net if the process is absent.
+
+### Android release identity
+A changed B-EDGE source MUST NOT be published under an already-distributed versionCode/versionName or old APK hash. Source candidate, signed artifact, version metadata, certificate continuity and Drive CURRENT readback must agree before publication. The user must not be asked to uninstall or re-pair for an ordinary in-place update.
+
+### Resource-pressure invariant
+Recovery/update/orchestration paths on the 4 GB PC must serialize heavy work, bound queues/logs, prefer local disk streaming over RAM aggregation, back off under repeated failure, and yield non-critical work under high memory/thermal pressure. Heartbeat liveness alone is not proof of forward progress.

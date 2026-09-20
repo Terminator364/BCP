@@ -113,11 +113,15 @@ def main() -> int:
         "MANAGED_NODE_CHILD_PROCESS_PROBE_FAILED",
         '@("login","--device")',
         "BCP_NEXUS_AUTH_DEVICE_FLOW",
+        "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED",
+        "BCP_NEXUS_AUTH_DEVICE_FLOW=HUMAN_AUTH_REQUIRED_OR_EXPIRED",
         "$env:PATH = $nodeHome + ';'",
         '--foreground-scripts',
     )
     assert re.search(r'\$NodeVersion\s*=\s*"24\.21\.0"', bootstrap)
     assert re.search(r'\$WranglerVersion\s*=\s*"4\.135\.0"', bootstrap)
+    assert '@("login") -AllowFailure' not in bootstrap
+    assert "DEFERRED_FALLBACK_BROWSER" not in bootstrap
     assert re.search(r'\$NodeArchiveSha256\s*=\s*"[0-9a-f]{64}"', bootstrap)
 
     # Retry/watchdog bounds: no infinite spin in weak connectivity.

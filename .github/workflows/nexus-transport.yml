@@ -81,6 +81,12 @@ jobs:
           for report_key in ["summary", "devices", "mission", "technical"]:
               assert report_key in worker, report_key
           assert "https://" in client
+          bootstrap = pathlib.Path("windows/BOOTSTRAP_BCP_NEXUS.ps1").read_text(encoding="utf-8")
+          assert '@("login","--device")' in bootstrap
+          assert "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED" in bootstrap
+          assert "BCP_NEXUS_AUTH_DEVICE_FLOW=HUMAN_AUTH_REQUIRED_OR_EXPIRED" in bootstrap
+          assert '@("login") -AllowFailure' not in bootstrap
+          assert "DEFERRED_FALLBACK_BROWSER" not in bootstrap
           print("BCP_NEXUS_SECURITY_CONTRACT=PASS")
 
   pc-client:
