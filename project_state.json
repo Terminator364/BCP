@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R53_HUMAN_COCKPIT_COUNTER_AUDIT_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R53 counter-audit found and corrected two UX/spec inconsistencies: the user guide still placed Messages récents before the email mirror despite the canonical mail-first policy, and the primary Telegram/Nexus keyboard exposed reports/technical diagnostics at the same visual level as orientation/action controls. R53 now enforces EMAIL_EXACT_MIRROR -> CHATGPT_FINAL -> optional Telegram witness, neutral delivery-gap wording, a compact primary cockpit, and a secondary Rapports & technique menu with direct/Nexus parity.",
-  "next_action": "Qualify the new exact R53 head across CURRENT, Telegram, Nexus, Field Ecosystem and coordinated product gates; merge only after exact-head green CI and main-head reread.",
+  "status": "R54_HUMAN_PRESENTATION_AND_PDF_QUALITY_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R54 interface counter-audit completed a deeper human-presentation pass: mail-first checkpoint order and progressive disclosure remain R53 invariants; normal human timestamps are Kinshasa-local while durable machine evidence remains UTC; reports 1-3 hide internal IDs/error-field vocabulary; the local PDF renderer has WinAnsi French accents, Bold hierarchy, pagination, page counts and duplicate-title protection; Nexus fallback was upgraded to the same lightweight PDF presentation contract.",
+  "next_action": "Run exact-head R54 CI for CURRENT, Telegram, Nexus, Field Ecosystem and coordinated qualification. Correct only evidenced failures; then reread main and merge PR123 only if the exact head is green.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1901,5 +1901,22 @@
     "delivery_gap_wording": "SAVED_RESPONSE_READING_NOT_CONFIRMED",
     "exact_email_chat_body_required": true,
     "field_verified": false
+  },
+  "r54_human_presentation": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "requirements_revision": "2026-09-20-R54",
+    "human_timezone": "Africa/Kinshasa",
+    "machine_time_authority": "UTC_OFFSET_AWARE",
+    "ten_second_comprehension_contract": true,
+    "progressive_disclosure": true,
+    "mail_first_checkpoint_order": [
+      "EMAIL_EXACT_MIRROR",
+      "CHATGPT_FINAL",
+      "TELEGRAM_WITNESS_OPTIONAL"
+    ],
+    "human_reports_hide_raw_internal_ids": true,
+    "local_pdf_renderer": "WINANSI_BOLD_PAGINATED_LIGHTWEIGHT",
+    "nexus_pdf_renderer": "WINANSI_BOLD_PAGINATED_LIGHTWEIGHT",
+    "rendered_visual_field_verification": false
   }
 }
