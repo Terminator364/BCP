@@ -133,6 +133,43 @@ def main() -> int:
         "WATCHDOG_NOTIFY_STATE_PATH",
     )
 
+    # Telegram Rich Cockpit V10 remains an enhancement, never a new failure point.
+    # Both direct and Nexus paths must retain V9 fallback and all four reports.
+    nexus_worker = read("nexus/cloudflare-worker/src/worker.mjs")
+    require(
+        telegram,
+        "sendRichMessage",
+        "rich_message",
+        "RICH_MESSAGE_SEND_FALLBACK",
+        "RICH_MESSAGE_EDIT_FALLBACK",
+        "V9 plain text is mandatory fallback",
+        "bcp:since",
+        "bcp:why",
+        "bcp:risks",
+        "bcp:quiet:120",
+        "report_devices",
+        "report_mission",
+    )
+    require(
+        nexus_worker,
+        "sendRichMessage",
+        "rich_message",
+        "RICH_V10",
+        "V9_PLAIN_FALLBACK",
+        "bcp:since",
+        "bcp:why",
+        "bcp:risks",
+        "bcp:quiet:120",
+        "bcp:pdf:devices",
+        "bcp:pdf:mission",
+        'version: "0.2.1"',
+    )
+    assert "allow_paid_broadcast" not in telegram
+    assert "allow_paid_broadcast" not in nexus_worker
+    assert set(nexus_release["report_exports"]["cached_reports"]) == {
+        "summary", "devices", "mission", "technical"
+    }
+
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
     assert current["components"]["nexus"]["version"] == nexus_release["version"]
