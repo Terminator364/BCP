@@ -22,7 +22,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "cc07534cf3e6608a0988f00d9f149a7080728649c55cfb4d32528a62fb538ae2"
+        "sha256": "d191d70d12168701060412fc72e606d1ddfa0e7693aadc109c7e9ca9c080ad4b"
       },
       "notes": "BCP 0.7.9 adds a least-privilege local recovery-launcher bridge for the field-observed ChatGPTPC_RecoveryPlane.vbs encoding failure and Drive-local target drift. It repairs the Startup VBS as UTF-16, readbacks it, and launches the existing recovery plane without claiming the target release installed."
     },
