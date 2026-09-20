@@ -1863,10 +1863,7 @@ class Service:
         })
         return count >= 2 or (now - first) >= 60
 
-    def consume_notification_budget(self, category: str, critical: bool = False) -> bool:
-        """Bound routine interruption volume; critical/human-action alerts bypass."""
-        if critical:
-            return True
+    def _notification_budget_window(self) -> tuple[list[int], int, int]:
         now = int(time.time())
         window = 30 * 60
         limit = 3
@@ -1879,26 +1876,39 @@ class Service:
                 continue
             if now - value < window:
                 stamps.append(value)
-        if len(stamps) >= limit:
-            atomic_json(NOTIFICATION_BUDGET_STATE_PATH, {
-                "schema": "bcp.telegram_notification_budget/1",
-                "sent_epochs": stamps,
-                "window_seconds": window,
-                "limit": limit,
-                "suppressed_category": clean(category, 80),
-                "updated_at": utc_now(),
-            })
-            return False
-        stamps.append(now)
+        return stamps, window, limit
+
+    def notification_budget_available(self, category: str, critical: bool = False) -> bool:
+        """Check interruption budget without consuming it. Delivery is charged only after success."""
+        if critical:
+            return True
+        stamps, window, limit = self._notification_budget_window()
+        if len(stamps) < limit:
+            return True
         atomic_json(NOTIFICATION_BUDGET_STATE_PATH, {
-            "schema": "bcp.telegram_notification_budget/1",
+            "schema": "bcp.telegram_notification_budget/2",
             "sent_epochs": stamps,
             "window_seconds": window,
             "limit": limit,
-            "last_category": clean(category, 80),
+            "suppressed_category": clean(category, 80),
             "updated_at": utc_now(),
         })
-        return True
+        return False
+
+    def record_notification_delivery(self, category: str, critical: bool = False) -> None:
+        """Count only a positively delivered routine interruption."""
+        if critical:
+            return
+        stamps, window, limit = self._notification_budget_window()
+        stamps.append(int(time.time()))
+        atomic_json(NOTIFICATION_BUDGET_STATE_PATH, {
+            "schema": "bcp.telegram_notification_budget/2",
+            "sent_epochs": stamps[-limit:],
+            "window_seconds": window,
+            "limit": limit,
+            "last_delivered_category": clean(category, 80),
+            "updated_at": utc_now(),
+        })
 
     def quiet_mode(self, minutes: int) -> str:
         if minutes <= 0:
