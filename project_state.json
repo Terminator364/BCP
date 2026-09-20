@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_7_R32_WINDOWS_VERSION_DRIFT_REPAIR_CANDIDATE",
-  "last_completed_atomic_action": "R32 candidate repaired post-R31 Windows release drift: INSTALL_BCP_FINAL.ps1 InstallerVersion and BCP_FINAL_ACCEPTANCE_CURRENT.ps1 TargetVersion now match release/server.json 0.7.7.",
-  "next_action": "Run exact-head R32 CI on the repair branch. Merge only if required Windows/Coordinated/Final Acceptance and existing release-contract gates pass, then re-read main and update durable state/readback.",
+  "status": "BCP_0_7_7_R32_MERGED_CI_QUALIFIED_FIELD_CONVERGENCE_PENDING",
+  "last_completed_atomic_action": "R32 merged to main at a8cfd9281c324c249ed4814317b377fd5736437a after exact-head PR qualification passed: Coordinated Product Qualification run 35521579808 and Field Ecosystem Preflight run 35521579768.",
+  "next_action": "Finish post-R32 main CI readback, then harden/diagnose resident outbound update transport from BCP 0.7.6 without replaying installation. Treat Cloudflare HUMAN_AUTH_REQUIRED as downstream; first restore qualified BCP/Nexus/Telegram convergence.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -229,18 +229,20 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-R32-WINDOWS-VERSION-DRIFT-REPAIR-20260920",
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
-    "last_completed_action": "Aligned Windows installer and final acceptance target to BCP 0.7.7 after post-merge R31 CI exposed stale 0.6.2 constants.",
-    "next_atomic_action": "Exact-head CI qualification, then serialized PR integration if green.",
-    "branch": "work/bcp/r32-windows-version-drift-repair-20260920",
-    "base_main_sha": "87ad65617cdc8b5b8ad9ff0fb7ed2c0e71f9efd0",
-    "root_cause": "STALE_WINDOWS_VERSION_CONSTANTS_0_6_2_VS_RELEASE_0_7_7",
-    "failed_main_runs": [
-      35516602176,
-      35516602228,
-      35516602175
-    ],
+    "checkpoint_id": "BCP-R33-POST-R32-STATE-RECONCILE-20260920",
+    "status": "FIELD_TRANSPORT_DIAGNOSIS_IN_PROGRESS",
+    "last_completed_action": "R32 integrated through serialized PR #98; main readback confirms a8cfd9281c324c249ed4814317b377fd5736437a.",
+    "next_atomic_action": "Complete post-merge CI readback and persist transport/convergence diagnosis.",
+    "branch": "work/bcp/r33-post-r32-state-reconcile-20260920",
+    "base_main_sha": "a8cfd9281c324c249ed4814317b377fd5736437a",
+    "r32_pr": 98,
+    "r32_exact_head": "38745ec11cf6f6e7c372421e2f98181e70a7dc2c",
+    "r32_merge_sha": "a8cfd9281c324c249ed4814317b377fd5736437a",
+    "r32_ci": {
+      "coordinated_product_qualification": 35521579808,
+      "field_ecosystem_preflight": 35521579768,
+      "result": "PASS"
+    },
     "no_replay": true
   },
   "runtime_verification": {
@@ -1683,5 +1685,53 @@
     "unchanged_version_artifact_download": false,
     "normal_idle_update_seconds": 1800,
     "field_verified": false
+  },
+  "latest_field_evidence_r32_reconcile": {
+    "observed_at_utc": "2026-09-20T16:01:08+00:00",
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json + runtime events tail",
+    "evidence_status": "MACHINE_READBACK",
+    "server_version": "0.7.6",
+    "server_pid": 13840,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "server_update_state": "CHECK_FAILED",
+    "server_update_target_version": "",
+    "nexus_bootstrap_bundle_version": "0.2.3",
+    "nexus_bootstrap_state": "HUMAN_AUTH_REQUIRED",
+    "nexus_bootstrap_receipt_status": "HUMAN_AUTH_REQUIRED",
+    "telegram_companion_target_version": "2026.09.20-cadence-telemetry-v17",
+    "telegram_companion_update_state": "UPDATE_AVAILABLE",
+    "telegram_companion_state": "DEGRADED_RETRY",
+    "telegram_error_class": "URLError",
+    "telegram_error_detail_classification": "WINERROR_10060_REMOTE_TIMEOUT",
+    "telegram_consecutive_failures": 145,
+    "pc_memory_load_percent": 87,
+    "pc_available_memory_mb": 485,
+    "pc_power_source": "AC",
+    "pc_battery_percent": 100,
+    "conclusion": "R32 fixed CI packaging/version drift. Resident convergence is separately blocked by outbound network/update-check failure; no install replay is justified."
+  },
+  "post_r32_main_ci": {
+    "merge_sha": "a8cfd9281c324c249ed4814317b377fd5736437a",
+    "final_acceptance_package": {
+      "run_id": 35521786370,
+      "result": "PASS"
+    },
+    "coordinated_pc_package": {
+      "run_id": 35521786500,
+      "result": "PASS"
+    },
+    "pc_sanity": {
+      "run_id": 35521786382,
+      "result": "PASS"
+    },
+    "windows_bootstrap_validation": {
+      "run_id": 35521786398,
+      "result": "PASS"
+    },
+    "field_ecosystem_preflight": {
+      "run_id": 35521786514,
+      "result": "IN_PROGRESS"
+    }
   }
 }
