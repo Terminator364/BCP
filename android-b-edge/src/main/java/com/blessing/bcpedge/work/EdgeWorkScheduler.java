@@ -17,8 +17,10 @@ import java.util.concurrent.TimeUnit;
 public final class EdgeWorkScheduler {
     public static final String UNIQUE_PERIODIC = "bcp-edge-v3-reconcile-periodic";
     public static final String UNIQUE_NOW = "bcp-edge-v3-reconcile-now";
-    private static final String LEGACY_PERIODIC = "bcp-edge-reconcile";
-    private static final String LEGACY_NOW = "bcp-edge-reconcile-now";
+    private static final String LEGACY_V1_PERIODIC = "bcp-edge-reconcile";
+    private static final String LEGACY_V1_NOW = "bcp-edge-reconcile-now";
+    private static final String LEGACY_V2_PERIODIC = "bcp-edge-v2-shadow-reconcile";
+    private static final String LEGACY_V2_NOW = "bcp-edge-v2-shadow-reconcile-now";
 
     private EdgeWorkScheduler() {}
 
@@ -30,8 +32,10 @@ public final class EdgeWorkScheduler {
 
     public static void schedulePeriodic(Context context) {
         WorkManager wm = WorkManager.getInstance(context.getApplicationContext());
-        wm.cancelUniqueWork(LEGACY_PERIODIC);
-        wm.cancelUniqueWork(LEGACY_NOW);
+        wm.cancelUniqueWork(LEGACY_V1_PERIODIC);
+        wm.cancelUniqueWork(LEGACY_V1_NOW);
+        wm.cancelUniqueWork(LEGACY_V2_PERIODIC);
+        wm.cancelUniqueWork(LEGACY_V2_NOW);
         PeriodicWorkRequest work = new PeriodicWorkRequest.Builder(
                 EdgeReconcileWorker.class, 15, TimeUnit.MINUTES, 5, TimeUnit.MINUTES)
                 .setConstraints(connected())
