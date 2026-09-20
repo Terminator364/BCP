@@ -638,7 +638,7 @@ def _chatgpt_pc_recovery_launcher_content(pythonw: Path, runner: Path) -> str:
 def _write_utf16_recovery_vbs(path: Path, content: str) -> dict:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".bcp-repair.tmp")
-    tmp.write_text(content, encoding="utf-16")
+    tmp.write_bytes(content.encode("utf-16"))
     os.replace(tmp, path)
     raw = path.read_bytes()
     if not raw.startswith((b"\xff\xfe", b"\xfe\xff")):
