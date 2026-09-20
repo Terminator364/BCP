@@ -114,3 +114,10 @@ Après CI verte et merge:
 4. vérification timestamps Kinshasa;
 5. vérification Nexus si transport distant actif;
 6. seulement alors: FIELD_VERIFIED pour R54.
+
+
+### H54-11 — États internes anglais dans la vue Messages récents
+**Sévérité:** P1 compréhension humaine.  
+La vue normale pouvait encore afficher `caught up`, `CHATGPT_UI` et `COMPLETE/INCOMPLETE`.
+
+**Correction:** traduction du chemin humain: `à jour`, `application ChatGPT`, `complète/incomplète`; les identifiants deviennent des références de dépannage. Les codes bruts restent réservés au diagnostic technique.
