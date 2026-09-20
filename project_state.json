@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "BCP_0_7_0_V8_RESIDENT_NEXUS_0_2_0_HUMAN_AUTH_REQUIRED_BEDGE_2_1_0_SIGNED_INSTALL_PENDING",
-  "last_completed_atomic_action": "Field readback at 2026-09-20T09:58:24Z proves Nexus 0.2.0 passed managed runtime preparation and reached the genuine Cloudflare browser authorization gate. B-EDGE 2.1.0 same-identity signed CURRENT is also published and readback-verified.",
-  "next_action": "Two genuine human field gates remain: authorize Cloudflare when the Nexus browser login is presented on the PC, and install the same-signature BCP_EDGE_CURRENT.apk over the existing B-EDGE app without uninstalling. Meanwhile code/CI may continue preparing B-EDGE independent Nexus egress without secrets.",
+  "status": "BCP_0_7_0_V8_RESIDENT_NEXUS_0_2_0_HUMAN_AUTH_REQUIRED_BEDGE_2_1_0_INSTALL_PENDING_TELEGRAM_V9_R20_CANDIDATE",
+  "last_completed_atomic_action": "Implemented Telegram Human Ops V9 / R20 candidate on a fenced branch: orientation-first attention states, forecast confidence, Since/Why/Radar views, bounded quiet mode, transition-based deduplicated alerts and one-shot recovery notifications. Nexus 0.2.0 and signed B-EDGE 2.1.0 human field gates remain unchanged.",
+  "next_action": "Run exact-head CI for Telegram V9/R20. If green, re-read main and merge serially. Resident BCP 0.7.0 may then auto-consume Telegram V9 while Cloudflare authorization and B-EDGE 2.1.0 install remain deferred human gates. No user action required while away from the PC.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -71,7 +71,8 @@
     "telegram_human_cockpit_v4": "docs/TELEGRAM_HUMAN_COCKPIT_V4_INTERACTIVE_EXPORTS.md",
     "telegram_human_cockpit_v5": "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md",
     "telegram_human_cockpit_v7": "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
-    "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md"
+    "offline_mission_sentinel": "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
+    "telegram_human_ops_v9": "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -129,7 +130,8 @@
     "docs/TELEGRAM_HUMAN_COCKPIT_V3_AND_MULTI_MISSION_REQUIREMENTS.md",
     "docs/TELEGRAM_HUMAN_COCKPIT_V5_MICRO_ACTIONS_AND_PROGRESS.md",
     "docs/TELEGRAM_HUMAN_COCKPIT_V7_AUTOMATIC_PROGRESS_AND_REPORTS.md",
-    "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md"
+    "docs/OFFLINE_MISSION_SENTINEL_AND_RESUME_ARCHITECTURE.md",
+    "docs/TELEGRAM_HUMAN_OPS_COCKPIT_V9_R20.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -159,7 +161,11 @@
     "P0_no_chatgpt_scheduled_monitoring_for_presence": true,
     "P0_human_readable_progress_forecast": true,
     "P0_automatic_telegram_refresh": true,
-    "P0_four_complete_telegram_reports": true
+    "P0_four_complete_telegram_reports": true,
+    "P0_attention_first_telegram_cockpit": true,
+    "P0_alert_grouping_dedup_recovery": true,
+    "P0_return_after_absence_digest": true,
+    "P0_predictive_risk_radar": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -189,12 +195,12 @@
     "note": "GitHub code search did not independently find this filename/hash. Do not promote to verified artifact until durable artifact/receipt is found."
   },
   "atomic_checkpoint": {
-    "checkpoint_id": "BCP-BEDGE-210-SIGNED-CURRENT-20260920",
-    "status": "HUMAN_FIELD_GATES_PENDING",
-    "last_completed_action": "Nexus 0.2.0 reached HUMAN_AUTH_REQUIRED; signed B-EDGE 2.1.0 CURRENT is ready.",
-    "next_atomic_action": "Prepare B-EDGE independent Nexus egress in CI; field activation waits for Cloudflare authorization and B-EDGE 2.1.0 install.",
-    "branch": "work/bcp/state-edge210-signed-current-20260920",
-    "base_main_sha": "c2dc08c21bc9b038387c568c3e455ae65448182b",
+    "checkpoint_id": "BCP-TELEGRAM-V9-R20-CANDIDATE-20260920",
+    "status": "CI_PENDING",
+    "last_completed_action": "Human Ops V9 code, canonical R20 specification, release manifests and design document persisted.",
+    "next_atomic_action": "Exact-head CI then serialized merge if green.",
+    "branch": "work/bcp/r20-telegram-human-ops-ux-20260920",
+    "base_main_sha": "2bf683408d5e730d409d989cfef33c97d5d6553f",
     "no_replay": true
   },
   "runtime_verification": {
@@ -1404,5 +1410,30 @@
     "pc_memory_load_percent": 79,
     "pc_power_source": "AC",
     "pc_battery_percent": 40
+  },
+  "telegram_human_ops_v9": {
+    "status": "IMPLEMENTED_CANDIDATE_FIELD_UNVERIFIED",
+    "version": "2026.09.20-human-ops-v9",
+    "requirements_revision": "2026-09-20-R20",
+    "features": {
+      "attention_states": [
+        "CRITICAL",
+        "ACTION",
+        "WATCH",
+        "ACTIVE",
+        "NORMAL"
+      ],
+      "forecast_confidence": true,
+      "since_last_visit": true,
+      "explainability_why": true,
+      "predictive_risk_radar": true,
+      "quiet_mode_minutes_default": 120,
+      "critical_bypass": true,
+      "transition_dedup": true,
+      "recovery_notification": true,
+      "optional_mini_app_future": true,
+      "low_data_bot_fallback": true
+    },
+    "field_verified": false
   }
 }
