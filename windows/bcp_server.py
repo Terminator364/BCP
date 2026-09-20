@@ -4680,9 +4680,10 @@ def selftest():
             bridge = sync_chatgpt_pc_flow_ledger(24)
             assert bridge["status"] == "CAUGHT_UP"
             assert bridge["imported"] == 2 and bridge["read_only"] is True
-            cids = [x["conversation_id"] for x in conversation_list(20) if x["source_kind"] == "CHATGPT_PC"]
-            assert cids
-            bridged = conversation_messages(cids[0], 8)
+            expected_cid = _chatgpt_pc_conversation_id("chat-session-1", "M-R27")
+            threads = {x["conversation_id"]: x for x in conversation_list(20)}
+            assert expected_cid in threads and threads[expected_cid]["source_kind"] == "CHATGPT_PC"
+            bridged = conversation_messages(expected_cid, 8)
             assert [x["role"] for x in bridged][-2:] == ["USER","ASSISTANT"]
             assert bridged[-1]["delivery_state"] == "CHATGPT_UI_DELIVERY_UNKNOWN"
             again = sync_chatgpt_pc_flow_ledger(24)
