@@ -463,6 +463,38 @@ class LocalTruth:
         )
         return list(reversed(rows))
 
+    def conversation_delivery_gaps(self, threshold_seconds: int = 300, limit: int = 20) -> list[dict]:
+        threshold_seconds = max(60, min(int(threshold_seconds), 86400))
+        rows = self._query(
+            "SELECT m.conversation_id,m.sequence,m.role,m.text,m.generated_at,m.mirrored_at,"
+            "m.delivery_state,m.evidence_class,m.linked_mission_id,m.seen_at,t.alias,t.source_kind "
+            "FROM conversation_messages m JOIN conversation_threads t "
+            "ON t.conversation_id=m.conversation_id "
+            "WHERE m.role='ASSISTANT' AND m.delivery_state IN "
+            "('GENERATED','MIRRORED_BCP','CHATGPT_UI_DELIVERY_UNKNOWN','DELIVERY_GAP_DETECTED') "
+            "AND COALESCE(m.seen_at,'')='' ORDER BY m.mirrored_at ASC LIMIT ?",
+            (max(limit * 4, 20),),
+        )
+        out = []
+        now = dt.datetime.now(dt.timezone.utc)
+        for row in rows:
+            raw = row.get("mirrored_at") or row.get("generated_at")
+            try:
+                parsed = dt.datetime.fromisoformat(str(raw or "").replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=dt.timezone.utc)
+                age = max(0, int((now - parsed.astimezone(dt.timezone.utc)).total_seconds()))
+            except Exception:
+                continue
+            if age < threshold_seconds:
+                continue
+            row["age_seconds"] = age
+            row["derived_state"] = "DELIVERY_GAP_DETECTED"
+            out.append(row)
+            if len(out) >= limit:
+                break
+        return out
+
     def buildhub(self) -> dict:
         raw = os.environ.get("BCP_BUILDHUB_RECEIPT", "").strip()
         if raw:
@@ -959,7 +991,14 @@ class Service:
         human_gate = self._human_gate(ev, next_action)
         forecast_confidence, forecast_confidence_reason = self._forecast_confidence(ctx, events, gh)
         telegram_state = str(runtime.get("telegram_companion_state") or "").upper()
+        delivery_gaps = self.local.conversation_delivery_gaps(300, 20)
         attention_reasons = []
+        if delivery_gaps:
+            oldest_gap = max(int(x.get("age_seconds") or 0) for x in delivery_gaps)
+            attention_reasons.append(
+                str(len(delivery_gaps)) + " réponse(s) assistant ont un miroir BCP mais aucune preuve de lecture depuis au moins "
+                + self._age_label(oldest_gap) + "."
+            )
         if human_gate != "AUCUNE":
             attention_reasons.append("Une intervention humaine est explicitement requise par la mission.")
         if nexus == "HUMAN_AUTH_REQUIRED":
@@ -979,7 +1018,7 @@ class Service:
             attention_level = "CRITICAL"
         elif human_gate != "AUCUNE" or nexus == "HUMAN_AUTH_REQUIRED":
             attention_level = "ACTION"
-        elif mission_state in HOLD_STATES or hold_reason or (isinstance(age, int) and age >= 900):
+        elif delivery_gaps or mission_state in HOLD_STATES or hold_reason or (isinstance(age, int) and age >= 900):
             attention_level = "WATCH"
         elif isinstance(age, int) and age < 900 and mission_state not in {"DONE", "CANCELLED"}:
             attention_level = "ACTIVE"
@@ -1016,6 +1055,7 @@ class Service:
             "human_gate": human_gate,
             "attention_level": attention_level,
             "attention_reasons": attention_reasons,
+            "delivery_gap_count": len(delivery_gaps),
             "forecast_confidence": forecast_confidence,
             "forecast_confidence_reason": forecast_confidence_reason,
             "evidence_age_label": age_label,
@@ -2003,6 +2043,10 @@ class Service:
 
     def conversations_inbox(self) -> str:
         threads = self.local.conversations(5)
+        gaps = self.local.conversation_delivery_gaps(300, 20)
+        gap_by_thread = {}
+        for gap in gaps:
+            gap_by_thread.setdefault(str(gap.get("conversation_id") or ""), gap)
         if not threads:
             return (
                 "💬 CONVERSATIONS SYNCHRONISÉES\n"
@@ -2019,8 +2063,11 @@ class Service:
             alias = clean(thread.get("alias") or cid, 80)
             source = clean(thread.get("source_kind") or "BCP", 30)
             state = str(thread.get("last_delivery_state") or "")
+            gap = gap_by_thread.get(cid)
             lines += ["", str(pos) + ". " + alias + " · " + source,
                       "   " + self._delivery_label(state) + " · " + clean(thread.get("last_activity_at"), 40)]
+            if gap:
+                lines.append("   ⚠️ Réponse potentiellement manquée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " sans preuve de lecture")
             msgs = self.local.conversation_messages(cid, 2)
             for msg in msgs:
                 role = str(msg.get("role") or "").upper()
@@ -3189,10 +3236,19 @@ def selftest() -> int:
         assert "POURQUOI CET ÉTAT" in svc.why()
         assert "DEPUIS VOTRE DERNIÈRE VISITE" in svc.since_last_seen()
         assert "RADAR" in svc.risk_radar()
+        cx = sqlite3.connect(db)
+        old_gap = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=8)).replace(microsecond=0).isoformat()
+        cx.execute("UPDATE conversation_messages SET mirrored_at=?,generated_at=? WHERE conversation_id='chat-main' AND role='ASSISTANT'", (old_gap, old_gap))
+        cx.commit()
+        cx.close()
+        gaps = svc.local.conversation_delivery_gaps(300, 10)
+        assert len(gaps) == 1 and gaps[0]["derived_state"] == "DELIVERY_GAP_DETECTED"
         inbox = svc.conversations_inbox()
         assert "CONVERSATIONS SYNCHRONISÉES" in inbox
         assert "Conversation principale" in inbox
         assert "affichage ChatGPT non confirmé" in inbox
+        assert "Réponse potentiellement manquée" in inbox
+        assert svc.presence_snapshot()["snapshot"]["delivery_gap_count"] == 1
         assert "Travail terminé côté BCP" in svc.conversation_view("chat-main")
         ack_text = svc.acknowledge_attention()
         assert "Pris en compte" in ack_text or "Aucun signal prioritaire" in ack_text
