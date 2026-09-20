@@ -3,11 +3,11 @@
   "channel": "stable",
   "version": "2026.09.20-cadence-telemetry-v17",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "5304aec7460bc7995ad8afcc2a775c991ff5ad008c86da46c35ba5415f925739",
+  "sha256": "ba0d88acd7fd85e5951cf733500979bc6f0c94783c9d70be7f7b202d4dc9aef5",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V17 is unchanged under R51. Nexus fresh-auth retry is isolated from direct Telegram transport; existing bounded retry and no-spam behavior are preserved.",
-  "requirements_revision": "2026-09-20-R51"
+  "notes": "Telegram V17 R53 humanizes the cockpit, adds direct Aide/mode d'emploi, rewrites delivery-gap wording, aligns Rich/V9 labels, and preserves bounded no-spam behavior.",
+  "requirements_revision": "2026-09-20-R53"
 }
