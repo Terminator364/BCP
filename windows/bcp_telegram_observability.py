@@ -495,7 +495,84 @@ class LocalTruth:
                 break
         return out
 
+    def conversation_producer_sync(self, conversation_id: str = "") -> list[dict]:
+        params = []
+        where = ""
+        if conversation_id:
+            where = "WHERE conversation_id=?"
+            params.append(str(conversation_id)[:64])
+        try:
+            producers = self._query(
+                "SELECT conversation_id,producer_session_id,source_kind,source_ref,sequence_floor,"
+                "announced_sequence,last_heartbeat_at,last_receipt_at,updated_at "
+                "FROM conversation_producers " + where + " ORDER BY updated_at DESC",
+                tuple(params),
+            )
+        except Exception:
+            producers = []
+        if not producers:
+            return []
+        msg_params = []
+        msg_where = "WHERE producer_sequence>0 AND producer_session_id<>''"
+        if conversation_id:
+            msg_where += " AND conversation_id=?"
+            msg_params.append(str(conversation_id)[:64])
+        rows = self._query(
+            "SELECT conversation_id,producer_session_id,producer_sequence FROM conversation_messages "
+            + msg_where + " ORDER BY conversation_id,producer_session_id,producer_sequence",
+            tuple(msg_params),
+        )
+        received = {}
+        for row in rows:
+            key = (str(row.get("conversation_id") or ""), str(row.get("producer_session_id") or ""))
+            received.setdefault(key, set()).add(int(row.get("producer_sequence") or 0))
+        out = []
+        for item in producers:
+            cid = str(item.get("conversation_id") or "")
+            sid = str(item.get("producer_session_id") or "")
+            seqs = received.get((cid, sid), set())
+            floor = max(1, int(item.get("sequence_floor") or 1))
+            announced = max(0, int(item.get("announced_sequence") or 0))
+            missing = []
+            if announced >= floor:
+                start = None
+                for n in range(floor, announced + 1):
+                    if n not in seqs and start is None:
+                        start = n
+                    elif n in seqs and start is not None:
+                        missing.append((start, n - 1))
+                        start = None
+                if start is not None:
+                    missing.append((start, announced))
+            cursor = floor
+            while cursor in seqs and cursor <= announced:
+                cursor += 1
+            item["contiguous_received_sequence"] = min(announced, cursor - 1) if announced else cursor - 1
+            item["highest_received_sequence"] = max(seqs) if seqs else 0
+            item["missing_count"] = sum(b - a + 1 for a, b in missing)
+            item["missing_ranges"] = [{"from": a, "to": b} for a, b in missing[:20]]
+            item["sync_state"] = "COMPLETE" if not missing else "INCOMPLETE"
+            out.append(item)
+        return out
+
     def conversation_sequence_gaps(self, conversation_id: str = "", limit: int = 20) -> list[dict]:
+        producer_sync = self.conversation_producer_sync(conversation_id)
+        if producer_sync:
+            out = []
+            for item in producer_sync:
+                for r in item.get("missing_ranges", []):
+                    out.append({
+                        "conversation_id": item.get("conversation_id"),
+                        "producer_session_id": item.get("producer_session_id"),
+                        "missing_from": int(r.get("from") or 0),
+                        "missing_to": int(r.get("to") or 0),
+                        "missing_count": int(r.get("to") or 0) - int(r.get("from") or 0) + 1,
+                        "announced_sequence": int(item.get("announced_sequence") or 0),
+                    })
+                    if len(out) >= limit:
+                        return out
+            return out
+
         params = []
         where = "WHERE producer_sequence>0 AND producer_session_id<>''"
         if conversation_id:
@@ -2093,6 +2170,10 @@ class Service:
         seq_gap_by_thread = {}
         for gap in seq_gaps:
             seq_gap_by_thread.setdefault(str(gap.get("conversation_id") or ""), gap)
+        producer_sync = self.local.conversation_producer_sync("")
+        producer_by_thread = {}
+        for item in producer_sync:
+            producer_by_thread.setdefault(str(item.get("conversation_id") or ""), item)
         if not threads:
             return (
                 "💬 CONVERSATIONS SYNCHRONISÉES\n"
@@ -2115,10 +2196,16 @@ class Service:
             if gap:
                 lines.append("   ⚠️ Réponse potentiellement manquée · " + self._age_label(int(gap.get("age_seconds") or 0)) + " sans preuve de lecture")
             seq_gap = seq_gap_by_thread.get(cid)
+            producer = producer_by_thread.get(cid)
             if seq_gap:
                 lines.append(
                     "   🧩 Synchronisation incomplète · séquence(s) "
                     + str(seq_gap.get("missing_from")) + "–" + str(seq_gap.get("missing_to")) + " absente(s)"
+                )
+            elif producer:
+                lines.append(
+                    "   🔄 Sync producteur complète jusqu’à #"
+                    + str(producer.get("contiguous_received_sequence") or producer.get("announced_sequence") or 0)
                 )
             msgs = self.local.conversation_messages(cid, 2)
             for msg in msgs:
@@ -2154,6 +2241,17 @@ class Service:
                 clean(msg.get("text"), 700),
                 self._delivery_label(str(msg.get("delivery_state") or "")),
             ]
+        producer_sync = self.local.conversation_producer_sync(cid)
+        if producer_sync:
+            lines += ["", "🔄 Producteurs synchronisés :"]
+            for item in producer_sync[:5]:
+                lines.append(
+                    "• " + clean(item.get("source_kind"), 24)
+                    + " · session " + clean(item.get("producer_session_id"), 36)
+                    + " · reçu #" + str(item.get("contiguous_received_sequence") or 0)
+                    + " / annoncé #" + str(item.get("announced_sequence") or 0)
+                    + " · " + clean(item.get("sync_state"), 20)
+                )
         seq_gaps = self.local.conversation_sequence_gaps(cid, 10)
         if seq_gaps:
             lines += ["", "🧩 Trous de synchronisation détectés :"]
@@ -3173,6 +3271,12 @@ def selftest() -> int:
             producer_sequence INTEGER NOT NULL DEFAULT 0,
             producer_session_id TEXT NOT NULL DEFAULT ''
         );
+        CREATE TABLE conversation_producers(
+            conversation_id TEXT,producer_session_id TEXT,source_kind TEXT,source_ref TEXT,
+            sequence_floor INTEGER,announced_sequence INTEGER,last_heartbeat_at TEXT,
+            last_receipt_at TEXT,updated_at TEXT,
+            PRIMARY KEY(conversation_id,producer_session_id)
+        );
         """)
         cx.execute("INSERT INTO heads VALUES(?,?,?,?,?,?,?,?)", (
             "API/BCP", 7, 7, "abc", "EN_COURS", "CI patch persisted",
@@ -3212,6 +3316,9 @@ def selftest() -> int:
         cx.execute("INSERT INTO conversation_messages(conversation_id,sequence,role,text,generated_at,mirrored_at,delivery_state,evidence_class,linked_mission_id,seen_at) VALUES(?,?,?,?,?,?,?,?,?,?)", (
             "chat-main", 2, "ASSISTANT", "Travail terminé côté BCP; affichage ChatGPT non confirmé.", now, now,
             "CHATGPT_UI_DELIVERY_UNKNOWN", "EXTERNAL_RECEIPT", "", ""
+        ))
+        cx.execute("INSERT INTO conversation_producers VALUES(?,?,?,?,?,?,?,?,?)", (
+            "chat-main", "s1", "CHATGPT_PC", "selftest", 10, 12, now, now, now
         ))
         cx.commit()
         cx.close()
@@ -3321,6 +3428,8 @@ def selftest() -> int:
         cx.commit()
         cx.close()
         assert svc.local.conversation_sequence_gaps("chat-main", 10)[0]["missing_from"] == 11
+        sync = svc.local.conversation_producer_sync("chat-main")
+        assert sync and sync[0]["announced_sequence"] == 12 and sync[0]["sync_state"] == "INCOMPLETE"
         assert "Synchronisation incomplète" in svc.conversations_inbox()
         assert svc.presence_snapshot()["snapshot"]["sequence_gap_count"] == 1
         assert "Travail terminé côté BCP" in svc.conversation_view("chat-main")

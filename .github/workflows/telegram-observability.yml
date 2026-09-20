@@ -106,6 +106,9 @@ jobs:
           assert "conversation_sequence_gaps" in py
           assert "Synchronisation incomplète" in py
           assert "sequence_gap_count" in py
+          assert "conversation_producer_sync" in py
+          assert "Sync producteur complète" in py
+          assert "announced_sequence" in py
           assert "MISSION_RESUME_REQUESTS.jsonl" in py
           assert "watchdog_notice" in py
           assert "WATCHDOG_NOTIFY_STATE_PATH" in py

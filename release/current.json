@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-20-R25",
+  "requirements_revision": "2026-09-20-R26",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.3",
+      "version": "0.7.4",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "381df8b51fe2089b66f00e062942b0b590cc188ef1e83f95c9e6ea2a51b843e7"
+        "sha256": "a2f0765c160a533f15510c34d20ba15d6785109c238ce489ac8f19fdf44df4b3"
       },
-      "notes": "BCP 0.7.3 adds a local append-only Conversation Receipt Bridge with durable cursor, bounded ingestion, producer sequence tracking and late-receipt sequence repair."
+      "notes": "BCP 0.7.4 adds producer high-water marks, tail/internal sync-gap derivation, local durable receipt acknowledgement, and producer-sync readback."
     },
     "android_b_edge": {
       "version": "2.1.0-rc1-sentinel-evergreen",
@@ -50,13 +50,13 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "e6cc0c6cdaa2762873835519c11088f5c51e62c8b5d0b40bb39d5bc5bdfa9ef4"
+        "sha256": "0b3733ca68cb05bacf62c7ee7eeac29d97714d682e7fd61c1b6b153d469a30b2"
       },
-      "notes": "Nexus 0.2.3 remains R25-compatible; canonical receipt bodies and sequence repair remain local to BCP."
+      "notes": "Nexus 0.2.3 remains R26-compatible; canonical producer receipts/watermarks/acks remain local."
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-receipt-bridge-v14",
+    "version": "2026.09.20-producer-watermark-v15",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -111,7 +111,11 @@
       "local append-only producer receipt bridge with durable cursor",
       "producer sequence tracking separate from BCP ingestion sequence",
       "conversation sequence-gap detection and late-receipt automatic repair",
-      "Telegram incomplete-sync WATCH indicator"
+      "Telegram incomplete-sync WATCH indicator",
+      "producer high-water mark synchronization truth",
+      "tail-gap detection relative to announced producer sequence",
+      "durable local producer receipt acknowledgement",
+      "Telegram complete-through vs announced watermark visibility"
     ]
   }
 }
