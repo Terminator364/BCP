@@ -34,6 +34,8 @@ public final class EdgeReconcileWorker extends Worker {
                     .putInt("sentinel_failures",sentinel.optInt("consecutive_failures",0))
                     .putBoolean("resume_pending",sentinel.optBoolean("resume_pending",false))
                     .putString("resume_request_id",sentinel.optString("resume_request_id",""))
+                    .putBoolean("nexus_provisioned",sync.optBoolean("nexus_provisioned",false))
+                    .putString("nexus_alert_state",sync.optString("nexus_alert_state",""))
                     .putBoolean("durable_reconcile_executed",true)
                     .build();
             // Offline is a valid EDGE_ONLY/PC_UNAVAILABLE state, not a WorkManager
