@@ -8,10 +8,21 @@ On a fresh conversation, this code means:
 - load `project_state.json`, this handoff, the canonical requirements, delivery policy, 25-minute cadence policy, pre-human action simulation policy, writer-fence policy and CURRENT manifests;
 - do not reconstruct the project from chat history;
 - resume from the next uncommitted action only;
-- send the full checkpoint by Gmail first; after confirmed mail delivery, ChatGPT is pointer-only;
+- immediately send a short Gmail **START** notice before substantive project work; at tranche end send the full Gmail **END** checkpoint; only after the END receipt is confirmed may ChatGPT answer, and then it is pointer-only;
 - normal useful-work tranche target is approximately 25 minutes (practical 24–25 minute window unless a real gate ends it earlier);
 - never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
+
+### START/END Gmail handshake — R59
+For every user-invoked continuation/relaunch/message that starts project work:
+1. perform only the minimum routing/context lookup needed to know the project;
+2. send Gmail START with Kinshasa day/date/time, project and tranche scope;
+3. perform the substantive work;
+4. persist evidence/checkpoint;
+5. send Gmail END with the complete checkpoint;
+6. in ChatGPT show only: “Va sur Gmail” + Kinshasa day/date/time + checkpoint id.
+
+If the START mail fails, do not begin the substantive tranche. If the END mail fails, do not claim completion or show a success pointer.
 
 Current durable integration truth:
 - R58 is merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`;
