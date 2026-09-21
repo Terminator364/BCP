@@ -104,6 +104,12 @@ def main() -> int:
         fail("end_email_provider_ack_contract")
     if email.get("chat_output_before_end_ack_forbidden") is not True:
         fail("chat_before_end_email_ack_forbidden_contract")
+    if email.get("gmail_label_required") != "BCP":
+        fail("bcp_gmail_label_contract")
+    if email.get("subject_prefix_required") != "[BCP]":
+        fail("bcp_gmail_subject_prefix_contract")
+    if email.get("label_apply_after_send_ack") is not True:
+        fail("bcp_gmail_label_after_ack_contract")
     cadence_delivery = delivery.get("cadence") or {}
     if cadence_delivery.get("end_watchdog_required_at_start") is not True:
         fail("end_watchdog_required_at_start_contract")
