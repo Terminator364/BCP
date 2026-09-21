@@ -40,6 +40,8 @@ public final class EdgeRelayPolicy {
         if ("GET".equalsIgnoreCase(method) && "/v1/node/context".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/sync".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/jobs".equals(path)) return true;
+        if ("GET".equalsIgnoreCase(method) && "/v1/node/communications".equals(path)) return true;
+        if ("POST".equalsIgnoreCase(method) && "/v1/node/communications".equals(path)) return true;
         return false;
     }
 
