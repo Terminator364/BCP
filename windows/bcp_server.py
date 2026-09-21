@@ -32,7 +32,7 @@ DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
 EDGE_RELAY_STATE_PATH = STATE_DIR / "edge_relay.json"
-SERVER_VERSION = "0.7.15"
+SERVER_VERSION = "0.7.16"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -113,6 +113,12 @@ def edge_relay_status(now_epoch: int | None = None) -> dict:
         "relay_host": str(raw.get("relay_host") or "") if active else "",
         "relay_port": int(raw.get("relay_port") or 0) if active else 0,
         "capability": str(raw.get("capability") or ""),
+        "node_role": str(raw.get("node_role") or ""),
+        "api_version": int(raw.get("api_version") or 0),
+        "api_base": str(raw.get("api_base") or ""),
+        "capabilities": list(raw.get("capabilities") or [])[:16],
+        "connectivity": dict(raw.get("connectivity") or {}),
+        "pending_jobs": max(0, int(raw.get("pending_jobs") or 0)),
         "edge_version": str(raw.get("edge_version") or ""),
         "registered_at": str(raw.get("registered_at") or ""),
         "expires_epoch": expires,
@@ -130,12 +136,38 @@ def register_edge_relay(remote_ip: str, body: dict) -> dict:
         raise ValueError("edge_relay_port_not_allowed")
     if capability != "HTTPS_CONNECT_TELEGRAM":
         raise ValueError("edge_relay_capability_not_allowed")
+    node_role = str(body.get("node_role") or "")[:80]
+    if node_role not in ("", "PHONE_PRIMARY_EDGE_SERVER"):
+        raise ValueError("edge_node_role_not_allowed")
+    raw_caps = body.get("capabilities") or []
+    if not isinstance(raw_caps, list):
+        raw_caps = []
+    capabilities = [str(x)[:80] for x in raw_caps[:16] if str(x).strip()]
+    raw_connectivity = body.get("connectivity") or {}
+    if not isinstance(raw_connectivity, dict):
+        raw_connectivity = {}
+    connectivity = {
+        "transports": list(raw_connectivity.get("transports") or [])[:8],
+        "internet": bool(raw_connectivity.get("internet")),
+        "validated": bool(raw_connectivity.get("validated")),
+        "metered": bool(raw_connectivity.get("metered")),
+        "wifi_direct_supported": bool(raw_connectivity.get("wifi_direct_supported")),
+        "bluetooth_le_supported": bool(raw_connectivity.get("bluetooth_le_supported")),
+        "usb_host_supported": bool(raw_connectivity.get("usb_host_supported")),
+        "device_owner": bool(raw_connectivity.get("device_owner")),
+    }
     now = int(time.time())
     rec = {
         "schema": "bcp.edge_relay_registration/1",
         "relay_host": remote_ip,
         "relay_port": port,
         "capability": capability,
+        "node_role": node_role,
+        "api_version": max(0, min(int(body.get("api_version") or 0), 9)),
+        "api_base": str(body.get("api_base") or "")[:80],
+        "capabilities": capabilities,
+        "connectivity": connectivity,
+        "pending_jobs": max(0, min(int(body.get("pending_jobs") or 0), 100000)),
         "edge_version": str(body.get("edge_version") or "")[:80],
         "registered_at": utc_now(),
         "registered_epoch": now,
