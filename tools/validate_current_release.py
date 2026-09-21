@@ -93,16 +93,16 @@ def main() -> int:
         if policy.get(key) is not expected:
             fail("policy." + key)
 
-    if int(cadence.get("target_minutes") or 0) != 30:
-        fail("cadence_target_not_30")
+    if int(cadence.get("target_minutes") or 0) != 25:
+        fail("cadence_target_not_25")
     window = cadence.get("acceptable_window_minutes") or []
-    if window != [26, 30]:
-        fail("cadence_window_not_26_30")
+    if window != [23, 25]:
+        fail("cadence_window_not_23_25")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
     if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
         fail("chat_pointer_only_contract")
-    if not str(active_tranche.get("delivery_key") or "").startswith("BCP30-"):
+    if not str(active_tranche.get("delivery_key") or "").startswith("BCP25-"):
         fail("active_tranche_delivery_key_contract")
     if active_tranche.get("close_owner") != "PRIMARY_ASSISTANT":
         fail("active_tranche_primary_close_owner")
@@ -122,16 +122,10 @@ def main() -> int:
     if email.get("chat_output_before_end_ack_forbidden") is not True:
         fail("chat_before_end_email_ack_forbidden_contract")
     cadence_delivery = delivery.get("cadence") or {}
-    if cadence_delivery.get("two_guard_closeout_required") is not True:
-        fail("dual_closeout_guard_contract")
-    if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 26:
+    if cadence_delivery.get("scheduled_close_guards_required") is not False:
+        fail("scheduled_close_guard_dependency_contract")
+    if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 23:
         fail("normal_closeout_offset_contract")
-    if int(cadence_delivery.get("backup_earliest_offset_minutes") or 0) != 28:
-        fail("backup_earliest_offset_contract")
-    if int(cadence_delivery.get("hard_close_guard_offset_minutes") or 0) != 29:
-        fail("hard_close_guard_offset_contract")
-    if int(cadence_delivery.get("absolute_end_deadline_minutes") or 0) != 30:
-        fail("absolute_end_deadline_contract")
     if cadence_delivery.get("user_relaunch_must_never_be_required") is not True:
         fail("user_relaunch_dependency_contract")
     if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
@@ -142,12 +136,12 @@ def main() -> int:
         fail("pre_human_runtime_layer_missing")
     if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
         fail("human_action_matrix_ref_drift")
-    if communication.get("schema") != "bcp.communication_survival_policy/4":
+    if communication.get("schema") != "bcp.communication_survival_policy/5":
         fail("communication_survival_schema")
     if communication.get("cold_recovery", {}).get("code") != "BCPGO BCP":
         fail("communication_cold_recovery_code")
-    if communication.get("checkpoint_protocol", {}).get("target_minutes") != 30:
-        fail("communication_30_minute_checkpoint")
+    if communication.get("checkpoint_protocol", {}).get("target_minutes") != 25:
+        fail("communication_25_minute_checkpoint")
     if communication.get("channels", {}).get("gmail", {}).get("end_retry_until_provider_ack") is not True:
         fail("communication_gmail_end_ack")
     if communication.get("channels", {}).get("phone_edge", {}).get("store_and_forward") is not True:
@@ -164,19 +158,19 @@ def main() -> int:
         fail("foreground_end_send_primary_contract")
     if email.get("delivery_key_required") is not True:
         fail("email_delivery_key_contract")
-    if comm_protocol.get("schema") != "bcp.communication_protocol/1":
+    if comm_protocol.get("schema") != "bcp.communication_protocol/2":
         fail("communication_protocol_schema")
     if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("communication_primary_owner")
-    if comm_protocol.get("cadence_minutes") != 30 or comm_protocol.get("primary_work_budget_minutes") != 26:
+    if comm_protocol.get("cadence_minutes") != 25 or comm_protocol.get("primary_work_budget_minutes") != 23:
         fail("communication_protocol_cadence")
-    if comm_protocol.get("normal_close_reserve_minutes") != 4:
+    if comm_protocol.get("normal_close_reserve_minutes") != 2:
         fail("communication_close_reserve")
-    if comm_protocol.get("backup_earliest_offset_minutes") != 28 or comm_protocol.get("hard_guard_offset_minutes") != 29:
-        fail("communication_backup_offsets")
-    if comm_state_machine.get("schema") != "bcp.communication_state_machine/1":
+    if comm_protocol.get("scheduled_backup_required") is not False:
+        fail("communication_scheduled_backup_dependency")
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/2":
         fail("communication_state_machine_schema")
-    if comm_state_machine.get("useful_work_minutes") != 26 or comm_state_machine.get("normal_close_reserve_minutes") != 4:
+    if comm_state_machine.get("useful_work_minutes") != 23 or comm_state_machine.get("normal_close_reserve_minutes") != 2:
         fail("communication_state_machine_cadence")
     if "END_SEND_PENDING->END_ACKNOWLEDGED" not in (comm_state_machine.get("normal_path") or []):
         fail("communication_state_machine_end_ack")
