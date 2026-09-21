@@ -64,7 +64,6 @@
       "ZERO_USD_DEFAULT",
       "UNSTABLE_POWER_NETWORK_RESILIENCE",
       "USER_NOT_TELEMETRY_BUS",
-      "BCP_FASTPATH_P0_NO_GLOBAL_SEARCH_OR_NETWORK_WAIT",
       "CONTROL_EXECUTION_DATA_REASONING_PLANE_SEPARATION",
       "CAPABILITY_REGISTRY_AND_STANDARD_MACHINE_RECEIPTS"
     ],
@@ -92,11 +91,9 @@
         "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx",
         "evidence": "Library parsed 54-page source, targeted postulate reads",
         "verified_content": [
-          "Postulate 1 original source requires autonomous total observable activity history across conversations/agents while preserving speed",
-          "Postulate 2 requires exact Universal Chronicle plus derived canonical memory, SQLite WAL, selective retrieval and transactional outbox",
-          "Postulate 3 makes the dedicated SM-A217F a local-first continuity appliance and future logical memory/session/journal/mission coordinator after fencing/replication proof",
-          "Postulate 4 requires BCP_FASTPATH_P0, no global search/network wait on the interactive path, precomputed context, one durable turn transaction and async noncritical work"
-        ]
+          "Postulate 1 original source requires autonomous total observable activity history across conversations/agents while preserving speed"
+        ],
+        "classification": "A_SOURCE_INTENT_ONLY_FOR_POSTULATE_1"
       }
     ],
     "source_completeness": {
@@ -151,7 +148,26 @@
       "RESOURCE_GOVERNOR_AND_THERMAL_BATTERY_AWARENESS",
       "OPTIONAL_EXPLICIT_DEVICE_OWNER_APPLIANCE_TIER",
       "NO_PUBLIC_INBOUND_PHONE_SERVER_REQUIRED",
-      "MEASURED_CAPABILITIES_NOT_ARCHITECTURAL_WISHFUL_THINKING"
+      "MEASURED_CAPABILITIES_NOT_ARCHITECTURAL_WISHFUL_THINKING",
+      "BCP_FASTPATH_P0_NO_GLOBAL_SEARCH_OR_NETWORK_WAIT",
+      "IMMUTABLE_HOT_SNAPSHOT_REBUILDABLE_FROM_CORE_DB",
+      "WRITER_ARBITER_P0_P1_P2_P3",
+      "SINGLE_TURN_DURABLE_TRANSACTION",
+      "PER_DEPENDENCY_CIRCUIT_BREAKERS",
+      "OUTBOUND_REVERSE_RPC_NO_PUBLIC_PHONE_INGRESS",
+      "LONG_POLL_VS_WEBSOCKET_MEASURED_AB",
+      "FTS_LOCAL_BASELINE_BEFORE_EMBEDDINGS"
+    ],
+    "source_read_receipts": [
+      {
+        "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx",
+        "classification": "B_RESEARCH_EXPANSION_POSTULATES_2_TO_4",
+        "verified_content": [
+          "Postulate 2: exact Universal Chronicle + derived canonical memory, SQLite WAL, selective retrieval, transactional outbox",
+          "Postulate 3: dedicated SM-A217F local-first continuity appliance, future logical memory/session/journal/mission coordinator after fencing/replication proof",
+          "Postulate 4: BCP_FASTPATH_P0 with immutable HotSnapshot, writer-arbiter lanes P0-P3, single-turn transactions, per-dependency circuit breakers, no-wait offline behavior, outbound reverse-RPC and long-poll/WebSocket measured challenger"
+        ]
+      }
     ]
   },
   "C": {
