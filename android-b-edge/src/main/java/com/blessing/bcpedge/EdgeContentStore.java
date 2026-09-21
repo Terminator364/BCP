@@ -106,15 +106,21 @@ public final class EdgeContentStore {
             StatFs fs = new StatFs(root.getAbsolutePath());
             long total = fs.getTotalBytes();
             long available = fs.getAvailableBytes();
-            long reserve = Math.max(MIN_DEVICE_RESERVE, total / 5L);
-            long byTotal = total / 2L;
-            long byAvailable = Math.max(0L, available - reserve);
-            long desired = Math.min(MAX_QUOTA, Math.min(byTotal, byAvailable));
-            if (desired >= MIN_QUOTA) return desired;
-            return Math.max(0L, Math.min(MIN_QUOTA, available / 4L));
+            return dedicatedQuotaBytes(total, available);
         } catch (Exception ex) {
             return MIN_QUOTA;
         }
+    }
+
+    static long dedicatedQuotaBytes(long total, long available) {
+        long safeTotal = Math.max(0L, total);
+        long safeAvailable = Math.max(0L, available);
+        long reserve = Math.max(MIN_DEVICE_RESERVE, safeTotal / 5L);
+        long byTotal = safeTotal / 2L;
+        long byAvailable = Math.max(0L, safeAvailable - reserve);
+        long desired = Math.min(MAX_QUOTA, Math.min(byTotal, byAvailable));
+        if (desired >= MIN_QUOTA) return desired;
+        return Math.max(0L, Math.min(MIN_QUOTA, safeAvailable / 4L));
     }
 
     private void trimToQuota() {
