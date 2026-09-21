@@ -225,10 +225,15 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           test "$("$ADB" get-state)" = "device"
           gradle :android-b-edge:connectedDebugAndroidTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
-          TEST_XML="android-b-edge/build/outputs/androidTest-results/connected/debug/TEST-com.blessing.bcpedge.EdgeCommunicationJournalInstrumentedTest.xml"
-          test -s "$TEST_XML"
-          grep -F 'failures="0"' "$TEST_XML" >/dev/null
-          grep -F 'errors="0"' "$TEST_XML" >/dev/null
+          TEST_ROOT="android-b-edge/build/outputs/androidTest-results/connected"
+          test -d "$TEST_ROOT"
+          find "$TEST_ROOT" -type f -name '*.xml' -print | tee android-instrumentation-results.txt
+          test -s android-instrumentation-results.txt
+          grep -R -F 'EdgeCommunicationJournalInstrumentedTest' "$TEST_ROOT" >/dev/null
+          if grep -R -E 'failures="[1-9]|errors="[1-9]' "$TEST_ROOT"; then
+            echo "BCP_ANDROID_PHONE_COMMUNICATION_JOURNAL=FAIL"
+            exit 1
+          fi
           echo "BCP_ANDROID_PHONE_COMMUNICATION_JOURNAL=PASS"
 
       - name: Cold relaunch idempotence smoke
@@ -273,7 +278,8 @@ jobs:
             edge-private-unauthorized.json
             edge-communications-unauthorized.json
             edge-health-relaunch.json
-            android-b-edge/build/outputs/androidTest-results/connected/debug/
+            android-instrumentation-results.txt
+            android-b-edge/build/outputs/androidTest-results/connected/
             android-b-edge/build/reports/androidTests/connected/
             emulator.log
             avd-list-created.txt
