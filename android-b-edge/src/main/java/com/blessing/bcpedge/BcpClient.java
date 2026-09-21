@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import com.blessing.bcpedge.work.EdgeWorkScheduler;
+import com.blessing.bcpedge.storage.EdgeDatabase;
+import com.blessing.bcpedge.storage.EdgeEventEntity;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -11,6 +13,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -93,6 +96,90 @@ public final class BcpClient {
 
     public void recordEvent(String type, String detail) {
         telemetry.add(type, detail);
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("detail", detail == null ? "" : detail);
+            appendLocalEvent(type, payload, "OBSERVED", null);
+        } catch (Exception ignored) {}
+    }
+
+    public JSONObject appendLocalEvent(String type, JSONObject payload, String truthStatus,
+                                       String idempotencyKey) throws Exception {
+        String eventType = type == null ? "" : type.trim().toUpperCase(Locale.ROOT);
+        if (eventType.isEmpty() || eventType.length() > 96) {
+            throw new IllegalArgumentException("invalid_event_type");
+        }
+        JSONObject body = payload == null ? new JSONObject() : payload;
+        String raw = body.toString();
+        if (raw.getBytes(StandardCharsets.UTF_8).length > 64 * 1024) {
+            throw new IllegalArgumentException("event_payload_too_large");
+        }
+        long now = System.currentTimeMillis();
+        String eventId = "evt-" + UUID.randomUUID();
+        String idem = idempotencyKey == null ? "" : idempotencyKey.trim();
+        if (idem.isEmpty()) idem = eventId;
+        if (idem.length() > 160) throw new IllegalArgumentException("idempotency_key_too_long");
+        String truth = truthStatus == null ? "OBSERVED" : truthStatus.trim().toUpperCase(Locale.ROOT);
+        if (!Arrays.asList("OBSERVED","VERIFIED","REPORTED","INFERRED","MODEL_GENERATED","UNKNOWN").contains(truth)) {
+            throw new IllegalArgumentException("invalid_truth_status");
+        }
+        EdgeEventEntity event = new EdgeEventEntity(
+                eventId, getProject(), eventType, "B_EDGE", "B_EDGE_LOCAL",
+                truth, raw, sha256Hex(raw), idem, now, now);
+        long inserted = EdgeDatabase.get(context).edgeDao().insertEvent(event);
+        JSONObject out = new JSONObject();
+        out.put("ok", inserted != -1L);
+        out.put("result", inserted == -1L ? "ALREADY_RECORDED" : "APPENDED");
+        out.put("event_id", eventId);
+        out.put("idempotency_key", idem);
+        out.put("payload_sha256", event.payloadSha256);
+        out.put("truth_status", truth);
+        return out;
+    }
+
+    public JSONObject localEventTail(int requestedLimit) {
+        JSONObject out = new JSONObject();
+        JSONArray events = new JSONArray();
+        try {
+            int limit = Math.max(1, Math.min(200, requestedLimit));
+            java.util.List<EdgeEventEntity> rows =
+                    EdgeDatabase.get(context).edgeDao().recentEvents(getProject(), limit);
+            for (EdgeEventEntity e : rows) {
+                JSONObject item = new JSONObject();
+                item.put("event_id", e.eventId);
+                item.put("project_id", e.projectId);
+                item.put("event_type", e.eventType);
+                item.put("actor_type", e.actorType);
+                item.put("source", e.source);
+                item.put("truth_status", e.truthStatus);
+                item.put("payload", new JSONObject(e.payloadJson));
+                item.put("payload_sha256", e.payloadSha256);
+                item.put("idempotency_key", e.idempotencyKey);
+                item.put("occurred_at_ms", e.occurredAt);
+                item.put("ingested_at_ms", e.ingestedAt);
+                events.put(item);
+            }
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("event_count", EdgeDatabase.get(context).edgeDao().eventCount(getProject()));
+            out.put("events", events);
+            out.put("authority", "APPEND_ONLY_LOCAL_CHRONICLE");
+        } catch (Exception ex) {
+            try {
+                out.put("ok", false);
+                out.put("error", ex.getClass().getSimpleName());
+                out.put("events", events);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    private static String sha256Hex(String value) throws Exception {
+        MessageDigest d = MessageDigest.getInstance("SHA-256");
+        byte[] bytes = d.digest(value.getBytes(StandardCharsets.UTF_8));
+        StringBuilder s = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) s.append(String.format(Locale.ROOT, "%02x", b & 0xff));
+        return s.toString();
     }
 
     public JSONObject registerEdgeRelay() {
