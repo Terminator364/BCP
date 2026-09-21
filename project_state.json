@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R60_CANDIDATE_FIELD_BCP_0_7_13_PROVEN_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "Fresh Google Drive machine readback from API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json proves MBMPC is running BCP 0.7.13 with exact server SHA-256 cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe, update_state=UP_TO_DATE, update_target_version=0.7.13, paired=true. Nexus remains HUMAN_AUTH_REQUIRED with bundle 0.2.6 and the expired-device-auth classification. R60 exact-head CI is still required before exposing the fresh human auth action.",
-  "next_action": "Complete exact-head PR #127 qualification. If all required workflows pass, reread main and merge through the single-writer fence; verify main/post-merge. Because BCP 0.7.13 field readback is now proven, the next user action after merge may be exactly one fresh Nexus Cloudflare device authorization attempt. Require provider-authenticated whoami/readback before Nexus completion.",
+  "status": "R61_COMMS_RECOVERY_CANDIDATE_NEXUS_HUMAN_GATE_READY",
+  "last_completed_atomic_action": "R60 merged at 6b123e7640f3ad51b3e3a0124bf0a27ebc3ba73f and every post-merge workflow passed, including Windows Bootstrap #286, Final Acceptance #258, Coordinated PC #251, Telegram #541, Nexus Transport #506, CURRENT #788, Nexus One-Shot #136, PC Sanity #317, Managed Update #247, Field Ecosystem #718, Android Build #348, Coordinated Product #913 and Android Human-Action Simulation #41. Fresh runtime telemetry proves MBMPC BCP 0.7.13 UP_TO_DATE. R61 adds a 25-minute END-mail watchdog contract and Telegram companion v19 sustained-outage classification.",
+  "next_action": "Qualify and merge R61. The direct Telegram path is currently timing out from MBMPC (WinError 10060) while the companion process remains alive; after sustained failures V19 will mark DIRECT_TRANSPORT_OUTAGE instead of looking merely retriable. Because R60 post-merge CI and BCP 0.7.13 field readback are green, exactly one fresh Nexus Cloudflare authorization is now the legitimate next human recovery gate after R61 integration. After authorization, require provider-authenticated readback before switching Telegram ownership to Nexus/webhook and declaring cockpit restored.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2136,5 +2136,30 @@
       "nexus_bootstrap_state"
     ],
     "public_repo_drive_ids_forbidden": true
+  },
+  "r61_communication_recovery": {
+    "status": "CANDIDATE",
+    "tranche_start_mail_receipt": "1a0c2fb87cf7fc36",
+    "tranche_start_local_time": "2026-09-21T09:00:48+01:00",
+    "end_watchdog_armed": true,
+    "end_watchdog_target_minutes": 25,
+    "no_user_relaunch_required_for_end": true,
+    "telegram_runtime_observed_at_utc": "2026-09-21T08:00:38+00:00",
+    "telegram_direct_state": "DEGRADED_RETRY",
+    "telegram_error_class": "URLError",
+    "telegram_error_detail_classification": "WINERROR_10060_REMOTE_TIMEOUT",
+    "telegram_consecutive_failures": 34,
+    "telegram_process_alive": true,
+    "telegram_target_version": "2026.09.21-comms-resilience-v19",
+    "v19_behavior": [
+      "DIRECT_TRANSPORT_OUTAGE_AFTER_3_CONSECUTIVE_FAILURES",
+      "PERSIST_OUTAGE_RECEIPT",
+      "RECOVERY_RECEIPT_ON_SUCCESS",
+      "EXPOSE_FRESH_NEXUS_AUTHORIZATION_REQUIRED_WHEN_QUALIFIED"
+    ],
+    "r60_postmerge_ci": "ALL_PASS",
+    "bcp_0_7_13_field_readback": "PASS_EXACT_SHA",
+    "nexus_gate": "READY_AFTER_R61_INTEGRATION",
+    "human_action_required_now": false
   }
 }
