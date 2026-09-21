@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.communication_state_machine/2",
-  "revision": "2026-09-21-R77",
+  "schema": "bcp.communication_state_machine/3",
+  "revision": "2026-09-22-R81",
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
@@ -23,7 +23,7 @@
   ],
   "owners": [
     "PRIMARY_ASSISTANT",
-    "OPTIONAL_RECOVERY_ACTOR"
+    "EMERGENCY_RECOVERY_ACTOR"
   ],
   "normal_path": [
     "NONE->START_SEND_PENDING",
@@ -55,7 +55,9 @@
   "timing": {
     "primary_close_reserve_begins_minute": 23,
     "normal_end_target_minute": 25,
-    "scheduled_backup_required": false
+    "scheduled_backup_required": false,
+    "emergency_backup_earliest_minute": 26,
+    "rule": "PRIMARY_ASSISTANT owns START->WORKING->CLOSE_INTENT->END_ACKNOWLEDGED in foreground; backup may act only after primary close failure/interruption is established"
   },
   "invariants": [
     "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
@@ -64,6 +66,8 @@
     "the user message is never a closeout trigger",
     "delivery_key is unique per tranche",
     "END send is search-before-send and idempotent",
-    "normal closeout is owned by PRIMARY_ASSISTANT and must not depend on an automation"
+    "normal closeout is owned by PRIMARY_ASSISTANT and must not depend on an automation",
+    "automation cannot be used as a substitute for the useful-work window",
+    "emergency automation may send only after the normal close target is missed or the primary turn is interrupted"
   ]
 }
