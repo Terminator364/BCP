@@ -130,7 +130,10 @@ jobs:
           "$ADB" install -r "$APK" | tee adb-install.txt
           grep -F "Success" adb-install.txt >/dev/null
           "$ADB" shell am force-stop com.blessing.bcpedge.evergreen || true
-          "$ADB" shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-start.txt
+          COMPONENT="$("$ADB" shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER com.blessing.bcpedge.evergreen 2>/dev/null | tr -d '\r' | tail -1)"
+          test -n "$COMPONENT"
+          echo "$COMPONENT" | tee launcher-component.txt
+          "$ADB" shell am start -W -n "$COMPONENT" | tee activity-start.txt
           grep -E "Status: ok|Status:.*ok" activity-start.txt >/dev/null
           sleep 5
           PID="$("$ADB" shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
@@ -161,7 +164,9 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" shell am force-stop com.blessing.bcpedge.evergreen
           sleep 1
-          "$ADB" shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-relaunch.txt
+          COMPONENT="$(cat launcher-component.txt)"
+          test -n "$COMPONENT"
+          "$ADB" shell am start -W -n "$COMPONENT" | tee activity-relaunch.txt
           sleep 4
           PID="$("$ADB" shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
           test -n "$PID"
@@ -179,6 +184,7 @@ jobs:
             android-emulator-apk.sha256
             android-emulator-apk.badging.txt
             activity-start.txt
+            launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml
             bcp-window-relaunch.xml
