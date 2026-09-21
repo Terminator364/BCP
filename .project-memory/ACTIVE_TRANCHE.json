@@ -1,0 +1,37 @@
+{
+  "schema": "bcp.active_tranche/1",
+  "project": "API/BCP",
+  "tranche_id": "BCP-R72-COMMS-FAILSAFE-START-20260921-1739",
+  "status": "WORKING",
+  "started_at_kinshasa": "2026-09-21T17:39:53+01:00",
+  "target_minutes": 30,
+  "preclose_snapshot_due_kinshasa": "2026-09-21T18:05:53+01:00",
+  "normal_closeout_due_kinshasa": "2026-09-21T18:06:53+01:00",
+  "hard_close_guard_due_kinshasa": "2026-09-21T18:07:53+01:00",
+  "absolute_end_deadline_kinshasa": "2026-09-21T18:09:53+01:00",
+  "start_email": {
+    "provider": "GMAIL",
+    "message_id": "1a0c4d6d0e436f76",
+    "acknowledged": true,
+    "label": "BCP"
+  },
+  "end_email": {
+    "acknowledged": false,
+    "message_id": null,
+    "checkpoint_id": null
+  },
+  "closeout": {
+    "trigger_source": "TIMER_DRIVEN",
+    "user_message_required": false,
+    "search_before_send": true,
+    "normal_guard_armed": true,
+    "hard_guard_armed": true,
+    "duplicate_end_forbidden": true
+  },
+  "work_scope": [
+    "COMMUNICATION_CLOSEOUT_FAILSAFE",
+    "CROSS_CONVERSATION_CONTINUITY",
+    "BCP_PHONE_FULL_NODE_CONTINUATION"
+  ],
+  "branch": "work/bcp/r72-comms-failsafe-20260921-1739"
+}

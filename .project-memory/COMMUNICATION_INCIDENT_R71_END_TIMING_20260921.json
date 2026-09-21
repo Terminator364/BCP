@@ -1,0 +1,39 @@
+{
+  "schema": "bcp.communication_incident/1",
+  "incident_id": "COMM-R71-END-TIMING-20260921",
+  "severity": "P0_USER_COMMUNICATION",
+  "status": "ROOT_CAUSE_FIXED_IN_R72_CANDIDATE",
+  "observed_date": "2026-09-21",
+  "user_symptom": "User reached the expected tranche limit and had to send a relaunch message before seeing the END checkpoint.",
+  "evidence": {
+    "gmail_start_subject": "[BCP] DÉBUT R71 — continuité/communication durcie + reprise multi-conversation — lundi 21/09/2026 17:07 Kinshasa",
+    "gmail_start_message_id": "1a0c4b92df73f8c2",
+    "gmail_start_provider_timestamp_utc": "2026-09-21T16:07:45Z",
+    "r71_watchdog_scheduled_utc": "2026-09-21T16:36:53Z",
+    "r71_end_message_id": "1a0c4d3992dcbe48",
+    "r71_end_provider_timestamp_utc": "2026-09-21T16:36:36Z",
+    "r71_watchdog_actual_run_utc": "2026-09-21T16:36:57.701426Z"
+  },
+  "root_cause": [
+    "SINGLE_WATCHDOG_WAS_SCHEDULED_TOO_CLOSE_TO_THE_30_MINUTE_BOUNDARY",
+    "NO_EARLY_NORMAL_CLOSEOUT_GUARD_EXISTED",
+    "USER_RELAUNCH_ARRIVED_SECONDS_BEFORE_WATCHDOG_EXECUTION",
+    "SYSTEM_APPEARED_USER_TRIGGERED_EVEN_THOUGH_WATCHDOG_WAS_ABOUT_TO_RUN"
+  ],
+  "corrective_actions": [
+    "PRE_CLOSE_SNAPSHOT_T_PLUS_26",
+    "NORMAL_CLOSEOUT_T_PLUS_27",
+    "INDEPENDENT_HARD_GUARD_T_PLUS_28",
+    "ABSOLUTE_END_DEADLINE_T_PLUS_30",
+    "SEARCH_GMAIL_BY_CHECKPOINT_BEFORE_SEND",
+    "PROVIDER_ACK_AND_READBACK_REQUIRED",
+    "ACTIVE_TRANCHE_DURABLE_LEDGER",
+    "USER_MESSAGE_NEVER_CLOSEOUT_TRIGGER"
+  ],
+  "regression_requirements": [
+    "VALIDATOR_REJECTS_SINGLE_MINUTE_29_GUARD",
+    "VALIDATOR_REQUIRES_NORMAL_27_HARD_28_DEADLINE_30",
+    "BCPGO_LOADS_ACTIVE_TRANCHE",
+    "DUPLICATE_END_FORBIDDEN"
+  ]
+}

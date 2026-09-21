@@ -1,0 +1,25 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r72-comms-failsafe-20260921-1739",
+  "project_or_mission": "API/BCP R72 communication closeout fail-safe + continuity hardening",
+  "base_main_sha": "fe6e3dc2a75423cfdc2353842ed031c294030dbc",
+  "created_at": "2026-09-21T17:39:00+01:00",
+  "work_branch": "work/bcp/r72-comms-failsafe-20260921-1739",
+  "intended_file_scope": [
+    ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    "API_PROJECT_CONTINUITY.md",
+    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "project_state.json",
+    "tools/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Field Ecosystem Preflight",
+    "BCP Nexus One-Shot Human-Action Qualification"
+  ]
+}

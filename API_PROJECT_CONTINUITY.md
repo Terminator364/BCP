@@ -1,3 +1,34 @@
+# R72 Dual-Closeout Communication Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+## Why R72 exists
+
+R71 proved that a watchdog scheduled at minute 29 is too close to the 30-minute user-visible deadline. In the observed R71 tranche, the user relaunch arrived seconds before the scheduled watchdog execution, so the END mail appeared to depend on the user's "eh oh" message even though the watchdog was about to run. This is unacceptable for the communication contract.
+
+R72 changes the closeout trigger from "near-deadline single watchdog" to **timer-driven dual pre-deadline closeout**:
+
+1. Gmail START + provider ACK before substantive work.
+2. Durable pre-close snapshot by T+26.
+3. Normal closeout guard at T+27.
+4. Hard close guard at T+28.
+5. Absolute END deadline T+30.
+6. Both guards search Gmail for the checkpoint id before sending, preventing duplicate END mail.
+7. Gmail END must have provider ACK + readback + BCP label.
+8. ChatGPT is pointer-only after END ACK.
+9. A user message is never the closeout trigger.
+
+Durable active-tranche ledger:
+`.project-memory/ACTIVE_TRANCHE.json`.
+
+Fresh-conversation recovery MUST load this active-tranche ledger before deciding whether work is still open, closing, or already END-acknowledged.
+
+## Current product direction
+
+The product direction from R71 remains unchanged: B-EDGE 2.2.0 full-node is the next coherent phone product gate, not another micro-beta. The dedicated phone remains the persistent low-power BCP server/edge node; the PC is the Windows/heavy worker.
+
+---
+
 # R71 Communication-Survival Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
@@ -22,10 +53,10 @@ The durable communication fabric is:
 4. Drive as durable replicated telemetry/recovery evidence;
 5. ChatGPT as interactive reasoning/pointer surface, never canonical state.
 
-If ChatGPT UI stalls or the conversation is replaced, `BCPGO BCP` resumes from durable state. The user does not need to send an “eh oh” message to obtain a checkpoint. The END watchdog is armed at START, and Gmail END is retried until provider acknowledgement before any ChatGPT end output.
+If ChatGPT UI stalls or the conversation is replaced, `BCPGO BCP` resumes from durable state. The user does not need to send an “eh oh” message to obtain a checkpoint. The dual closeout guards are armed at START: normal closeout before the deadline and a hard backup guard after it; Gmail END is retried until provider acknowledgement before any ChatGPT end output.
 
 Detailed technical recovery runbook:
-`docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
+`docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md`.
 
 Private human recovery copy: `API_BCP/03_DOCUMENTATION/BCP — PLAN DE SECOURS COMMUNICATION & REPRISE R71` in the user's Drive. Do not put its Drive ID or private link into the public repository.
 

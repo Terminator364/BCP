@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-21-R71",
+  "requirements_revision": "2026-09-21-R72",
   "zero_usd": true,
   "overall_state": "CI_SIGNED_DISTRIBUTED_FIELD_RELAY_PENDING",
   "update_policy": {
@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "e3cd669af8823e326b05d39e37679e8182fae233a7b3f953f2e3eed88717a56c"
+        "sha256": "09d8ca87ce3231b4fcc687f586aef220f45a44965a1eba2dd511fc9b7bddea6f"
       },
       "notes": "Nexus 0.2.6 R54 remains device-flow-only, reconciles Worker health version, and mirrors the compact human cockpit plus WinAnsi/Bold/paginated PDF fallback with Kinshasa-time captions."
     }

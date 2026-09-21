@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R71
+Revision: 2026-09-21-R72
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1965,3 +1965,19 @@ Machine policy: `.project-memory/COMMUNICATION_SURVIVAL_POLICY.json`.
 Technical runbook: `docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
 
 Acceptance requires representative coverage of channel failure, duplicate delivery, reboot/crash during queued messages, network topology change, Telegram direct-to-phone-relay fallback, phone no-uplink durable queuing and idempotent replay after recovery.
+
+## P0 — Autonomous tranche closeout — R72
+
+The user MUST NOT be required to send a relaunch message merely to receive the Gmail END checkpoint.
+
+For the 30-minute interactive tranche:
+- durable pre-close snapshot by approximately T+26;
+- normal closeout guard at approximately T+27;
+- independent hard close guard at approximately T+28;
+- absolute END deadline at T+30;
+- both close guards search Gmail by checkpoint/delivery key before sending;
+- duplicate END mail is forbidden;
+- provider acknowledgement plus readback is required before END is considered delivered;
+- ChatGPT is pointer-only after END acknowledgement;
+- user messages, UI refreshes and conversation activity MUST NOT act as closeout triggers;
+- `.project-memory/ACTIVE_TRANCHE.json` is the durable source for tranche lifecycle and is loaded by `BCPGO BCP`.

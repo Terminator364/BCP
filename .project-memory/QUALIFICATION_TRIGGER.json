@@ -1,6 +1,6 @@
 {
   "schema": "bcp.qualification_trigger/1",
-  "revision": "2026-09-21-R71",
+  "revision": "2026-09-21-R72",
   "purpose": "One-file exact-head qualification fence. Bump nonce/reason after the final durable candidate mutation so all critical workflows execute against the final exact commit SHA.",
   "nonce": "R71-COMMS-SURVIVAL-FULL-NODE-FINAL-1",
   "required_workflows": [
@@ -17,5 +17,15 @@
     "BCP Telegram Observability Qualification",
     "BCP Windows Bootstrap Validation"
   ],
-  "exact_head_required": true
+  "exact_head_required": true,
+  "reason": "R72 dual pre-deadline communication closeout exact-head qualification",
+  "required_head_contracts": [
+    "DELIVERY_REDUNDANCY_POLICY_R72",
+    "INTERACTIVE_WORK_CADENCE_POLICY_R72",
+    "COMMUNICATION_SURVIVAL_POLICY_R72",
+    "ACTIVE_TRANCHE_LEDGER",
+    "BCPGO_DUAL_CLOSEOUT_RECOVERY",
+    "CURRENT_REQUIREMENTS_R72"
+  ],
+  "updated_at": "2026-09-21T17:50:00+01:00"
 }

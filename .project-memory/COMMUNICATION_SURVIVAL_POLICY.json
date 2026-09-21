@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.communication_survival_policy/1",
-  "revision": "2026-09-21-R71",
+  "schema": "bcp.communication_survival_policy/2",
+  "revision": "2026-09-21-R72",
   "status": "CANONICAL_CANDIDATE",
   "objective": "Preserve user-visible communication and durable mission continuity across ChatGPT UI instability, PC Internet loss, home Wi-Fi failure, PC reboot/offline periods, Telegram direct transport outage, and conversation handoff.",
   "principles": [
@@ -12,7 +12,10 @@
     "DRIVE_IS_DURABLE_REPLICATED_EVIDENCE_NOT_SOLE_RUNTIME_AUTHORITY",
     "GITHUB_MAIN_PLUS_WRITER_FENCE_IS_CANONICAL_SOURCE_STATE",
     "EVERY_DELIVERY_CARRIES_IDEMPOTENCY_AND_RECEIPT_STATE",
-    "NO_USER_EH_OH_RELAUNCH_REQUIRED_FOR_END_CHECKPOINT"
+    "NO_USER_EH_OH_RELAUNCH_REQUIRED_FOR_END_CHECKPOINT",
+    "CLOSEOUT_IS_TIMER_DRIVEN_NOT_USER_MESSAGE_DRIVEN",
+    "TWO_INDEPENDENT_PRE_DEADLINE_END_GUARDS",
+    "END_MAIL_SEARCH_BEFORE_SEND_PREVENTS_DUPLICATES"
   ],
   "channels": {
     "gmail": {
@@ -77,7 +80,6 @@
   },
   "checkpoint_protocol": {
     "target_minutes": 30,
-    "watchdog_offset_minutes": 29,
     "order": [
       "GMAIL_START_ACK",
       "WORK",
@@ -85,11 +87,16 @@
       "GMAIL_END_ACK",
       "CHATGPT_POINTER"
     ],
-    "if_chatgpt_ui_disappears": "WATCHDOG_OR_NEXT_BCPGO_RECOVERS_FROM_DURABLE_STATE",
+    "if_chatgpt_ui_disappears": "NORMAL_CLOSEOUT_OR_HARD_GUARD_SENDS_GMAIL_END_FROM_DURABLE_STATE; NEXT_BCPGO_RECOVERS_WITHOUT_USER_REEXPLANATION",
     "if_end_email_fails": "RETRY_UNTIL_PROVIDER_ACK_NO_CHATGPT_END_OUTPUT",
     "if_pc_offline": "PHONE_EDGE_QUEUES_LOCAL_EVENTS_AND_PC_RECONCILES_ON_RETURN",
     "if_telegram_direct_fails": "TRY_PHONE_EDGE_RELAY_IF_FRESH_REGISTERED_ELSE_PERSIST_OUTAGE",
-    "if_drive_unavailable": "KEEP_LOCAL_DURABLE_STATE_AND_RETRY_WITH_BACKOFF"
+    "if_drive_unavailable": "KEEP_LOCAL_DURABLE_STATE_AND_RETRY_WITH_BACKOFF",
+    "preclose_snapshot_offset_minutes": 26,
+    "normal_closeout_offset_minutes": 27,
+    "hard_close_guard_offset_minutes": 28,
+    "absolute_end_deadline_minutes": 30,
+    "if_user_message_arrives_near_deadline": "DO_NOT_TREAT_USER_MESSAGE_AS_CLOSEOUT_TRIGGER; RECONCILE_WITH_TIMER_DRIVEN_END_STATE"
   },
   "cold_recovery": {
     "code": "BCPGO BCP",
@@ -98,6 +105,7 @@
       ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
       ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
       ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/ACTIVE_TRANCHE.json",
       ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
       "project_state.json",
       "API_PROJECT_CONTINUITY.md",
@@ -105,13 +113,16 @@
     ],
     "user_reexplanation_required": false,
     "next_action_source": "project_state.next_action",
-    "writer_fence_required_before_mutation": true
+    "writer_fence_required_before_mutation": true,
+    "active_tranche_state_ref": ".project-memory/ACTIVE_TRANCHE.json"
   },
   "anti_false_success": {
     "telegram_sent_requires_provider_message_id_or_success_receipt": true,
     "gmail_sent_requires_provider_send_ack": true,
     "drive_mirror_is_not_user_seen": true,
     "chatgpt_visible_is_not_assumed": true,
-    "phone_queue_accepted_is_not_remote_delivery": true
+    "phone_queue_accepted_is_not_remote_delivery": true,
+    "gmail_end_exists_requires": "SENT_MESSAGE_ID_PLUS_SEARCH_READBACK",
+    "duplicate_end_prevention": "SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND"
   }
 }
