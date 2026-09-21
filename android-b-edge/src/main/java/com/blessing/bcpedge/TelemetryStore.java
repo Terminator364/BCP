@@ -22,7 +22,7 @@ public final class TelemetryStore {
             JSONObject o = new JSONObject();
             o.put("ts", System.currentTimeMillis());
             o.put("type", type);
-            o.put("edge_version", "1.0.0");
+            o.put("edge_version", BcpClient.edgeVersionForTelemetry());
             if (detail != null) o.put("detail",
                     detail.length() > 240 ? detail.substring(0,240) : detail);
             try (FileOutputStream fos = new FileOutputStream(file, true)) {
