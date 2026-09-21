@@ -551,6 +551,7 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
     nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
     chat = chatgpt_pc_status()
     telegram = telegram_companion_runtime_status()
+    edge_relay = edge_relay_status()
     resources = windows_resource_status()
     mission_watchdog = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
     resume_request = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
@@ -589,6 +590,12 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "telegram_companion_consecutive_failures": telegram["consecutive_failures"],
         "telegram_companion_update_state": telegram["update_state"],
         "telegram_companion_target_version": telegram["target_version"],
+        "edge_relay_active": edge_relay["active"],
+        "edge_relay_host": edge_relay["relay_host"],
+        "edge_relay_port": edge_relay["relay_port"],
+        "edge_relay_capability": edge_relay["capability"],
+        "edge_relay_edge_version": edge_relay["edge_version"],
+        "edge_relay_expires_in_seconds": edge_relay["expires_in_seconds"],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
