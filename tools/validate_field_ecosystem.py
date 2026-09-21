@@ -40,6 +40,11 @@ def main() -> int:
     edge_legacy_worker = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeReconcileWorker.java")
     edge_app = read("android-b-edge/src/main/java/com/blessing/bcpedge/BcpEdgeApplication.java")
     edge_manifest = read("android-b-edge/src/main/AndroidManifest.xml")
+    edge_server = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java")
+    edge_permissions = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePermissionManager.java")
+    edge_presence = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePresenceAdvertiser.java")
+    edge_boot = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeBootReceiver.java")
+    edge_main = read("android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java")
     android_candidate = load("release/android_candidate.json")
     rdc = read("docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md")
 
@@ -108,6 +113,31 @@ def main() -> int:
         "MIN_REENTRY_TRIGGER_MS",
     )
     require(edge_manifest, 'android:name=".BcpEdgeApplication"')
+    require(
+        edge_manifest,
+        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE_CONNECTED_DEVICE",
+        "POST_NOTIFICATIONS",
+        "NEARBY_WIFI_DEVICES",
+        "BLUETOOTH_SCAN",
+        'remoteMessaging|connectedDevice',
+        'android:name=".EdgeBootReceiver"',
+    )
+    require(
+        edge_server,
+        "DEDICATED_EDGE_API_SERVER",
+        '"/health"',
+        '"/v1/node/capabilities"',
+        '"/v1/node/status"',
+        '"/v1/node/sync"',
+        '"/v1/node/jobs"',
+        "EdgePresenceAdvertiser",
+    )
+    assert '"/v1/node/shell"' not in edge_server
+    require(edge_permissions, "requestCoreRuntimePermissions", "requestBatteryUnrestricted", "batteryUnrestricted")
+    require(edge_presence, "NsdManager", "WifiP2pManager", "BluetoothLeAdvertiser", "ADVERTISE_MODE_LOW_POWER")
+    require(edge_boot, "BOOT_OR_PACKAGE_REPLACED", "startForegroundService")
+    require(edge_main, "BCP Edge Server", "AUTORISATIONS SERVEUR", "ACTIVER / RENFORCER LE MODE SERVEUR 24/7")
     assert android_candidate["version_code"] > 210
     assert android_candidate["publication_allowed"] is False
     assert android_candidate["distribution_status"] == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
