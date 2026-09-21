@@ -3,7 +3,7 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R70_FULL_NODE_2_2_0_CANDIDATE_30MIN_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R70 replaced the micro-beta phone path with a coherent B-EDGE 2.2.0 full-node candidate: dedicated foreground Edge/API server, authenticated local API, Room durable queue/memory/store-and-forward, reboot/package-replace recovery, NSD + Wi-Fi Direct + BLE presence, meaningful Android permission onboarding, optional battery-unrestricted setup, and a server-first dashboard. Continuity/cadence is now 30 minutes with Gmail START/END provider-ack gating.",
+  "last_completed_atomic_action": "R70 coherent full-node implementation now includes dedicated foreground Edge/API server, Room durable queue/memory/receipts, reboot recovery, NSD/Wi-Fi Direct/BLE presence, real Android permission onboarding, server-first dashboard, adaptive network/data-saver truth, and an app-private adaptive content cache capped at 8 GiB for context/resume snapshots. Cadence is 30 minutes with Gmail START/END ACK gating.",
   "next_action": "Qualify the exact R70 candidate head with Android build, unit/lint, API-35 emulator install/launch/UI/full-node service/local-API tests, CURRENT contract, coordinated product and field ecosystem gates. Auto-fix failures. Do not request another phone install until the coherent 2.2.0 full-node vertical slice is green, signed with the pinned Evergreen identity, published to Drive CURRENT in place, and hash-read back.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
@@ -2380,7 +2380,9 @@
       "TELEGRAM_TLS_CONNECT_RELAY",
       "SERVER_FIRST_DASHBOARD",
       "MEANINGFUL_RUNTIME_PERMISSION_ONBOARDING",
-      "OPTIONAL_BATTERY_UNRESTRICTED_DEDICATED_MODE"
+      "OPTIONAL_BATTERY_UNRESTRICTED_DEDICATED_MODE",
+      "APP_PRIVATE_ADAPTIVE_CONTENT_CACHE_MAX_8_GIB",
+      "ADAPTIVE_NETWORK_DATA_SAVER_STORE_AND_FORWARD"
     ],
     "research_basis": [
       "ANDROID_OFFLINE_FIRST_LOCAL_SOURCE_QUEUE_WORKMANAGER",
