@@ -1,0 +1,149 @@
+{
+  "schema": "bcp.abc_source_registry/1",
+  "revision": "2026-09-21-R77",
+  "status": "CANONICAL_CANDIDATE",
+  "rule": "BCP product scope is the cumulative union A+B+C. No release or completion percentage may be computed from only one layer.",
+  "A": {
+    "meaning": "ORIGINAL_PRECONCEPTION_AND_PROMISED_PRODUCT",
+    "authority": [
+      {
+        "kind": "SEALED_PRECONCEPTION_POINTER",
+        "ref": ".project-memory/APIAX07_CONTINUITY.json",
+        "package": "BCP_PRECONCEPTION_V0_7_AX15GO_SEALED.zip",
+        "package_sha256": "50166472fd60329bc21d958f1bc97f3f410922dfd0c7f32071be35703051ebec",
+        "status": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
+        "batch": "AX15GO-BCP-20260918-V07",
+        "note": "Pointer and byte-audit metadata are durable in repo; sealed ZIP bytes were not rematerialized during R77 and must not be falsely claimed as reread."
+      },
+      {
+        "kind": "UNDERSTANDING_DOSSIER_POINTER",
+        "ref": ".project-memory/APIAX07_CONTINUITY.json",
+        "artifact": "BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf",
+        "sha256": "9e01e1dd5dd40d176d51c85b6d985506f6379702e94ab9201167031afce35ab3"
+      },
+      {
+        "kind": "SOURCE_INTENT_AND_RESEARCH_REGISTER",
+        "provider": "Google Drive",
+        "title": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master.docx",
+        "drive_file_id": "1NPKxO7_JezpVSh9_KRE625sDfXpM7a8m",
+        "role": "Preserves original user-source postulate plus cumulative research; Postulate 1 is source intent, later postulates are refinements."
+      },
+      {
+        "kind": "CURRENT_CANONICAL_REQUIREMENTS",
+        "ref": "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      },
+      {
+        "kind": "PRODUCT_MOTIVATION",
+        "ref": ".project-memory/WHY_API_EXISTS.json"
+      },
+      {
+        "kind": "SCOPE_PROFILE",
+        "ref": ".project-memory/API_SCOPE_PROFILE.json"
+      },
+      {
+        "kind": "CONTEXT_FABRIC",
+        "ref": "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      },
+      {
+        "kind": "CONTEXT_POLICY",
+        "ref": ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json"
+      }
+    ],
+    "mandatory_themes": [
+      "DURABLE_EXTERNAL_PROJECT_STATE",
+      "UNIVERSAL_SESSION_CONVERSATION_TURN_EVENT_CHRONICLE",
+      "EVIDENCE_VAULT_AND_PROVENANCE",
+      "CANONICAL_MEMORY_AND_SUPERSESSION",
+      "FAST_MINIMAL_CONTEXT_CAPSULES",
+      "BCPGO_COLD_BOOTSTRAP",
+      "B_EDGE_DEDICATED_PHONE_PRIMARY_EDGE_COORDINATOR",
+      "PC_HEAVY_FENCED_WORKER",
+      "NEXUS_REMOTE_GATEWAY_WITNESS",
+      "OFFLINE_FIRST_QUEUE_OUTBOX",
+      "IDEMPOTENT_ACTIONS_RECEIPTS_READBACK",
+      "ZERO_USD_DEFAULT",
+      "UNSTABLE_POWER_NETWORK_RESILIENCE",
+      "USER_NOT_TELEMETRY_BUS"
+    ]
+  },
+  "B": {
+    "meaning": "RESEARCH_BACKED_REALISTIC_EXPANSION_BEYOND_ORIGINAL_IDEA",
+    "authority": [
+      {
+        "ref": "docs/BEDGE_RUNTIME_V2_HARDENING.md"
+      },
+      {
+        "ref": "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      },
+      {
+        "ref": "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
+      },
+      {
+        "ref": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      },
+      {
+        "provider": "Android Developers",
+        "topic": "offline-first local source of truth + queued sync + WorkManager"
+      },
+      {
+        "provider": "Android Developers",
+        "topic": "foreground-service restrictions and device-owner exemptions"
+      },
+      {
+        "provider": "Android Developers",
+        "topic": "Wi-Fi Direct service discovery without existing LAN/hotspot"
+      },
+      {
+        "provider": "Android Developers",
+        "topic": "dedicated/fully-managed device owner mode as optional appliance tier"
+      }
+    ],
+    "expansion_principles": [
+      "DETERMINISTIC_LOCAL_FIRST_BEFORE_LLM",
+      "ROOM_SQLITE_WAL_AS_PHONE_DURABLE_CORE",
+      "WORKMANAGER_FOR_DEFERRED_RECOVERY_NOT_SUBSECOND_HOT_PATH",
+      "EVENT_SOURCED_CHRONICLE_PLUS_DERIVED_MEMORY",
+      "AUTHENTICATED_ENCRYPTED_LAN_TARGET",
+      "MULTI_TRANSPORT_LOCAL_DISCOVERY_AND_STORE_FORWARD",
+      "RESOURCE_GOVERNOR_AND_THERMAL_BATTERY_AWARENESS",
+      "OPTIONAL_EXPLICIT_DEVICE_OWNER_APPLIANCE_TIER",
+      "NO_PUBLIC_INBOUND_PHONE_SERVER_REQUIRED",
+      "MEASURED_CAPABILITIES_NOT_ARCHITECTURAL_WISHFUL_THINKING"
+    ]
+  },
+  "C": {
+    "meaning": "ACCUMULATED_FIELD_FEEDBACK_WORKSTYLE_CORRECTIONS_AND_USER_ACCEPTANCE",
+    "sources": [
+      "project_state.json",
+      "API_PROJECT_CONTINUITY.md",
+      ".project-memory/ERROR_LEDGER.jsonl",
+      ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json",
+      ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json",
+      ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+      ".project-memory/COMMUNICATION_INCIDENT_R71_END_TIMING_20260921.json"
+    ],
+    "mandatory_feedback": [
+      "NO_MICRO_BETA_INSTALL_LOOPS",
+      "PHONE_IS_DEDICATED_AND_CURRENTLY_UNDERUTILIZED",
+      "PHONE_MUST_BE_REAL_EDGE_API_SERVER_NOT_SIMPLE_CLIENT_RELAY",
+      "PC_MUST_NOT_BE_SOLE_COMMUNICATION_CENTER",
+      "BAD_NETWORK_AND_POWER_ARE_NORMAL",
+      "LOW_PC_RAM_AND_MOBILE_DATA_COST_MATTER",
+      "REAL_ANDROID_PERMISSION_ONBOARDING_IS_ACCEPTABLE_WHEN_FUNCTIONALLY_JUSTIFIED",
+      "SERVER_FIRST_UI_MUST_SHOW_REAL_CAPABILITIES_STATUS_QUEUES_MEMORY_TRANSPORTS_PERMISSIONS_DIAGNOSTICS",
+      "SIMULATE_WINDOWS_ANDROID_BEFORE_USER_CLICK_INSTALL_RETRY",
+      "GMAIL_START_WORK_GMAIL_END_THEN_CHAT_POINTER",
+      "25_MIN_TRANCHE_TARGET_23_WORK_2_CLOSEOUT",
+      "PRIMARY_ASSISTANT_NORMAL_CLOSE_NO_AUTOMATION_DEPENDENCY",
+      "BCPGO_BCP_MUST_COLD_RESUME_WITHOUT_USER_REEXPLANATION",
+      "TELEGRAM_AND_OTHER_CHANNELS_REQUIRE_PROVIDER_RECEIPT_NOT_FALSE_SUCCESS",
+      "COMMUNICATION_CONTINUITY_IS_P0_NOT_DECORATION"
+    ]
+  },
+  "merge_semantics": {
+    "mode": "SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE",
+    "removal_requires_explicit_supersession": true,
+    "source_conflict_state": "SPEC_CONFLICT_HOLD",
+    "completion_denominator": "ALL_ACTIVE_A_PLUS_B_PLUS_C_REQUIREMENTS"
+  }
+}
