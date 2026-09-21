@@ -142,6 +142,24 @@ public final class EdgeOrchestrator {
         return out;
     }
 
+    public JSONArray communicationHistory(String projectId) {
+        JSONArray out = new JSONArray();
+        try {
+            JSONArray history = memorySnapshot(projectId).optJSONArray("HISTORY");
+            if (history == null) return out;
+            for (int i = 0; i < history.length() && out.length() < 64; i++) {
+                JSONObject row = history.optJSONObject(i);
+                if (row == null) continue;
+                String key = row.optString("key", "");
+                if (!key.startsWith("comm:")) continue;
+                JSONObject copy = new JSONObject(row.toString());
+                copy.put("record_id", key.substring("comm:".length()));
+                out.put(copy);
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
     public JSONObject queueJob(String projectId, String kind, JSONObject payload,
                                boolean requiresPc, int priority, String resourceClass,
                                JSONArray dependencies) {
