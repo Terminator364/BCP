@@ -1,8 +1,8 @@
 {
   "schema": "bcp.abc_coverage/1",
-  "revision": "2026-09-21-R77",
-  "status": "INITIAL_WEIGHTED_MACRO_AUDIT",
-  "warning": "This is an initial macro-level audit against currently indexed A+B+C sources. It is not a claim that every byte of the sealed V0.7 package was reread in R77. Percentages must be recomputed as the source registry is expanded.",
+  "revision": "2026-09-21-R78",
+  "status": "SOURCE_RECONCILED_MACRO_AUDIT",
+  "warning": "Macro evidence audit against source-reconciled A+B+C. APIAX07 handoff, understanding dossier and UCMF v4 Postulates 1-4 were read in R78; the sealed V0.7 ZIP itself remains represented by its durable SHA/manifest audit pointer and was not falsely claimed as byte-reread.",
   "scoring": {
     "functional_score_definition": "weighted fraction of required capability materially implemented in current code/design",
     "evidence_score_definition": "weighted maturity of deterministic CI/device/field proof; documentation alone scores low",
@@ -26,8 +26,9 @@
     {
       "id": "COMMUNICATION_PROVIDER_PROOF",
       "weight": 6,
-      "functional": 0.65,
-      "evidence": 0.45
+      "functional": 0.8,
+      "evidence": 0.65,
+      "note": "25-minute KINLINK-style delivery state machine + Gmail provider IDs/readback implemented; current tranche validates normal close without automation."
     },
     {
       "id": "PHONE_LOCAL_API_SERVER",
@@ -104,8 +105,9 @@
     {
       "id": "UCMF_UNIVERSAL_EVENT_LEDGER",
       "weight": 6,
-      "functional": 0.25,
-      "evidence": 0.1
+      "functional": 0.65,
+      "evidence": 0.55,
+      "note": "Room v3 edge_events + append-only admission/tail API implemented; Android/contract qualification still being reconciled on exact head; field 2.2 install pending."
     },
     {
       "id": "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
@@ -140,17 +142,24 @@
   ],
   "totals": {
     "weight": 100,
-    "functional_percent": 53.7,
-    "evidence_maturity_percent": 41.45
+    "functional_percent": 57,
+    "evidence_maturity_percent": 45.35
   },
   "top_gaps": [
-    "UNIVERSAL_EVENT_LEDGER_AND_PROVENANCE_NOT_YET_PHONE_CANONICAL",
+    "UNIVERSAL_CHRONICLE_IMPLEMENTED_BUT_NOT_YET_FIELD_PROVEN_ON_2_2_PHONE",
     "LAN_TRANSPORT_STILL_CLEAR_TEXT_POC",
     "INSTALLED_PHONE_2_1_2_NOT_FULL_NODE_2_2",
     "TELEGRAM_DIRECT_FIELD_OUTAGE_AND_EDGE_RELAY_NOT_FIELD_REGISTERED",
     "MEMORY_ADMISSION_SUPERSESSION_AND_SOURCE_CAPABILITY_MATRIX_INCOMPLETE",
     "OPTIONAL_DEDICATED_DEVICE_OWNER_TIER_NOT_IMPLEMENTED_OR_FIELD_GATED",
-    "FULL_A_SOURCE_PACKAGE_BYTES_NOT_REMATERIALIZED_IN_R77"
+    "SEALED_V0_7_ZIP_NOT_BYTE_REREAD_BUT_HANDOFF_DOSSIER_UCMF_V4_RECONCILED"
   ],
-  "release_rule": "No user-facing milestone may be represented as percentage-complete against A+B+C unless this matrix and source completeness are refreshed on the exact candidate head."
+  "release_rule": "No user-facing milestone may be represented as percentage-complete against A+B+C unless this matrix and source completeness are refreshed on the exact candidate head.",
+  "source_completeness": {
+    "A": "HANDOFF_DOSSIER_UCMF_V4_READ_SEALED_ZIP_HASH_POINTER_ONLY",
+    "B": "CURRENT_RESEARCH_INDEXED",
+    "C": "CURRENT_FIELD_FEEDBACK_INDEXED",
+    "global_percentage_claim_allowed": false,
+    "reason": "sealed V0.7 ZIP bytes not rematerialized; scores remain macro evidence estimates rather than absolute completion"
+  }
 }
