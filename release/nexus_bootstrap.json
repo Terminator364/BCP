@@ -6,7 +6,7 @@
   "auto_stage": true,
   "auto_launch_once": true,
   "zero_usd": true,
-  "requirements_revision": "2026-09-21-R74",
+  "requirements_revision": "2026-09-21-R75",
   "files": [
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
