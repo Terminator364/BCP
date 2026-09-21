@@ -131,6 +131,15 @@ jobs:
           fi
           echo "EDGE_EVERGREEN_STATIC_GUARDS=PASS"
 
+      - name: BCP phone full-node Python contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/test_bedge_chronicle_contract.py
+          python tools/test_bedge_mission_step_contract.py
+          python tools/test_bedge_capability_registry_contract.py
+          python tools/test_bedge_relay_contract.py
+
       - name: Unit tests
         run: gradle :android-b-edge:testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
 
