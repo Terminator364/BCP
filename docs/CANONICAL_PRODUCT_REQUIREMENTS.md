@@ -1762,3 +1762,21 @@ The canonical interactive tranche target is now 8–10 minutes for BCP. Earlier 
 
 Canonical machine policy:
 - `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`
+
+
+## P0 — Pre-human action simulation gate
+
+Before instructing the user to click, install, authorize, run, reboot, retry, or replace a CURRENT artifact, BCP MUST exercise the exact user-facing path in representative automation whenever technically feasible.
+
+Mandatory principles:
+- use Windows GitHub-hosted runners for Windows/PowerShell/runtime paths;
+- use Android unit/lint/build tests and an emulator/instrumented path when Android UI/platform behavior materially affects correctness;
+- test the exact CURRENT package/version/hash and the version-propagation/update path, not only source code in isolation;
+- include runtime execution, negative controls, HOLD/rollback behavior, and readback expectations;
+- if a path fails in CI/simulation, continue fixing automatically and do not ask the user to repeat the same action;
+- distinguish simulated/provider-boundary evidence from real field verification;
+- external consent/authentication such as Cloudflare device authorization remains a real human/provider boundary, but all code before that boundary must be exercised first;
+- do not claim FIELD_VERIFIED from simulation alone.
+
+Canonical policy:
+`.project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json`.
