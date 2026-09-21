@@ -22,6 +22,7 @@ on:
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
       - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      - ".project-memory/ADAPTIVE_COMMUNICATION_POLICY.json"
       - ".github/workflows/current-release-contract.yml"
   push:
     paths:
@@ -65,6 +66,7 @@ jobs:
           python -m json.tool schemas/bcp_current_release.schema.json > /dev/null
           python -m json.tool .project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json > /dev/null
           python -m json.tool .project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json > /dev/null
+          python -m json.tool .project-memory/ADAPTIVE_COMMUNICATION_POLICY.json > /dev/null
           python -m json.tool .project-memory/DELIVERY_REDUNDANCY_POLICY.json > /dev/null
           python -m json.tool .project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json > /dev/null
 
