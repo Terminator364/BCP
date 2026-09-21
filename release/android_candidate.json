@@ -38,7 +38,9 @@
     "paired BCP credential protects private local API and proxy access",
     "no arbitrary proxy target and no arbitrary shell surface",
     "30-minute Gmail START/END continuity contract carried by BCPGO",
-    "no-micro-beta field gate: next install only after coherent full-node exact-head qualification"
+    "no-micro-beta field gate: next install only after coherent full-node exact-head qualification",
+    "adaptive Wi-Fi/cellular/metered network truth with DATA_SAVER and STORE_AND_FORWARD routing hints",
+    "app-private adaptive content cache up to 8 GiB for context/resume snapshots without consuming the whole 64 GB device"
   ],
   "release_train": "BCP-0.7.15_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }
