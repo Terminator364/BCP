@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/6",
-  "revision": "2026-09-21-R61",
+  "schema": "bcp.delivery_redundancy_policy/7",
+  "revision": "2026-09-21-R67",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -40,7 +40,13 @@
       ],
       "end_mail_retry_required": true,
       "end_mail_provider_ack_required": true,
-      "chat_output_before_end_ack_forbidden": true
+      "chat_output_before_end_ack_forbidden": true,
+      "project_label_required_when_supported": true,
+      "project_label_name": "BCP",
+      "label_applies_to": [
+        "START",
+        "END"
+      ]
     },
     "telegram": {
       "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",
