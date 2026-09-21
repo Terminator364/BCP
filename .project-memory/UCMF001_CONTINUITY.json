@@ -1,0 +1,56 @@
+{
+  "schema": "bcp.ucmf001_continuity/1",
+  "code": "UCMF001",
+  "parent_project": "API/BCP",
+  "status": "ACTIVE_CUMULATIVE_RESEARCH_REGISTER_V9",
+  "canonical_drive": {
+    "provider": "Google Drive",
+    "file_id": "1NPKxO7_JezpVSh9_KRE625sDfXpM7a8m",
+    "title": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master.docx",
+    "current_verified_version": "UCMF001 / V9 FINAL RESILIENCE CLOSURE",
+    "current_verified_postulate": 9,
+    "rule": "Resolve this stable code to the current Drive file; append new postulates, never rewrite earlier source postulates."
+  },
+  "current_postulate_9": {
+    "title": "CHATGPT-DEGRADED OPERATING ENVIRONMENT : LA MISSION DOIT SURVIVRE À LA CONVERSATION",
+    "status": "DESIGN_HARDENED_CANDIDATE_FIELD_DRIVEN_REWORK",
+    "invariants": [
+      "CHATGPT_IS_EXECUTOR_NOT_MISSION_AUTHORITY",
+      "CONVERSATION_MAY_DIE_MISSION_MUST_NOT",
+      "LOCAL_DURABLE_STATE_BEFORE_REMOTE_WAIT",
+      "PLATFORM_HOLD_IS_NONTERMINAL",
+      "UNKNOWN_PROVIDER_STATE_IS_NOT_PROGRESS_OR_FAILURE",
+      "RESUME_FROM_DURABLE_STATE_NOT_CHAT_SCROLLBACK",
+      "USER_IS_NEVER_TELEMETRY_BUS",
+      "NO_SAFETY_BYPASS"
+    ]
+  },
+  "communication_contract_ref": ".project-memory/COMMUNICATION_PROTOCOL.json",
+  "abc_source_registry_ref": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+  "abc_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC.md",
+  "cold_bootstrap": {
+    "accepted_codes": [
+      "UCMF001",
+      "BCPGO UCMF001"
+    ],
+    "project_label": "BCP",
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "algorithm": [
+      "MINIMAL_ROUTE_TO_BCP_UCMF_SCOPE",
+      "READ_THIS_CONTINUITY_AND_COMMUNICATION_PROTOCOL",
+      "RECONCILE_ANY_OPEN_BCP_TRANCHE",
+      "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_MESSAGE_ID",
+      "LOAD_CURRENT_DRIVE_UCMF_MASTER_AND_A_PLUS_B_PLUS_C_SPEC",
+      "RESUME_NEXT_DURABLE_UCMF_OR_BCP_ACTION_WITHOUT_CHAT_RECONSTRUCTION",
+      "PERSIST_CLOSE_INTENT_AT_CLOSE_RESERVE",
+      "SEND_GMAIL_END_AND_VERIFY_SENT_READBACK",
+      "PERSIST_END_ACKNOWLEDGED_AND_CLOSED",
+      "ONLY_THEN_CHAT_POINTER"
+    ],
+    "user_reexplanation_required": false,
+    "normal_close_automation_required": false
+  },
+  "integration_rule": "Accepted UCMF findings are merged additively into BCP A+B+C through SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE; DESIGN/MODEL evidence is never silently promoted to DEVICE/FIELD proof."
+}
