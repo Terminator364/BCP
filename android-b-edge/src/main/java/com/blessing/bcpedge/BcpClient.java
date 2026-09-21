@@ -70,9 +70,21 @@ public final class BcpClient {
             api.put("port", EdgeRelayPolicy.RELAY_PORT);
             api.put("authenticated_private_endpoints", true);
             api.put("public_surface", "health+static_capabilities_only");
+            api.put("encrypted_transport", false);
+            api.put("transport_security", "CLEARTEXT_POC_AUTHENTICATED_PRIVATE_ENDPOINTS");
+            api.put("production_transport_ready", false);
             orchestrator.putCapability(getProject(), "LOCAL_API_SERVER", "B-EDGE",
-                    "B_EDGE", "SERVER", "READY", "LAN", api,
+                    "B_EDGE", "SERVER", "POC_CLEAR_HTTP", "LAN", api,
                     "MACHINE_READBACK", now, expiry);
+
+            JSONObject lanSecurity = new JSONObject();
+            lanSecurity.put("authenticated_private_endpoints", true);
+            lanSecurity.put("encrypted", false);
+            lanSecurity.put("target", "AUTHENTICATED_ENCRYPTED_LAN");
+            lanSecurity.put("blocking_release_gap", true);
+            orchestrator.putCapability(getProject(), "LAN_TRANSPORT_SECURITY", "B-EDGE",
+                    "BCP_POLICY", "SECURITY", "POC_CLEAR_HTTP", "LAN", lanSecurity,
+                    "SYSTEM_POLICY", now, expiry);
 
             JSONObject durable = new JSONObject();
             durable.put("room_wal", true);
