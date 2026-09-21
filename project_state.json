@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R60_CANDIDATE_EXACT_HEAD_QUALIFICATION_IN_PROGRESS",
-  "last_completed_atomic_action": "R60 communication hardening is active on PR #127: Gmail START is required before substantive work; Gmail END must retry until provider send acknowledgement; ChatGPT end output is forbidden before END acknowledgement and becomes pointer-only after success. R59 human-action simulation gates remain active, including Windows/Nexus exact-path qualification and Android emulator install/launch/UI/cold-relaunch simulation.",
-  "next_action": "Complete exact-head PR #127 qualification after R60 validator/policy updates. If every required gate passes, reread main and merge through the single-writer fence. Verify post-merge CI and raw main manifests, then obtain machine-readable BCP_RUNTIME_LATEST readback proving MBMPC has converged to BCP 0.7.13 before exposing one fresh Nexus Cloudflare authorization action.",
+  "status": "R60_CANDIDATE_FIELD_BCP_0_7_13_PROVEN_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "Fresh Google Drive machine readback from API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json proves MBMPC is running BCP 0.7.13 with exact server SHA-256 cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe, update_state=UP_TO_DATE, update_target_version=0.7.13, paired=true. Nexus remains HUMAN_AUTH_REQUIRED with bundle 0.2.6 and the expired-device-auth classification. R60 exact-head CI is still required before exposing the fresh human auth action.",
+  "next_action": "Complete exact-head PR #127 qualification. If all required workflows pass, reread main and merge through the single-writer fence; verify main/post-merge. Because BCP 0.7.13 field readback is now proven, the next user action after merge may be exactly one fresh Nexus Cloudflare device authorization attempt. Require provider-authenticated whoami/readback before Nexus completion.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2015,9 +2015,9 @@
     "delivery_policy": "R58_EMAIL_FIRST_CHAT_POINTER_25_MIN_TARGET",
     "pre_human_action_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     "current_field_truth": {
-      "bcp_observed_version": "0.7.12",
+      "bcp_observed_version": "0.7.13",
       "bcp_target_version": "0.7.13",
-      "bcp_update_readback": "PENDING",
+      "bcp_update_readback": "PASS_EXACT_SHA",
       "telegram_state": "ACTIVE",
       "telegram_mode": "DIRECT_TELEGRAM",
       "nexus_bundle_version": "0.2.6",
@@ -2025,7 +2025,7 @@
       "nexus_retry_before_0_7_13_readback_forbidden": true
     },
     "current_human_gate": {
-      "gate": "NO_USER_ACTION_WHILE_BCP_0_7_13_CONVERGENCE_PENDING",
+      "gate": "WAIT_R60_EXACT_HEAD_CI_AND_MERGE_THEN_FRESH_NEXUS_DEVICE_AUTHORIZATION",
       "next_irreducible_gate_after_readback": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
       "stale_code_reuse_forbidden": true,
       "localhost_8976_fallback_forbidden": true,
@@ -2091,5 +2091,31 @@
     "current_tranche_start_receipt": "1a0c2d8c97df6174",
     "current_tranche_start_local_time": "2026-09-21T08:22:54+01:00",
     "current_tranche_end_receipt": null
+  },
+  "latest_runtime_readback_r60": {
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "drive_file_id": "1dhTestayG287gmMEE-acaLMf6w2zTYz4",
+    "drive_modified_at_utc": "2026-09-21T07:30:24.534Z",
+    "runtime_updated_at_utc": "2026-09-21T07:28:47+00:00",
+    "evidence_status": "MACHINE_READBACK",
+    "pc_name": "MBMPC",
+    "server_version": "0.7.13",
+    "server_pid": 11688,
+    "server_sha256": "cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe",
+    "paired": true,
+    "server_update_state": "UP_TO_DATE",
+    "server_update_target_version": "0.7.13",
+    "nexus_bootstrap_state": "HUMAN_AUTH_REQUIRED",
+    "nexus_bootstrap_bundle_version": "0.2.6",
+    "nexus_bootstrap_error_class": "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED",
+    "telegram_companion_state": "DEGRADED_RETRY",
+    "telegram_companion_mode": "DIRECT_TELEGRAM",
+    "chatgpt_pc_active_version": "6.0.34",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "pc_memory_load_percent": 85,
+    "pc_available_memory_mb": 545,
+    "pc_power_source": "AC",
+    "field_gate_bcp_0_7_13": "PASS",
+    "nexus_field_auth": "PENDING_HUMAN_PROVIDER_GATE"
   }
 }
