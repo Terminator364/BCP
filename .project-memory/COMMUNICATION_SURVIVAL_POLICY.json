@@ -1,6 +1,6 @@
 {
   "schema": "bcp.communication_survival_policy/4",
-  "revision": "2026-09-21-R74",
+  "revision": "2026-09-21-R77",
   "status": "CANONICAL_CANDIDATE",
   "objective": "Preserve user-visible communication and durable mission continuity across ChatGPT UI instability, PC Internet loss, home Wi-Fi failure, PC reboot/offline periods, Telegram direct transport outage, and conversation handoff.",
   "principles": [
@@ -14,14 +14,15 @@
     "EVERY_DELIVERY_CARRIES_IDEMPOTENCY_AND_RECEIPT_STATE",
     "NO_USER_EH_OH_RELAUNCH_REQUIRED_FOR_END_CHECKPOINT",
     "CLOSEOUT_IS_TIMER_DRIVEN_NOT_USER_MESSAGE_DRIVEN",
-    "TWO_INDEPENDENT_PRE_DEADLINE_END_GUARDS",
     "END_MAIL_SEARCH_BEFORE_SEND_PREVENTS_DUPLICATES",
     "SCHEDULER_COMPLETION_IS_NOT_DELIVERY_PROOF",
     "FOREGROUND_END_SEND_IS_PRIMARY_WHEN_SESSION_IS_ALIVE",
     "BACKGROUND_GUARDS_USE_MINIMAL_DETERMINISTIC_END_PAYLOAD_IF_PRIMARY_CLOSEOUT_IS_MISSING",
     "DELIVERY_STATE_MACHINE_AND_APPEND_ONLY_DELIVERY_LEDGER_ARE_MANDATORY",
     "PRIMARY_ASSISTANT_OWNS_NORMAL_CLOSE; SCHEDULED_GUARDS_ARE_BACKUP_ONLY",
-    "DELIVERY_KEY_IS_REQUIRED_FOR_EVERY_TRANCHE"
+    "DELIVERY_KEY_IS_REQUIRED_FOR_EVERY_TRANCHE",
+    "NORMAL_CLOSEOUT_MUST_NOT_DEPEND_ON_AUTOMATIONS",
+    "PRIMARY_ASSISTANT_OWNS_25_MINUTE_23_PLUS_2_CLOSEOUT"
   ],
   "channels": {
     "gmail": {
@@ -103,7 +104,7 @@
     }
   },
   "checkpoint_protocol": {
-    "target_minutes": 30,
+    "target_minutes": 25,
     "order": [
       "GMAIL_START_ACK",
       "WORK",
@@ -116,19 +117,19 @@
     "if_pc_offline": "PHONE_EDGE_QUEUES_LOCAL_EVENTS_AND_PC_RECONCILES_ON_RETURN",
     "if_telegram_direct_fails": "TRY_PHONE_EDGE_RELAY_IF_FRESH_REGISTERED_ELSE_PERSIST_OUTAGE",
     "if_drive_unavailable": "KEEP_LOCAL_DURABLE_STATE_AND_RETRY_WITH_BACKOFF",
-    "preclose_snapshot_offset_minutes": 26,
-    "normal_closeout_offset_minutes": 26,
-    "hard_close_guard_offset_minutes": 29,
-    "absolute_end_deadline_minutes": 30,
+    "preclose_snapshot_offset_minutes": 22,
+    "normal_closeout_offset_minutes": 23,
+    "hard_close_guard_offset_minutes": 25,
+    "absolute_end_deadline_minutes": 25,
     "if_user_message_arrives_near_deadline": "DO_NOT_TREAT_USER_MESSAGE_AS_CLOSEOUT_TRIGGER; RECONCILE_WITH_TIMER_DRIVEN_END_STATE",
-    "foreground_closeout": "PRIMARY_ASSISTANT_ENTERS_CLOSE_RESERVE_AT_T+26; PERSIST_CLOSE_INTENT; SEARCH_GMAIL_BY_DELIVERY_KEY; SEND_IF_MISSING; VERIFY_PROVIDER_ACK_AND_SENT_READBACK; PERSIST_CLOSED; ONLY_THEN_RETURN",
-    "background_guards": "BACKUP_ONLY_AT_T+28_AND_T+29; SEARCH_GMAIL_SENT_FIRST; NEVER_USE_SCHEDULER_COMPLETION_AS_SUCCESS",
+    "foreground_closeout": "PRIMARY_ASSISTANT_ENTERS_CLOSE_RESERVE_AT_T+23; PERSIST_CLOSE_INTENT; SEARCH_GMAIL_BY_DELIVERY_KEY; SEND_IF_MISSING; VERIFY_PROVIDER_ACK_AND_SENT_READBACK; PERSIST_CLOSED; ONLY_THEN_RETURN",
+    "background_guards": "DISABLED_BY_DEFAULT; OPTIONAL_BACKUP_ONLY_IF_EXPLICITLY_ARMED; NEVER_REQUIRED_FOR_NORMAL_END",
     "scheduler_completion_semantics": "ADVISORY_ONLY_NOT_DELIVERY_PROOF",
     "backup_end_template_ref": ".project-memory/END_FAILSAFE_TEMPLATE.json",
-    "useful_work_target_minutes": 26,
+    "useful_work_target_minutes": 23,
     "useful_work_minimum_minutes": 20,
-    "normal_close_reserve_minutes": 4,
-    "backup_earliest_offset_minutes": 28
+    "normal_close_reserve_minutes": 2,
+    "backup_earliest_offset_minutes": 24
   },
   "cold_recovery": {
     "code": "BCPGO BCP",
