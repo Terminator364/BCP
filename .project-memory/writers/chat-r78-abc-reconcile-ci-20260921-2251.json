@@ -1,0 +1,27 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r78-abc-reconcile-ci-20260921-2251",
+  "project_or_mission": "API/BCP reconcile R77 A+B+C candidate, fix exact-head CI, continue full-node",
+  "base_main_sha": "3c82dc3d40dc59db50d2825e9914a809e63f815d",
+  "source_candidate_head": "ef24a5445b21a64d8ddbf8434feb000c3c9d05c9",
+  "source_pr": 148,
+  "created_at": "2026-09-21T22:51:11+01:00",
+  "work_branch": "work/bcp/r78-abc-reconcile-ci-20260921-2251",
+  "intended_file_scope": [
+    "tools/validate_field_ecosystem.py",
+    ".project-memory/**",
+    "docs/**",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    "release/android_candidate.json",
+    "android-b-edge/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Field Ecosystem Preflight",
+    "BCP Android Human-Action Simulation",
+    "BCP Coordinated Product Qualification",
+    "BCP Android Build"
+  ],
+  "reconciliation_note": "Supersedes duplicate R76/R77 open candidates by preserving the latest PR #148 head and fixing its failed exact-head field validator; no direct main mutation."
+}

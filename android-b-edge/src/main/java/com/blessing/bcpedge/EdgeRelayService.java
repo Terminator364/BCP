@@ -242,6 +242,11 @@ public final class EdgeRelayService extends Service {
             caps.put("role", "DEDICATED_EDGE_API_SERVER");
             caps.put("local_api", true);
             caps.put("durable_queue", true);
+            caps.put("universal_event_ledger", true);
+            caps.put("universal_event_ledger_mode", "APPEND_ONLY_LOCAL_CHRONICLE");
+            caps.put("mission_step_envelope_v1", true);
+            caps.put("provider_degraded_resume", true);
+            caps.put("mission_authority", "DURABLE_BCP_STATE_NOT_CHAT_UI");
             caps.put("local_allowlisted_executor", true);
             caps.put("local_executor_kinds", new org.json.JSONArray()
                     .put("LOCAL_CONTEXT_SNAPSHOT")
@@ -266,6 +271,38 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/context".equals(path)) {
             writeJson(out, 200, new BcpClient(this).localContextPack());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/events".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localEventTail(100));
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/mission-steps".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localMissionSteps(50, true));
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/events".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            String eventType = body.optString("event_type", "");
+            JSONObject payload = body.optJSONObject("payload");
+            if (payload == null) payload = new JSONObject();
+            String truth = body.optString("truth_status", "OBSERVED");
+            String idem = body.optString("idempotency_key", "");
+            JSONObject receipt = new BcpClient(this).appendLocalEvent(
+                    eventType, payload, truth, idem);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 200, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/mission-steps".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).upsertMissionStep(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/mission-steps/state".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).updateMissionStepState(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 404, receipt);
             return;
         }
         if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
@@ -304,6 +341,7 @@ public final class EdgeRelayService extends Service {
             out.put("permissions", EdgePermissionManager.status(this));
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
+            out.put("mission_steps", client.localMissionSteps(8, true));
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());

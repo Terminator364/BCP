@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/1",
+  "schema": "bcp.new_conversation_takeover/4",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -8,6 +8,10 @@
     "project_state.json",
     "API_PROJECT_CONTINUITY.md",
     ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "docs/BCP_CANONICAL_SPEC_ABC.md",
+    ".project-memory/BCP_ABC_COVERAGE.json",
+    ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    ".project-memory/UCMF001_CONTINUITY.json",
     ".project-memory/COMMUNICATION_PROTOCOL.json",
     ".project-memory/COMMUNICATION_STATE_MACHINE.json",
     ".project-memory/ACTIVE_TRANCHE.json",
@@ -22,12 +26,13 @@
   "takeover_algorithm": [
     "READ_DURABLE_STATE_FIRST",
     "RECONCILE_UNCLOSED_TRANCHE_BEFORE_NEW_WORK",
-    "LOAD_COMMUNICATION_STATE_MACHINE_AND_DELIVERY_LEDGER",
+    "LOAD_COMMUNICATION_STATE_MACHINE_DELIVERY_LEDGER_AND_UCMF_V9_POINTER",
     "LOAD_GIT_WRITER_FENCE",
     "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
     "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
-    "WORK_FROM_PROJECT_STATE_NEXT_ACTION",
-    "ENTER_CLOSE_RESERVE_AT_MINUTE_26",
+    "LOAD_AND_APPLY_FULL_A_PLUS_B_PLUS_C_SPEC",
+    "RESUME_ONLY_FROM_PROJECT_STATE_NEXT_UNCOMMITTED_ACTION",
+    "ENTER_CLOSE_RESERVE_AT_MINUTE_23",
     "PERSIST_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
     "SEND_COMPLETE_GMAIL_END_IF_MISSING",
@@ -36,19 +41,23 @@
     "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
   ],
   "communication_contract": {
-    "cadence_minutes": 30,
-    "useful_work_minutes": 26,
-    "normal_close_reserve_minutes": 4,
+    "cadence_minutes": 25,
+    "useful_work_minutes": 23,
+    "normal_close_reserve_minutes": 2,
     "gmail_label": "BCP",
     "normal_close_owner": "PRIMARY_ASSISTANT",
-    "backup_owner": "SHADOW_BACKUP",
-    "hard_guard_owner": "HARD_GUARD",
+    "scheduled_backup_required": false,
     "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
     "ui_thinking_indicator_authoritative": false
   },
   "product_truth": {
     "phone_direction": "coherent dedicated Android full-node/server appliance",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
-    "continuation_code": "BCPGO BCP"
+    "continuation_code": "BCPGO BCP",
+    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_SOURCE_RECONCILED_R79_UCMF_V9",
+    "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
+    "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
+    "ucmf_current_postulate": 9
   }
 }

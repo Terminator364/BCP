@@ -3,7 +3,11 @@ package com.blessing.bcpedge;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.os.SystemClock;
 import com.blessing.bcpedge.work.EdgeWorkScheduler;
+import com.blessing.bcpedge.storage.EdgeDatabase;
+import com.blessing.bcpedge.storage.EdgeEventEntity;
+import com.blessing.bcpedge.storage.EdgeMissionStepEntity;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -11,6 +15,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -62,6 +67,7 @@ public final class BcpClient {
             out.put("memory", orchestrator.memorySnapshot(getProject()));
             out.put("content_store", contentStore.status());
             out.put("network", EdgeNetworkState.snapshot(context));
+            out.put("mission_steps", localMissionSteps(8, true));
             out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
             out.put("offline_capable", true);
         } catch (Exception ignored) {}
@@ -93,6 +99,240 @@ public final class BcpClient {
 
     public void recordEvent(String type, String detail) {
         telemetry.add(type, detail);
+        try {
+            JSONObject payload = new JSONObject();
+            payload.put("detail", detail == null ? "" : detail);
+            appendLocalEvent(type, payload, "OBSERVED", null);
+        } catch (Exception ignored) {}
+    }
+
+    public JSONObject appendLocalEvent(String type, JSONObject payload, String truthStatus,
+                                       String idempotencyKey) throws Exception {
+        String eventType = type == null ? "" : type.trim().toUpperCase(Locale.ROOT);
+        if (eventType.isEmpty() || eventType.length() > 96) {
+            throw new IllegalArgumentException("invalid_event_type");
+        }
+        JSONObject body = payload == null ? new JSONObject() : payload;
+        String raw = body.toString();
+        if (raw.getBytes(StandardCharsets.UTF_8).length > 64 * 1024) {
+            throw new IllegalArgumentException("event_payload_too_large");
+        }
+        long now = System.currentTimeMillis();
+        String eventId = "evt-" + UUID.randomUUID();
+        String idem = idempotencyKey == null ? "" : idempotencyKey.trim();
+        if (idem.isEmpty()) idem = eventId;
+        if (idem.length() > 160) throw new IllegalArgumentException("idempotency_key_too_long");
+        String truth = truthStatus == null ? "OBSERVED" : truthStatus.trim().toUpperCase(Locale.ROOT);
+        if (!Arrays.asList("OBSERVED","VERIFIED","REPORTED","INFERRED","MODEL_GENERATED","UNKNOWN").contains(truth)) {
+            throw new IllegalArgumentException("invalid_truth_status");
+        }
+        EdgeEventEntity event = new EdgeEventEntity(
+                eventId, getProject(), eventType, "B_EDGE", "B_EDGE_LOCAL",
+                truth, raw, sha256Hex(raw), idem, now, now);
+        long inserted = EdgeDatabase.get(context).edgeDao().insertEvent(event);
+        JSONObject out = new JSONObject();
+        out.put("ok", inserted != -1L);
+        out.put("result", inserted == -1L ? "ALREADY_RECORDED" : "APPENDED");
+        out.put("event_id", eventId);
+        out.put("idempotency_key", idem);
+        out.put("payload_sha256", event.payloadSha256);
+        out.put("truth_status", truth);
+        return out;
+    }
+
+    public JSONObject localEventTail(int requestedLimit) {
+        JSONObject out = new JSONObject();
+        JSONArray events = new JSONArray();
+        try {
+            int limit = Math.max(1, Math.min(200, requestedLimit));
+            java.util.List<EdgeEventEntity> rows =
+                    EdgeDatabase.get(context).edgeDao().recentEvents(getProject(), limit);
+            for (EdgeEventEntity e : rows) {
+                JSONObject item = new JSONObject();
+                item.put("event_id", e.eventId);
+                item.put("project_id", e.projectId);
+                item.put("event_type", e.eventType);
+                item.put("actor_type", e.actorType);
+                item.put("source", e.source);
+                item.put("truth_status", e.truthStatus);
+                item.put("payload", new JSONObject(e.payloadJson));
+                item.put("payload_sha256", e.payloadSha256);
+                item.put("idempotency_key", e.idempotencyKey);
+                item.put("occurred_at_ms", e.occurredAt);
+                item.put("ingested_at_ms", e.ingestedAt);
+                events.put(item);
+            }
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("event_count", EdgeDatabase.get(context).edgeDao().eventCount(getProject()));
+            out.put("events", events);
+            out.put("authority", "APPEND_ONLY_LOCAL_CHRONICLE");
+        } catch (Exception ex) {
+            try {
+                out.put("ok", false);
+                out.put("error", ex.getClass().getSimpleName());
+                out.put("events", events);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+
+    private static final java.util.Set<String> MISSION_PROVIDER_STATES =
+            new java.util.HashSet<>(java.util.Arrays.asList(
+                    "NOT_DISPATCHED", "DISPATCH_ATTEMPTED", "PROVIDER_ACKED",
+                    "STREAM_OBSERVED", "RESULT_OBSERVED", "RESULT_COMMITTED",
+                    "PLATFORM_HOLD", "INTERRUPTED", "OUTCOME_UNKNOWN",
+                    "RECONCILING", "SUPERSEDED"));
+
+    private static final java.util.Set<String> MISSION_SIDE_EFFECT_CLASSES =
+            new java.util.HashSet<>(java.util.Arrays.asList(
+                    "NONE", "READ_ONLY", "IDEMPOTENT", "MUTATING"));
+
+    public JSONObject upsertMissionStep(JSONObject body) throws Exception {
+        if (body == null) body = new JSONObject();
+        String stepId = body.optString("step_id", "").trim();
+        String missionId = body.optString("mission_id", "").trim();
+        if (stepId.isEmpty() || stepId.length() > 160) throw new IllegalArgumentException("invalid_step_id");
+        if (missionId.isEmpty() || missionId.length() > 160) throw new IllegalArgumentException("invalid_mission_id");
+
+        String providerState = body.optString("provider_state", "NOT_DISPATCHED").trim().toUpperCase(Locale.ROOT);
+        if (!MISSION_PROVIDER_STATES.contains(providerState)) throw new IllegalArgumentException("invalid_provider_state");
+        String effect = body.optString("side_effect_class", "NONE").trim().toUpperCase(Locale.ROOT);
+        if (!MISSION_SIDE_EFFECT_CLASSES.contains(effect)) throw new IllegalArgumentException("invalid_side_effect_class");
+
+        String requestedOperation = body.optString("requested_operation", "").trim();
+        if (requestedOperation.isEmpty() || requestedOperation.length() > 256) {
+            throw new IllegalArgumentException("invalid_requested_operation");
+        }
+        JSONArray deps = body.optJSONArray("dependencies");
+        if (deps == null) deps = new JSONArray();
+        String depsJson = deps.toString();
+        if (depsJson.getBytes(StandardCharsets.UTF_8).length > 32 * 1024) {
+            throw new IllegalArgumentException("dependencies_too_large");
+        }
+
+        String idem = body.optString("idempotency_key", "").trim();
+        if (idem.isEmpty()) idem = "mission-step:" + stepId;
+        if (idem.length() > 192) throw new IllegalArgumentException("idempotency_key_too_long");
+
+        long nowWall = System.currentTimeMillis();
+        long createdWall = body.optLong("created_at_wall_ms", nowWall);
+        long createdElapsed = body.optLong("created_at_elapsed_ms", SystemClock.elapsedRealtime());
+        EdgeMissionStepEntity step = new EdgeMissionStepEntity(
+                stepId,
+                missionId,
+                getProject(),
+                Math.max(0L, body.optLong("step_revision", 0L)),
+                requestedOperation,
+                body.optString("input_hash", ""),
+                body.optString("context_capsule_hash", ""),
+                body.optString("policy_revision", ""),
+                Math.max(0L, body.optLong("expected_state_revision", 0L)),
+                body.optString("last_confirmed_checkpoint", ""),
+                depsJson,
+                effect,
+                idem,
+                body.optString("fencing_token", ""),
+                body.optString("next_safe_action", ""),
+                body.optString("continuation_frontier", ""),
+                providerState,
+                createdWall,
+                createdElapsed,
+                nowWall
+        );
+        EdgeDatabase.get(context).edgeDao().putMissionStep(step);
+
+        JSONObject eventPayload = new JSONObject();
+        eventPayload.put("mission_id", missionId);
+        eventPayload.put("step_id", stepId);
+        eventPayload.put("provider_state", providerState);
+        eventPayload.put("side_effect_class", effect);
+        eventPayload.put("next_safe_action", step.nextSafeAction);
+        appendLocalEvent("MISSION_STEP_STATE", eventPayload, "OBSERVED", "mission-event:" + stepId + ":" + providerState + ":" + step.stepRevision);
+
+        JSONObject out = missionStepJson(step);
+        out.put("ok", true);
+        out.put("result", "MISSION_STEP_DURABLE");
+        out.put("authority", "B_EDGE_LOCAL_DURABLE_MISSION_STATE");
+        return out;
+    }
+
+    public JSONObject localMissionSteps(int requestedLimit, boolean resumableOnly) {
+        JSONObject out = new JSONObject();
+        JSONArray rows = new JSONArray();
+        try {
+            int limit = Math.max(1, Math.min(100, requestedLimit));
+            java.util.List<EdgeMissionStepEntity> steps = resumableOnly
+                    ? EdgeDatabase.get(context).edgeDao().resumableMissionSteps(getProject(), limit)
+                    : EdgeDatabase.get(context).edgeDao().recentMissionSteps(getProject(), limit);
+            for (EdgeMissionStepEntity step : steps) rows.put(missionStepJson(step));
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("resumable_only", resumableOnly);
+            out.put("mission_steps", rows);
+            out.put("mission_authority", "DURABLE_STATE_NOT_CHAT_UI");
+        } catch (Exception ex) {
+            try {
+                out.put("ok", false);
+                out.put("error", ex.getClass().getSimpleName());
+                out.put("mission_steps", rows);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    public JSONObject updateMissionStepState(JSONObject body) throws Exception {
+        if (body == null) body = new JSONObject();
+        String stepId = body.optString("step_id", "").trim();
+        String providerState = body.optString("provider_state", "").trim().toUpperCase(Locale.ROOT);
+        if (stepId.isEmpty() || stepId.length() > 160) throw new IllegalArgumentException("invalid_step_id");
+        if (!MISSION_PROVIDER_STATES.contains(providerState)) throw new IllegalArgumentException("invalid_provider_state");
+        String next = body.optString("next_safe_action", "");
+        String frontier = body.optString("continuation_frontier", "");
+        int changed = EdgeDatabase.get(context).edgeDao().updateMissionStepState(
+                stepId, providerState, next, frontier, System.currentTimeMillis());
+        JSONObject out = new JSONObject();
+        out.put("ok", changed == 1);
+        out.put("updated", changed);
+        out.put("step_id", stepId);
+        out.put("provider_state", providerState);
+        out.put("next_safe_action", next);
+        out.put("continuation_frontier", frontier);
+        return out;
+    }
+
+    private static JSONObject missionStepJson(EdgeMissionStepEntity s) throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("step_id", s.stepId);
+        o.put("mission_id", s.missionId);
+        o.put("project_id", s.projectId);
+        o.put("step_revision", s.stepRevision);
+        o.put("requested_operation", s.requestedOperation);
+        o.put("input_hash", s.inputHash);
+        o.put("context_capsule_hash", s.contextCapsuleHash);
+        o.put("policy_revision", s.policyRevision);
+        o.put("expected_state_revision", s.expectedStateRevision);
+        o.put("last_confirmed_checkpoint", s.lastConfirmedCheckpoint);
+        o.put("dependencies", new JSONArray(s.dependenciesJson));
+        o.put("side_effect_class", s.sideEffectClass);
+        o.put("idempotency_key", s.idempotencyKey);
+        o.put("fencing_token_present", !s.fencingToken.isEmpty());
+        o.put("next_safe_action", s.nextSafeAction);
+        o.put("continuation_frontier", s.continuationFrontier);
+        o.put("provider_state", s.providerState);
+        o.put("created_at_wall_ms", s.createdAtWallMs);
+        o.put("created_at_elapsed_ms", s.createdAtElapsedMs);
+        o.put("updated_at_wall_ms", s.updatedAtWallMs);
+        return o;
+    }
+
+    private static String sha256Hex(String value) throws Exception {
+        MessageDigest d = MessageDigest.getInstance("SHA-256");
+        byte[] bytes = d.digest(value.getBytes(StandardCharsets.UTF_8));
+        StringBuilder s = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) s.append(String.format(Locale.ROOT, "%02x", b & 0xff));
+        return s.toString();
     }
 
     public JSONObject registerEdgeRelay() {

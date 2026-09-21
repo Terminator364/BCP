@@ -18,6 +18,8 @@ on:
       - "tools/validate_current_release.py"
       - "tools/test_active_tranche_delivery.py"
       - "tools/test_bedge_local_executor_contract.py"
+      - "tools/test_bedge_chronicle_contract.py"
+      - "tools/test_bedge_mission_step_contract.py"
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -29,6 +31,10 @@ on:
       - ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
       - ".project-memory/COMMUNICATION_STATE_MACHINE.json"
       - ".project-memory/COMMUNICATION_PROTOCOL.json"
+      - ".project-memory/BCP_ABC_SOURCE_REGISTRY.json"
+      - ".project-memory/UCMF001_CONTINUITY.json"
+      - ".project-memory/BCP_ABC_COVERAGE.json"
+      - "docs/BCP_CANONICAL_SPEC_ABC.md"
       - ".project-memory/END_FAILSAFE_TEMPLATE.json"
       - "project_state.json"
       - "API_PROJECT_CONTINUITY.md"
@@ -84,6 +90,9 @@ jobs:
           python -m json.tool .project-memory/COMMUNICATION_SURVIVAL_POLICY.json > /dev/null
           python -m json.tool .project-memory/COMMUNICATION_PROTOCOL.json > /dev/null
           python -m json.tool .project-memory/COMMUNICATION_STATE_MACHINE.json > /dev/null
+          python -m json.tool .project-memory/BCP_ABC_SOURCE_REGISTRY.json > /dev/null
+          python -m json.tool .project-memory/BCP_ABC_COVERAGE.json > /dev/null
+          python -m json.tool .project-memory/UCMF001_CONTINUITY.json > /dev/null
           python -m json.tool .project-memory/NEW_CONVERSATION_TAKEOVER.json > /dev/null
           python - <<'PY'
           import json, pathlib
@@ -107,6 +116,12 @@ jobs:
 
       - name: Validate B-EDGE local executor contract
         run: python tools/test_bedge_local_executor_contract.py
+
+      - name: Validate B-EDGE Universal Chronicle contract
+        run: python tools/test_bedge_chronicle_contract.py
+
+      - name: Validate B-EDGE mission-step continuity contract
+        run: python tools/test_bedge_mission_step_contract.py
 
       - name: Server update self-test
         run: python windows/bcp_server.py --selftest

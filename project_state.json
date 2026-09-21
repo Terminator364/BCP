@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R74_COMMUNICATION_AND_PHONE_LOCAL_EXECUTOR_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R74 ports the stronger KINLINK communication delivery model into BCP and adds a safe allowlisted Android local task executor so deterministic EDGE jobs can complete on the dedicated phone without waiting for the PC. CURRENT contract run #1190 is PASS on PR #144 exact head. Fresh Drive field telemetry proves BCP 0.7.16 is UP_TO_DATE on MBMPC; Telegram direct transport is still in DIRECT_TRANSPORT_OUTAGE and edge relay is currently inactive/unregistered in the installed 2.1.2 field app, confirming the need for the coherent 2.2.0 full-node release.",
-  "next_action": "Finish PR #144 exact-head qualification. If green, merge through the writer fence and verify post-merge. Continue 2.2.0 full-node as one coherent candidate: prove local executor behavior in Android CI/emulator, relay registration and Telegram route readback, then sign/publish Drive CURRENT only after all release gates. Do not ask for another phone install before that coherent gate.",
+  "status": "R79_UCMF_V9_ABC_MISSION_STEP_EXACT_HEAD_CI_RUNNING",
+  "last_completed_atomic_action": "R79 directly resolved the current UCMF001 Drive master through Postulate 9/V9, expanded the A+B+C denominator to Postulates 1-9, recalibrated macro maturity to 53.9% functional / 42.2% evidence, made UCMF001 a first-class 25-minute cold-continuation pointer, and added B-EDGE Room v4 durable mission-step/provider-state envelopes so mission progress can survive ChatGPT/provider interruption independently of chat scrollback.",
+  "next_action": "Finish exact-head PR #149 qualification on the R79 head. If all required gates are green, reread main under the Git writer fence and merge the superseding R79 line. Then verify post-merge and continue the coherent B-EDGE 2.2 full-node against the largest A+B+C gaps: encrypted/authenticated LAN, memory admission/supersession, source-capability registry, server-first UI, black-start/direct-boot and bulk-media plane. Do not publish another phone micro-beta before the coherent release gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -92,7 +92,11 @@
     "communication_protocol": ".project-memory/COMMUNICATION_PROTOCOL.json",
     "communication_state_machine": ".project-memory/COMMUNICATION_STATE_MACHINE.json",
     "communication_delivery_ledger": ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
-    "new_conversation_takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json"
+    "new_conversation_takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
+    "abc_integral_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -173,7 +177,11 @@
     ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     ".project-memory/COMMUNICATION_PROTOCOL.json",
     ".project-memory/COMMUNICATION_STATE_MACHINE.json",
-    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    ".project-memory/BCP_ABC_COVERAGE.json",
+    "docs/BCP_CANONICAL_SPEC_ABC.md",
+    ".project-memory/UCMF001_CONTINUITY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -228,7 +236,7 @@
     "P0_global_5_to_7_minute_tranche_cadence": false,
     "P0_email_only_detailed_checkpoint": true,
     "P0_interactive_work_tranche_8_to_10_minutes": false,
-    "P0_interactive_work_tranche_25_minutes": false,
+    "P0_interactive_work_tranche_25_minutes": true,
     "P0_pre_human_action_simulation_gate": true,
     "P0_gmail_start_before_substantive_work": true,
     "P0_gmail_end_provider_ack_before_chat_output": true,
@@ -241,20 +249,27 @@
     "P0_phone_multitransport_presence": true,
     "P0_phone_meaningful_permission_onboarding": true,
     "P0_phone_server_first_ui": true,
-    "P0_interactive_work_tranche_30_minutes": true,
+    "P0_interactive_work_tranche_30_minutes": false,
     "P0_phone_no_micro_beta_field_installs": true,
     "P0_phone_full_node_vertical_slice": true,
     "P0_communication_survival_fabric": true,
     "P0_cross_conversation_recovery_without_user_reexplanation": true,
     "P0_no_user_relaunch_required_for_end_checkpoint": true,
-    "P0_30_minute_interactive_work_tranche": true,
-    "P0_dual_predeadline_end_guards": true,
+    "P0_30_minute_interactive_work_tranche": false,
+    "P0_dual_predeadline_end_guards": false,
     "P0_user_message_never_closeout_trigger": true,
     "P0_end_mail_search_before_send": true,
     "P0_end_mail_provider_readback": true,
     "P0_scheduler_completion_is_not_delivery_proof": true,
     "P0_foreground_end_send_primary": true,
-    "P0_backup_minimal_end_payload": true
+    "P0_backup_minimal_end_payload": true,
+    "P0_25_minute_23_work_2_closeout": true,
+    "P0_primary_assistant_normal_close_without_automation": true,
+    "P0_integral_abc_release_gate": true,
+    "P0_23_minute_useful_work_plus_2_minute_closeout": true,
+    "P0_ucmf_v9_mission_survives_conversation": true,
+    "P0_phone_durable_mission_step_envelope": true,
+    "P0_integral_abc_spec_denominator": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2562,5 +2577,120 @@
     "edge_only_capable": true,
     "current_release_published": false,
     "candidate_version": "2.2.0-full-node-evergreen"
+  },
+  "abc_integral_spec": {
+    "status": "CANONICAL_CANDIDATE_R77",
+    "definition": "A=original preconception/promised functions; B=research-backed realistic expansion; C=all accumulated field feedback/corrections/preferences",
+    "source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "canonical_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "coverage": ".project-memory/BCP_ABC_COVERAGE.json",
+    "initial_macro_functional_percent": 53.7,
+    "initial_evidence_maturity_percent": 41.45,
+    "caveat": "Sealed V0.7 package pointer/hash is authoritative but package bytes were not rematerialized during R77; global percentage remains provisional until source completeness is improved."
+  },
+  "r77_phone_chronicle": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "room_database_version": 3,
+    "entity": "android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeEventEntity.java",
+    "api": [
+      "GET /v1/node/events",
+      "POST /v1/node/events"
+    ],
+    "semantics": "APPEND_ONLY_LOCAL_CHRONICLE",
+    "truth_states": [
+      "OBSERVED",
+      "VERIFIED",
+      "REPORTED",
+      "INFERRED",
+      "MODEL_GENERATED",
+      "UNKNOWN"
+    ],
+    "idempotency_scope": "PROJECT",
+    "remaining_gaps": [
+      "canonical sequence/hash chain",
+      "evidence vault refs",
+      "memory admission/supersession",
+      "encrypted LAN transport",
+      "field migration proof"
+    ]
+  },
+  "communication_r77": {
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "scheduled_automation_required": false,
+    "gmail_start_end_provider_ack_required": true,
+    "chat_pointer_after_end_only": true,
+    "continuity_code": "BCPGO BCP"
+  },
+  "abc_product_scope": {
+    "revision": "2026-09-21-R78",
+    "formula": "A_PLUS_B_PLUS_C",
+    "source_status": "HANDOFF_DOSSIER_UCMF_V4_READ_SEALED_ZIP_SHA_POINTER_PRESERVED",
+    "functional_macro_percent": 57,
+    "evidence_maturity_percent": 45.35,
+    "percentage_is_absolute_completion": false,
+    "universal_chronicle": "IMPLEMENTED_CANDIDATE_ROOM_V3_FIELD_2_2_PENDING",
+    "top_next_gaps": [
+      "ENCRYPTED_AUTHENTICATED_LAN",
+      "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
+      "SOURCE_CAPABILITY_REGISTRY",
+      "TELEGRAM_PHONE_RELAY_FIELD_PROOF",
+      "FULL_SERVER_FIRST_UI",
+      "BEDGE_2_2_DEVICE_FIELD_PROMOTION"
+    ]
+  },
+  "communication_cadence_r78": {
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "scheduled_close_guard_required": false,
+    "start_provider_ack_required": true,
+    "end_provider_ack_required": true,
+    "chat_final_before_end_ack_forbidden": true,
+    "current_delivery_key": "BCP25-20260921-2251-R77",
+    "current_start_message_id": "1a0c5f3d387fc1b3",
+    "next_external_tranche_label": "R78",
+    "current_end_message_id": "1a0c609b60dbc048",
+    "current_end_verified": true,
+    "last_closed_at_kinshasa": "2026-09-21T23:15:20+01:00"
+  },
+  "r79_abc_ucmf_v9": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_RUNNING",
+    "branch": "work/bcp/r78-abc-reconcile-ci-20260921-2251",
+    "pr": 149,
+    "current_ucmf_drive_file_id": "1NPKxO7_JezpVSh9_KRE625sDfXpM7a8m",
+    "current_ucmf_version": "UCMF001 / V9 FINAL RESILIENCE CLOSURE",
+    "current_ucmf_postulate": 9,
+    "abc_functional_macro_percent": 53.9,
+    "abc_evidence_maturity_percent": 42.2,
+    "phone_room_version": 4,
+    "phone_mission_step_envelope": "BCP_MISSION_STEP_ENVELOPE_V1",
+    "provider_states": [
+      "NOT_DISPATCHED",
+      "DISPATCH_ATTEMPTED",
+      "PROVIDER_ACKED",
+      "STREAM_OBSERVED",
+      "RESULT_OBSERVED",
+      "RESULT_COMMITTED",
+      "PLATFORM_HOLD",
+      "INTERRUPTED",
+      "OUTCOME_UNKNOWN",
+      "RECONCILING",
+      "SUPERSEDED"
+    ],
+    "continuation_codes": [
+      "BCPGO BCP",
+      "UCMF001",
+      "BCPGO UCMF001"
+    ],
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "scheduled_normal_close_required": false,
+    "current_tranche": "BCP-R79-START-20260921-2327",
+    "current_tranche_start_message_id": "1a0c61524165617e"
   }
 }

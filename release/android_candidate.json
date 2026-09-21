@@ -37,13 +37,15 @@
     "existing strict Telegram HTTPS CONNECT relay remains api.telegram.org:443 only",
     "paired BCP credential protects private local API and proxy access",
     "no arbitrary proxy target and no arbitrary shell surface",
-    "30-minute Gmail START/END continuity contract carried by BCPGO",
+    "25-minute Gmail START/END continuity contract carried by BCPGO (23 min useful work + 2 min primary closeout)",
     "no-micro-beta field gate: next install only after coherent full-node exact-head qualification",
     "adaptive Wi-Fi/cellular/metered network truth with DATA_SAVER and STORE_AND_FORWARD routing hints",
     "app-private adaptive content cache up to 8 GiB for context/resume snapshots without consuming the whole 64 GB device",
     "allowlisted deterministic local task executor runs safe EDGE jobs on the dedicated phone without waiting for the PC",
     "local task receipts are persisted before jobs are removed from the durable queue",
-    "local context/health/queue/memory-maintenance jobs remain available in EDGE_ONLY mode with no arbitrary shell"
+    "local context/health/queue/memory-maintenance jobs remain available in EDGE_ONLY mode with no arbitrary shell",
+    "Universal Chronicle append-only edge_events ledger with project-scoped idempotency and authenticated /v1/node/events tail/admission",
+    "A+B+C integral specification gate: candidate scope is measured against original preconception + researched expansion + accumulated field feedback"
   ],
   "release_train": "BCP-0.7.16_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }

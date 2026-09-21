@@ -1790,7 +1790,7 @@ For the current Nexus authorization path, qualification includes both the server
 
 ## P0 — Interactive work cadence
 
-Normal interactive technical work uses a ~30-minute useful-work tranche: target 30 minutes, with approximately the final minute reserved for durable checkpoint/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. The full checkpoint is sent by email first; ChatGPT then shows only the short Gmail/date-time/checkpoint pointer after confirmed mail delivery.
+Normal interactive technical work uses a 25-minute wall-clock tranche: target approximately 23 minutes of useful work with the final ~2 minutes reserved for PRIMARY_ASSISTANT durable closeout/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. Gmail START is provider-acknowledged before substantive work; Gmail END is sent and verified in SENT before ChatGPT shows the short Gmail/date-time/checkpoint pointer. Normal closeout MUST NOT depend on an automation or a user relaunch.
 
 The durable `project_state.json` must expose the currently active cadence and simulation-gate policy so a fresh `BCPGO BCP` recovery cannot regress to a superseded 5–7 or 8–10 minute rule or ask the user to repeat an unqualified action path.
 
@@ -1970,7 +1970,7 @@ Acceptance requires representative coverage of channel failure, duplicate delive
 
 The user MUST NOT be required to send a relaunch message merely to receive the Gmail END checkpoint.
 
-For the 30-minute interactive tranche:
+For the 25-minute interactive tranche:
 - durable pre-close snapshot by approximately T+26;
 - normal closeout guard at approximately T+27;
 - independent hard close guard at approximately T+28;
@@ -2018,7 +2018,7 @@ Canonical files:
 
 Mandatory tranche model:
 - wall-clock target = 30 minutes;
-- target useful-work budget = 26 minutes;
+- target useful-work budget = 23 minutes;
 - minimum useful-work target = 20 minutes when no real human/tool/safety gate ends the tranche earlier;
 - final 4 minutes are reserved for closeout and MUST NOT be consumed by optional new product mutations;
 - `PRIMARY_ASSISTANT` owns normal closeout;
@@ -2032,6 +2032,31 @@ Mandatory tranche model:
 - ChatGPT final output is blocked until delivery state is END_ACKNOWLEDGED/CLOSED;
 - a user “eh oh” message is never a delivery trigger.
 
-The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be used as proof that a 30-minute tranche performed 30 minutes of model reasoning. Tranche proof consists of durable engineering evidence: commits, CI runs, provider acknowledgements, Drive readbacks, receipts, and field telemetry.
+The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be used as proof that a 25-minute tranche performed 25 minutes of model reasoning. Tranche proof consists of durable engineering evidence: commits, CI runs, provider acknowledgements, Drive readbacks, receipts, and field telemetry.
 
 Fresh-conversation code `BCPGO BCP` MUST load `.project-memory/NEW_CONVERSATION_TAKEOVER.json` and reconcile any open delivery state before starting new work.
+
+
+## P0 — Integral A+B+C product denominator — R79 / UCMF V9
+
+BCP scope MUST be evaluated against the cumulative **A+B+C** denominator:
+
+- **A** = original/sealed preconception, source intent and promised functions;
+- **B** = realistic research-backed architecture and technical expansion beyond the source idea;
+- **C** = all accumulated field feedback, corrections, work preferences, versions and constraints.
+
+Machine-readable authority:
+- `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`
+- `.project-memory/BCP_ABC_COVERAGE.json`
+- `docs/BCP_CANONICAL_SPEC_ABC.md`
+- `.project-memory/UCMF001_CONTINUITY.json`
+
+The current Drive UCMF001 master is verified through **Postulate 9 / V9 FINAL RESILIENCE CLOSURE**. Postulates 1–9 are part of the active BCP denominator: source intent, Chronicle/memory, phone appliance, fast path, destructive failure research, black-start/absence-human, gray-failure/direct-boot, bulk-media separation and ChatGPT/provider-degraded mission survival.
+
+A partial subsystem, one Android screen, one Telegram route or one incident fix MUST NOT be presented as overall product completion. Any completion percentage MUST name its denominator and source-completeness caveat.
+
+The coherent-release rule is strengthened: no micro-beta install loop. A user-facing phone update should advance a meaningful vertical slice across the active A+B+C gaps and carry exact-head CI/device evidence before installation is requested.
+
+The dedicated Android phone is a first-rank B-EDGE node. It MUST durably host `BCP_MISSION_STEP_ENVELOPE_V1` / provider-state recovery for steps that may outlive a ChatGPT conversation or remote provider attempt. Mission progress is established by durable receipts/checkpoints, not by a chat spinner or visible thinking duration. Current P0 direction is a local-first API/server appliance with durable Chronicle, memory, scheduler, queues, store-and-forward, context building, multi-transport discovery, resource governance and a server-first cockpit. The PC remains a heavy Windows worker/replica, not the sole communications center.
+
+The current cleartext LAN API is POC-only. Production target remains authenticated **and encrypted** local transport.

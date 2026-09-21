@@ -1,3 +1,77 @@
+# R79 A+B+C / UCMF V9 / 25-minute automatic communication handoff — 2026-09-21
+
+Canonical continuation: `BCPGO BCP`. UCMF scoped continuation: `UCMF001` or `BCPGO UCMF001`.
+
+A fresh conversation MUST NOT ask the user to reconstruct the prior chat. After the minimal routing read it MUST load the takeover/communication/writer-fence/A+B+C/UCMF pointers, reconcile any unclosed tranche, send and verify the BCP-labeled Gmail START, then resume the durable next action. Normal cadence is 25 minutes: target ~23 minutes substantive work + ~2 minutes PRIMARY_ASSISTANT closeout. Normal close does not depend on a scheduled automation. END is successful only after Gmail provider message_id + SENT readback + durable CLOSED receipt; only then may the app show the short Gmail pointer.
+
+The current UCMF001 Drive master has been directly resolved and verified through **Postulate 9 / V9 FINAL RESILIENCE CLOSURE**. Postulate 9 makes mission state independent of ChatGPT conversation state. R79 therefore adds a phone-resident `BCP_MISSION_STEP_ENVELOPE_V1`/provider-state surface so a model/provider interruption can resume from durable local state rather than chat scrollback.
+
+A+B+C source of truth:
+- A: sealed preconception pointer + understanding dossier + original UCMF source intent;
+- B: research expansion, now including UCMF Postulates 2–9;
+- C: cumulative field/workflow feedback.
+Current conservative macro audit after expanding the denominator to V9: **53.9% functional / 42.2% evidence maturity**. These are evidence scores, not marketing completion.
+
+Current engineering line: PR #149 / `work/bcp/r78-abc-reconcile-ci-20260921-2251`, now advanced as R79. Do not publish another phone micro-beta. Qualify the coherent 2.2 full-node vertical slice, including Chronicle, mission-step resilience, server-first UI, memory/source-capability gaps, transport security and field relay evidence.
+
+---
+
+# R78 A+B+C Source-Reconciled Handoff — 2026-09-21
+
+Continuation code: `BCPGO BCP`
+
+Mandatory cold-resume order includes:
+- `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`
+- `.project-memory/BCP_ABC_COVERAGE.json`
+- `docs/BCP_CANONICAL_SPEC_ABC.md`
+- communication protocol/state/active tranche/delivery ledger
+- writer fence, `project_state.json` and current release manifests.
+
+Product denominator is **A+B+C**:
+- A = sealed/original preconception + promised functions;
+- B = realistic research-backed expansion;
+- C = accumulated field feedback and work constraints.
+No completion/release claim may be scoped to a convenient fragment.
+
+R78 source reconciliation:
+- `APIAX07_HANDOFF.md` read from Library;
+- `BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf` parsed/read;
+- `UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx` Postulates 1–4 read;
+- sealed V0.7 ZIP remains preserved by SHA/manifest pointer and is **not** falsely claimed byte-reread.
+
+Source-derived A invariants now explicit:
+- API/BCP is a personal digital control/continuity plane, not merely an HTTP API;
+- Universal Chronicle exact events are separated from derived canonical memory;
+- B-EDGE dedicated phone is a first-class continuity appliance and future logical memory/session/journal/mission coordinator after fencing/replication proof;
+- BCP_FASTPATH_P0 forbids global search/network wait/expensive derived work from blocking the normal interactive control path when sufficient local state exists;
+- PC remains heavy Windows worker/verified replica, not the sole communications center.
+
+Current macro evidence audit after source reconciliation + Chronicle implementation:
+- functional coverage: **57.0%**;
+- evidence maturity: **45.35%**;
+- these are conservative macro evidence scores, not an absolute “product complete” percentage.
+
+R78 communication contract:
+- total tranche = **25 minutes**;
+- target **23 minutes useful work + ~2 minutes PRIMARY_ASSISTANT closeout**;
+- Gmail START provider ACK before substantive work;
+- normal Gmail END is sent directly by the active assistant — no automation dependency;
+- search-before-send by delivery_key; provider message_id + Gmail SENT readback required;
+- only then ChatGPT pointer;
+- external START at 22:51 accidentally reused label R77; delivery key remains unique; **next external tranche label must be R78+**.
+
+Current product line:
+- candidate stays `2.2.0-full-node-evergreen`; no micro-beta field install;
+- Room v3 Universal Chronicle `edge_events` + authenticated `GET/POST /v1/node/events` are implemented;
+- PR #148 exact-head Field Ecosystem failed only on a stale validator expecting `addMigrations(MIGRATION_1_2)`; R78 fixes the validator to require the real v1→v2→v3 migration chain;
+- next coherent gaps: authenticated+encrypted LAN, memory admission/provenance/supersession, source/capability registry, Telegram phone relay field proof, full server-first UI, then 2.2 device field promotion.
+
+Current reconciliation branch: `work/bcp/r78-abc-reconcile-ci-20260921-2251`.
+Next action: exact-head qualification -> reread `main` -> reconcile if moved -> serialized merge -> post-merge readback -> continue full-node vertical slice.
+
+
+---
+
 # R74 KINLINK-Style Communication State-Machine Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
