@@ -258,6 +258,10 @@ public final class EdgeRelayService extends Service {
             writeJson(out, 200, nodeStatus());
             return;
         }
+        if ("GET".equals(method) && "/v1/node/context".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localContextPack());
+            return;
+        }
         if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
             JSONObject result = new BcpClient(this).syncOrchestrationState();
             result.put("ok", true);
