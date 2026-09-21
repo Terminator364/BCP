@@ -52,6 +52,7 @@
       ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
       ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
       ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/END_FAILSAFE_TEMPLATE.json",
       ".project-memory/ACTIVE_TRANCHE.json",
       ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
       "project_state.json",
@@ -60,14 +61,19 @@
     ],
     "preclose_snapshot_offset_minutes": 26,
     "normal_closeout_offset_minutes": 27,
-    "hard_close_guard_offset_minutes": 28,
+    "hard_close_guard_offset_minutes": 29,
     "absolute_end_deadline_minutes": 30,
     "dual_end_guard_required": true,
     "user_message_is_not_closeout_trigger": true,
     "active_tranche_state_ref": ".project-memory/ACTIVE_TRANCHE.json",
     "load_active_tranche_before_resume": true,
     "end_mail_search_before_send": true,
-    "end_mail_idempotency_required": true
+    "end_mail_idempotency_required": true,
+    "scheduler_completion_is_not_delivery_proof": true,
+    "foreground_end_send_primary": true,
+    "gmail_end_requires_sent_search_readback": true,
+    "end_failsafe_template_ref": ".project-memory/END_FAILSAFE_TEMPLATE.json",
+    "load_end_failsafe_template_before_resume": true
   },
   "universal": [
     {

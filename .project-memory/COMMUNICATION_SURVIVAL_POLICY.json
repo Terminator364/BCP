@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.communication_survival_policy/2",
-  "revision": "2026-09-21-R72",
+  "schema": "bcp.communication_survival_policy/3",
+  "revision": "2026-09-21-R73",
   "status": "CANONICAL_CANDIDATE",
   "objective": "Preserve user-visible communication and durable mission continuity across ChatGPT UI instability, PC Internet loss, home Wi-Fi failure, PC reboot/offline periods, Telegram direct transport outage, and conversation handoff.",
   "principles": [
@@ -15,7 +15,10 @@
     "NO_USER_EH_OH_RELAUNCH_REQUIRED_FOR_END_CHECKPOINT",
     "CLOSEOUT_IS_TIMER_DRIVEN_NOT_USER_MESSAGE_DRIVEN",
     "TWO_INDEPENDENT_PRE_DEADLINE_END_GUARDS",
-    "END_MAIL_SEARCH_BEFORE_SEND_PREVENTS_DUPLICATES"
+    "END_MAIL_SEARCH_BEFORE_SEND_PREVENTS_DUPLICATES",
+    "SCHEDULER_COMPLETION_IS_NOT_DELIVERY_PROOF",
+    "FOREGROUND_END_SEND_IS_PRIMARY_WHEN_SESSION_IS_ALIVE",
+    "BACKGROUND_GUARDS_USE_MINIMAL_DETERMINISTIC_END_PAYLOAD_IF_PRIMARY_CLOSEOUT_IS_MISSING"
   ],
   "channels": {
     "gmail": {
@@ -31,7 +34,25 @@
         "evidence",
         "next_action_or_gate",
         "continuation_code"
-      ]
+      ],
+      "end_delivery_proof": {
+        "required": true,
+        "proof": "SENT_SEARCH_MATCH_PLUS_PROVIDER_MESSAGE_ID",
+        "scheduler_status_insufficient": true,
+        "start_and_end_label_required": "BCP"
+      },
+      "backup_end_payload": {
+        "retrieval_dependency": "NONE_REQUIRED_FOR_MINIMAL_FAILSAFE",
+        "must_include": [
+          "project",
+          "tranche_id",
+          "closeout_status",
+          "latest_durable_checkpoint_pointer",
+          "continuation_code",
+          "pending_work_truth"
+        ],
+        "rationale": "A complex GitHub/Drive synthesis must not block the backup END mail."
+      }
     },
     "telegram": {
       "priority": 2,
@@ -87,16 +108,20 @@
       "GMAIL_END_ACK",
       "CHATGPT_POINTER"
     ],
-    "if_chatgpt_ui_disappears": "NORMAL_CLOSEOUT_OR_HARD_GUARD_SENDS_GMAIL_END_FROM_DURABLE_STATE; NEXT_BCPGO_RECOVERS_WITHOUT_USER_REEXPLANATION",
+    "if_chatgpt_ui_disappears": "BACKGROUND_GUARDS_SEND_MINIMAL_END_IF POSSIBLE; DURABLE ACTIVE_TRANCHE REMAINS OPEN UNTIL GMAIL SENT READBACK; NEXT BCPGO RECOVERS WITHOUT USER REEXPLANATION",
     "if_end_email_fails": "RETRY_UNTIL_PROVIDER_ACK_NO_CHATGPT_END_OUTPUT",
     "if_pc_offline": "PHONE_EDGE_QUEUES_LOCAL_EVENTS_AND_PC_RECONCILES_ON_RETURN",
     "if_telegram_direct_fails": "TRY_PHONE_EDGE_RELAY_IF_FRESH_REGISTERED_ELSE_PERSIST_OUTAGE",
     "if_drive_unavailable": "KEEP_LOCAL_DURABLE_STATE_AND_RETRY_WITH_BACKOFF",
     "preclose_snapshot_offset_minutes": 26,
     "normal_closeout_offset_minutes": 27,
-    "hard_close_guard_offset_minutes": 28,
+    "hard_close_guard_offset_minutes": 29,
     "absolute_end_deadline_minutes": 30,
-    "if_user_message_arrives_near_deadline": "DO_NOT_TREAT_USER_MESSAGE_AS_CLOSEOUT_TRIGGER; RECONCILE_WITH_TIMER_DRIVEN_END_STATE"
+    "if_user_message_arrives_near_deadline": "DO_NOT_TREAT_USER_MESSAGE_AS_CLOSEOUT_TRIGGER; RECONCILE_WITH_TIMER_DRIVEN_END_STATE",
+    "foreground_closeout": "PRIMARY_PATH_SEND_END_AND_VERIFY_GMAIL_BEFORE_RETURNING_FROM_ACTIVE_TRANCHE",
+    "background_guards": "BACKUP_ONLY; SEARCH_GMAIL_SENT_FOR_EXACT_CHECKPOINT; IF_MISSING_SEND_PRECOMPOSED_MINIMAL_END_THEN_VERIFY_MESSAGE_ID",
+    "scheduler_completion_semantics": "ADVISORY_ONLY_NOT_DELIVERY_PROOF",
+    "backup_end_template_ref": ".project-memory/END_FAILSAFE_TEMPLATE.json"
   },
   "cold_recovery": {
     "code": "BCPGO BCP",
@@ -105,6 +130,7 @@
       ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
       ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
       ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/END_FAILSAFE_TEMPLATE.json",
       ".project-memory/ACTIVE_TRANCHE.json",
       ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
       "project_state.json",
@@ -123,6 +149,8 @@
     "chatgpt_visible_is_not_assumed": true,
     "phone_queue_accepted_is_not_remote_delivery": true,
     "gmail_end_exists_requires": "SENT_MESSAGE_ID_PLUS_SEARCH_READBACK",
-    "duplicate_end_prevention": "SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND"
+    "duplicate_end_prevention": "SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND",
+    "scheduler_completed_is_not_delivery": true,
+    "user_relaunch_must_never_be_delivery_trigger": true
   }
 }

@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/10",
+  "schema": "bcp.interactive_work_cadence_policy/11",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 30,
@@ -24,7 +24,7 @@
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T17:39:00+01:00",
+  "updated_at": "2026-09-21T18:18:00+01:00",
   "target_internal_work_minutes": 30,
   "acceptable_internal_work_window_minutes": [
     27,
@@ -68,7 +68,10 @@
     "disable_watchdog_after_normal_end_ack": true,
     "preclose_snapshot_offset_minutes": 26,
     "normal_closeout_offset_minutes": 27,
-    "hard_close_guard_offset_minutes": 28,
-    "absolute_end_deadline_minutes": 30
+    "hard_close_guard_offset_minutes": 29,
+    "absolute_end_deadline_minutes": 30,
+    "foreground_end_send_primary": true,
+    "scheduler_completion_is_not_delivery_proof": true,
+    "backup_minimal_end_payload": true
   }
 }

@@ -1,0 +1,29 @@
+{
+  "schema": "bcp.end_failsafe_template/1",
+  "revision": "2026-09-21-R73",
+  "purpose": "Minimal Gmail END payload usable by backup closeout without deep GitHub/Drive synthesis.",
+  "recipient_source": "ESTABLISHED_BCP_GMAIL_RECIPIENT",
+  "label": "BCP",
+  "subject_template": "[BCP] FIN FAIL-SAFE {TRANCHE_ID} — {KINSHASA_DATETIME}",
+  "required_body_lines": [
+    "Projet: API / BCP",
+    "Tranche: {TRANCHE_ID}",
+    "Heure Kinshasa: {KINSHASA_DATETIME}",
+    "Statut: CLOSEOUT_FAILSAFE",
+    "Dernier checkpoint durable: {LATEST_DURABLE_POINTER}",
+    "Travail non vérifié ou encore en cours: {PENDING_TRUTH}",
+    "Code de reprise: BCPGO BCP",
+    "Ce mail clôt la tranche côté communication; il ne transforme pas un contrôle encore en cours en PASS."
+  ],
+  "delivery_proof": {
+    "send_result_message_id_required": true,
+    "gmail_sent_search_required": true,
+    "exact_tranche_id_match_required": true,
+    "bcp_label_required": true
+  },
+  "idempotency": {
+    "search_before_send": true,
+    "duplicate_end_forbidden": true,
+    "key": "{TRANCHE_ID}"
+  }
+}

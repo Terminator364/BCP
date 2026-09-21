@@ -114,7 +114,7 @@ def main() -> int:
         fail("dual_closeout_guard_contract")
     if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 27:
         fail("normal_closeout_offset_contract")
-    if int(cadence_delivery.get("hard_close_guard_offset_minutes") or 0) != 28:
+    if int(cadence_delivery.get("hard_close_guard_offset_minutes") or 0) != 29:
         fail("hard_close_guard_offset_contract")
     if int(cadence_delivery.get("absolute_end_deadline_minutes") or 0) != 30:
         fail("absolute_end_deadline_contract")
@@ -128,7 +128,7 @@ def main() -> int:
         fail("pre_human_runtime_layer_missing")
     if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
         fail("human_action_matrix_ref_drift")
-    if communication.get("schema") != "bcp.communication_survival_policy/2":
+    if communication.get("schema") != "bcp.communication_survival_policy/3":
         fail("communication_survival_schema")
     if communication.get("cold_recovery", {}).get("code") != "BCPGO BCP":
         fail("communication_cold_recovery_code")
@@ -142,6 +142,12 @@ def main() -> int:
         fail("communication_telegram_edge_fallback")
     if communication.get("anti_false_success", {}).get("phone_queue_accepted_is_not_remote_delivery") is not True:
         fail("communication_evidence_truth_boundary")
+    if communication.get("anti_false_success", {}).get("scheduler_completed_is_not_delivery") is not True:
+        fail("scheduler_completion_truth_boundary")
+    if email.get("scheduler_completion_is_not_delivery_proof") is not True:
+        fail("email_scheduler_completion_truth_boundary")
+    if email.get("foreground_end_send_primary") is not True:
+        fail("foreground_end_send_primary_contract")
     if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
         fail("human_action_matrix_schema")
     actions = human_actions.get("actions") or []
