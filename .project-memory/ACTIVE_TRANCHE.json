@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "ACTIVE",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSING",
   "started_at_kinshasa": "2026-09-21T22:21:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T22:44:00+01:00",
   "normal_end_target_kinshasa": "2026-09-21T22:46:00+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "final_app_reply_gate": "END_ACK_REQUIRED",
@@ -61,5 +61,13 @@
       "status": "CLOSED"
     }
   ],
-  "tranche_number_collision_note": "R77 label was reused at 22:21 after an earlier R77 closed at 21:40; delivery_key remains unique. Future tranche labels must advance monotonically from R78."
+  "tranche_number_collision_note": "R77 label was reused at 22:21 after an earlier R77 closed at 21:40; delivery_key remains unique. Future tranche labels must advance monotonically from R78.",
+  "no_more_product_mutations": true,
+  "close_intent_at_kinshasa": "2026-09-21T22:43:00+01:00",
+  "closeout_checkpoint": {
+    "product_head_before_close_intent": "a99e139f62d910003b734ef95e961fff0b856d1e",
+    "pr": 148,
+    "ci_truth": "CURRENT contract passed on prior exact head; Nexus stale dual-guard regression found and fixed; final head requalification pending; Android/field/product jobs pending.",
+    "no_release_published": true
+  }
 }
