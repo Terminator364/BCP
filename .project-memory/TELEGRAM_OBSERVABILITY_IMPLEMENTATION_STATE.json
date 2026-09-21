@@ -1,23 +1,25 @@
 {
   "schema": "bcp.telegram_observability_implementation_state/1",
-  "updated_at": "2026-09-19",
+  "updated_at": "2026-09-21",
   "mission": "BCPGO — TELEGRAM CONTROL PLANE / OBSERVABILITY MVP",
   "mode": "READ_ONLY",
   "budget_usd": 0,
   "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
-  "work_branch": "work/bcp/telegram-control-plane-observability-20260919",
-  "status": "KINSHASA_SMOKE_PASS_READ_ONLY_FIELD_ACTIVE",
-  "field_status": "KINSHASA_SMOKE_PASS",
+  "work_branch": "work/bcp/r61-comms-recovery-20260921",
+  "status": "R61_DIRECT_TELEGRAM_OUTAGE_NEXUS_RECOVERY_READY",
+  "field_status": "HISTORICAL_KINSHASA_SMOKE_PASS_CURRENT_DIRECT_EGRESS_OUTAGE",
   "implementation": {
     "worker": "windows/bcp_telegram_observability.py",
     "configurator": "windows/CONFIGURE_BCP_TELEGRAM.ps1",
     "field_guide": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
     "dependencies": "PYTHON_STANDARD_LIBRARY_ONLY",
-    "transport": "TELEGRAM_LONG_POLL",
+    "transport": "DIRECT_TELEGRAM_WITH_QUALIFIED_NEXUS_FAILOVER",
     "aggressive_polling": false,
     "private_chat_allowlist": true,
     "token_storage": "LOCAL_ONLY",
-    "read_only": true
+    "read_only": true,
+    "current_companion_version": "2026.09.21-comms-resilience-v19",
+    "direct_transport_outage_state": "DIRECT_TRANSPORT_OUTAGE"
   },
   "commands": [
     "/status",
@@ -47,7 +49,7 @@
     "STATUS_RESPONSE_PASS",
     "NORMAL_KINSHASA_NETWORK_NO_VPN"
   ],
-  "next_safe_action": "Human gate only: create bot with official @BotFather if not already created, then run the local configurator from the qualified Telegram package; token stays local. Complete Kinshasa getMe/getUpdates/sendMessage/status smoke.",
+  "next_safe_action": "After R61 exact-head CI and merge, perform exactly one fresh Nexus/Cloudflare device authorization using the already-qualified one-shot path. Then require provider-authenticated readback before switching Telegram receiver ownership to Nexus/webhook. Do not reinstall Telegram or re-enter the bot token.",
   "integration": {
     "pr_number": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
@@ -77,7 +79,19 @@
     "sendMessage_reply": "PASS",
     "status_command_reply": "PASS",
     "bot_username": "BlessingBCPCocpitbot",
-    "evidence_summary": "User received live /status replies in Telegram over normal Kinshasa mobile connectivity. Replies reported API/BCP state, GitHub CI, B-EDGE pairing, Drive receipt, BCP heartbeat and zero spend."
+    "evidence_summary": "User received live /status replies in Telegram over normal Kinshasa mobile connectivity. Replies reported API/BCP state, GitHub CI, B-EDGE pairing, Drive receipt, BCP heartbeat and zero spend.",
+    "current_runtime": {
+      "observed_at_utc": "2026-09-21T08:00:38+00:00",
+      "pc_name": "MBMPC",
+      "bcp_version": "0.7.13",
+      "telegram_process_alive": true,
+      "direct_telegram_state": "DEGRADED_RETRY",
+      "error_class": "URLError",
+      "error_detail_classification": "WINERROR_10060_REMOTE_TIMEOUT",
+      "consecutive_failures": 34,
+      "nexus_state": "HUMAN_AUTH_REQUIRED",
+      "direct_transport_restored": false
+    }
   },
   "runtime_snapshot_observed": {
     "global_state_latest": "BOOTSTRAP_FALLBACK",
@@ -110,5 +124,15 @@
     ],
     "field_verified": false,
     "scheduled_chatgpt_automation": false
+  },
+  "r61": {
+    "companion_version": "2026.09.21-comms-resilience-v19",
+    "outage_threshold_failures": 3,
+    "durable_outage_receipt": "state/telegram_transport_outage.json",
+    "recovery_state_on_success": "RECOVERED",
+    "qualified_failover_action": "FRESH_NEXUS_AUTHORIZATION_REQUIRED",
+    "user_reinstall_required": false,
+    "bot_token_reentry_required": false,
+    "r60_postmerge_ci": "ALL_PASS"
   }
 }
