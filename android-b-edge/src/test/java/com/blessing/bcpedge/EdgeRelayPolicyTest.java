@@ -16,10 +16,24 @@ public class EdgeRelayPolicyTest {
 
     @Test public void pairedBearerMustMatchExactly() {
         assertTrue(EdgeRelayPolicy.isValidProxyAuthorization("Bearer abc123", "abc123"));
+        assertTrue(EdgeRelayPolicy.isValidBearerAuthorization("Bearer abc123", "abc123"));
         assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Bearer abc124", "abc123"));
+        assertFalse(EdgeRelayPolicy.isValidBearerAuthorization("Bearer abc124", "abc123"));
         assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Basic abc123", "abc123"));
         assertFalse(EdgeRelayPolicy.isValidProxyAuthorization(null, "abc123"));
         assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Bearer abc123", ""));
+    }
+
+    @Test public void localApiSurfaceIsBounded() {
+        assertTrue(EdgeRelayPolicy.isPublicApiPath("GET", "/health"));
+        assertTrue(EdgeRelayPolicy.isPublicApiPath("GET", "/v1/node/capabilities"));
+        assertFalse(EdgeRelayPolicy.isPublicApiPath("GET", "/v1/node/status"));
+
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("GET", "/v1/node/status"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/sync"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/jobs"));
+        assertFalse(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/shell"));
+        assertFalse(EdgeRelayPolicy.isAllowedApiPath("GET", "/etc/passwd"));
     }
 
     @Test public void registrationFreshnessIsBounded() {
