@@ -37,12 +37,7 @@
         <service
             android:name=".EdgeRelayService"
             android:exported="false"
-            android:foregroundServiceType="remoteMessaging" />
-
-        <service
-            android:name=".EdgeNodeService"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice|remoteMessaging" />
+            android:foregroundServiceType="remoteMessaging|connectedDevice" />
 
         <receiver
             android:name=".EdgeBootReceiver"
