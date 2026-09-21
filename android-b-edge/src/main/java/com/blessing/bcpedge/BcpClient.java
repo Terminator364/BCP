@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.1-rc1-reentry";
+    private static final String EDGE_VERSION = "2.1.2-rc1-edge-relay";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
