@@ -76,6 +76,10 @@ def main() -> int:
     assert protocol["normal_close_reserve_minutes"] == 4
     assert protocol["backup_earliest_offset_minutes"] == 28
     assert protocol["hard_guard_offset_minutes"] == 29
+    assert protocol["threading"] == "PREFER_END_REPLY_TO_START_THREAD_WITH_VERIFIED_STANDALONE_FALLBACK"
+    assert protocol["idempotency"] == "DELIVERY_KEY_PLUS_GMAIL_SEARCH_PLUS_PROVIDER_MESSAGE_ID"
+    assert protocol["crash_recovery"]["scheduler_completed_without_gmail_end"].startswith("KEEP_TRANCHE_OPEN")
+    assert "OPEN_DELIVERY_FAILURE" in state_machine["delivery_states"]
 
     assert state_machine["schema"] == "bcp.communication_state_machine/2"
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]
@@ -88,6 +92,7 @@ def main() -> int:
     ]
     assert len(starts) == 1
     assert starts[0]["start_message_id"] == active["gmail_start_message_id"]
+    assert active["previous_tranche"]["end_email_message_id"] == "1a0c539e52ecf523"
 
     r73_ends = [
         row for row in ledger_rows
