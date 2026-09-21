@@ -341,6 +341,7 @@ public final class EdgeRelayService extends Service {
             out.put("permissions", EdgePermissionManager.status(this));
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
+            out.put("mission_steps", client.localMissionSteps(8, true));
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());
