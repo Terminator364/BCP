@@ -247,7 +247,9 @@ public final class EdgeRelayService extends Service {
                     .put("LOCAL_CONTEXT_SNAPSHOT")
                     .put("LOCAL_HEALTH_SNAPSHOT")
                     .put("LOCAL_QUEUE_SUMMARY")
-                    .put("LOCAL_MEMORY_COMPACT"));
+                    .put("LOCAL_MEMORY_COMPACT")
+                    .put("LOCAL_CONTENT_STORE_STATUS")
+                    .put("LOCAL_RECOVERY_CHECKPOINT"));
             caps.put("content_addressed_private_cache", true);
             caps.put("store_and_forward", true);
             caps.put("telegram_https_connect_relay", true);
