@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R60
+Revision: 2026-09-21-R62
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1811,3 +1811,29 @@ Canonical machine policies:
 - `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`
 - `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`
 - `.project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json`
+
+
+## P0 — Autonomous communication liveness across restart and network change / R62
+
+Field evidence showed two distinct communication failure modes that MUST be handled without using the user as a telemetry bus:
+
+1. the resident Telegram worker can be alive and polling successfully while the human sees no new message for hours because no event crossed the prior push threshold;
+2. a transient DNS/network failure during Nexus manifest staging can overwrite the visible Nexus delivery state with `STAGE_FAILED`, causing the explicit one-shot helper to misleadingly report `NO_HUMAN_AUTH_RETRY_NEEDED` even when a durable Cloudflare human-auth receipt previously existed.
+
+The communication plane MUST therefore:
+
+- emit a compact Telegram **BCP connected** notice after a genuine PC/worker restart once the direct Bot API path is actually proven healthy, with anti-spam suppression for quick worker restarts;
+- emit a compact **Telegram reconnected** notice after recovery from bounded direct transport failures, including Wi-Fi ↔ hotspot/mobile changes;
+- emit at most one silent lightweight **BCP still online** proof every 90 minutes while the PC and direct Telegram path remain healthy, so prolonged silence is not confused with a dead bot;
+- preserve bounded data use: no high-frequency healthy heartbeat spam and no large payload on these liveness notices;
+- persist transport-notice receipts locally and never mark a notice delivered if the Telegram send failed;
+- keep mission/event delivery and user commands independent from the liveness notice channel;
+- preserve a prior stable Nexus state and human-auth receipt when a later manifest check fails because of DNS/timeout/TLS/connection refusal;
+- when a one-shot Nexus retry is invoked during a network-stage failure, retry staging once immediately and, if the network is still unavailable, return a truthful automatic recovery state instead of a misleading success/no-retry result;
+- never reuse stale Cloudflare device codes and never enable automatic localhost:8976 fallback;
+- keep Gmail START -> work -> Gmail END provider acknowledgement -> ChatGPT pointer-only as the primary tranche communication order;
+- arm an automatic tranche-end watchdog at START so the user never has to send “eh oh” merely to obtain the END checkpoint.
+
+Target coordinated release:
+- BCP server **0.7.14**;
+- Telegram companion **2026.09.21-comms-autonomy-v20**.
