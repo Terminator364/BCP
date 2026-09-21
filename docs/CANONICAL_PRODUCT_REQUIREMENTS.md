@@ -1789,3 +1789,5 @@ For the current Nexus authorization path, qualification includes both the server
 ## P0 — Interactive work cadence
 
 Normal interactive technical work uses a ~25-minute useful-work tranche: target 25 minutes, with approximately the final minute reserved for durable checkpoint/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. The full checkpoint is sent by email first; ChatGPT then shows only the short Gmail/date-time/checkpoint pointer after confirmed mail delivery.
+
+The durable `project_state.json` must expose the currently active cadence and simulation-gate policy so a fresh `BCPGO BCP` recovery cannot regress to a superseded 5–7 or 8–10 minute rule or ask the user to repeat an unqualified action path.
