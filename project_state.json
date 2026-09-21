@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R58_CANDIDATE_CI_QUALIFICATION_IN_PROGRESS_NEXUS_HUMAN_GATE_PAUSED",
-  "last_completed_atomic_action": "R58 candidate prepared: BCP 0.7.13 fixes the Nexus explicit-retry HTTP 500 caused by missing uuid import; 25-minute target cadence, email-first/ChatGPT-pointer-only recovery, and pre-human action simulation gate are persisted. Exact Windows runtime retry simulation and exact PowerShell helper success/HTTP500 negative-control simulations are passing on the candidate branch.",
-  "next_action": "Finish exact-head R58 qualification. If all required workflows pass, re-read main and merge PR #126 through the single-writer fence. Then require managed PC update/readback to BCP 0.7.13 before asking the user to retry Nexus. Only after 0.7.13 field readback may one fresh Cloudflare device authorization be requested; provider-authenticated whoami/readback remains required for Nexus completion.",
+  "status": "R58_MERGED_POSTMERGE_CI_RUNNING_FIELD_UPDATE_PENDING",
+  "last_completed_atomic_action": "R58 merged to main at 0db531771d631ebade0847494baf3ca82c713674 after exact-head CI PASS. BCP 0.7.13 includes the Nexus retry uuid fix. 25-minute target cadence, email-first/ChatGPT-pointer-only delivery, and pre-human action simulation are now canonical. Exact Windows runtime retry simulation and exact one-shot PowerShell success/HTTP500 negative-control simulation passed before merge.",
+  "next_action": "No user action yet. Finish/read post-merge CI and wait for machine-readable field readback proving MBMPC has automatically advanced from BCP 0.7.12 to 0.7.13. Only after 0.7.13 is field-read back may BCP request one fresh Nexus Cloudflare device authorization. After consent, require provider-authenticated whoami/readback before declaring Nexus complete.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1999,42 +1999,32 @@
     "superseded_by": "R58_25_MINUTE_EMAIL_FIRST_SIMULATION_GATE"
   },
   "continuity_handoff": {
-    "checkpoint_id": "BCP-R56-CONTINUITY-HANDOFF-20260920",
+    "checkpoint_id": "BCP-R58-POSTMERGE-CONTINUITY-20260921",
     "continuation_code": "BCPGO BCP",
-    "purpose": "Fresh-conversation cold bootstrap for the active API/BCP project",
-    "canonical_main_sha": "f07df7ecd2963f998a3defa9f55a3803008c590f",
-    "delivery_policy": "R55_EMAIL_ONLY_DETAILED_CHECKPOINT_8_TO_10_MIN",
-    "runtime_observed_at_utc": "2026-09-20T22:53:23+00:00",
-    "runtime": {
-      "pc": "MBMPC",
-      "bcp_version": "0.7.12",
-      "bcp_update_state": "UP_TO_DATE",
-      "chatgpt_pc_version": "6.0.34",
-      "chatgpt_pc_sequence": 6034,
-      "chatgpt_pc_command_plane": "ALIVE",
+    "purpose": "Fresh-conversation cold bootstrap after R58 merge",
+    "canonical_main_sha": "0db531771d631ebade0847494baf3ca82c713674",
+    "delivery_policy": "R58_EMAIL_FIRST_CHAT_POINTER_25_MIN_TARGET",
+    "pre_human_action_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "current_field_truth": {
+      "bcp_observed_version": "0.7.12",
+      "bcp_target_version": "0.7.13",
+      "bcp_update_readback": "PENDING",
       "telegram_state": "ACTIVE",
       "telegram_mode": "DIRECT_TELEGRAM",
-      "telegram_consecutive_failures": 0,
       "nexus_bundle_version": "0.2.6",
       "nexus_state": "HUMAN_AUTH_REQUIRED",
-      "nexus_error_class": "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED",
-      "ram_percent": 83,
-      "available_memory_mb": 600,
-      "power_source": "AC",
-      "battery_percent": 95
+      "nexus_retry_before_0_7_13_readback_forbidden": true
     },
     "current_human_gate": {
-      "gate": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
-      "drive_helper_file": "BCP_NEXUS_AUTH_CURRENT.zip",
-      "drive_helper_file_id": "1G4Vgu4iraKsWzFSdpwHehFb2QYUoqJmJ",
-      "action_model": "ONE_ZIP_ONE_EXTRACTION_ONE_CMD_ONE_FRESH_DEVICE_FLOW",
+      "gate": "NO_USER_ACTION_WHILE_BCP_0_7_13_CONVERGENCE_PENDING",
+      "next_irreducible_gate_after_readback": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
       "stale_code_reuse_forbidden": true,
       "localhost_8976_fallback_forbidden": true,
       "nexus_success_requires_provider_readback": true
     }
   },
   "r58_delivery_and_simulation_policy": {
-    "status": "IMPLEMENTED_CANDIDATE_CI_QUALIFICATION_IN_PROGRESS",
+    "status": "MERGED_MAIN_POSTMERGE_CI_RUNNING",
     "revision": "2026-09-21-R58",
     "target_tranche_minutes": 25,
     "practical_window_minutes": [
@@ -2048,6 +2038,9 @@
     "exact_nexus_server_retry_runtime_simulation": true,
     "exact_nexus_powershell_helper_simulation": true,
     "http_500_negative_control": true,
-    "field_verified": false
+    "field_verified": false,
+    "merge_sha": "0db531771d631ebade0847494baf3ca82c713674",
+    "exact_head_sha": "c37b770063d061194fb109ab6b3c4b9cc9ffc9c2",
+    "exact_head_ci": "PASS"
   }
 }
