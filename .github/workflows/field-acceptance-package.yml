@@ -9,6 +9,13 @@ on:
       - "windows/bcp_server.py"
       - "release/server.json"
       - ".github/workflows/field-acceptance-package.yml"
+  pull_request:
+    paths:
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
+      - "windows/bcp_server.py"
+      - "release/server.json"
+      - ".github/workflows/field-acceptance-package.yml"
 
 permissions:
   contents: read
