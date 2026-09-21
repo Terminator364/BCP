@@ -28,6 +28,15 @@ public interface EdgeDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insertDependency(EdgeDependencyEntity dependency);
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insertEvent(EdgeEventEntity event);
+
+    @Query("SELECT * FROM edge_events WHERE projectId = :projectId ORDER BY occurredAt DESC LIMIT :limit")
+    List<EdgeEventEntity> recentEvents(String projectId, int limit);
+
+    @Query("SELECT COUNT(*) FROM edge_events WHERE projectId = :projectId")
+    int eventCount(String projectId);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void putSentinel(EdgeSentinelEntity sentinel);
 
