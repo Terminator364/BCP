@@ -1,3 +1,31 @@
+# R64 Fresh Conversation Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+R64 closes a real implementation gap: the dedicated old phone is infrastructure, not a passive client.
+
+Current candidate:
+- PR #133 on branch `work/bcp/r64-phone-edge-adaptive-comms-20260921-1312`;
+- BCP 0.7.15: fresh private-LAN B-EDGE relay registration + relay liveness in runtime telemetry;
+- B-EDGE 2.1.2 candidate: dedicated remote-messaging foreground relay, Room/WorkManager continuity retained;
+- Telegram V21: direct Bot API first, then B-EDGE HTTPS CONNECT failover only on network transport failure;
+- relay target is strictly `api.telegram.org:443`; no GitHub/Drive/APK/bulk relay;
+- Telegram TLS remains end-to-end; B-EDGE does not need the Telegram bot token;
+- no SIM is assumed in the old phone. It uses any available Wi-Fi uplink; without uplink, remote delivery waits durably and local state survives.
+
+Normal recovery:
+1. Gmail START before substantive work.
+2. Target ~25 minutes.
+3. Finish/read exact-head PR #133 CI; auto-fix simulation failures without user retry.
+4. Merge only through the single-writer fence.
+5. Field-promote server/phone/Telegram only after exact version/hash/signing/readback gates.
+6. Gmail END must be provider-acknowledged before any ChatGPT end output.
+7. ChatGPT remains pointer-only after successful END.
+
+Do not ask the user to reinstall or repeat clicks while R64 is still CI/field-unverified.
+
+---
+
 # R62 Post-Merge Communication Handoff — 2026-09-21
 
 Canonical main integration:
