@@ -29,16 +29,23 @@ public class EdgeCommunicationJournalInstrumentedTest {
         payload.put("text", "offline communication proof");
         payload.put("source_node", "ANDROID_EMULATOR");
 
-        JSONObject queued = client.queueJob("LOCAL_COMMUNICATION_RECORD", payload, false);
+        JSONObject queued = client.recordCommunication(payload);
         assertTrue("must execute locally without PC", queued.optBoolean("executed_locally", false));
+        assertFalse(queued.optBoolean("duplicate_suppressed", true));
+
+        JSONObject duplicate = client.recordCommunication(payload);
+        assertEquals("ALREADY_COMMITTED", duplicate.optString("result", ""));
+        assertTrue(duplicate.optBoolean("duplicate_suppressed", false));
 
         JSONArray rows = client.communicationHistory();
         boolean found = false;
+        int matches = 0;
         for (int i = 0; i < rows.length(); i++) {
             JSONObject row = rows.optJSONObject(i);
             if (row == null) continue;
             if (key.equals(row.optString("record_id", ""))) {
                 found = true;
+                matches++;
                 JSONObject value = row.optJSONObject("value");
                 assertNotNull(value);
                 assertEquals("offline communication proof", value.optString("text", ""));
@@ -47,5 +54,6 @@ public class EdgeCommunicationJournalInstrumentedTest {
             }
         }
         assertTrue("durable communication record must be readable locally", found);
+        assertEquals("same delivery key must not create duplicate history rows", 1, matches);
     }
 }
