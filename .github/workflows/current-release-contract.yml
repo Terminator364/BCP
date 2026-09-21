@@ -16,6 +16,9 @@ on:
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      - ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
+      - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
       - ".github/workflows/current-release-contract.yml"
   push:
     paths:
