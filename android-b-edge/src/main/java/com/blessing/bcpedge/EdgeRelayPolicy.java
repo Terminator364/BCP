@@ -37,6 +37,7 @@ public final class EdgeRelayPolicy {
     public static boolean isAllowedApiPath(String method, String path) {
         if (isPublicApiPath(method, path)) return true;
         if ("GET".equalsIgnoreCase(method) && "/v1/node/status".equals(path)) return true;
+        if ("GET".equalsIgnoreCase(method) && "/v1/node/context".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/sync".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/jobs".equals(path)) return true;
         return false;
