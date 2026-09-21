@@ -60,12 +60,24 @@ public final class EdgePresenceAdvertiser {
             if (nsd != null && nsdListener != null) nsd.unregisterService(nsdListener);
         } catch (Exception ignored) {}
         try {
-            if (bleAdvertiser != null && bleCallback != null) bleAdvertiser.stopAdvertising(bleCallback);
+            boolean bleAllowed = Build.VERSION.SDK_INT < 31
+                    || context.checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE)
+                    == PackageManager.PERMISSION_GRANTED;
+            if (bleAllowed && bleAdvertiser != null && bleCallback != null) {
+                bleAdvertiser.stopAdvertising(bleCallback);
+            }
+        } catch (SecurityException ignored) {
         } catch (Exception ignored) {}
         try {
-            if (p2p != null && p2pChannel != null && p2pService != null) {
+            boolean p2pAllowed = Build.VERSION.SDK_INT >= 33
+                    ? context.checkSelfPermission(Manifest.permission.NEARBY_WIFI_DEVICES)
+                        == PackageManager.PERMISSION_GRANTED
+                    : context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED;
+            if (p2pAllowed && p2p != null && p2pChannel != null && p2pService != null) {
                 p2p.removeLocalService(p2pChannel, p2pService, null);
             }
+        } catch (SecurityException ignored) {
         } catch (Exception ignored) {}
     }
 
