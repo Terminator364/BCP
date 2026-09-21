@@ -368,7 +368,7 @@ def main() -> int:
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
     assert cadence_policy["acceptable_window_minutes"] == [24, 25]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [20, 25]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [24, 25]
     assert delivery_policy["cadence"]["work_slice_minutes"] == "24-25"
     assert delivery_policy["cadence"]["target_minutes"] == 25
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
