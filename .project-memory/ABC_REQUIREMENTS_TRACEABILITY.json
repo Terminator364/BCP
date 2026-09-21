@@ -1,0 +1,579 @@
+{
+  "schema": "bcp.abc_requirements_traceability/1",
+  "revision": "2026-09-21-R76",
+  "status": "CANONICAL_CANDIDATE",
+  "rule": "FULL_CAHIER_DES_CHARGES_EQUALS_A_PLUS_B_PLUS_C; NO_PARTIAL_SUBSET_MAY_BE_PRESENTED_AS_THE_PRODUCT",
+  "authority": {
+    "A": [
+      "BCP V0.7 AX15GO SEALED preconception",
+      "BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf",
+      "APIAX07_HANDOFF.md"
+    ],
+    "B": [
+      "official platform documentation and architecture research",
+      "measured implementation constraints",
+      "cross-project reusable engineering patterns"
+    ],
+    "C": [
+      "durable user feedback and field evidence through R76",
+      "current canonical requirements",
+      "communication/UI/phone-utilization corrections"
+    ]
+  },
+  "scoring": {
+    "weights_total": 100,
+    "status_factors": {
+      "PROVEN_FIELD": 1,
+      "PROVEN_NATIVE": 0.85,
+      "PROVEN_CI": 0.7,
+      "PARTIAL": 0.4,
+      "DESIGN_ONLY": 0.15,
+      "MISSING": 0
+    },
+    "note": "This is an engineering maturity score against the full A+B+C capability matrix, not a claim that every individual requirement is equally difficult.",
+    "overall_percent": 45.9,
+    "by_class": {
+      "A": {
+        "weight": 45,
+        "earned": 20.8,
+        "percent": 46.3
+      },
+      "B": {
+        "weight": 35,
+        "earned": 14.6,
+        "percent": 41.8
+      },
+      "C": {
+        "weight": 20,
+        "earned": 10.4,
+        "percent": 52
+      }
+    }
+  },
+  "requirements": [
+    {
+      "id": "A01",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Canonical project identity, HEAD, append-only events and checkpoint",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "project_state.json",
+        "API_PROJECT_CONTINUITY.md"
+      ],
+      "gap": "Field recovery across all projects remains incomplete.",
+      "score_factor": 0.7,
+      "earned_weight": 2.1
+    },
+    {
+      "id": "A02",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Structured allowlisted jobs with schema, idempotency, fencing and expiry",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "windows/bcp_server.py",
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Not every adapter uses the full contract end-to-end.",
+      "score_factor": 0.7,
+      "earned_weight": 2.1
+    },
+    {
+      "id": "A03",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Machine receipts, artifacts, hashes and proof-carrying claims",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "release/current.json",
+        "tools/validate_current_release.py"
+      ],
+      "gap": "Coverage varies by adapter and field path.",
+      "score_factor": 0.7,
+      "earned_weight": 2.1
+    },
+    {
+      "id": "A04",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Universal offline OUTBOX/INBOX on phone and PC",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java"
+      ],
+      "gap": "Phone queue exists; universal cross-adapter PC+phone semantics are not fully field-proven.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A05",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Capability Registry and capability-aware routing",
+      "status": "PARTIAL",
+      "evidence": [
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Capabilities exist in several surfaces but are not yet one complete runtime registry.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A06",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Global recovery pointer and cold conversation takeover",
+      "status": "PARTIAL",
+      "evidence": [
+        ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+        ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      ],
+      "gap": "Durable takeover works structurally but communication closeout drift showed incomplete enforcement.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A07",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Local-first survival across Internet, power and PC reboot",
+      "status": "PARTIAL",
+      "evidence": [
+        ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+        "windows/bcp_server.py"
+      ],
+      "gap": "Real power-cut and multi-day partition gates remain open.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A08",
+      "source_class": "A",
+      "weight": 3,
+      "title": "CORE separated from project/service adapters",
+      "status": "PARTIAL",
+      "evidence": [
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Repository still contains adapter-specific coupling that needs a formal core interface.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A09",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Thin cloud coordination, not bulk authority",
+      "status": "PARTIAL",
+      "evidence": [
+        "nexus/cloudflare-worker/src/worker.mjs",
+        "docs/BCP_NEXUS_FIELD_GATE.md"
+      ],
+      "gap": "Tenant/Project coordination model from preconception is not fully realized.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A10",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Approval lanes, least privilege, no arbitrary shell, external content as data",
+      "status": "PROVEN_CI",
+      "evidence": [
+        ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java"
+      ],
+      "gap": "Field validation of all R2/R3 mappings remains incomplete.",
+      "score_factor": 0.7,
+      "earned_weight": 2.1
+    },
+    {
+      "id": "A11",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Explicit RAM/CPU/battery/network/storage/cloud budgets with graceful degradation",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeResourceGovernor.java",
+        "windows/bcp_server.py"
+      ],
+      "gap": "Budgets are not yet unified across every worker and adapter.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A12",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Unified human cockpit for projects, blockers, evidence and next action",
+      "status": "PARTIAL",
+      "evidence": [
+        "windows/bcp_telegram_observability.py",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
+      ],
+      "gap": "No single mature cross-project cockpit is field-qualified.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A13",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Retention plus portable export/migration JSONL+SQLite+manifest",
+      "status": "DESIGN_ONLY",
+      "evidence": [
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "No full export/import round-trip evidence.",
+      "score_factor": 0.15,
+      "earned_weight": 0.45
+    },
+    {
+      "id": "A14",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Reusable multi-project adapters across PhoneMouse, BuildHub, P2PCR95 and future projects",
+      "status": "PARTIAL",
+      "evidence": [
+        "project_state.json"
+      ],
+      "gap": "Several projects are referenced, but adapter parity is incomplete.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "A15",
+      "source_class": "A",
+      "weight": 3,
+      "title": "Minimum human handoff: user is not telemetry bus",
+      "status": "PARTIAL",
+      "evidence": [
+        "API_PROJECT_CONTINUITY.md"
+      ],
+      "gap": "Recent communication and install loops prove manual friction still exists.",
+      "score_factor": 0.4,
+      "earned_weight": 1.2
+    },
+    {
+      "id": "B01",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Dedicated old phone becomes primary low-power Edge/API appliance, not accessory",
+      "status": "PARTIAL",
+      "evidence": [
+        "release/android_candidate.json",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ],
+      "gap": "2.2 full-node is candidate, not field-promoted.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B02",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Optional fully-managed/Device-Owner appliance mode for truly dedicated phone",
+      "status": "DESIGN_ONLY",
+      "evidence": [
+        "docs/R76_ABC_RESEARCH_AND_ARCHITECTURE.md"
+      ],
+      "gap": "DPC/device-owner provisioning path not implemented or field-tested.",
+      "score_factor": 0.15,
+      "earned_weight": 0.375
+    },
+    {
+      "id": "B03",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Authenticated phone-hosted local API server with status/context/sync/jobs/capabilities",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ],
+      "gap": "Field install still runs older 2.1.2 line.",
+      "score_factor": 0.7,
+      "earned_weight": 1.75
+    },
+    {
+      "id": "B04",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Multi-transport local discovery and fallback: LAN/NSD, hotspot, Wi-Fi Direct, BLE presence",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgePresenceAdvertiser.java"
+      ],
+      "gap": "Transport selection/failover needs real phone-PC field qualification.",
+      "score_factor": 0.7,
+      "earned_weight": 1.75
+    },
+    {
+      "id": "B05",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Exploit dedicated 64GB storage with adaptive reserve instead of fixed small cache",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java"
+      ],
+      "gap": "Current cap is 8GiB, materially underusing a dedicated 64GB node.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B06",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Phone durable operational memory with layered current/history/policy state",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java"
+      ],
+      "gap": "Layered memory exists but long-horizon indexing/search and recovery tests are incomplete.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B07",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Useful phone-side deterministic executor while PC is absent",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeLocalTaskEngine.java"
+      ],
+      "gap": "Only four maintenance/snapshot tasks are currently supported.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B08",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Phone-first communication broker and provider-proof store-and-forward",
+      "status": "PARTIAL",
+      "evidence": [
+        ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ],
+      "gap": "Telegram field relay is not registered in installed 2.1.2 and Gmail is not phone-native.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B09",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Encrypted/pinned local API transport beyond cleartext LAN bearer",
+      "status": "MISSING",
+      "evidence": [
+        "android-b-edge/src/main/AndroidManifest.xml"
+      ],
+      "gap": "usesCleartextTraffic=true and HTTP local API remain; target needs TLS/pinned pairing or equivalent authenticated encryption.",
+      "score_factor": 0,
+      "earned_weight": 0
+    },
+    {
+      "id": "B10",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Boot restoration, foreground server and durable maintenance scheduling",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeBootReceiver.java",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/BcpEdgeApplication.java"
+      ],
+      "gap": "OEM-specific background survival still needs target-phone field evidence.",
+      "score_factor": 0.7,
+      "earned_weight": 1.75
+    },
+    {
+      "id": "B11",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Power-loss-aware SQLite durability policy and bounded WAL checkpointing",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java"
+      ],
+      "gap": "Critical-table durability classes and real abrupt-power-loss tests are not closed.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B12",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Fast on-device memory search/index for context reconstruction",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java"
+      ],
+      "gap": "Need explicit FTS/index strategy and bounded retrieval proof.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B13",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Phone as recovery replica and continuity authority when PC is offline",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeOrchestrator.java"
+      ],
+      "gap": "EDGE_ONLY is useful but not yet able to advance enough project/control operations independently.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "B14",
+      "source_class": "B",
+      "weight": 2.5,
+      "title": "Server-grade phone UI: node health, projects, queue, communications, storage, transports, permissions, recovery",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
+      ],
+      "gap": "Candidate UI is not yet visually/field qualified as a coherent appliance cockpit.",
+      "score_factor": 0.4,
+      "earned_weight": 1
+    },
+    {
+      "id": "C01",
+      "source_class": "C",
+      "weight": 2,
+      "title": "No micro-beta install loop; release only coherent integrated candidate",
+      "status": "PROVEN_CI",
+      "evidence": [
+        "release/android_candidate.json",
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Must remain enforced through signing/Drive field promotion.",
+      "score_factor": 0.7,
+      "earned_weight": 1.4
+    },
+    {
+      "id": "C02",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Simulate representative PC/Android path before asking user to click/install",
+      "status": "PROVEN_CI",
+      "evidence": [
+        ".github/workflows/android-human-action-simulation.yml",
+        ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+      ],
+      "gap": "Physical/OEM-only behaviors remain irreducibly field-bound.",
+      "score_factor": 0.7,
+      "earned_weight": 1.4
+    },
+    {
+      "id": "C03",
+      "source_class": "C",
+      "weight": 2,
+      "title": "25-minute tranche: START, ~23 min useful work, 2 min close, END provider proof, then pointer",
+      "status": "PARTIAL",
+      "evidence": [
+        ".project-memory/COMMUNICATION_PROTOCOL.json"
+      ],
+      "gap": "R76 is first tranche on corrected cadence; field/process proof still pending.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    },
+    {
+      "id": "C04",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Project-labeled Gmail START/END detailed checkpoints",
+      "status": "PROVEN_FIELD",
+      "evidence": [
+        ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
+      ],
+      "gap": "Need normal-primary END reliability without recovery guards.",
+      "score_factor": 1,
+      "earned_weight": 2
+    },
+    {
+      "id": "C05",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Telegram resilient witness/secondary cockpit with phone relay fallback",
+      "status": "PARTIAL",
+      "evidence": [
+        "windows/bcp_telegram_observability.py"
+      ],
+      "gap": "Current field Telegram direct transport outage and inactive installed phone relay.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    },
+    {
+      "id": "C06",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Stop underusing the dedicated old phone; shift durable low-power duties off PC",
+      "status": "PARTIAL",
+      "evidence": [
+        "release/android_candidate.json"
+      ],
+      "gap": "2.2 candidate is a large step but field system is still 2.1.2 and PC remains too central.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    },
+    {
+      "id": "C07",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Minimize mobile-data cost and operate over weak/variable RDC connectivity",
+      "status": "PARTIAL",
+      "evidence": [
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java"
+      ],
+      "gap": "Need measured data budgets and field failover receipts.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    },
+    {
+      "id": "C08",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Professional, comprehensible phone UI matching full server functions",
+      "status": "PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
+      ],
+      "gap": "Installed UI feedback remains negative; visual acceptance matrix not closed.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    },
+    {
+      "id": "C09",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Cold new conversation resumes without re-explaining communication/project rules",
+      "status": "PARTIAL",
+      "evidence": [
+        ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+        ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      ],
+      "gap": "Needs fresh-chat proof after R76 cadence/spec update.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    },
+    {
+      "id": "C10",
+      "source_class": "C",
+      "weight": 2,
+      "title": "Zero-dollar, weak-PC, unstable-power architecture remains usable and self-healing",
+      "status": "PARTIAL",
+      "evidence": [
+        "project_state.json",
+        ".project-memory/AI_PROVIDER_PLAN_RDC.json"
+      ],
+      "gap": "End-to-end field endurance/chaos acceptance is still open.",
+      "score_factor": 0.4,
+      "earned_weight": 0.8
+    }
+  ]
+}
