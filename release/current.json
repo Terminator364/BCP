@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.15",
+      "version": "0.7.16",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "99a91cef43c771c7cdd9807787517685ec3a1749050e5a5ce52022bb08e269cd"
+        "sha256": "582110afc0fbb59361d24750236f11a48bbaad3fb93b8dd3d001c29db40aae95"
       },
-      "notes": "BCP 0.7.15 adds authenticated short-lived B-EDGE relay registration and external relay liveness; field promotion follows exact-head qualification."
+      "notes": "BCP 0.7.16 adds durable readback of Telegram direct-vs-phone-relay transport while preserving authenticated B-EDGE relay registration and low-resource operation."
     },
     "android_b_edge": {
       "version": "2.1.2-rc1-edge-relay-evergreen",
@@ -56,7 +56,7 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.21-edge-relay-v21",
+    "version": "2026.09.21-comms-survival-v22",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -161,7 +161,8 @@
       "relay restricted to api.telegram.org:443 with bounded connection and timeout policy",
       "relay registration expires quickly and is externalized in runtime telemetry",
       "dedicated old-phone uplink is Wi-Fi/hotspot agnostic and does not assume a SIM",
-      "no-uplink state is durable NETWORK_WAIT/store-and-forward rather than fake delivery"
+      "no-uplink state is durable NETWORK_WAIT/store-and-forward rather than fake delivery",
+      "durable direct-vs-B-EDGE transport route receipt externalized in BCP runtime telemetry"
     ]
   }
 }
