@@ -1,27 +1,27 @@
 {
-  "schema": "bcp.active_tranche/4",
+  "schema": "bcp.active_tranche/5",
   "project": "API/BCP",
-  "tranche_id": "BCP-R77-START-20260921-2221",
-  "delivery_key": "BCP25-20260921-2221-R77",
+  "tranche_id": "BCP-R77-START-20260921-2251",
+  "delivery_key": "BCP25-20260921-2251-R77",
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "CHECKPOINTED",
-  "delivery_state": "CLOSED",
-  "status": "CLOSED",
-  "started_at_kinshasa": "2026-09-21T22:21:00+01:00",
-  "close_reserve_begins_kinshasa": "2026-09-21T22:44:00+01:00",
-  "normal_end_target_kinshasa": "2026-09-21T22:46:00+01:00",
-  "gmail_start_message_id": "1a0c5d832fe31948",
-  "gmail_start_thread_id": "1a0c5d832fe31948",
-  "gmail_end_message_id": "1a0c5ed527a2cc96",
-  "gmail_end_thread_id": "1a0c5ed527a2cc96",
-  "end_mail_verified": true,
+  "work_state": "WORKING",
+  "delivery_state": "START_ACKNOWLEDGED",
+  "status": "ACTIVE",
+  "started_at_kinshasa": "2026-09-21T22:51:26+01:00",
+  "close_reserve_begins_kinshasa": "2026-09-21T23:14:26+01:00",
+  "normal_end_target_kinshasa": "2026-09-21T23:16:26+01:00",
+  "gmail_start_message_id": "1a0c5f3d387fc1b3",
+  "gmail_start_thread_id": "1a0c5f3d387fc1b3",
+  "gmail_end_message_id": null,
+  "gmail_end_thread_id": null,
+  "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": true,
+  "close_intent_persisted": false,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
-  "final_app_reply_gate": "OPEN_AFTER_END_ACK",
+  "final_app_reply_gate": "END_ACK_REQUIRED",
   "communication_guard": {
     "final_app_reply_requires_end_ack_persisted": true,
     "closed_tranche_reuse_forbidden": true,
@@ -32,43 +32,20 @@
     "normal_closeout_depends_on_automation": false
   },
   "work_scope": [
-    "RECONSTRUCT_INTEGRAL_A_PLUS_B_PLUS_C_SPEC",
-    "MEASURE_PRODUCT_AGAINST_FULL_DENOMINATOR",
-    "ADVANCE_PHONE_FULL_NODE_WITH_UCMF_CHRONICLE",
-    "STABILIZE_25_MIN_PRIMARY_ASSISTANT_COMMUNICATION",
-    "SYNC_BCPGO_COLD_CONTINUITY"
+    "RECONCILE_R77_ABC_CANDIDATE_AND_FIX_FIELD_CI",
+    "READ_A_SOURCE_HANDOFF_DOSSIER_UCMF_V4",
+    "REFRESH_A_PLUS_B_PLUS_C_COVERAGE",
+    "SYNC_25_MIN_COMMUNICATION_AND_BCPGO",
+    "CONTINUE_PHONE_FULL_NODE_WITHOUT_MICRO_BETA"
   ],
-  "branch": "work/bcp/r77-abc-integral-25min-20260921-2221",
-  "previous_verified_closures": [
-    {
-      "delivery_key": "BCP30-20260921-1901-R74",
-      "gmail_end_message_id": "1a0c539e52ecf523",
-      "status": "CLOSED"
-    },
-    {
-      "delivery_key": "BCP30-20260921-1958-R75",
-      "gmail_end_message_id": "1a0c570d27ec8e58",
-      "status": "CLOSED"
-    },
-    {
-      "delivery_key": "BCP25-20260921-2037-R76",
-      "gmail_end_message_id": "1a0c58ef9561fec6",
-      "status": "CLOSED"
-    },
-    {
-      "delivery_key": "BCP25-20260921-2117-R77",
-      "gmail_end_message_id": "1a0c5b31645975c9",
-      "status": "CLOSED"
-    }
-  ],
-  "tranche_number_collision_note": "R77 label was reused at 22:21 after an earlier R77 closed at 21:40; delivery_key remains unique. Future tranche labels must advance monotonically from R78.",
-  "no_more_product_mutations": true,
-  "close_intent_at_kinshasa": "2026-09-21T22:43:00+01:00",
-  "closeout_checkpoint": {
-    "product_head_before_close_intent": "a99e139f62d910003b734ef95e961fff0b856d1e",
-    "pr": 148,
-    "ci_truth": "CURRENT contract passed on prior exact head; Nexus stale dual-guard regression found and fixed; final head requalification pending; Android/field/product jobs pending.",
-    "no_release_published": true
+  "branch": "work/bcp/r78-abc-reconcile-ci-20260921-2251",
+  "previous_verified_closure": {
+    "tranche_id": "BCP-R77-START-20260921-2221",
+    "delivery_key": "BCP25-20260921-2221-R77",
+    "gmail_end_message_id": "1a0c5ed527a2cc96",
+    "closed_at_kinshasa": "2026-09-21T22:45:00+01:00",
+    "status": "CLOSED"
   },
-  "closed_at_kinshasa": "2026-09-21T22:45:00+01:00"
+  "tranche_number_collision_note": "The external START reused R77 at 22:51 after earlier R77 closures. Delivery key is unique. Internal engineering line advances as R78; next user-visible tranche label MUST be R78 or higher.",
+  "no_more_product_mutations": false
 }
