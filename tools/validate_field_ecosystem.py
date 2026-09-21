@@ -411,10 +411,10 @@ def main() -> int:
     cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
-    assert cadence_policy["acceptable_window_minutes"] == [24, 25]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [24, 25]
-    assert delivery_policy["cadence"]["work_slice_minutes"] == "24-25"
-    assert delivery_policy["cadence"]["target_minutes"] == 25
+    assert cadence_policy["acceptable_window_minutes"] == [29, 30]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [29, 30]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "29-30"
+    assert delivery_policy["cadence"]["target_minutes"] == 30
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
     assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK"
