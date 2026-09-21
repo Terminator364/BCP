@@ -13,6 +13,10 @@ On a fresh conversation, this code means:
 - never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
+### 25-minute END watchdog — R61
+
+At each Gmail START, arm a one-shot assistant watchdog for +25 minutes. The watchdog must check whether this tranche's END Gmail already has a provider send acknowledgement. If yes, it does nothing. If no, it sends an accurate END checkpoint from the latest durable state and only then may a ChatGPT pointer appear. A normal successful END disables the watchdog. This removes dependence on the user sending “eh oh” or another relaunch just to close a tranche.
+
 ### START/END Gmail handshake — R60
 For every user-invoked continuation/relaunch/message that starts project work:
 1. perform only the minimum routing/context lookup needed to know the project;
