@@ -40,6 +40,12 @@ public interface EdgeDao {
     @Query("SELECT * FROM edge_memory_claims WHERE projectId = :projectId ORDER BY admittedAt DESC LIMIT :limit")
     List<EdgeMemoryClaimEntity> memoryClaims(String projectId, int limit);
 
+    @Query("SELECT * FROM edge_memory_claims WHERE claimId = :claimId LIMIT 1")
+    EdgeMemoryClaimEntity memoryClaimById(String claimId);
+
+    @Query("SELECT * FROM edge_memory_claims WHERE projectId = :projectId AND scope = :scope AND memoryKey = :memoryKey AND state = 'ADMITTED' ORDER BY admittedAt DESC LIMIT 1")
+    EdgeMemoryClaimEntity latestAdmittedMemoryClaim(String projectId, String scope, String memoryKey);
+
     @Query("UPDATE edge_memory_claims SET state = :state, reason = :reason, updatedAt = :updatedAt WHERE claimId = :claimId")
     int setMemoryClaimState(String claimId, String state, String reason, long updatedAt);
 
