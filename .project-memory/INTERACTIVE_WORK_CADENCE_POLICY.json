@@ -4,12 +4,12 @@
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 25,
   "acceptable_window_minutes": [
-    20,
+    24,
     25
   ],
   "principles": [
-    "Perform a substantial useful-work tranche targeting 25 minutes by default unless a real human gate, safety hold, tool failure, or completed atomic action makes an earlier checkpoint necessary.",
-    "Prefer sustained work up to the 25-minute target; checkpoint before optional work would materially overrun the target.",
+    "Perform a substantial useful-work tranche targeting 25 minutes by default; do not checkpoint materially earlier unless a real human gate, safety hold, tool failure, or completed atomic action makes early return necessary.",
+    "Treat 25 minutes as the normal target, with roughly the final minute reserved for durable checkpoint/email delivery rather than optional expansion.",
     "Do not infer network/UI latency from an unsynchronized manual stopwatch or from ChatGPT's thinking-duration indicator.",
     "Separate producer time, BCP mirror delay, transport acceptance, and explicit seen acknowledgement whenever evidence exists.",
     "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
@@ -23,11 +23,11 @@
   "updated_at": "2026-09-21T01:45:00+01:00",
   "target_internal_work_minutes": 25,
   "acceptable_internal_work_window_minutes": [
-    20,
+    24,
     25
   ],
   "user_visible_target_window_minutes": [
-    20,
+    24,
     25
   ],
   "cutoff_strategy": "CHECKPOINT_AT_OR_BEFORE_25_MINUTES_UNLESS_REAL_GATE_ENDS_EARLIER",
@@ -47,10 +47,10 @@
   },
   "response_timing": {
     "user_visible_target_minutes": [
-      20,
+      24,
       25
     ],
-    "useful_work_minimum_minutes": 20,
+    "useful_work_minimum_minutes": 24,
     "internal_soft_cutoff_minutes": 24.5,
     "checkpoint_before_optional_overrun": true,
     "true_gate_may_return_early": true,
