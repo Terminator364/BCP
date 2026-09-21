@@ -13,6 +13,12 @@ On a fresh conversation, this code means:
 - never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
+### R61 merged communications checkpoint
+
+R61 is merged on `main` at `66cbeeb2cd1315369fddbdc1d611fd7e38e5803e`. Exact-head CI passed before merge and the observed post-merge gates are all green: CURRENT #796, PC Sanity #320, Nexus One-Shot #141, Nexus Transport #513, Telegram Observability #550 and Field Ecosystem #727.
+
+The direct Telegram worker is alive but the transport remains unusable from MBMPC due repeated WinError 10060 timeouts. BCP 0.7.13 is field-proven and the Nexus one-shot path is qualified. The next irreducible human gate is therefore exactly one fresh Cloudflare device authorization using `API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip`. Never reuse an expired code, reinstall BCP, re-enter the Telegram token, or fall back to localhost:8976. Completion requires provider-authenticated readback and proof that Telegram receiver ownership moved to Nexus/webhook.
+
 ### R61 communication recovery state
 
 Fresh field telemetry after the PC was powered on proves BCP 0.7.13 is alive and UP_TO_DATE, while the Telegram companion process is alive but the direct Bot API path is timing out with WinError 10060 and repeated failures. Treat this as a transport outage, not as a dead process and not as evidence that Telegram messages are being delivered.
