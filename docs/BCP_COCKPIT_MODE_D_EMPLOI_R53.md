@@ -166,9 +166,9 @@ En fonctionnement normal, vous ne devez pas avoir à:
 ## 9. Continuité par mail
 
 Pour les tranches de travail interactives:
-- cible courante: 8–10 minutes de travail utile;
+- cible courante: environ 25 minutes de travail utile (fenêtre pratique 24–25 minutes, sauf vrai gate plus tôt);
 - fin de tranche: checkpoint visible;
-- le corps du mail miroir doit être textuellement identique au message final ChatGPT;
+- le mail contient le checkpoint complet; après succès Gmail, ChatGPT affiche seulement le pointeur mail/date-heure/checkpoint;
 - quand Gmail est disponible, le mail miroir est envoyé **avant** l’affichage du checkpoint final ChatGPT;
 - ordre de livraison du checkpoint: **mail exact → ChatGPT final → Telegram témoin éventuel**;
 - si l’envoi du mail échoue, le système ne doit jamais prétendre qu’il a été envoyé et le checkpoint ChatGPT doit afficher explicitement le hold de livraison;
