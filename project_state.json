@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R74_COMMUNICATION_AND_PHONE_LOCAL_EXECUTOR_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R74 ports the stronger KINLINK communication delivery model into BCP and adds a safe allowlisted Android local task executor so deterministic EDGE jobs can complete on the dedicated phone without waiting for the PC. CURRENT contract run #1190 is PASS on PR #144 exact head. Fresh Drive field telemetry proves BCP 0.7.16 is UP_TO_DATE on MBMPC; Telegram direct transport is still in DIRECT_TRANSPORT_OUTAGE and edge relay is currently inactive/unregistered in the installed 2.1.2 field app, confirming the need for the coherent 2.2.0 full-node release.",
-  "next_action": "Finish PR #144 exact-head qualification. If green, merge through the writer fence and verify post-merge. Continue 2.2.0 full-node as one coherent candidate: prove local executor behavior in Android CI/emulator, relay registration and Telegram route readback, then sign/publish Drive CURRENT only after all release gates. Do not ask for another phone install before that coherent gate.",
+  "status": "R77_ABC_INTEGRAL_PHONE_CHRONICLE_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R77 establishes A+B+C as the product denominator, restores the 25-minute 23+2 primary-assistant communication contract without normal automation dependency, reconciles durable tranche delivery state, and implements the first phone-resident UCMF Universal Chronicle slice: Room v3 edge_events, append-only event writes, project-scoped idempotency, local event tail, and authenticated /v1/node/events API.",
+  "next_action": "Open/qualify the exact R77 branch. Fix any validator or Android build failures. If exact-head CI passes, reread main, reconcile if moved, merge through the single-writer fence, then continue the coherent 2.2 full-node candidate by closing encrypted LAN transport, memory admission/supersession, source-capability registry, Telegram field relay, and server-first UI gaps before another user install.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -173,7 +173,10 @@
     ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     ".project-memory/COMMUNICATION_PROTOCOL.json",
     ".project-memory/COMMUNICATION_STATE_MACHINE.json",
-    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    ".project-memory/BCP_ABC_COVERAGE.json",
+    "docs/BCP_CANONICAL_SPEC_ABC.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -2562,5 +2565,51 @@
     "edge_only_capable": true,
     "current_release_published": false,
     "candidate_version": "2.2.0-full-node-evergreen"
+  },
+  "abc_integral_spec": {
+    "status": "CANONICAL_CANDIDATE_R77",
+    "definition": "A=original preconception/promised functions; B=research-backed realistic expansion; C=all accumulated field feedback/corrections/preferences",
+    "source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "canonical_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "coverage": ".project-memory/BCP_ABC_COVERAGE.json",
+    "initial_macro_functional_percent": 53.7,
+    "initial_evidence_maturity_percent": 41.45,
+    "caveat": "Sealed V0.7 package pointer/hash is authoritative but package bytes were not rematerialized during R77; global percentage remains provisional until source completeness is improved."
+  },
+  "r77_phone_chronicle": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "room_database_version": 3,
+    "entity": "android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeEventEntity.java",
+    "api": [
+      "GET /v1/node/events",
+      "POST /v1/node/events"
+    ],
+    "semantics": "APPEND_ONLY_LOCAL_CHRONICLE",
+    "truth_states": [
+      "OBSERVED",
+      "VERIFIED",
+      "REPORTED",
+      "INFERRED",
+      "MODEL_GENERATED",
+      "UNKNOWN"
+    ],
+    "idempotency_scope": "PROJECT",
+    "remaining_gaps": [
+      "canonical sequence/hash chain",
+      "evidence vault refs",
+      "memory admission/supersession",
+      "encrypted LAN transport",
+      "field migration proof"
+    ]
+  },
+  "communication_r77": {
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "scheduled_automation_required": false,
+    "gmail_start_end_provider_ack_required": true,
+    "chat_pointer_after_end_only": true,
+    "continuity_code": "BCPGO BCP"
   }
 }
