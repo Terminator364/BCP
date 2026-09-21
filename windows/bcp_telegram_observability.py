@@ -42,6 +42,9 @@ ATTENTION_NOTIFY_STATE_PATH = STATE_DIR / "telegram_attention_notify_state.json"
 ATTENTION_ACK_STATE_PATH = STATE_DIR / "telegram_attention_ack.json"
 ATTENTION_PENDING_STATE_PATH = STATE_DIR / "telegram_attention_pending.json"
 NOTIFICATION_BUDGET_STATE_PATH = STATE_DIR / "telegram_notification_budget.json"
+TRANSPORT_OUTAGE_PATH = STATE_DIR / "telegram_transport_outage.json"
+NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
+DIRECT_OUTAGE_FAILURE_THRESHOLD = 3
 
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
@@ -3077,6 +3080,7 @@ class Telegram:
         offset = int((read_json(OFFSET_PATH, {}) or {}).get("next_offset") or 0)
         backoff = [2, 5, 15, 30, 60]
         failures = 0
+        first_failure_at = ""
         append_log("WORKER_STARTED")
         write_worker_health("DIRECT_TELEGRAM", "RUNNING", consecutive_failures=0, next_offset=offset)
         while True:
@@ -3084,7 +3088,20 @@ class Telegram:
                 obj = self.api("getUpdates", {
                     "offset": offset, "timeout": 20, "allowed_updates": ["message", "callback_query"]
                 }, 35)
+                recovered_failures = failures
                 failures = 0
+                if recovered_failures:
+                    outage = read_json(TRANSPORT_OUTAGE_PATH, {}) or {}
+                    atomic_json(TRANSPORT_OUTAGE_PATH, {
+                        "schema": "bcp.telegram_transport_outage/1",
+                        "state": "RECOVERED",
+                        "mode": "DIRECT_TELEGRAM",
+                        "recovered_at": utc_now(),
+                        "first_failure_at": str(outage.get("first_failure_at") or first_failure_at),
+                        "prior_consecutive_failures": int(recovered_failures),
+                    })
+                    append_log("DIRECT_TELEGRAM_RECOVERED", prior_consecutive_failures=recovered_failures)
+                first_failure_at = ""
                 updates = obj.get("result") or []
                 write_worker_health(
                     "DIRECT_TELEGRAM", "ACTIVE",
@@ -3092,6 +3109,8 @@ class Telegram:
                     next_offset=offset,
                     updates_received=len(updates),
                     last_poll_at=utc_now(),
+                    transport_outage=False,
+                    transport_outage_state="RECOVERED" if recovered_failures else "NONE",
                 )
                 for upd in updates:
                     uid = int(upd.get("update_id") or 0)
@@ -3149,14 +3168,52 @@ class Telegram:
             except (URLError, TimeoutError, OSError, RuntimeError) as e:
                 delay = backoff[min(failures, len(backoff) - 1)]
                 failures += 1
+                if not first_failure_at:
+                    first_failure_at = utc_now()
                 detail = clean(e, 180)
-                append_log("RETRY", error_class=type(e).__name__, retry_seconds=delay)
+                sustained = failures >= DIRECT_OUTAGE_FAILURE_THRESHOLD
+                bootstrap = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
+                nexus_state = str(bootstrap.get("state") or bootstrap.get("status") or "NOT_READY")[:80]
+                state = "DIRECT_TRANSPORT_OUTAGE" if sustained else "DEGRADED_RETRY"
+                append_log(
+                    "DIRECT_TELEGRAM_OUTAGE" if sustained else "RETRY",
+                    error_class=type(e).__name__,
+                    retry_seconds=delay,
+                    consecutive_failures=failures,
+                    nexus_state=nexus_state,
+                )
+                if sustained:
+                    atomic_json(TRANSPORT_OUTAGE_PATH, {
+                        "schema": "bcp.telegram_transport_outage/1",
+                        "state": "DIRECT_TRANSPORT_OUTAGE",
+                        "mode": "DIRECT_TELEGRAM",
+                        "first_failure_at": first_failure_at,
+                        "last_failure_at": utc_now(),
+                        "consecutive_failures": failures,
+                        "error_class": type(e).__name__,
+                        "error_detail": detail,
+                        "next_retry_seconds": delay,
+                        "nexus_state": nexus_state,
+                        "recovery_action": (
+                            "FRESH_NEXUS_AUTHORIZATION_REQUIRED"
+                            if nexus_state == "HUMAN_AUTH_REQUIRED"
+                            else "WAIT_FOR_NETWORK_OR_QUALIFIED_NEXUS_FAILOVER"
+                        ),
+                    })
                 write_worker_health(
-                    "DIRECT_TELEGRAM", "DEGRADED_RETRY",
+                    "DIRECT_TELEGRAM", state,
                     consecutive_failures=failures,
                     error_class=type(e).__name__,
                     error_detail=detail,
                     retry_seconds=delay,
+                    transport_outage=sustained,
+                    transport_outage_since=first_failure_at,
+                    nexus_state=nexus_state,
+                    recovery_action=(
+                        "FRESH_NEXUS_AUTHORIZATION_REQUIRED"
+                        if sustained and nexus_state == "HUMAN_AUTH_REQUIRED"
+                        else "DIRECT_RETRY"
+                    ),
                 )
                 time.sleep(delay)
             except Exception as e:
@@ -3812,6 +3869,8 @@ def selftest() -> int:
         assert str((svc.cfg.get("transport") or {}).get("mode") or "DIRECT_TELEGRAM") == "DIRECT_TELEGRAM"
         assert Nexus.__name__ == "Nexus"
         assert HEALTH_PATH.name == "telegram_worker_health.json"
+        assert TRANSPORT_OUTAGE_PATH.name == "telegram_transport_outage.json"
+        assert DIRECT_OUTAGE_FAILURE_THRESHOLD == 3
         assert MISSION_WATCHDOG_STATE_PATH.name == "mission_watchdog.json"
         assert "bcp:continue" in json.dumps(Telegram.keyboard(), ensure_ascii=False)
         assert Telegram._callback_action.__name__ == "_callback_action"
