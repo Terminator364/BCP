@@ -46,6 +46,8 @@ def main() -> int:
     assert "RECEIVE_BOOT_COMPLETED" in manifest
     assert "NEARBY_WIFI_DEVICES" in manifest
     assert "BLUETOOTH_SCAN" in manifest
+    assert "ACCESS_COARSE_LOCATION" in manifest
+    assert "ACCESS_FINE_LOCATION" in manifest
     assert "POST_NOTIFICATIONS" in manifest
     assert "FOREGROUND_SERVICE_REMOTE_MESSAGING" in manifest
 
@@ -55,6 +57,10 @@ def main() -> int:
     assert 'BCP_PAIR_TOKEN_PATH = STATE_DIR / "bcp_token.txt"' in telegram
     assert 'parsed.hostname != "api.telegram.org"' in telegram
     assert 'EDGE_RELAY_FALLBACK_FAILED' in telegram
+    assert 'TRANSPORT_ROUTE_PATH = STATE_DIR / "telegram_transport_route.json"' in telegram
+    assert 'record_transport_route("DIRECT_TELEGRAM", "PROVIDER_REACHABLE")' in telegram
+    assert '"B_EDGE_RELAY",' in telegram and '"PROVIDER_REACHABLE"' in telegram
+    assert '"NO_WORKING_OUTBOUND_ROUTE",' in telegram
     # The Telegram bot token must not be used as proxy authentication.
     proxy_section = telegram[telegram.index("def _json_via_edge"):telegram.index("def json(", telegram.index("def _json_via_edge"))]
     assert "self.token" not in proxy_section
