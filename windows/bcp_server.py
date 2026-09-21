@@ -66,6 +66,9 @@ NEXUS_BOOTSTRAP_RETRY_BASE_SECONDS = 5 * 60
 NEXUS_BOOTSTRAP_RETRY_MAX_SECONDS = 30 * 60
 NEXUS_BOOTSTRAP_MAX_AUTO_ATTEMPTS = 4
 NEXUS_BOOTSTRAP_PROCESS_TIMEOUT_SECONDS = 45 * 60
+COMMUNICATION_MAX_PAYLOAD_BYTES = 16 * 1024
+COMMUNICATION_ALLOWED_CLASSES = {"ALERT", "CHECKPOINT_POINTER", "MISSION_STATE", "ACK", "COMMAND_RECEIPT"}
+COMMUNICATION_OUTBOX_MAX_ROWS = 256
 DB_LOCK = threading.RLock()
 UPDATE_LOCK = threading.RLock()
 NEXUS_BOOTSTRAP_LOCK = threading.RLock()
@@ -2391,6 +2394,33 @@ def ensure_state() -> str:
             )"""
         )
         cx.execute("CREATE INDEX IF NOT EXISTS idx_conversation_producers_updated ON conversation_producers(updated_at DESC)")
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS communication_outbox(
+                delivery_id TEXT PRIMARY KEY,
+                dedupe_key TEXT NOT NULL UNIQUE,
+                payload_class TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                priority INTEGER NOT NULL DEFAULT 50,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                attempt_count INTEGER NOT NULL DEFAULT 0,
+                last_attempt_at TEXT NOT NULL DEFAULT '',
+                last_error TEXT NOT NULL DEFAULT ''
+            )"""
+        )
+        cx.execute(
+            """CREATE TABLE IF NOT EXISTS communication_delivery_receipts(
+                delivery_id TEXT PRIMARY KEY,
+                dedupe_key TEXT NOT NULL,
+                payload_class TEXT NOT NULL,
+                route TEXT NOT NULL,
+                delivered_at TEXT NOT NULL,
+                receiver_node TEXT NOT NULL,
+                provider_message_id TEXT NOT NULL DEFAULT ''
+            )"""
+        )
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_comm_outbox_priority ON communication_outbox(priority DESC,created_at ASC)")
+        cx.execute("CREATE INDEX IF NOT EXISTS idx_comm_receipts_delivered ON communication_delivery_receipts(delivered_at DESC)")
         cx.execute("CREATE INDEX IF NOT EXISTS idx_missions_project_updated ON missions(project_id,updated_at)")
         for col, ddl in (
             ("evidence_class", "evidence_class TEXT NOT NULL DEFAULT 'UNCLASSIFIED'"),
@@ -2435,6 +2465,190 @@ def db_connection():
             yield cx
     finally:
         cx.close()
+
+
+
+def _communication_payload(payload_class: str, payload: dict) -> tuple[str, str]:
+    cls = str(payload_class or "").strip().upper()
+    if cls not in COMMUNICATION_ALLOWED_CLASSES:
+        raise ValueError("communication_payload_class_forbidden")
+    if not isinstance(payload, dict):
+        raise ValueError("communication_payload_object_required")
+    raw = canonical_json(payload)
+    if len(raw.encode("utf-8")) > COMMUNICATION_MAX_PAYLOAD_BYTES:
+        raise ValueError("communication_payload_too_large")
+    return cls, raw
+
+
+def communication_outbox_enqueue(payload_class: str, payload: dict, dedupe_key: str = "",
+                                 priority: int = 50) -> dict:
+    """Persist compact control traffic before any remote dispatch attempt."""
+    cls, raw = _communication_payload(payload_class, payload)
+    dedupe = str(dedupe_key or "").strip()
+    if not dedupe:
+        dedupe = sha256_text("R63-COMM\n" + cls + "\n" + raw)
+    if len(dedupe) > 160:
+        dedupe = sha256_text(dedupe)
+    now = utc_now()
+    priority = max(0, min(100, int(priority)))
+    with DB_LOCK:
+        with db_connection() as cx:
+            depth = int(cx.execute("SELECT COUNT(*) FROM communication_outbox").fetchone()[0])
+            existing = cx.execute(
+                "SELECT delivery_id FROM communication_outbox WHERE dedupe_key=?",
+                (dedupe,),
+            ).fetchone()
+            if existing:
+                delivery_id = str(existing["delivery_id"])
+                cx.execute(
+                    """UPDATE communication_outbox
+                       SET updated_at=?,priority=MAX(priority,?),payload_class=?,payload_json=?
+                       WHERE delivery_id=?""",
+                    (now, priority, cls, raw, delivery_id),
+                )
+                return {"result": "ALREADY_QUEUED", "delivery_id": delivery_id,
+                        "dedupe_key": dedupe, "depth": depth}
+            if depth >= COMMUNICATION_OUTBOX_MAX_ROWS:
+                raise RuntimeError("communication_outbox_capacity_reached")
+            delivery_id = "comm-" + uuid.uuid4().hex
+            cx.execute(
+                """INSERT INTO communication_outbox(
+                       delivery_id,dedupe_key,payload_class,payload_json,priority,
+                       created_at,updated_at,attempt_count,last_attempt_at,last_error
+                   ) VALUES(?,?,?,?,?,?,?,0,'','')""",
+                (delivery_id, dedupe, cls, raw, priority, now, now),
+            )
+            return {"result": "QUEUED", "delivery_id": delivery_id,
+                    "dedupe_key": dedupe, "depth": depth + 1}
+
+
+def communication_outbox_pull(limit: int = 20) -> dict:
+    limit = max(1, min(int(limit), 50))
+    now = utc_now()
+    with DB_LOCK:
+        with db_connection() as cx:
+            rows = cx.execute(
+                """SELECT delivery_id,dedupe_key,payload_class,payload_json,priority,
+                          created_at,attempt_count
+                   FROM communication_outbox
+                   ORDER BY priority DESC,created_at ASC LIMIT ?""",
+                (limit,),
+            ).fetchall()
+            items = []
+            for row in rows:
+                cx.execute(
+                    """UPDATE communication_outbox
+                       SET attempt_count=attempt_count+1,last_attempt_at=?,updated_at=?
+                       WHERE delivery_id=?""",
+                    (now, now, str(row["delivery_id"])),
+                )
+                items.append({
+                    "delivery_id": str(row["delivery_id"]),
+                    "dedupe_key": str(row["dedupe_key"]),
+                    "payload_class": str(row["payload_class"]),
+                    "payload": json.loads(str(row["payload_json"])),
+                    "priority": int(row["priority"]),
+                    "created_at": str(row["created_at"]),
+                    "attempt_count": int(row["attempt_count"]) + 1,
+                })
+            depth = int(cx.execute("SELECT COUNT(*) FROM communication_outbox").fetchone()[0])
+    return {"ok": True, "schema": "bcp.communication_outbox_batch/1",
+            "count": len(items), "depth": depth, "items": items}
+
+
+def communication_outbox_ack(delivery_id: str, route: str, receiver_node: str,
+                             provider_message_id: str = "") -> dict:
+    delivery_id = str(delivery_id or "").strip()
+    if not delivery_id:
+        raise ValueError("delivery_id_required")
+    route = str(route or "UNKNOWN")[:80]
+    receiver = str(receiver_node or "B_EDGE")[:80]
+    provider_id = str(provider_message_id or "")[:120]
+    now = utc_now()
+    with DB_LOCK:
+        with db_connection() as cx:
+            row = cx.execute(
+                """SELECT delivery_id,dedupe_key,payload_class
+                   FROM communication_outbox WHERE delivery_id=?""",
+                (delivery_id,),
+            ).fetchone()
+            if not row:
+                prior = cx.execute(
+                    "SELECT delivery_id FROM communication_delivery_receipts WHERE delivery_id=?",
+                    (delivery_id,),
+                ).fetchone()
+                return {"ok": True, "result": "ALREADY_ACKED" if prior else "NOT_FOUND",
+                        "delivery_id": delivery_id}
+            cx.execute(
+                """INSERT OR IGNORE INTO communication_delivery_receipts(
+                       delivery_id,dedupe_key,payload_class,route,delivered_at,
+                       receiver_node,provider_message_id
+                   ) VALUES(?,?,?,?,?,?,?)""",
+                (delivery_id, str(row["dedupe_key"]), str(row["payload_class"]),
+                 route, now, receiver, provider_id),
+            )
+            cx.execute("DELETE FROM communication_outbox WHERE delivery_id=?", (delivery_id,))
+            depth = int(cx.execute("SELECT COUNT(*) FROM communication_outbox").fetchone()[0])
+    mirror_telemetry_status("COMMUNICATION_RELAY_ACK", {
+        "status": "DELIVERED", "transport_lane": route,
+    })
+    return {"ok": True, "result": "ACKED", "delivery_id": delivery_id, "depth": depth}
+
+
+def communication_outbox_fail(delivery_id: str, detail: str) -> None:
+    with DB_LOCK:
+        with db_connection() as cx:
+            cx.execute(
+                """UPDATE communication_outbox
+                   SET last_error=?,updated_at=? WHERE delivery_id=?""",
+                (str(detail or "")[:240], utc_now(), str(delivery_id or "")),
+            )
+
+
+def communication_outbox_stats() -> dict:
+    with db_connection() as cx:
+        depth = int(cx.execute("SELECT COUNT(*) FROM communication_outbox").fetchone()[0])
+        delivered = int(cx.execute("SELECT COUNT(*) FROM communication_delivery_receipts").fetchone()[0])
+        oldest = cx.execute(
+            "SELECT created_at FROM communication_outbox ORDER BY created_at ASC LIMIT 1"
+        ).fetchone()
+        last = cx.execute(
+            """SELECT route,delivered_at,receiver_node FROM communication_delivery_receipts
+               ORDER BY delivered_at DESC LIMIT 1"""
+        ).fetchone()
+    return {
+        "depth": depth,
+        "delivered_receipts": delivered,
+        "oldest_pending_at": str(oldest["created_at"]) if oldest else "",
+        "last_delivery_route": str(last["route"]) if last else "",
+        "last_delivered_at": str(last["delivered_at"]) if last else "",
+        "last_receiver_node": str(last["receiver_node"]) if last else "",
+    }
+
+
+def edge_relay_config() -> dict:
+    """Return relay credentials only to an already-authorized private-LAN B-EDGE."""
+    telegram_token_path = STATE_DIR / "telegram_bot_token.txt"
+    telegram_cfg_path = STATE_DIR / "telegram_observability.json"
+    cfg = read_json(telegram_cfg_path, {}) or {}
+    token = ""
+    try:
+        token = telegram_token_path.read_text(encoding="utf-8").strip()
+    except Exception:
+        pass
+    chat_id = cfg.get("allowed_chat_id")
+    configured = bool(token and isinstance(chat_id, int) and int(chat_id) != 0)
+    return {
+        "ok": True,
+        "schema": "bcp.edge_relay_config/1",
+        "configured": configured,
+        "telegram_bot_token": token if configured else "",
+        "allowed_chat_id": int(chat_id) if configured else 0,
+        "cellular_control_allowed": True,
+        "max_cellular_payload_bytes": COMMUNICATION_MAX_PAYLOAD_BYTES,
+        "allowed_payload_classes": sorted(COMMUNICATION_ALLOWED_CLASSES),
+        "security_scope": "AUTHENTICATED_PRIVATE_LAN_COMPATIBILITY",
+    }
 
 
 MEMORY_LAYERS = ("USER_MEMORY", "PROJECT_MEMORY", "TECHNICAL_KNOWLEDGE", "OPERATING_STATE", "HISTORY", "POLICY")
@@ -4334,6 +4548,36 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if path == "/v1/edge/relay/outbox":
+            if not private_or_loopback(self.remote_ip()):
+                self.send_json(403, {"error": "edge_relay_requires_private_lan"})
+                return
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                limit = int((query.get("limit") or ["20"])[0])
+                self.send_json(200, communication_outbox_pull(limit))
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "edge_relay_pull_failed", "detail": str(e)[:240]})
+            return
+
+        if path == "/v1/edge/relay/config":
+            if not private_or_loopback(self.remote_ip()):
+                self.send_json(403, {"error": "edge_relay_requires_private_lan"})
+                return
+            try:
+                self.send_json(200, edge_relay_config())
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "edge_relay_config_failed", "detail": str(e)[:240]})
+            return
+
+        if path == "/v1/communication/status":
+            try:
+                self.send_json(200, {"ok": True, "schema": "bcp.communication_status/1",
+                                     **communication_outbox_stats()})
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "communication_status_failed", "detail": str(e)[:240]})
+            return
+
         if path == "/v1/diagnostics":
             self.send_json(
                 200,
@@ -4552,6 +4796,37 @@ class Handler(BaseHTTPRequestHandler):
 
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/v1/edge/relay/ack":
+            if not private_or_loopback(self.remote_ip()):
+                self.send_json(403, {"error": "edge_relay_requires_private_lan"})
+                return
+            try:
+                body = self.read_json()
+                self.send_json(200, communication_outbox_ack(
+                    body.get("delivery_id"), body.get("route") or "B_EDGE",
+                    body.get("receiver_node") or "B_EDGE",
+                    body.get("provider_message_id") or "",
+                ))
+            except Exception as e:
+                self.send_json(400, {"ok": False, "error": "edge_relay_ack_failed", "detail": str(e)[:240]})
+            return
+
+        if path == "/v1/communication/enqueue":
+            try:
+                body = self.read_json()
+                payload_class = body.get("payload_class") or "MISSION_STATE"
+                payload = body.get("payload")
+                if not isinstance(payload, dict):
+                    raise ValueError("payload_object_required")
+                result = communication_outbox_enqueue(
+                    payload_class, payload, str(body.get("dedupe_key") or ""),
+                    int(body.get("priority") or 50),
+                )
+                self.send_json(202, {"ok": True, **result})
+            except Exception as e:
+                self.send_json(400, {"ok": False, "error": "communication_enqueue_failed", "detail": str(e)[:240]})
             return
 
         if path == "/v1/system/chatgpt-pc/recover":
