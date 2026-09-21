@@ -294,11 +294,21 @@ public final class BcpClient {
                             .put("server_known", !getServer().isEmpty())));
 
             receipts.put(observeBuiltinCapability(
-                    "TELEGRAM_CONNECT_RELAY", "api.telegram.org", "PHONE_EGRESS",
+                    "INTERNET_UPLINK", "ANDROID_CONNECTIVITY", "PHONE_NETWORK",
                     net.optBoolean("validated", false) ? "AVAILABLE" : "DEGRADED",
-                    "LOCAL_PROBE", "api.telegram.org:443",
+                    "LOCAL_PROBE", net.optString("transport", "UNKNOWN"),
+                    net));
+
+            // A validated Internet network is NOT proof that api.telegram.org is reachable.
+            // Field evidence already showed selective Telegram egress failure. Keep the provider
+            // capability UNKNOWN until an actual provider/tunnel acknowledgement is recorded.
+            receipts.put(observeBuiltinCapability(
+                    "TELEGRAM_CONNECT_RELAY", "api.telegram.org", "PHONE_EGRESS",
+                    net.optBoolean("validated", false) ? "UNKNOWN" : "DEGRADED",
+                    "CONFIGURED", "api.telegram.org:443",
                     new JSONObject().put("tls_end_to_end", true)
                             .put("proxy_scope", "api.telegram.org:443")
+                            .put("provider_probe_required", true)
                             .put("network", net)));
 
             receipts.put(observeBuiltinCapability(
