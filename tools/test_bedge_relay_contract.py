@@ -31,7 +31,7 @@ def main() -> int:
     assert "port != 443" in policy
     assert "MessageDigest.isEqual" in policy
     assert "MAX_CONNECTIONS = 4" in policy
-    assert "Proxy-Authorization" in relay
+    assert '"proxy-authorization"' in relay
     assert "CredentialStore(this).getToken()" in relay
     assert "FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING" in relay
     assert 'android:foregroundServiceType="remoteMessaging"' in manifest
