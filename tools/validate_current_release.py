@@ -21,6 +21,7 @@ CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.jso
 DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
 PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
 HUMAN_ACTION_MATRIX = ROOT / ".project-memory" / "HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+ADAPTIVE_COMMUNICATION_POLICY = ROOT / ".project-memory" / "ADAPTIVE_COMMUNICATION_POLICY.json"
 
 
 def fail(message: str) -> None:
@@ -65,6 +66,7 @@ def main() -> int:
     delivery = load(DELIVERY_POLICY)
     pre_human = load(PRE_HUMAN_POLICY)
     human_actions = load(HUMAN_ACTION_MATRIX)
+    adaptive_comms = load(ADAPTIVE_COMMUNICATION_POLICY)
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
@@ -156,6 +158,25 @@ def main() -> int:
     evidence = set(nexus_action.get("required_evidence") or [])
     if not {"202_LAUNCHED_positive_control", "500_HOLD_negative_control"}.issubset(evidence):
         fail("nexus_positive_negative_controls_missing")
+
+    if adaptive_comms.get("revision") != "2026-09-21-R63":
+        fail("adaptive_comms_revision")
+    invariants = set(adaptive_comms.get("invariants") or [])
+    for required in {
+        "PERSIST_BEFORE_DISPATCH",
+        "IDEMPOTENCY_AND_ACK_REQUIRED",
+        "LAN_FIRST_FOR_PC_TO_BEDGE",
+        "MOBILE_DATA_CONTROL_PLANE_ONLY",
+        "NO_LARGE_ARTIFACTS_ON_CELLULAR",
+        "OFFLINE_STORE_AND_FORWARD",
+    }:
+        if required not in invariants:
+            fail("adaptive_comms_missing:" + required)
+    cellular = adaptive_comms.get("cellular") or {}
+    if int(cellular.get("max_payload_bytes") or 0) > 16384:
+        fail("adaptive_cellular_budget_too_large")
+    if "APK" not in set(cellular.get("bulk_forbidden") or []):
+        fail("adaptive_cellular_bulk_guard_missing")
 
     m = re.search(r"^Revision:\s*(\S+)", spec, re.M)
     if not m or m.group(1) != cur.get("requirements_revision"):
