@@ -156,7 +156,9 @@ jobs:
           worker_bytes = pathlib.Path("windows/bcp_telegram_observability.py").read_bytes()
           import hashlib
           assert companion["schema"] == "bcp.telegram_companion_release/1"
-          assert companion["minimum_server_version"] == "0.6.3"
+          def vt(v): return tuple(int(x) for x in str(v).split("-",1)[0].split("."))
+assert vt(companion["minimum_server_version"]) <= vt(srv["version"])
+assert companion["minimum_server_version"] == "0.7.15"
           assert companion["sha256"] == hashlib.sha256(worker_bytes).hexdigest()
           assert companion["url"].startswith("https://raw.githubusercontent.com/Terminator364/BCP/")
           nexus = __import__("json").loads(pathlib.Path("release/nexus_bootstrap.json").read_text(encoding="utf-8"))
