@@ -381,14 +381,14 @@ Resolution order:
 
 Aliases do not fork project history. If an alias and `BCPGO <project>` resolve to different durable authorities, enter conflict hold rather than guessing.
 
-Current/future projects inherit the 20–25 minute useful-work checkpoint cadence, targeting 25 minutes, by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
+Current/future projects inherit the 24–25 minute useful-work checkpoint cadence, targeting 25 minutes, by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
 
 
 ### Email-first recovery invariant
 
 On every `BCPGO` recovery, before any detailed ChatGPT checkpoint is shown:
 - load `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`;
-- perform the useful-work tranche using the active 20–25 minute cadence, targeting 25 minutes, unless a real gate ends it earlier;
+- perform the useful-work tranche using the active 24–25 minute cadence, targeting 25 minutes, unless a real gate ends it earlier;
 - send the complete human checkpoint by Gmail first when Gmail is available;
 - after successful email delivery, the ChatGPT app response MUST be pointer-only and contain only: `MAIL_SENT`, Kinshasa date/time, and checkpoint ID;
 - do not duplicate the detailed checkpoint body in ChatGPT after the email has succeeded;
