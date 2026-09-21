@@ -1,7 +1,7 @@
 {
   "schema": "bcp.universal_continuation_code_registry/1",
   "status": "CANONICAL_POINTER_REGISTRY",
-  "updated_at": "2026-09-21",
+  "updated_at": "2026-09-22",
   "invariants": {
     "codes_are_pointers_not_summaries": true,
     "universal_cold_bootstrap": "BCPGO",
@@ -88,7 +88,7 @@
     "new_conversation_takeover_ref": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     "delivery_key_required": true,
     "primary_close_owner": "PRIMARY_ASSISTANT",
-    "scheduled_close_guards_are_backup_only": false,
+    "scheduled_close_guards_are_backup_only": true,
     "chatgpt_thinking_indicator_is_work_proof": false,
     "scheduled_close_guards_required": false,
     "abc_source_registry_ref": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
@@ -97,7 +97,11 @@
     "absolute_end_deadline_minutes": 25,
     "load_abc_spec_before_product_mutation": true,
     "ucmf001_continuity_ref": ".project-memory/UCMF001_CONTINUITY.json",
-    "load_ucmf_v9_when_bcp_scope_touches_memory_continuity": true
+    "load_ucmf_v9_when_bcp_scope_touches_memory_continuity": true,
+    "scheduled_close_guards_default_enabled": false,
+    "emergency_backup_earliest_minute": 26,
+    "normal_closeout_must_not_wait_for_automation": true,
+    "automation_must_not_replace_useful_work_window": true
   },
   "universal": [
     {
@@ -134,7 +138,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R79_ABC_UCMF_V9_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
+      "status": "VALID_SCOPED_ALIAS_WITH_R81_ABC_UCMF_V9_25MIN_FOREGROUND_PRIMARY_CLOSE_PHONE_FULL_NODE",
       "fallback": "BCPGO BCP"
     },
     {
