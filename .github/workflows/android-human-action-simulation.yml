@@ -163,9 +163,21 @@ jobs:
           grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null
           grep -F "AUTORISATIONS SERVEUR" bcp-window.xml >/dev/null
           grep -F "ACTIVER / RENFORCER LE MODE SERVEUR 24/7" bcp-window.xml >/dev/null
-          grep -F "Registre capacités:" bcp-window.xml >/dev/null
-          grep -F "Journal mémoire/provenance:" bcp-window.xml >/dev/null
-          grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" bcp-window.xml >/dev/null
+
+          # The governance/autonomy panel is below the initial viewport on a phone.
+          # Exercise the real scroll instead of pretending off-screen text is visible.
+          "$ADB" shell input swipe 520 1500 520 380 450
+          sleep 1
+          "$ADB" shell input swipe 520 1500 520 380 450
+          sleep 1
+          "$ADB" shell uiautomator dump /sdcard/bcp-window-lower.xml >/dev/null
+          "$ADB" pull /sdcard/bcp-window-lower.xml bcp-window-lower.xml >/dev/null
+          grep -F "Registre capacités:" bcp-window-lower.xml >/dev/null
+          grep -F "Journal mémoire/provenance:" bcp-window-lower.xml >/dev/null
+          grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" bcp-window-lower.xml >/dev/null
+          "$ADB" exec-out screencap -p > bcp-server-dashboard-lower.png
+          test -s bcp-server-dashboard-lower.png
+
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
@@ -259,7 +271,9 @@ jobs:
             launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml
+            bcp-window-lower.xml
             bcp-server-dashboard.png
+            bcp-server-dashboard-lower.png
             bcp-window-relaunch.xml
             edge-health.json
             edge-capabilities.json
