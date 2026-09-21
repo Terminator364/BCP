@@ -366,9 +366,11 @@ def main() -> int:
     # R55 delivery/cadence policy must remain explicit and machine-checkable.
     cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
-    assert cadence_policy["acceptable_window_minutes"] == [8, 10]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [8, 10]
-    assert delivery_policy["cadence"]["work_slice_minutes"] == "8-10"
+    pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
+    assert cadence_policy["acceptable_window_minutes"] == [20, 25]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [20, 25]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "20-25"
+    assert delivery_policy["cadence"]["target_minutes"] == 25
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
     assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT"
@@ -380,6 +382,9 @@ def main() -> int:
     guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md")
     require(guide, "mail détaillé complet", "pointeur ChatGPT", "Telegram comme témoin", "📚 Rapports & technique", "heure de Kinshasa", "Page X/Y", "UTC+1")
     assert delivery_policy["packaging"]["nested_zip_for_user_action_forbidden"] is True
+    assert pre_human_policy["default_rule"] == "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE"
+    assert "RUNTIME_PATH" in pre_human_policy["required_layers"]
+    assert pre_human_policy["failure_behavior"].startswith("KEEP_WORKING_AUTOMATICALLY")
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
