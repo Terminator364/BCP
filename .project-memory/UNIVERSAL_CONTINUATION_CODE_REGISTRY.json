@@ -33,7 +33,11 @@
     "email_end_checkpoint_before_chat_pointer": true,
     "email_end_retry_until_provider_ack": true,
     "chat_output_before_end_ack_forbidden": true,
-    "chat_pointer_only_after_end_ack": true
+    "chat_pointer_only_after_end_ack": true,
+    "phone_primary_edge_server_policy_ref": ".project-memory/PHONE_PRIMARY_EDGE_SERVER_POLICY.json",
+    "load_phone_primary_edge_server_policy_on_bcp_recovery": true,
+    "bcp_gmail_label": "BCP",
+    "label_start_and_end_mail_when_supported": true
   },
   "universal": [
     {
