@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R73_PROVIDER_PROOF_CLOSEOUT_CANDIDATE",
-  "last_completed_atomic_action": "R72 corrective END was manually resent and provider-acknowledged after Gmail search proved the scheduled guards had completed without producing a SENT message. R73 START was then sent and provider-acknowledged. R73 policies now make foreground END primary, scheduler completion advisory only, and Gmail SENT message-id/readback the delivery authority.",
-  "next_action": "Finish R73 provider-proof closeout qualification/merge. Then continue the coherent B-EDGE 2.2.0 full-node release: Telegram direct transport is still in outage and the installed 2.1.2 relay is not currently registered/active, so the next product branch must make the dedicated phone a persistent communication/API node and prove relay registration/route readback before asking for another install.",
+  "status": "R74_COMMUNICATION_STATE_MACHINE_CANDIDATE",
+  "last_completed_atomic_action": "R73 missing END was provider-acknowledged at Gmail message 1a0c520e8cc2673f after search proved no prior END existed. R74 START was provider-acknowledged at message 1a0c5216e9b71648. BCP now ports the stronger KINLINK communication model: delivery_key, explicit delivery states, PRIMARY_ASSISTANT close owner, CLOSE_INTENT, append-only delivery ledger, search-before-send, provider-ack/readback closure, and scheduled guards as backup-only.",
+  "next_action": "Finish R74 exact-head qualification and merge the communication state-machine port. Then continue coherent B-EDGE full-node/server work from the current durable phone branch; no micro-beta or install instruction before exact-head product gates. Re-check Telegram transport/phone relay registration from fresh field telemetry.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -88,7 +88,11 @@
     "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md",
     "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
     "active_tranche_ledger": ".project-memory/ACTIVE_TRANCHE.json",
-    "end_failsafe_template": ".project-memory/END_FAILSAFE_TEMPLATE.json"
+    "end_failsafe_template": ".project-memory/END_FAILSAFE_TEMPLATE.json",
+    "communication_protocol": ".project-memory/COMMUNICATION_PROTOCOL.json",
+    "communication_state_machine": ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    "communication_delivery_ledger": ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    "new_conversation_takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -165,7 +169,11 @@
     "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md",
     "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
     ".project-memory/ACTIVE_TRANCHE.json",
-    ".project-memory/END_FAILSAFE_TEMPLATE.json"
+    ".project-memory/END_FAILSAFE_TEMPLATE.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    ".project-memory/COMMUNICATION_PROTOCOL.json",
+    ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -1922,26 +1930,22 @@
     "field_verified": false
   },
   "operational_cadence_policy": {
-    "status": "CANONICAL_CANDIDATE_R70",
-    "revision": "2026-09-21-R70",
-    "target_minutes": 30,
-    "work_slice_minutes": "29-30",
-    "checkpoint_each_slice": true,
-    "email_full_checkpoint_first": true,
-    "chatgpt_after_mail": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK",
-    "email_body_must_equal_chat_response": false,
-    "manual_first_one_shot_field_rule": false,
-    "pre_human_action_simulation_required": true,
-    "blind_retry_loops": false,
-    "current_install_folder": "API_BCP/00_INSTALL_CURRENT",
-    "replace_current_in_place": true,
-    "cleanup_temporary_uploads": true,
-    "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH",
-    "email_start_notice_before_substantive_work": true,
-    "email_end_checkpoint_before_chat_pointer": true,
-    "email_end_retry_until_provider_ack": true,
-    "chat_output_before_end_ack_forbidden": true,
-    "end_watchdog_offset_minutes": 29
+    "status": "CANONICAL_CANDIDATE_R74",
+    "revision": "2026-09-21-R74",
+    "cadence_minutes": 30,
+    "useful_work_target_minutes": 26,
+    "useful_work_minimum_minutes": 20,
+    "normal_close_reserve_minutes": 4,
+    "primary_close_owner": "PRIMARY_ASSISTANT",
+    "backup_close_owner": "SHADOW_BACKUP",
+    "hard_guard_owner": "HARD_GUARD",
+    "delivery_key_required": true,
+    "start_provider_ack_required": true,
+    "close_intent_required": true,
+    "end_provider_ack_and_sent_readback_required": true,
+    "scheduler_completion_is_delivery_proof": false,
+    "chatgpt_thinking_indicator_is_work_proof": false,
+    "chatgpt_after_mail": "POINTER_ONLY_AFTER_END_ACK"
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2508,5 +2512,18 @@
     "pc_memory_load_percent": 78,
     "pc_available_memory_mb": 792,
     "pc_power_source": "AC"
+  },
+  "r74_communication": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_PENDING",
+    "tranche_id": "BCP-R74-START-20260921-1901",
+    "delivery_key": "BCP30-20260921-1901-R74",
+    "r73_end_message_id": "1a0c520e8cc2673f",
+    "r74_start_message_id": "1a0c5216e9b71648",
+    "communication_protocol": ".project-memory/COMMUNICATION_PROTOCOL.json",
+    "state_machine": ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    "delivery_ledger": ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    "takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "source_model_reference": "KINLINK_COMMUNICATION_PROTOCOL_V4",
+    "scheduler_guards": "BACKUP_ONLY"
   }
 }
