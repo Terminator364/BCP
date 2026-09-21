@@ -24,6 +24,7 @@ on:
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
       - ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json"
+      - ".project-memory/END_FAILSAFE_TEMPLATE.json"
       - "project_state.json"
       - "API_PROJECT_CONTINUITY.md"
       - ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
@@ -76,6 +77,7 @@ jobs:
           python -m json.tool .project-memory/DELIVERY_REDUNDANCY_POLICY.json > /dev/null
           python -m json.tool .project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json > /dev/null
           python -m json.tool .project-memory/COMMUNICATION_SURVIVAL_POLICY.json > /dev/null
+          python -m json.tool .project-memory/END_FAILSAFE_TEMPLATE.json > /dev/null
           python -m json.tool .project-memory/ACTIVE_TRANCHE.json > /dev/null
           python -m json.tool .project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json > /dev/null
           python -m json.tool project_state.json > /dev/null
