@@ -190,7 +190,7 @@ def main() -> int:
         fail("foreground_end_send_primary_contract")
     if email.get("delivery_key_required") is not True:
         fail("email_delivery_key_contract")
-    if comm_protocol.get("schema") != "bcp.communication_protocol/2":
+    if comm_protocol.get("schema") != "bcp.communication_protocol/3":
         fail("communication_protocol_schema")
     if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("communication_primary_owner")
@@ -200,12 +200,25 @@ def main() -> int:
         fail("communication_close_reserve")
     if comm_protocol.get("scheduled_backup_required") is not False:
         fail("communication_scheduled_backup_dependency")
-    if comm_state_machine.get("schema") != "bcp.communication_state_machine/2":
+    normal_work = comm_protocol.get("normal_work_contract") or {}
+    if normal_work.get("rule") != "THE_SAME_FOREGROUND_ASSISTANT_TURN_OWNS_START_WORK_CLOSEOUT_END":
+        fail("communication_foreground_same_turn_contract")
+    if normal_work.get("automation_is_never_normal_owner") is not True:
+        fail("communication_automation_normal_owner_forbidden")
+    backup = comm_protocol.get("backup_semantics") or {}
+    if backup.get("default_enabled") is not False or backup.get("must_not_preempt_healthy_foreground_tranche") is not True:
+        fail("communication_backup_only_contract")
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/3":
         fail("communication_state_machine_schema")
     if comm_state_machine.get("useful_work_minutes") != 23 or comm_state_machine.get("normal_close_reserve_minutes") != 2:
         fail("communication_state_machine_cadence")
     if "END_SEND_PENDING->END_ACKNOWLEDGED" not in (comm_state_machine.get("normal_path") or []):
         fail("communication_state_machine_end_ack")
+    timing = comm_state_machine.get("timing") or {}
+    if timing.get("primary_work_target_minutes") != 23 or timing.get("normal_end_target_minute") != 25:
+        fail("communication_state_machine_foreground_timing")
+    if timing.get("automation_may_run_only_if_foreground_interrupted") is not True:
+        fail("communication_state_machine_automation_recovery_only")
     if takeover.get("trigger_code") != "BCPGO BCP":
         fail("new_conversation_takeover_code")
     if takeover.get("communication_contract", {}).get("normal_close_owner") != "PRIMARY_ASSISTANT":
