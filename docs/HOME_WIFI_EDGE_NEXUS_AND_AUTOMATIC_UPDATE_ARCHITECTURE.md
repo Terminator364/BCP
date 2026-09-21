@@ -285,3 +285,18 @@ On the target Windows PC, Google Drive for desktop streaming is treated as a vir
 Cloudflare authentication uses Wrangler device authorization only for automatic login. Classic localhost callback OAuth is not an automatic fallback. This prevents competing browser pages and false inference from a dead localhost callback.
 
 B-EDGE keeps the 15-minute WorkManager periodic safety net and uses unique one-shot reconciliation for prompt return-to-Wi-Fi recovery. A future signed B-EDGE release must unify the duplicate reconcile-worker paths before distribution.
+
+
+## R63 — Capability-adaptive B-EDGE relay
+
+The earlier statement “B-EDGE is not assumed to have cellular” remains true, but it is no longer interpreted as “B-EDGE can never relay through cellular.”
+
+BCP now distinguishes **assumption** from **runtime capability**:
+- B-EDGE cellular is optional and discovered;
+- local PC<->B-EDGE traffic remains LAN/hotspot-local;
+- validated Wi-Fi remote egress is preferred;
+- validated B-EDGE cellular may carry only compact control-plane traffic under the R63 16 KiB budget;
+- bulk/download/update payloads never silently fail over to cellular;
+- durable PC outbox + B-EDGE pull/ack makes direct PC Telegram non-critical.
+
+Phone-initiated pull/reconciliation is preferred to an always-listening Android service because Android may stop background listeners. WorkManager remains the process-death/reboot safety net.
