@@ -13,6 +13,11 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.ServiceCompat;
 
+import com.blessing.bcpedge.storage.EdgeDatabase;
+
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -30,13 +35,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Dedicated-node, low-data HTTPS CONNECT relay.
+ * Dedicated-phone BCP node.
+ *
+ * One bounded local socket exposes:
+ * - authenticated HTTPS CONNECT relay restricted to api.telegram.org:443;
+ * - a tiny authenticated local BCP Edge API for status, sync and durable job admission.
  *
  * Security boundary:
- * - LAN clients must authenticate with the already-paired BCP bearer credential.
- * - only api.telegram.org:443 is allowed;
- * - TLS stays end-to-end between the PC Telegram worker and Telegram, so B-EDGE
- *   never receives the bot token or message payload in plaintext.
+ * - LAN API/private relay clients authenticate with the already-paired BCP bearer credential;
+ * - public endpoints expose capability/health only;
+ * - Telegram TLS remains end-to-end between the PC worker and api.telegram.org;
+ * - no arbitrary proxy target and no arbitrary shell execution is exposed.
  */
 public final class EdgeRelayService extends Service {
     private static final String CHANNEL_ID = "bcp_edge_relay";
@@ -48,36 +57,54 @@ public final class EdgeRelayService extends Service {
     private final Semaphore connectionSlots = new Semaphore(EdgeRelayPolicy.MAX_CONNECTIONS);
     private volatile boolean stopping = false;
     private volatile ServerSocket serverSocket;
+    private EdgePresenceAdvertiser presence;
+    private volatile JSONObject presenceState = new JSONObject();
 
     @Override public void onCreate() {
         super.onCreate();
         createChannel();
-        Notification n = buildNotification("Relais local sécurisé actif");
+        Notification n = buildNotification("Serveur Edge/API local actif");
         if (Build.VERSION.SDK_INT >= 34) {
-            ServiceCompat.startForeground(
-                    this,
-                    NOTIFICATION_ID,
-                    n,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING);
+            int types = ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING
+                    | ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE;
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, n, types);
         } else {
             startForeground(NOTIFICATION_ID, n);
         }
+
+        presence = new EdgePresenceAdvertiser(this);
+        try {
+            presenceState = presence.start(
+                    EdgeRelayPolicy.RELAY_PORT,
+                    new BcpClient(this).getEdgeVersion());
+        } catch (Throwable ignored) {}
+
         io.submit(this::serveLoop);
         registration.scheduleWithFixedDelay(() -> {
             try {
-                new BcpClient(EdgeRelayService.this).registerEdgeRelay();
+                BcpClient client = new BcpClient(EdgeRelayService.this);
+                client.registerEdgeRelay();
+                client.recordEvent("EDGE_SERVER_HEARTBEAT", nodeSummary().toString());
             } catch (Throwable ignored) {}
         }, 1, 120, TimeUnit.SECONDS);
         mark("STARTING", "");
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null) {
+            String reason = intent.getStringExtra("boot_reason");
+            if (reason != null && !reason.isEmpty()) {
+                try { new BcpClient(this).recordEvent("EDGE_SERVER_START_REASON", reason); }
+                catch (Throwable ignored) {}
+            }
+        }
         return START_STICKY;
     }
 
     @Override public void onDestroy() {
         stopping = true;
         try { if (serverSocket != null) serverSocket.close(); } catch (Exception ignored) {}
+        try { if (presence != null) presence.stop(); } catch (Exception ignored) {}
         registration.shutdownNow();
         io.shutdownNow();
         mark("STOPPED", "");
@@ -96,7 +123,8 @@ public final class EdgeRelayService extends Service {
                 Socket client = server.accept();
                 if (!connectionSlots.tryAcquire()) {
                     try {
-                        writeAscii(client.getOutputStream(), "HTTP/1.1 503 Busy\r\nConnection: close\r\n\r\n");
+                        writeAscii(client.getOutputStream(),
+                                "HTTP/1.1 503 Busy\r\nConnection: close\r\n\r\n");
                     } catch (Exception ignored) {}
                     try { client.close(); } catch (Exception ignored) {}
                     continue;
@@ -115,7 +143,6 @@ public final class EdgeRelayService extends Service {
     }
 
     private void handle(Socket client) {
-        Socket upstream = null;
         try {
             client.setSoTimeout(EdgeRelayPolicy.TUNNEL_IDLE_TIMEOUT_MS);
             InputStream cin = client.getInputStream();
@@ -124,31 +151,26 @@ public final class EdgeRelayService extends Service {
             String requestLine = readLine(cin, 2048);
             if (requestLine == null) return;
             String[] parts = requestLine.trim().split("\\s+");
-            if (parts.length != 3 || !"CONNECT".equalsIgnoreCase(parts[0])) {
-                writeAscii(cout, "HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n");
+            if (parts.length != 3) {
+                writeAscii(cout, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
                 return;
             }
-
-            Map<String,String> headers = new HashMap<>();
-            int headerBytes = requestLine.length();
-            while (true) {
-                String line = readLine(cin, 4096);
-                if (line == null) return;
-                headerBytes += line.length();
-                if (headerBytes > 16_384) {
-                    writeAscii(cout, "HTTP/1.1 431 Request Header Fields Too Large\r\nConnection: close\r\n\r\n");
-                    return;
-                }
-                if (line.isEmpty()) break;
-                int colon = line.indexOf(':');
-                if (colon > 0) {
-                    headers.put(
-                            line.substring(0, colon).trim().toLowerCase(Locale.ROOT),
-                            line.substring(colon + 1).trim());
-                }
+            Map<String,String> headers = readHeaders(cin, requestLine.length());
+            String method = parts[0].toUpperCase(Locale.ROOT);
+            if ("CONNECT".equals(method)) {
+                handleConnect(client, cin, cout, parts[1], headers);
+                return;
             }
+            handleApi(cin, cout, method, cleanPath(parts[1]), headers);
+        } catch (Exception e) {
+            mark("REQUEST_ERROR", e.getClass().getSimpleName());
+        }
+    }
 
-            String target = parts[1];
+    private void handleConnect(Socket client, InputStream cin, OutputStream cout,
+                               String target, Map<String,String> headers) {
+        Socket upstream = null;
+        try {
             int colon = target.lastIndexOf(':');
             if (colon <= 0) {
                 writeAscii(cout, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
@@ -160,9 +182,11 @@ public final class EdgeRelayService extends Service {
             catch (Exception e) { port = -1; }
 
             String expected = new CredentialStore(this).getToken();
-            if (!EdgeRelayPolicy.isValidProxyAuthorization(headers.get("proxy-authorization"), expected)) {
+            if (!EdgeRelayPolicy.isValidProxyAuthorization(
+                    headers.get("proxy-authorization"), expected)) {
                 mark("AUTH_REJECT", client.getInetAddress().getHostAddress());
-                writeAscii(cout, "HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n");
+                writeAscii(cout,
+                        "HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n");
                 return;
             }
             if (!EdgeRelayPolicy.isAllowedConnectTarget(host, port)) {
@@ -174,7 +198,8 @@ public final class EdgeRelayService extends Service {
             upstream = new Socket();
             upstream.connect(new InetSocketAddress(host, port), EdgeRelayPolicy.CONNECT_TIMEOUT_MS);
             upstream.setSoTimeout(EdgeRelayPolicy.TUNNEL_IDLE_TIMEOUT_MS);
-            writeAscii(cout, "HTTP/1.1 200 Connection Established\r\nProxy-Agent: BCP-EDGE\r\n\r\n");
+            writeAscii(cout,
+                    "HTTP/1.1 200 Connection Established\r\nProxy-Agent: BCP-EDGE\r\n\r\n");
             mark("TUNNEL_OPEN", host);
 
             final Socket upstreamFinal = upstream;
@@ -188,6 +213,193 @@ public final class EdgeRelayService extends Service {
         } finally {
             try { if (upstream != null) upstream.close(); } catch (Exception ignored) {}
         }
+    }
+
+    private void handleApi(InputStream in, OutputStream out, String method, String path,
+                           Map<String,String> headers) throws Exception {
+        if (!EdgeRelayPolicy.isAllowedApiPath(method, path)) {
+            writeJson(out, 404, json("ok", false, "error", "not_found"));
+            return;
+        }
+
+        if (!EdgeRelayPolicy.isPublicApiPath(method, path)) {
+            String expected = new CredentialStore(this).getToken();
+            if (!EdgeRelayPolicy.isValidBearerAuthorization(headers.get("authorization"), expected)) {
+                writeJson(out, 401, json("ok", false, "error", "unauthorized"));
+                return;
+            }
+        }
+
+        if ("GET".equals(method) && "/health".equals(path)) {
+            JSONObject health = nodeSummary();
+            health.put("ok", true);
+            writeJson(out, 200, health);
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/capabilities".equals(path)) {
+            JSONObject caps = new JSONObject();
+            caps.put("ok", true);
+            caps.put("role", "DEDICATED_EDGE_API_SERVER");
+            caps.put("local_api", true);
+            caps.put("durable_queue", true);
+            caps.put("content_addressed_private_cache", true);
+            caps.put("store_and_forward", true);
+            caps.put("telegram_https_connect_relay", true);
+            caps.put("nsd_presence", true);
+            caps.put("wifi_direct_presence", true);
+            caps.put("ble_presence", true);
+            caps.put("arbitrary_proxy", false);
+            caps.put("arbitrary_shell", false);
+            caps.put("version", new BcpClient(this).getEdgeVersion());
+            writeJson(out, 200, caps);
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/status".equals(path)) {
+            writeJson(out, 200, nodeStatus());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/context".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localContextPack());
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
+            JSONObject result = new BcpClient(this).syncOrchestrationState();
+            result.put("ok", true);
+            result.put("node", nodeSummary());
+            writeJson(out, 200, result);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/jobs".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            String kind = body.optString("kind", "").trim();
+            if (kind.isEmpty() || kind.length() > 80) {
+                writeJson(out, 400, json("ok", false, "error", "invalid_kind"));
+                return;
+            }
+            JSONObject payload = body.optJSONObject("payload");
+            if (payload == null) payload = new JSONObject();
+            boolean requiresPc = body.optBoolean("requires_pc", true);
+            JSONObject queued = new BcpClient(this).queueJob(kind, payload, requiresPc);
+            queued.put("ok", queued.optBoolean("queued", false)
+                    || "QUEUED".equals(queued.optString("result", ""))
+                    || "ALREADY_QUEUED".equals(queued.optString("result", "")));
+            writeJson(out, 202, queued);
+        }
+    }
+
+    private JSONObject nodeStatus() {
+        JSONObject out = nodeSummary();
+        try {
+            BcpClient client = new BcpClient(this);
+            out.put("ok", true);
+            out.put("project", client.getProject());
+            out.put("paired", !client.getToken().isEmpty());
+            out.put("sentinel", client.sentinelStatus());
+            out.put("permissions", EdgePermissionManager.status(this));
+            out.put("content_store", client.contentStoreStatus());
+            out.put("network", EdgeNetworkState.snapshot(this));
+            out.put("pending_jobs",
+                    EdgeDatabase.get(this).edgeDao().countPendingJobs());
+            out.put("presence", presenceState);
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            out.put("listener_state", p.getString("state", ""));
+            out.put("listener_detail", p.getString("detail", ""));
+            out.put("listener_updated_at", p.getLong("updated_at", 0L));
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    private JSONObject nodeSummary() {
+        JSONObject out = new JSONObject();
+        try {
+            out.put("node", "B-EDGE");
+            out.put("role", "DEDICATED_EDGE_API_SERVER");
+            out.put("version", new BcpClient(this).getEdgeVersion());
+            out.put("port", EdgeRelayPolicy.RELAY_PORT);
+            out.put("server_mode_enabled", EdgePermissionManager.isServerModeEnabled(this));
+            out.put("timestamp_ms", System.currentTimeMillis());
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    private static Map<String,String> readHeaders(InputStream in, int initialBytes) throws Exception {
+        Map<String,String> headers = new HashMap<>();
+        int headerBytes = initialBytes;
+        while (true) {
+            String line = readLine(in, 4096);
+            if (line == null) break;
+            headerBytes += line.length();
+            if (headerBytes > EdgeRelayPolicy.HEADER_MAX_BYTES) {
+                throw new IllegalArgumentException("headers_too_large");
+            }
+            if (line.isEmpty()) break;
+            int colon = line.indexOf(':');
+            if (colon > 0) {
+                headers.put(
+                        line.substring(0, colon).trim().toLowerCase(Locale.ROOT),
+                        line.substring(colon + 1).trim());
+            }
+        }
+        return headers;
+    }
+
+    private static JSONObject readJsonBody(InputStream in, Map<String,String> headers) throws Exception {
+        int len = 0;
+        try { len = Integer.parseInt(headers.getOrDefault("content-length", "0")); }
+        catch (Exception ignored) {}
+        if (len < 0 || len > EdgeRelayPolicy.API_BODY_MAX_BYTES) {
+            throw new IllegalArgumentException("body_too_large");
+        }
+        if (len == 0) return new JSONObject();
+        byte[] body = readExactly(in, len);
+        return new JSONObject(new String(body, StandardCharsets.UTF_8));
+    }
+
+    private static byte[] readExactly(InputStream in, int length) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(length);
+        byte[] buf = new byte[Math.min(4096, Math.max(1, length))];
+        int remaining = length;
+        while (remaining > 0) {
+            int n = in.read(buf, 0, Math.min(buf.length, remaining));
+            if (n < 0) throw new IllegalArgumentException("unexpected_eof");
+            out.write(buf, 0, n);
+            remaining -= n;
+        }
+        return out.toByteArray();
+    }
+
+    private static String cleanPath(String raw) {
+        if (raw == null || raw.isEmpty()) return "/";
+        int q = raw.indexOf('?');
+        return q >= 0 ? raw.substring(0, q) : raw;
+    }
+
+    private static JSONObject json(Object... pairs) {
+        JSONObject out = new JSONObject();
+        try {
+            for (int i = 0; i + 1 < pairs.length; i += 2) {
+                out.put(String.valueOf(pairs[i]), pairs[i + 1]);
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    private static void writeJson(OutputStream out, int code, JSONObject obj) throws Exception {
+        byte[] body = obj.toString().getBytes(StandardCharsets.UTF_8);
+        String reason = code == 200 ? "OK"
+                : code == 202 ? "Accepted"
+                : code == 400 ? "Bad Request"
+                : code == 401 ? "Unauthorized"
+                : code == 404 ? "Not Found"
+                : "Error";
+        String head = "HTTP/1.1 " + code + " " + reason + "\r\n"
+                + "Content-Type: application/json; charset=utf-8\r\n"
+                + "Content-Length: " + body.length + "\r\n"
+                + "Connection: close\r\n"
+                + "Cache-Control: no-store\r\n\r\n";
+        out.write(head.getBytes(StandardCharsets.US_ASCII));
+        out.write(body);
+        out.flush();
     }
 
     private static void pumpQuiet(InputStream in, Socket outSocket) {
@@ -222,7 +434,8 @@ public final class EdgeRelayService extends Service {
         int used = 0;
         while (used < max) {
             int b = in.read();
-            if (b < 0) return used == 0 ? null : new String(buf, 0, used, StandardCharsets.US_ASCII).trim();
+            if (b < 0) return used == 0 ? null
+                    : new String(buf, 0, used, StandardCharsets.US_ASCII).trim();
             if (b == '\n') break;
             if (b != '\r') buf[used++] = (byte)b;
         }
@@ -238,8 +451,8 @@ public final class EdgeRelayService extends Service {
     private void createChannel() {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationChannel ch = new NotificationChannel(
-                CHANNEL_ID, "BCP Edge relay", NotificationManager.IMPORTANCE_LOW);
-        ch.setDescription("Relais local BCP entre le PC et Internet pour le contrôle léger.");
+                CHANNEL_ID, "BCP Edge server", NotificationManager.IMPORTANCE_LOW);
+        ch.setDescription("Serveur local BCP, reprise, file durable et relais de communication.");
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.createNotificationChannel(ch);
     }
@@ -248,7 +461,7 @@ public final class EdgeRelayService extends Service {
         Notification.Builder b = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
-        return b.setContentTitle("BCP Edge")
+        return b.setContentTitle("BCP Edge · serveur dédié")
                 .setContentText(text)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                 .setOngoing(true)

@@ -22,10 +22,10 @@
       "CHECKPOINT_ID"
     ],
     "cadence_window_minutes": [
-      24,
-      25
+      29,
+      30
     ],
-    "cadence_target_minutes": 25,
+    "cadence_target_minutes": 30,
     "pre_human_action_simulation_policy_ref": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     "load_pre_human_action_simulation_policy_before_user_action": true,
     "load_delivery_policy_before_substantive_work": true,
@@ -38,7 +38,25 @@
     "project_mail_label_source": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     "bcp_install_current_source": "API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk",
     "bcp_phone_primary_edge_node": true,
-    "bcpgo_bcp_loads_current_install_manifest": true
+    "bcpgo_bcp_loads_current_install_manifest": true,
+    "bcp_phone_full_server_target": true,
+    "bcp_phone_candidate_version": "2.2.0-full-node-evergreen",
+    "bcp_phone_candidate_must_pass_emulated_local_api_server_gate": true,
+    "bcp_phone_no_sim_assumed": true,
+    "bcp_pc_is_heavy_worker_not_sole_communications_center": true,
+    "communication_survival_policy_ref": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    "load_communication_survival_policy_before_resume": true,
+    "new_conversation_user_reexplanation_required": false,
+    "bcpgo_bcp_load_order": [
+      ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+      ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+      ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+      ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+      "project_state.json",
+      "API_PROJECT_CONTINUITY.md",
+      "release/current.json"
+    ]
   },
   "universal": [
     {
@@ -75,7 +93,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R68_PHONE_EDGE_AND_MAIL_CONTRACT",
+      "status": "VALID_SCOPED_ALIAS_WITH_R70_FULL_PHONE_SERVER_30MIN_AND_MAIL_CONTRACT",
       "fallback": "BCPGO BCP"
     },
     {

@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.21-edge-relay-v21",
+  "version": "2026.09.21-comms-survival-v22",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "71c4fd11b3bcbfff985d4b9109ef7c430fa6e6554ed75489d1b225e31e02bc24",
+  "sha256": "de827751f5997aa92172e1c06ef82ce840be4b754b412dc47126f48f92b10125",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V21 keeps R62 liveness notices and adds direct-network-error failover through a fresh authenticated B-EDGE api.telegram.org:443 TLS tunnel without copying the bot token to the phone.",
-  "requirements_revision": "2026-09-21-R64"
+  "notes": "Telegram V22 preserves V21 direct-to-B-EDGE fallback and adds durable route evidence for direct Telegram, B-EDGE relay success, and no-working-route failure so field telemetry can prove which communications path was actually used.",
+  "requirements_revision": "2026-09-21-R71"
 }

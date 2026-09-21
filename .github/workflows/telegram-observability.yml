@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/bcp_telegram_observability.py"
       - "windows/CONFIGURE_BCP_TELEGRAM.ps1"
       - "release/telegram_observability.json"
@@ -14,6 +15,7 @@ on:
       - ".github/workflows/telegram-observability.yml"
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/bcp_telegram_observability.py"
       - "windows/CONFIGURE_BCP_TELEGRAM.ps1"
       - "docs/TELEGRAM_*.md"

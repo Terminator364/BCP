@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R64
+Revision: 2026-09-21-R71
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1254,7 +1254,7 @@ BCP MUST NOT imply continuous access to arbitrary private ChatGPT UI history. St
 When durable work evidence exists but expected downstream message-delivery evidence does not appear within a bounded interval, BCP SHOULD raise a deduplicated delivery-gap signal. This signal is observational and MUST NOT infer hidden ChatGPT model/UI state.
 
 ### Bounded interactive cadence
-During active human development sessions, checkpoint/report cadence SHOULD target approximately 25 minutes of useful work, reserving roughly the final minute for durable checkpoint/email delivery so long tool/reasoning sequences do not leave the user unable to distinguish work, network/UI loss, or interruption. This is not a ChatGPT scheduled/background automation.
+During active human development sessions, checkpoint/report cadence SHOULD target approximately 30 minutes of useful work, reserving roughly the final minute for durable checkpoint/email delivery so long tool/reasoning sequences do not leave the user unable to distinguish work, network/UI loss, or interruption. This is not a ChatGPT scheduled/background automation.
 
 Canonical detailed requirement:
 - `docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md`
@@ -1332,7 +1332,7 @@ Canonical detail:
 
 ### Interactive work cadence default
 
-For active technical project work where this project context is available, use bounded work tranches targeting **25 minutes**, with a practical **24–25 minute** window before the durable checkpoint unless a real gate requires earlier return.
+For active technical project work where this project context is available, use bounded work tranches targeting **30 minutes**, with a practical **29–30 minute** window before the durable checkpoint unless a real gate requires earlier return.
 
 The cadence policy MUST NOT be treated as a background-execution promise: after ChatGPT responds, another invocation is required for the next ChatGPT tranche. Resident BCP components may continue independently where explicitly implemented.
 
@@ -1363,7 +1363,7 @@ Canonical detail:
 
 This requirement is additive and preserves R27.
 
-Interactive technical work MUST target approximately 25 minutes of useful work per normal tranche, with a practical 24–25 minute window unless a genuine human gate, safety/tool failure, or completed atomic action justifies earlier return.
+Interactive technical work MUST target approximately 30 minutes of useful work per normal tranche, with a practical 29–30 minute window unless a genuine human gate, safety/tool failure, or completed atomic action justifies earlier return.
 
 BCP MUST NOT equate ChatGPT's displayed “thinking” duration with end-to-end user-visible latency.
 
@@ -1634,7 +1634,7 @@ The canonical guide is:
 - docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md
 
 ### Interactive tranche and Gmail START/END acknowledgement gate
-The active API/BCP work cadence now targets 25 minutes, with a practical 24–25 minute window unless a real gate requires earlier return.
+The active API/BCP work cadence now targets 30 minutes, with a practical 29–30 minute window unless a real gate requires earlier return.
 When email is available, the complete checkpoint body MUST be sent by email first. After positive Gmail send receipt, the ChatGPT application MUST show only the short pointer containing mail confirmation, Kinshasa date/time, and checkpoint identifier; it MUST NOT duplicate the detailed checkpoint body.
 
 Checkpoint delivery order is normative:
@@ -1727,7 +1727,7 @@ Target presentation revision: **R54**.
 This requirement is additive and supersedes only the human checkpoint delivery surface from R53/R54; all underlying execution, telemetry, evidence, rollback, security and product requirements remain active.
 
 ### Human-facing delivery rule
-For every normal active technical work tranche targeting 25 minutes (practical 24–25 minute window):
+For every normal active technical work tranche targeting 30 minutes (practical 29–30 minute window):
 1. execute useful project work first;
 2. persist the durable checkpoint and evidence;
 3. send the complete human-readable checkpoint by email;
@@ -1760,7 +1760,7 @@ If Gmail delivery fails:
 - do not silently fall back to a full in-app checkpoint unless the user explicitly asks for that exception.
 
 ### Cadence
-The canonical interactive tranche target is now approximately 25 minutes for BCP, with a practical 24–25 minute window. Earlier 5–6, 5–7, and 8–10 minute human-facing checkpoint cadence rules are superseded by R58 for this project.
+The canonical interactive tranche target is now approximately 30 minutes for BCP, with a practical 29–30 minute window. Earlier 5–6, 5–7, and 8–10 minute human-facing checkpoint cadence rules are superseded by R58 for this project.
 
 Canonical machine policy:
 - `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`
@@ -1790,7 +1790,7 @@ For the current Nexus authorization path, qualification includes both the server
 
 ## P0 — Interactive work cadence
 
-Normal interactive technical work uses a ~25-minute useful-work tranche: target 25 minutes, with approximately the final minute reserved for durable checkpoint/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. The full checkpoint is sent by email first; ChatGPT then shows only the short Gmail/date-time/checkpoint pointer after confirmed mail delivery.
+Normal interactive technical work uses a ~30-minute useful-work tranche: target 30 minutes, with approximately the final minute reserved for durable checkpoint/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. The full checkpoint is sent by email first; ChatGPT then shows only the short Gmail/date-time/checkpoint pointer after confirmed mail delivery.
 
 The durable `project_state.json` must expose the currently active cadence and simulation-gate policy so a fresh `BCPGO BCP` recovery cannot regress to a superseded 5–7 or 8–10 minute rule or ask the user to repeat an unqualified action path.
 
@@ -1801,7 +1801,7 @@ For every user-invoked active technical tranche where Gmail is available:
 
 - a **START** email MUST be sent before substantive project work begins; only minimal routing/context lookup needed to identify the active project is allowed before this message;
 - the START email MUST include project, Kinshasa-local day/date/time, tranche target, and work scope;
-- the normal tranche target remains approximately 25 minutes;
+- the normal tranche target remains approximately 30 minutes;
 - at the end, a **full END checkpoint** MUST be sent by Gmail before any user-visible ChatGPT completion response;
 - after successful END mail delivery, ChatGPT MUST be pointer-only: “Va sur Gmail” + Kinshasa-local day/date/time + checkpoint identifier;
 - detailed work results MUST NOT be duplicated into the ChatGPT app after the mail succeeds;
@@ -1883,3 +1883,85 @@ No R64 user-facing install/update may be requested until:
 4. server registration accepts only authenticated private-LAN B-EDGE state;
 5. CURRENT/server/Android/Telegram versions and hashes are coordinated;
 6. field installation/readback proves the signed B-EDGE runtime before the relay is represented as FIELD_ACTIVE.
+
+
+## P0 — Dedicated Android Edge/API server appliance — R69
+
+The dedicated old Android phone is a first-class BCP infrastructure node, not a passive telemetry client and not merely a Telegram tunnel. The PC remains the Windows/heavy-compute node; it MUST NOT be the sole communication center.
+
+The phone node MUST, within ordinary Android application capabilities and without requiring a SIM:
+- run a visible foreground Edge/API server with an honest persistent notification;
+- restore the server path after supported reboot/package-replacement lifecycle events;
+- expose a bounded local API for health, capabilities, authenticated node status, durable sync and bounded job admission;
+- authenticate private LAN API access with the existing paired BCP credential and never expose arbitrary shell execution;
+- retain the existing Telegram HTTPS CONNECT relay restricted to `api.telegram.org:443`, preserving end-to-end Telegram TLS;
+- keep Room/WAL-backed project, memory, queue, receipt, dependency and sentinel state so a PC outage does not erase continuity;
+- provide store-and-forward semantics and idempotent replay after connectivity returns;
+- advertise local presence by normal LAN NSD and, when the device supports and the user grants the necessary Android permission, by Wi-Fi Direct DNS-SD and a low-power BLE beacon;
+- remain useful on Wi-Fi, a temporary hotspot, or a local-only link; no cellular modem/SIM is assumed in the old phone;
+- request only permissions tied to concrete node capabilities and explain each permission in the UI;
+- support an optional Android battery-optimization exemption for this dedicated 24/7 use case, while remaining functional in a degraded standard-battery mode if the user declines;
+- preserve low-data operation: control messages, receipts, compact telemetry and queue metadata are preferred over bulk transfer;
+- never invent PC progress while the PC is unreachable.
+
+The first user-facing screen MUST make the phone-node role observable. It must show, in human language, the local server state, API/listener state, durable queue/store-and-forward state, transport/discovery readiness and the Android permissions/autonomy status. A technically working server hidden behind a generic “connected” screen is not sufficient.
+
+Representative Android qualification MUST exercise the exact installable candidate in an emulator or equivalent:
+1. install the APK;
+2. launch the real resolved launcher activity;
+3. grant or simulate only the declared dedicated-server runtime permissions;
+4. verify the full-node UI;
+5. verify a real local HTTP `/health` response from the foreground phone service;
+6. verify `/v1/node/capabilities` advertises durable queue/store-and-forward and rejects arbitrary proxy/shell semantics;
+7. verify a private endpoint rejects unauthenticated access;
+8. force-stop/relaunch and verify the local API becomes healthy again.
+
+Field promotion additionally requires the actual old phone to prove: in-place upgrade without uninstall, permission flow, foreground notification/service, paired identity preservation, local API readback, relay registration, reboot/restart survival and at least one authenticated PC↔phone/Telegram communication round-trip.
+
+The project MAY later evaluate fully-managed Android/DPC/device-owner provisioning for a truly appliance-like dedicated phone, but this is a separate opt-in migration because normal device-owner provisioning can require destructive enrollment/factory-reset conditions. R69 does not silently require or perform such a reset.
+
+
+## P0 — No-micro-beta full-node release gate — R70
+
+The dedicated Android phone is not a peripheral client. It is a first-class always-on BCP Edge/API node. The product MUST stop the pattern of asking the user to install a succession of tiny field deltas.
+
+Before the next phone install request, one coherent candidate MUST include and qualify together:
+- persistent foreground full-node runtime with reboot/package-replace recovery;
+- authenticated local API server with bounded allowlisted operations and no arbitrary shell;
+- Room-backed durable queue, receipts, memory/cache and store-and-forward behavior;
+- NSD LAN presence plus Wi-Fi Direct and BLE low-data presence when Android permissions/capabilities allow them;
+- runtime permission onboarding for the capabilities actually used, plus an explicit optional battery-unrestricted path for this dedicated device;
+- human-readable server dashboard showing node state, transports, queue/memory, permission readiness, PC reachability and diagnostics;
+- in-place Evergreen update with pinned signing identity, hash readback and rollback;
+- representative emulator install/launch/UI/service/API checks on the exact candidate head.
+
+The PC is the Windows/heavy-operation node, not the sole communications center. When the PC is unavailable, B-EDGE MUST retain local project state, queue work, preserve receipts and continue all phone-capable operations. When the PC returns, B-EDGE reconciles idempotently instead of requiring manual reconstruction.
+
+Research basis for R70 implementation:
+- Android offline-first architecture: local data source + persistent queue + WorkManager/network-aware draining;
+- Android Wi-Fi Direct service discovery: nearby service discovery/advertising without requiring an existing LAN;
+- Android NSD: LAN service advertisement/discovery;
+- foreground-service connected-device/remote-messaging types for long-running device communication;
+- Android dedicated-device / device-owner mode is a later optional hardening path, not a prerequisite and not silently enabled because provisioning can be disruptive.
+
+Permission principle: owning the phone does not mean requesting every permission. Request all permissions that map to concrete BCP capabilities, explain them in context, and degrade gracefully if one is denied. Do not request unrelated sensitive permissions merely to make the app appear more powerful.
+
+Field-install rule: if exact-head CI or emulator evidence fails, continue fixing automatically. Do not ask the user to reinstall the next phone APK until the vertical slice is coherent and qualified.
+
+
+## P0 — Communication survival fabric — R71
+
+BCP MUST survive loss or instability of any single communication surface. The canonical communication topology is multi-plane:
+
+- Gmail is the primary detailed human checkpoint surface. START precedes substantive work. END is retried until provider acknowledgement. ChatGPT emits no end output before END ACK and is pointer-only afterward.
+- Telegram is a secondary witness/alert/navigation surface. Direct PC egress is preferred when healthy; a qualified B-EDGE CONNECT relay is the fallback for Telegram when direct PC transport fails.
+- The dedicated Android phone is a persistent low-power communications appliance, API node and store-and-forward node; it MUST remain useful without assuming a SIM and MUST preserve local queue/state when no uplink exists.
+- Drive is replicated durable telemetry/recovery evidence, not proof of user delivery and not the sole runtime authority.
+- ChatGPT is an interactive reasoning/pointer surface, never canonical state.
+- `BCPGO BCP` is the cold-recovery command. A fresh conversation MUST recover policies, writer fence, project state, current release and next action without user re-explanation.
+- A user relaunch message such as “eh oh” MUST NOT be required merely to trigger the END checkpoint; the one-shot END watchdog is armed at START.
+
+Machine policy: `.project-memory/COMMUNICATION_SURVIVAL_POLICY.json`.  
+Technical runbook: `docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
+
+Acceptance requires representative coverage of channel failure, duplicate delivery, reboot/crash during queued messages, network topology change, Telegram direct-to-phone-relay fallback, phone no-uplink durable queuing and idempotent replay after recovery.

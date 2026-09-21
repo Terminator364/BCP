@@ -21,6 +21,7 @@ CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.jso
 DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
 PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
 HUMAN_ACTION_MATRIX = ROOT / ".project-memory" / "HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+COMMUNICATION_POLICY = ROOT / ".project-memory" / "COMMUNICATION_SURVIVAL_POLICY.json"
 
 
 def fail(message: str) -> None:
@@ -65,6 +66,7 @@ def main() -> int:
     delivery = load(DELIVERY_POLICY)
     pre_human = load(PRE_HUMAN_POLICY)
     human_actions = load(HUMAN_ACTION_MATRIX)
+    communication = load(COMMUNICATION_POLICY)
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
@@ -84,11 +86,11 @@ def main() -> int:
         if policy.get(key) is not expected:
             fail("policy." + key)
 
-    if int(cadence.get("target_minutes") or 0) != 25:
-        fail("cadence_target_not_25")
+    if int(cadence.get("target_minutes") or 0) != 30:
+        fail("cadence_target_not_30")
     window = cadence.get("acceptable_window_minutes") or []
-    if window != [24, 25]:
-        fail("cadence_window_not_24_25")
+    if window != [29, 30]:
+        fail("cadence_window_not_29_30")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
     if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
@@ -107,7 +109,7 @@ def main() -> int:
     cadence_delivery = delivery.get("cadence") or {}
     if cadence_delivery.get("end_watchdog_required_at_start") is not True:
         fail("end_watchdog_required_at_start_contract")
-    if int(cadence_delivery.get("end_watchdog_offset_minutes") or 0) != 25:
+    if int(cadence_delivery.get("end_watchdog_offset_minutes") or 0) != 29:
         fail("end_watchdog_offset_contract")
     if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
         fail("start_work_end_chat_order_contract")
@@ -117,6 +119,20 @@ def main() -> int:
         fail("pre_human_runtime_layer_missing")
     if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
         fail("human_action_matrix_ref_drift")
+    if communication.get("schema") != "bcp.communication_survival_policy/1":
+        fail("communication_survival_schema")
+    if communication.get("cold_recovery", {}).get("code") != "BCPGO BCP":
+        fail("communication_cold_recovery_code")
+    if communication.get("checkpoint_protocol", {}).get("target_minutes") != 30:
+        fail("communication_30_minute_checkpoint")
+    if communication.get("channels", {}).get("gmail", {}).get("end_retry_until_provider_ack") is not True:
+        fail("communication_gmail_end_ack")
+    if communication.get("channels", {}).get("phone_edge", {}).get("store_and_forward") is not True:
+        fail("communication_phone_store_forward")
+    if communication.get("channels", {}).get("telegram", {}).get("fallback_path") != "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM":
+        fail("communication_telegram_edge_fallback")
+    if communication.get("anti_false_success", {}).get("phone_queue_accepted_is_not_remote_delivery") is not True:
+        fail("communication_evidence_truth_boundary")
     if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
         fail("human_action_matrix_schema")
     actions = human_actions.get("actions") or []

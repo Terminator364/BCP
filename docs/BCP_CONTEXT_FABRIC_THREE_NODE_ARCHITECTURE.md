@@ -656,3 +656,17 @@ BCPGO resolution SHOULD expose a compact, non-secret receipt containing:
 - projection integrity state.
 
 This receipt is advisory context-cache state only. It cannot advance canonical project state.
+
+
+### R69 — B-EDGE as the primary persistent appliance node
+
+B-EDGE is not just a memory replica or a network relay. On the dedicated old Android phone it is the preferred persistent low-power appliance node for BCP:
+- bounded local API server;
+- durable Room/WAL memory, receipts and store-and-forward queue;
+- local presence/discovery by LAN NSD, optional Wi-Fi Direct and optional BLE beacon;
+- Telegram selective relay while preserving end-to-end TLS;
+- lifecycle restart after reboot/app replacement where Android permits it;
+- lightweight coordination and continuity while PC-WORKER is absent;
+- PC-WORKER receives Windows-only or heavy jobs and remains a replica/worker, not the only control plane.
+
+The phone node must never claim work that requires the PC actually ran. It can queue, coordinate, preserve intent, expose health, relay control and later reconcile receipts.

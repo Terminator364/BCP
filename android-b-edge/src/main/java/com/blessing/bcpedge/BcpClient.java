@@ -19,12 +19,13 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.2-rc1-edge-relay";
+    private static final String EDGE_VERSION = "2.2.0-full-node";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
     private final CredentialStore credentials;
     private final EdgeOrchestrator orchestrator;
+    private final EdgeContentStore contentStore;
 
     public BcpClient(Context context) {
         this.context = context.getApplicationContext();
@@ -32,6 +33,7 @@ public final class BcpClient {
         this.telemetry = new TelemetryStore(context);
         this.credentials = new CredentialStore(context);
         this.orchestrator = new EdgeOrchestrator(context);
+        this.contentStore = new EdgeContentStore(context);
     }
 
     public String getServer() { return prefs.getString("server", ""); }
@@ -45,7 +47,36 @@ public final class BcpClient {
     }
     public JSONArray projectRegistry() { return orchestrator.projectRegistry(); }
     public String getEdgeVersion() { return EDGE_VERSION; }
+    static String edgeVersionForTelemetry() { return EDGE_VERSION; }
+    public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
+
+    public JSONObject localContextPack() {
+        JSONObject out = new JSONObject();
+        try {
+            out.put("project", getProject());
+            out.put("edge_version", getEdgeVersion());
+            out.put("mode", orchestrator.getMode());
+            out.put("sentinel", orchestrator.sentinelStatus(getProject()));
+            out.put("pending_jobs", orchestrator.pendingJobs(getProject()));
+            out.put("memory", orchestrator.memorySnapshot(getProject()));
+            out.put("content_store", contentStore.status());
+            out.put("network", EdgeNetworkState.snapshot(context));
+            out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
+            out.put("offline_capable", true);
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    public void recordValidatedRecipe(String key, JSONObject recipe) {
+        orchestrator.putMemory(getProject(), "TECHNICAL_KNOWLEDGE",
+                "validated_recipe:" + key, recipe, "VALIDATED", true, null);
+    }
+
+    public void recordProviderState(String provider, JSONObject state) {
+        orchestrator.putMemory(getProject(), "OPERATING_STATE",
+                "provider:" + provider, state, "MACHINE_READBACK", false, null);
+    }
 
     public JSONObject observePcSentinel(boolean reachable) {
         JSONObject s = orchestrator.observePcReachability(getProject(), reachable);
@@ -77,6 +108,11 @@ public final class BcpClient {
             body.put("capability", "HTTPS_CONNECT_TELEGRAM");
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
+            body.put("node_role", "DEDICATED_EDGE_API_SERVER");
+            body.put("api_port", EdgeRelayPolicy.RELAY_PORT);
+            body.put("api_version", "v1");
+            body.put("store_and_forward", true);
+            body.put("durable_queue", true);
             JSONObject r = requestJson(
                     "POST", getServer() + "/v1/edge/relay/register",
                     body.toString(), getToken(), "edge-relay-register",
@@ -504,6 +540,7 @@ public final class BcpClient {
                     .putString("cached_resume_json", r.toString())
                     .putLong("cached_resume_at", System.currentTimeMillis())
                     .commit();
+            contentStore.putJson("resume", getProject() + "-resume", r);
         } catch (Exception ignored) {}
     }
 
@@ -523,6 +560,7 @@ public final class BcpClient {
                     getServer() + "/v1/projects/" + enc(getProject()) + "/context",
                     null, getToken(), null, 2200, 5000);
             orchestrator.cacheContext(getProject(), r);
+            contentStore.putJson("context", getProject() + "-context", r);
             return r;
         } catch (Exception ex) {
             orchestrator.setMode("EDGE_ONLY");

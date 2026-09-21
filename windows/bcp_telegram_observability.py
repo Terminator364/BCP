@@ -48,6 +48,7 @@ ATTENTION_PENDING_STATE_PATH = STATE_DIR / "telegram_attention_pending.json"
 NOTIFICATION_BUDGET_STATE_PATH = STATE_DIR / "telegram_notification_budget.json"
 TRANSPORT_OUTAGE_PATH = STATE_DIR / "telegram_transport_outage.json"
 TRANSPORT_NOTICE_PATH = STATE_DIR / "telegram_transport_notice.json"
+TRANSPORT_ROUTE_PATH = STATE_DIR / "telegram_transport_route.json"
 TRANSPORT_START_NOTICE_MIN_INTERVAL_SECONDS = 15 * 60
 TRANSPORT_ALIVE_NOTICE_INTERVAL_SECONDS = 90 * 60
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
@@ -141,6 +142,21 @@ def atomic_json(path: Path, obj: Any) -> None:
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
+
+
+def record_transport_route(route: str, status: str, *, detail: str = "", relay_host: str = "") -> None:
+    """Persist the strongest transport evidence without leaking credentials."""
+    try:
+        atomic_json(TRANSPORT_ROUTE_PATH, {
+            "schema": "bcp.telegram_transport_route/1",
+            "route": str(route or "UNKNOWN")[:40],
+            "status": str(status or "UNKNOWN")[:40],
+            "detail": clean(detail, 180) if "clean" in globals() else str(detail or "")[:180],
+            "relay_host": str(relay_host or "")[:80],
+            "updated_at": utc_now(),
+        })
+    except Exception:
+        pass
 
 
 def clean(value: Any, limit: int = 240) -> str:
@@ -483,6 +499,7 @@ class Http:
         try:
             with urlopen(req, timeout=timeout) as res:
                 raw = res.read()
+                record_transport_route("DIRECT_TELEGRAM", "PROVIDER_REACHABLE")
                 return int(res.status), json.loads(raw.decode("utf-8")) if raw else {}
         except HTTPError as e:
             raw = e.read()
@@ -490,16 +507,30 @@ class Http:
                 obj = json.loads(raw.decode("utf-8")) if raw else {}
             except Exception:
                 obj = {"description": clean(raw.decode("utf-8", errors="replace"))}
+            record_transport_route("DIRECT_TELEGRAM", "PROVIDER_REACHABLE_HTTP_ERROR", detail=str(e.code))
             return int(e.code), obj
         except (URLError, TimeoutError, OSError) as direct_error:
             try:
-                return self._json_via_edge(url, method, body, hdr, timeout)
+                status, obj = self._json_via_edge(url, method, body, hdr, timeout)
+                relay = self._edge_relay()
+                record_transport_route(
+                    "B_EDGE_RELAY",
+                    "PROVIDER_REACHABLE",
+                    detail=type(direct_error).__name__,
+                    relay_host=(relay[0] if relay else ""),
+                )
+                return status, obj
             except Exception as relay_error:
                 append_log(
                     "EDGE_RELAY_FALLBACK_FAILED",
                     direct_error_class=type(direct_error).__name__,
                     relay_error_class=type(relay_error).__name__,
                     detail=clean(relay_error, 140),
+                )
+                record_transport_route(
+                    "NO_WORKING_OUTBOUND_ROUTE",
+                    "FAILED",
+                    detail=type(direct_error).__name__ + "->" + type(relay_error).__name__,
                 )
                 raise direct_error
 

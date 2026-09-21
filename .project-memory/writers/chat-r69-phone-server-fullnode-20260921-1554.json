@@ -1,0 +1,25 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r69-phone-server-fullnode-20260921-1554",
+  "project_or_mission": "API/BCP R69 dedicated Android phone as full Edge/API server node",
+  "base_main_sha": "90e328cf5a87910ad1e0496523ccf73c86ca7512",
+  "created_at": "2026-09-21T15:54:00+01:00",
+  "work_branch": "work/bcp/r69-phone-server-fullnode-20260921-1554",
+  "intended_file_scope": [
+    "android-b-edge/**",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+    "API_PROJECT_CONTINUITY.md",
+    ".project-memory/**",
+    "release/android_candidate.json",
+    "tools/**",
+    ".github/workflows/**"
+  ],
+  "expected_ci_gates": [
+    "CURRENT release contract",
+    "Android build",
+    "Android human-action simulation",
+    "Coordinated product qualification",
+    "Field ecosystem preflight"
+  ]
+}

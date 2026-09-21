@@ -10,8 +10,8 @@ android {
         applicationId "com.blessing.bcpedge.evergreen"
         minSdk 26
         targetSdk 35
-        versionCode 212
-        versionName "2.1.2-rc1-edge-relay-evergreen"
+        versionCode 220
+        versionName "2.2.0-full-node-evergreen"
     }
 
     buildTypes {

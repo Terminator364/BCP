@@ -2,8 +2,19 @@ name: BCP Android Build
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
+      - "android-b-edge/**"
+      - "release/android.json"
+      - "release/android_candidate.json"
+      - "settings.gradle"
+      - "build.gradle"
+      - "gradle.properties"
+      - ".github/workflows/android-build.yml"
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "android-b-edge/**"
       - "release/android.json"
       - "release/android_candidate.json"
@@ -69,7 +80,7 @@ jobs:
           assert f'versionName "{name}"' in gradle, 'versionName drift'
           assert f'private static final String EDGE_VERSION = "{core}";' in client, 'EDGE_VERSION drift'
           PY
-          grep -F 'BCP Edge Evergreen' "$MANIFEST" >/dev/null
+          grep -F 'BCP Edge Server' "$MANIFEST" >/dev/null
           grep -F '0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617' "$UPDATE" >/dev/null
           grep -F '/v1/edge/update' "$UPDATE" >/dev/null
           grep -F '/v1/edge/update/apk' "$UPDATE" >/dev/null
@@ -88,6 +99,24 @@ jobs:
           grep -F 'EDGE_ONLY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
           grep -F 'PC_MEMORY_PRESSURE' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
           grep -F 'WAITING_FOR_PC' android-b-edge/src/main/java/com/blessing/bcpedge/EdgePolicy.java >/dev/null
+
+          grep -F 'android.permission.RECEIVE_BOOT_COMPLETED' "$MANIFEST" >/dev/null
+          grep -F 'android.permission.NEARBY_WIFI_DEVICES' "$MANIFEST" >/dev/null
+          grep -F 'android.permission.BLUETOOTH_SCAN' "$MANIFEST" >/dev/null
+          grep -F 'android.permission.POST_NOTIFICATIONS' "$MANIFEST" >/dev/null
+          grep -F 'remoteMessaging|connectedDevice' "$MANIFEST" >/dev/null
+          grep -F 'EdgeBootReceiver' "$MANIFEST" >/dev/null
+          grep -F 'EdgePermissionManager' "$MAIN" >/dev/null
+          grep -F 'BCP Edge Server' "$MAIN" >/dev/null
+          grep -F 'DEDICATED_EDGE_API_SERVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
+          grep -F '/v1/node/capabilities' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F '/v1/node/jobs' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F 'EdgePresenceAdvertiser' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
+          grep -F 'EdgeContentStore' "$CLIENT" >/dev/null
+          grep -F 'MAX_QUOTA = 8L * 1024L * 1024L * 1024L' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java >/dev/null
+          grep -F 'DATA_SAVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
+          grep -F 'STORE_AND_FORWARD' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
+          echo "EDGE_FULL_NODE_STATIC_GUARDS=PASS"
 
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
             echo "Credential rendering regression detected"

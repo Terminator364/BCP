@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R68_MERGED_INSTALLABLE_BEDGE_2_1_2_FIELD_INSTALL_READY",
-  "last_completed_atomic_action": "R68 exact-head CI passed on head 4196c0ac93cc6442d460a4b79bb2c8afa7fbc060; PR #136 merged to main at 546c5d4042660e80a60fa10eff0d760301e48bdc. Main readback confirms signed B-EDGE 2.1.2 CURRENT metadata, server 0.7.15 coordination, phone-primary Edge continuity, BCP Gmail label policy, exact stable Drive APK SHA and rollback evidence.",
-  "next_action": "Human field gate is now one in-place installation of API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk over the existing BCP Edge app. Do not uninstall. After install, field-verify version 2.1.2, pairing continuity, foreground relay notification/service, relay registration readback and one Telegram round-trip; auto-fix any failure before asking for repeated user actions.",
+  "status": "R71_COMMUNICATION_SURVIVAL_FULL_NODE_EXACT_HEAD_CI",
+  "last_completed_atomic_action": "R71 communication-survival fabric is implemented on the active full-node branch. Gmail START/END+ACK and 30-minute watchdog are durable; BCPGO cold recovery now loads communication survival policy; a detailed private Drive recovery document exists; Telegram now persists whether the working path was direct, B-EDGE relay, or no route, and BCP external telemetry exports that proof. BCP server candidate advanced to 0.7.16 and Telegram companion to communication-survival V22. Android manifest coarse/fine location lint contract was repaired rather than suppressed.",
+  "next_action": "Finish exact-head PR #138 CI. Automatically repair any remaining full-node/communication failures. Do not request another phone install until the coherent 2.2.0 full-node candidate is exact-head green, signed with the pinned Evergreen identity (v2/v3), published to Drive CURRENT with exact hash readback, and production-critical transport/security gaps are closed or explicitly classified nonblocking.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -83,7 +83,10 @@
     "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     "delivery_redundancy_policy": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+    "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    "communication_survival_policy": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -154,7 +157,11 @@
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
-    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json"
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json",
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json",
+    ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -209,14 +216,26 @@
     "P0_global_5_to_7_minute_tranche_cadence": false,
     "P0_email_only_detailed_checkpoint": true,
     "P0_interactive_work_tranche_8_to_10_minutes": false,
-    "P0_interactive_work_tranche_25_minutes": true,
+    "P0_interactive_work_tranche_25_minutes": false,
     "P0_pre_human_action_simulation_gate": true,
     "P0_gmail_start_before_substantive_work": true,
     "P0_gmail_end_provider_ack_before_chat_output": true,
     "P0_proof_carrying_human_action_qualification": true,
     "P0_phone_primary_edge_server_node": true,
     "P0_gmail_project_label": true,
-    "P0_current_installable_artifact_readback": true
+    "P0_current_installable_artifact_readback": true,
+    "P0_phone_local_api_server": true,
+    "P0_phone_boot_restore": true,
+    "P0_phone_multitransport_presence": true,
+    "P0_phone_meaningful_permission_onboarding": true,
+    "P0_phone_server_first_ui": true,
+    "P0_interactive_work_tranche_30_minutes": true,
+    "P0_phone_no_micro_beta_field_installs": true,
+    "P0_phone_full_node_vertical_slice": true,
+    "P0_communication_survival_fabric": true,
+    "P0_cross_conversation_recovery_without_user_reexplanation": true,
+    "P0_no_user_relaunch_required_for_end_checkpoint": true,
+    "P0_30_minute_interactive_work_tranche": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -1892,10 +1911,10 @@
     "field_verified": false
   },
   "operational_cadence_policy": {
-    "status": "CANONICAL_CANDIDATE_R58",
-    "revision": "2026-09-21-R60",
-    "target_minutes": 25,
-    "work_slice_minutes": "24-25",
+    "status": "CANONICAL_CANDIDATE_R70",
+    "revision": "2026-09-21-R70",
+    "target_minutes": 30,
+    "work_slice_minutes": "29-30",
     "checkpoint_each_slice": true,
     "email_full_checkpoint_first": true,
     "chatgpt_after_mail": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK",
@@ -1910,7 +1929,8 @@
     "email_start_notice_before_substantive_work": true,
     "email_end_checkpoint_before_chat_pointer": true,
     "email_end_retry_until_provider_ack": true,
-    "chat_output_before_end_ack_forbidden": true
+    "chat_output_before_end_ack_forbidden": true,
+    "end_watchdog_offset_minutes": 29
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2012,28 +2032,35 @@
     "superseded_by": "R58_25_MINUTE_EMAIL_FIRST_SIMULATION_GATE"
   },
   "continuity_handoff": {
-    "checkpoint_id": "BCP-R58-POSTMERGE-CONTINUITY-20260921",
+    "checkpoint_id": "BCP-R70-FULL-PHONE-NODE-20260921",
     "continuation_code": "BCPGO BCP",
-    "purpose": "Fresh-conversation cold bootstrap after R58 merge",
-    "canonical_main_sha": "0db531771d631ebade0847494baf3ca82c713674",
-    "delivery_policy": "R58_EMAIL_FIRST_CHAT_POINTER_25_MIN_TARGET",
+    "purpose": "Fresh-conversation cold bootstrap for 30-minute no-micro-beta full-phone-node work",
+    "canonical_main_sha": "90e328cf5a87910ad1e0496523ccf73c86ca7512",
+    "active_work_branch": "work/bcp/r69-phone-server-fullnode-20260921-1554",
+    "delivery_policy": "R70_GMAIL_START_WORK_30MIN_GMAIL_END_ACK_THEN_CHAT_POINTER",
+    "cadence_target_minutes": 30,
     "pre_human_action_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "full_node_candidate": {
+      "version": "2.2.0-full-node-evergreen",
+      "version_code": 220,
+      "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_PENDING",
+      "no_micro_beta_install_rule": true
+    },
     "current_field_truth": {
-      "bcp_observed_version": "0.7.13",
-      "bcp_target_version": "0.7.13",
-      "bcp_update_readback": "PASS_EXACT_SHA",
-      "telegram_state": "ACTIVE",
-      "telegram_mode": "DIRECT_TELEGRAM",
+      "bcp_observed_version": "0.7.15",
+      "bcp_update_state": "UP_TO_DATE",
+      "current_installed_edge_version": "2.1.2-rc1-edge-relay",
+      "current_edge_role": "RELAY_CENTRIC_FIELD_APP",
+      "current_edge_registration_observed": true,
+      "telegram_state": "DIRECT_TRANSPORT_OUTAGE",
       "nexus_bundle_version": "0.2.6",
-      "nexus_state": "HUMAN_AUTH_REQUIRED",
-      "nexus_retry_before_0_7_13_readback_forbidden": true
+      "nexus_state": "HUMAN_AUTH_REQUIRED"
     },
     "current_human_gate": {
-      "gate": "WAIT_R60_EXACT_HEAD_CI_AND_MERGE_THEN_FRESH_NEXUS_DEVICE_AUTHORIZATION",
-      "next_irreducible_gate_after_readback": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
-      "stale_code_reuse_forbidden": true,
-      "localhost_8976_fallback_forbidden": true,
-      "nexus_success_requires_provider_readback": true
+      "gate": "NO_NEW_PHONE_INSTALL_UNTIL_R70_FULL_NODE_EXACT_HEAD_GREEN_SIGNED_PUBLISHED_READBACK",
+      "next_irreducible_gate_after_release": "ONE_IN_PLACE_2_2_0_FULL_NODE_INSTALL_AND_ANDROID_PERMISSION_ONBOARDING",
+      "uninstall_forbidden": true,
+      "repeated_micro_beta_installs_forbidden": true
     }
   },
   "r58_delivery_and_simulation_policy": {
@@ -2319,5 +2346,97 @@
     "exact_head_sha": "4196c0ac93cc6442d460a4b79bb2c8afa7fbc060",
     "exact_head_ci": "PASS_ALL_REQUIRED",
     "current_human_gate": "INSTALL_BEDGE_2_1_2_IN_PLACE"
+  },
+  "r69_phone_full_node": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/r69-phone-server-fullnode-20260921-1554",
+    "base_main_sha": "90e328cf5a87910ad1e0496523ccf73c86ca7512",
+    "current_field_version": "2.1.2-rc1-edge-relay",
+    "current_field_state": "ACTIVE_RELAY_VERIFIED",
+    "candidate_version_code": 220,
+    "candidate_version_name": "2.2.0-rc1-full-node-evergreen",
+    "in_place_update_required": true,
+    "uninstall_forbidden": true,
+    "local_api_port": 8876,
+    "phone_role": "PRIMARY_PERSISTENT_EDGE_API_SERVER_APPLIANCE",
+    "pc_role": "WINDOWS_HEAVY_COMPUTE_WORKER_NOT_SOLE_COMMS_CENTER",
+    "sim_assumed": false,
+    "no_sim_required": true,
+    "required_pre_human_gates": [
+      "EXACT_HEAD_CI_GREEN",
+      "ANDROID_EMULATOR_INSTALL_LAUNCH_UI_PASS",
+      "LOCAL_API_HEALTH_200",
+      "CAPABILITIES_READBACK_PASS",
+      "PRIVATE_ENDPOINT_401_NEGATIVE_CONTROL",
+      "COLD_RELAUNCH_API_PASS",
+      "PINNED_CERT_SIGNING",
+      "DRIVE_CURRENT_HASH_READBACK"
+    ]
+  },
+  "r70_phone_full_node": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_PENDING",
+    "branch": "work/bcp/r69-phone-server-fullnode-20260921-1554",
+    "version": "2.2.0-full-node-evergreen",
+    "version_code": 220,
+    "architecture": [
+      "FOREGROUND_EDGE_API_SERVER",
+      "AUTHENTICATED_LOCAL_API",
+      "ROOM_DURABLE_QUEUE_MEMORY_RECEIPTS",
+      "STORE_AND_FORWARD",
+      "BOOT_AND_PACKAGE_REPLACE_RECOVERY",
+      "NSD_LAN_PRESENCE",
+      "WIFI_DIRECT_DNS_SD_PRESENCE",
+      "BLE_LOW_POWER_PRESENCE",
+      "TELEGRAM_TLS_CONNECT_RELAY",
+      "SERVER_FIRST_DASHBOARD",
+      "MEANINGFUL_RUNTIME_PERMISSION_ONBOARDING",
+      "OPTIONAL_BATTERY_UNRESTRICTED_DEDICATED_MODE",
+      "APP_PRIVATE_ADAPTIVE_CONTENT_CACHE_MAX_8_GIB",
+      "ADAPTIVE_NETWORK_DATA_SAVER_STORE_AND_FORWARD"
+    ],
+    "research_basis": [
+      "ANDROID_OFFLINE_FIRST_LOCAL_SOURCE_QUEUE_WORKMANAGER",
+      "ANDROID_WIFI_DIRECT_SERVICE_DISCOVERY",
+      "ANDROID_NSD",
+      "ANDROID_FOREGROUND_CONNECTED_DEVICE_REMOTE_MESSAGING",
+      "ANDROID_WIFI_AWARE_OPTIONAL_CAPABILITY",
+      "ANDROID_DEVICE_OWNER_OPTIONAL_ADVANCED_DEDICATED_MODE"
+    ],
+    "permission_principle": "REQUEST_REAL_CAPABILITY_PERMISSIONS_ONLY_NOT_PERMISSION_THEATER",
+    "pc_role": "WINDOWS_AND_HEAVY_COMPUTE_EXECUTOR_NOT_SOLE_COMMUNICATIONS_CENTER",
+    "next_install_policy": "QUALIFY_COHERENT_VERTICAL_SLICE_BEFORE_USER_INSTALL",
+    "remaining_before_field_release": [
+      "ENCRYPTED_AUTHENTICATED_LAN_TRANSPORT_REPLACES_CLEAR_HTTP_PRODUCTION_PATH",
+      "EDGE_ONLY_REMOTE_CONTROL_PATH_WHEN_PC_IS_OFFLINE_EITHER_PHONE_NATIVE_OR_NEXUS_BACKED",
+      "EXPLICIT_ERROR_LEDGER_AND_PROVIDER_QUOTA_LOCAL_READBACK_IN_SERVER_DASHBOARD",
+      "CONTEXT_BUILDER_PROVES_MINIMAL_CONTEXT_PACK_FROM_LOCAL_MEMORY_LAYERS",
+      "RESOURCE_GOVERNOR_AND_STORAGE_PRESSURE_FIELD_SHAPED_TESTS",
+      "EXACT_HEAD_ANDROID_EMULATOR_FULL_NODE_PASS",
+      "PINNED_EVERGREEN_SIGNING_V2_V3_AND_DRIVE_CURRENT_HASH_READBACK"
+    ],
+    "release_gate": "NO_USER_INSTALL_UNTIL_REMAINING_FULL_NODE_GAPS_ARE_CLOSED_OR_EXPLICITLY_CLASSIFIED_AS_POST_FIELD_NONBLOCKING",
+    "coordinated_server_version": "0.7.16"
+  },
+  "r71_communication_survival": {
+    "status": "IMPLEMENTED_CANDIDATE_CI",
+    "revision": "2026-09-21-R71",
+    "continuation_code": "BCPGO BCP",
+    "tranche_target_minutes": 30,
+    "gmail_start_required": true,
+    "gmail_end_provider_ack_required": true,
+    "end_watchdog_offset_minutes": 29,
+    "chatgpt_pointer_only_after_end_ack": true,
+    "telegram_direct_then_phone_relay": true,
+    "phone_edge_store_and_forward": true,
+    "deterministic_drive_runtime_path": "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "user_reexplanation_on_new_conversation": false,
+    "runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "anti_false_success": true,
+    "target_server_version": "0.7.16",
+    "target_telegram_version": "2026.09.21-comms-survival-v22",
+    "telegram_route_receipt": "state/telegram_transport_route.json",
+    "external_route_readback": true,
+    "private_recovery_document": "API_BCP/03_DOCUMENTATION/BCP — PLAN DE SECOURS COMMUNICATION & REPRISE R71",
+    "research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
   }
 }

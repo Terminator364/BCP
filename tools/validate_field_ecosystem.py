@@ -40,6 +40,11 @@ def main() -> int:
     edge_legacy_worker = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeReconcileWorker.java")
     edge_app = read("android-b-edge/src/main/java/com/blessing/bcpedge/BcpEdgeApplication.java")
     edge_manifest = read("android-b-edge/src/main/AndroidManifest.xml")
+    edge_server = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java")
+    edge_permissions = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePermissionManager.java")
+    edge_presence = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePresenceAdvertiser.java")
+    edge_boot = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeBootReceiver.java")
+    edge_main = read("android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java")
     android_candidate = load("release/android_candidate.json")
     rdc = read("docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md")
 
@@ -108,6 +113,31 @@ def main() -> int:
         "MIN_REENTRY_TRIGGER_MS",
     )
     require(edge_manifest, 'android:name=".BcpEdgeApplication"')
+    require(
+        edge_manifest,
+        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE_CONNECTED_DEVICE",
+        "POST_NOTIFICATIONS",
+        "NEARBY_WIFI_DEVICES",
+        "BLUETOOTH_SCAN",
+        'remoteMessaging|connectedDevice',
+        'android:name=".EdgeBootReceiver"',
+    )
+    require(
+        edge_server,
+        "DEDICATED_EDGE_API_SERVER",
+        '"/health"',
+        '"/v1/node/capabilities"',
+        '"/v1/node/status"',
+        '"/v1/node/sync"',
+        '"/v1/node/jobs"',
+        "EdgePresenceAdvertiser",
+    )
+    assert '"/v1/node/shell"' not in edge_server
+    require(edge_permissions, "requestCoreRuntimePermissions", "requestBatteryUnrestricted", "batteryUnrestricted")
+    require(edge_presence, "NsdManager", "WifiP2pManager", "BluetoothLeAdvertiser", "ADVERTISE_MODE_LOW_POWER")
+    require(edge_boot, "BOOT_OR_PACKAGE_REPLACED", "startForegroundService")
+    require(edge_main, "BCP Edge Server", "AUTORISATIONS SERVEUR", "ACTIVER / RENFORCER LE MODE SERVEUR 24/7")
     assert android_candidate["version_code"] > 210
     assert android_candidate["publication_allowed"] is False
     assert android_candidate["distribution_status"] == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
@@ -381,10 +411,11 @@ def main() -> int:
     cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
-    assert cadence_policy["acceptable_window_minutes"] == [24, 25]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [24, 25]
-    assert delivery_policy["cadence"]["work_slice_minutes"] == "24-25"
-    assert delivery_policy["cadence"]["target_minutes"] == 25
+    communication_policy = load(".project-memory/COMMUNICATION_SURVIVAL_POLICY.json")
+    assert cadence_policy["acceptable_window_minutes"] == [29, 30]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [29, 30]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "29-30"
+    assert delivery_policy["cadence"]["target_minutes"] == 30
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
     assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK"
@@ -407,6 +438,13 @@ def main() -> int:
     assert pre_human_policy["default_rule"] == "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE"
     assert "RUNTIME_PATH" in pre_human_policy["required_layers"]
     assert pre_human_policy["failure_behavior"].startswith("KEEP_WORKING_AUTOMATICALLY")
+    assert communication_policy["schema"] == "bcp.communication_survival_policy/1"
+    assert "NO_SINGLE_COMMUNICATION_CHANNEL_IS_CANONICAL_STATE" in communication_policy["principles"]
+    assert communication_policy["channels"]["gmail"]["end_retry_until_provider_ack"] is True
+    assert communication_policy["channels"]["phone_edge"]["store_and_forward"] is True
+    assert communication_policy["channels"]["telegram"]["fallback_path"] == "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM"
+    assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
+    assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]

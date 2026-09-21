@@ -1,0 +1,21 @@
+{
+  "schema": "bcp.qualification_trigger/1",
+  "revision": "2026-09-21-R71",
+  "purpose": "One-file exact-head qualification fence. Bump nonce/reason after the final durable candidate mutation so all critical workflows execute against the final exact commit SHA.",
+  "nonce": "R71-COMMS-SURVIVAL-FULL-NODE-FINAL-1",
+  "required_workflows": [
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Managed Server Update",
+    "BCP Coordinated PC Package",
+    "BCP Coordinated Product Qualification",
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Final Acceptance Package",
+    "BCP Field Ecosystem Preflight",
+    "BCP Nexus Transport Qualification",
+    "BCP Nexus One-Shot Human-Action Qualification",
+    "BCP Telegram Observability Qualification",
+    "BCP Windows Bootstrap Validation"
+  ],
+  "exact_head_required": true
+}
