@@ -201,6 +201,7 @@ jobs:
           assert obj["ok"] is True
           assert obj["local_api"] is True
           assert obj["durable_queue"] is True
+          assert obj["durable_communication_journal"] is True
           assert obj["content_addressed_private_cache"] is True
           assert obj["store_and_forward"] is True
           assert obj["telegram_https_connect_relay"] is True
@@ -211,6 +212,9 @@ jobs:
           PRIVATE_CODE="$(curl -sS -o edge-private-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/status)"
           test "$PRIVATE_CODE" = "401"
           grep -F '"unauthorized"' edge-private-unauthorized.json >/dev/null
+          COMM_CODE="$(curl -sS -o edge-communications-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/communications)"
+          test "$COMM_CODE" = "401"
+          grep -F '"unauthorized"' edge-communications-unauthorized.json >/dev/null
           echo "BCP_ANDROID_LOCAL_API_SERVER=PASS"
 
       - name: Cold relaunch idempotence smoke
@@ -253,6 +257,7 @@ jobs:
             edge-health.json
             edge-capabilities.json
             edge-private-unauthorized.json
+            edge-communications-unauthorized.json
             edge-health-relaunch.json
             emulator.log
             avd-list-created.txt
