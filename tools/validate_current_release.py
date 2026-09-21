@@ -65,6 +65,7 @@ def main() -> int:
     cadence = load(CADENCE_POLICY)
     delivery = load(DELIVERY_POLICY)
     pre_human = load(PRE_HUMAN_POLICY)
+    active_tranche = load(ROOT / ".project-memory" / "ACTIVE_TRANCHE.json")
     human_actions = load(HUMAN_ACTION_MATRIX)
     communication = load(COMMUNICATION_POLICY)
 
@@ -89,12 +90,14 @@ def main() -> int:
     if int(cadence.get("target_minutes") or 0) != 30:
         fail("cadence_target_not_30")
     window = cadence.get("acceptable_window_minutes") or []
-    if window != [29, 30]:
-        fail("cadence_window_not_29_30")
+    if window != [27, 30]:
+        fail("cadence_window_not_27_30")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
     if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
         fail("chat_pointer_only_contract")
+    if active_tranche.get("closeout", {}).get("user_message_required") is not False:
+        fail("active_tranche_closeout_contract")
     email = delivery.get("channels", {}).get("email", {})
     if email.get("start_notice_required_before_substantive_work") is not True:
         fail("start_email_before_work_contract")
@@ -107,10 +110,16 @@ def main() -> int:
     if email.get("chat_output_before_end_ack_forbidden") is not True:
         fail("chat_before_end_email_ack_forbidden_contract")
     cadence_delivery = delivery.get("cadence") or {}
-    if cadence_delivery.get("end_watchdog_required_at_start") is not True:
-        fail("end_watchdog_required_at_start_contract")
-    if int(cadence_delivery.get("end_watchdog_offset_minutes") or 0) != 29:
-        fail("end_watchdog_offset_contract")
+    if cadence_delivery.get("two_guard_closeout_required") is not True:
+        fail("dual_closeout_guard_contract")
+    if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 27:
+        fail("normal_closeout_offset_contract")
+    if int(cadence_delivery.get("hard_close_guard_offset_minutes") or 0) != 28:
+        fail("hard_close_guard_offset_contract")
+    if int(cadence_delivery.get("absolute_end_deadline_minutes") or 0) != 30:
+        fail("absolute_end_deadline_contract")
+    if cadence_delivery.get("user_relaunch_must_never_be_required") is not True:
+        fail("user_relaunch_dependency_contract")
     if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
         fail("start_work_end_chat_order_contract")
     if pre_human.get("default_rule") != "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE":
