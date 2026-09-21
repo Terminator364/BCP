@@ -13,6 +13,16 @@ on:
       - "release/server.json"
       - "tests/chatgpt_pc_register_contract_cli.py"
       - ".github/workflows/windows-bootstrap-validation.yml"
+  pull_request:
+    paths:
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/INSTALL_BCP_FINAL.cmd"
+      - "windows/bcp_server.py"
+      - "windows/BCP_PC_MIGRATE_CURRENT.cmd"
+      - "windows/BCP_PC_MIGRATE_CURRENT.ps1"
+      - "release/server.json"
+      - "tests/chatgpt_pc_register_contract_cli.py"
+      - ".github/workflows/windows-bootstrap-validation.yml"
 
 permissions:
   contents: read
