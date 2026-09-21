@@ -1,9 +1,9 @@
 {
-  "schema": "bcp.communication_state_machine/1",
-  "revision": "2026-09-21-R74",
-  "cadence_minutes": 30,
-  "useful_work_minutes": 26,
-  "normal_close_reserve_minutes": 4,
+  "schema": "bcp.communication_state_machine/2",
+  "revision": "2026-09-21-R77",
+  "cadence_minutes": 25,
+  "useful_work_minutes": 23,
+  "normal_close_reserve_minutes": 2,
   "work_states": [
     "IDLE",
     "WORKING",
@@ -54,10 +54,10 @@
     }
   ],
   "timing": {
-    "primary_close_reserve_begins_minute": 26,
-    "backup_earliest_offset_minutes": 28,
-    "hard_guard_offset_minutes": 29,
-    "absolute_end_deadline_minutes": 30
+    "primary_close_reserve_begins_minute": 23,
+    "absolute_end_deadline_minutes": 25,
+    "scheduled_backup_default": "DISABLED",
+    "normal_close_owner": "PRIMARY_ASSISTANT"
   },
   "invariants": [
     "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
@@ -65,6 +65,8 @@
     "a scheduler completion is never Gmail delivery proof",
     "the user message is never a closeout trigger",
     "delivery_key is unique per tranche",
-    "END send is search-before-send and idempotent"
+    "END send is search-before-send and idempotent",
+    "normal closeout is performed by PRIMARY_ASSISTANT without depending on an automation",
+    "A+B+C spec is loaded before substantive product mutation"
   ]
 }
