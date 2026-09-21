@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/1",
+  "schema": "bcp.new_conversation_takeover/2",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -20,18 +20,22 @@
     "release/current.json"
   ],
   "takeover_algorithm": [
-    "READ_DURABLE_STATE_FIRST",
-    "RECONCILE_UNCLOSED_TRANCHE_BEFORE_NEW_WORK",
-    "LOAD_COMMUNICATION_STATE_MACHINE_AND_DELIVERY_LEDGER",
+    "DO_NOT_ASK_USER_TO_RECONSTRUCT_PRIOR_CHAT",
+    "READ_DURABLE_STATE_BEFORE_EXPLAINING_ANYTHING",
+    "RECONCILE_ANY_UNCLOSED_OR_OPEN_delivery_failure_TRANCHE_BEFORE_NEW_WORK",
+    "LOAD_COMMUNICATION_PROTOCOL_STATE_MACHINE_AND_DELIVERY_LEDGER",
     "LOAD_GIT_WRITER_FENCE",
-    "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
-    "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
+    "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK_BEFORE_SUBSTANTIVE_WORK",
+    "PERSIST_START_MESSAGE_ID_THREAD_ID_AND_DELIVERY_KEY",
     "WORK_FROM_PROJECT_STATE_NEXT_ACTION",
     "ENTER_CLOSE_RESERVE_AT_MINUTE_26",
-    "PERSIST_CLOSE_INTENT",
+    "STOP_NEW_PRODUCT_MUTATIONS",
+    "PERSIST_CLOSE_INTENT_AND_FINAL_TECHNICAL_CHECKPOINT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
-    "SEND_COMPLETE_GMAIL_END_IF_MISSING",
-    "REQUIRE_PROVIDER_ACK_AND_SENT_READBACK",
+    "PREFER_END_REPLY_TO_START_THREAD",
+    "IF_REPLY_REJECTED_SEARCH_SENT_AGAIN_THEN_STANDALONE_FALLBACK",
+    "REQUIRE_PROVIDER_MESSAGE_ID_AND_SENT_READBACK",
+    "APPEND_END_ACK_TO_DELIVERY_LEDGER",
     "PERSIST_CLOSED_STATE",
     "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
   ],
@@ -44,11 +48,15 @@
     "backup_owner": "SHADOW_BACKUP",
     "hard_guard_owner": "HARD_GUARD",
     "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
-    "ui_thinking_indicator_authoritative": false
+    "ui_thinking_indicator_authoritative": false,
+    "visible_thinking_duration_guaranteed": false,
+    "delivery_proof": "GMAIL_SENT_PLUS_PROVIDER_MESSAGE_ID_PLUS_DURABLE_LEDGER"
   },
   "product_truth": {
     "phone_direction": "coherent dedicated Android full-node/server appliance",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
+    "current_phone_candidate": "2.2.0-full-node-evergreen",
+    "micro_beta_policy": "DO_NOT_EXPOSE_NEXT_INSTALL_UNTIL_COHERENT_FULL_NODE_GATES_PASS",
     "continuation_code": "BCPGO BCP"
   }
 }
