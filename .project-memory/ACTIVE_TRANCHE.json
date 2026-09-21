@@ -7,20 +7,20 @@
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
   "work_state": "CHECKPOINTED",
-  "delivery_state": "CLOSE_INTENT_PERSISTED",
-  "status": "CLOSING",
+  "delivery_state": "CLOSED",
+  "status": "CLOSED",
   "started_at_kinshasa": "2026-09-21T21:17:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T21:40:00+01:00",
   "absolute_end_deadline_kinshasa": "2026-09-21T21:42:00+01:00",
   "gmail_start_message_id": "1a0c59d8414f7441",
   "gmail_start_thread_id": "1a0c59d8414f7441",
-  "gmail_end_message_id": null,
-  "gmail_end_thread_id": null,
-  "end_mail_verified": false,
+  "gmail_end_message_id": "1a0c5b31645975c9",
+  "gmail_end_thread_id": "1a0c5b31645975c9",
+  "end_mail_verified": true,
   "gmail_label": "BCP",
   "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
-  "final_app_reply_gate": "END_ACK_REQUIRED",
+  "final_app_reply_gate": "OPEN_AFTER_END_ACK",
   "communication_guard": {
     "final_app_reply_requires_end_ack_persisted": true,
     "closed_tranche_reuse_forbidden": true,
@@ -45,5 +45,6 @@
     "closure_reason": "PROVIDER_PROOF_END_CONFIRMED_BY_GMAIL_SENT"
   },
   "no_more_product_mutations": true,
-  "close_intent_at_kinshasa": "2026-09-21T21:39:00+01:00"
+  "close_intent_at_kinshasa": "2026-09-21T21:39:00+01:00",
+  "closed_at_kinshasa": "2026-09-21T21:40:43+01:00"
 }
