@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R71_MERGED_POSTMERGE_FIELD_CONVERGENCE_PENDING",
-  "last_completed_atomic_action": "PR #138 merged to main at ed67963c97130078b1442c8b369fbe6fb41f19a2 after all 12 critical workflows passed on exact head d00deaff968bb10df7d87c0a959d03ed4d3faf43. Main readback confirms BCP 0.7.16, Telegram communication-survival V22, R71 communication policy, 30-minute Gmail START/END cadence, BCPGO cold recovery, and the global exact-head qualification trigger.",
-  "next_action": "Observe post-merge CI and machine-readable field convergence. Verify MBMPC auto-updates to BCP 0.7.16 and Telegram companion V22, with telegram_transport_route proving DIRECT_TELEGRAM, B_EDGE_RELAY, or no route. Keep installed phone B-EDGE 2.1.2 until the 2.2.0 full-node APK is Evergreen-signed v2/v3 and Drive CURRENT is replaced/read back by exact hash; then request one coherent in-place install, not another micro-beta.",
+  "status": "R72_DUAL_CLOSEOUT_COMMS_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R72 root-cause correction implemented on candidate branch: the prior minute-29 single END watchdog is replaced by a timer-driven dual closeout (preclose snapshot T+26, normal closeout T+27, hard guard T+28, absolute deadline T+30), with Gmail search-before-send, provider ACK/readback, BCP label and no user-message dependency.",
+  "next_action": "Qualify R72 exact head. If green, reread main through the writer fence, reconcile if moved, merge, verify main, then continue the coherent B-EDGE 2.2.0 full-node product line without micro-beta installs.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -86,7 +86,8 @@
     "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
     "communication_survival_policy": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
     "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
-    "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+    "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
+    "active_tranche_ledger": ".project-memory/ACTIVE_TRANCHE.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -161,7 +162,8 @@
     ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json",
     ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
     "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
-    "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+    "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
+    ".project-memory/ACTIVE_TRANCHE.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -235,7 +237,11 @@
     "P0_communication_survival_fabric": true,
     "P0_cross_conversation_recovery_without_user_reexplanation": true,
     "P0_no_user_relaunch_required_for_end_checkpoint": true,
-    "P0_30_minute_interactive_work_tranche": true
+    "P0_30_minute_interactive_work_tranche": true,
+    "P0_dual_predeadline_end_guards": true,
+    "P0_user_message_never_closeout_trigger": true,
+    "P0_end_mail_search_before_send": true,
+    "P0_end_mail_provider_readback": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2444,5 +2450,19 @@
     "field_server_target": "0.7.16",
     "field_telegram_target": "2026.09.21-comms-survival-v22",
     "phone_full_node_install_gate": "NOT_YET_PUBLISHED_SIGNED_CURRENT"
+  },
+  "r72_communication_closeout": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "revision": "2026-09-21-R72",
+    "root_cause": "SINGLE_WATCHDOG_AT_MINUTE_29_LEFT_TOO_LITTLE_MARGIN; USER_RELAUNCH_ARRIVED_SECONDS_BEFORE_WATCHDOG",
+    "target_minutes": 30,
+    "preclose_snapshot_offset_minutes": 26,
+    "normal_closeout_offset_minutes": 27,
+    "hard_close_guard_offset_minutes": 28,
+    "absolute_end_deadline_minutes": 30,
+    "active_tranche_ref": ".project-memory/ACTIVE_TRANCHE.json",
+    "user_message_required": false,
+    "search_before_send": true,
+    "provider_ack_required": true
   }
 }
