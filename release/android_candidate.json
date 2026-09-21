@@ -2,12 +2,12 @@
   "schema": "bcp.android_source_candidate/1",
   "channel": "ci-candidate",
   "version_code": 220,
-  "version_name": "2.2.0-rc1-full-node-evergreen",
+  "version_name": "2.2.0-full-node-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.15",
-  "requirements_revision": "2026-09-21-R69",
+  "requirements_revision": "2026-09-21-R70",
   "base_distributed_version_code": 212,
   "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -36,7 +36,9 @@
     "dedicated server UI with local node, autonomy, permission and diagnostic cards",
     "existing strict Telegram HTTPS CONNECT relay remains api.telegram.org:443 only",
     "paired BCP credential protects private local API and proxy access",
-    "no arbitrary proxy target and no arbitrary shell surface"
+    "no arbitrary proxy target and no arbitrary shell surface",
+    "30-minute Gmail START/END continuity contract carried by BCPGO",
+    "no-micro-beta field gate: next install only after coherent full-node exact-head qualification"
   ],
   "release_train": "BCP-0.7.15_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }
