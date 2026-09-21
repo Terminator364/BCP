@@ -1,0 +1,139 @@
+name: BCP Android Human-Action Simulation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "android-b-edge/**"
+      - "release/android.json"
+      - "release/android_candidate.json"
+      - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      - ".github/workflows/android-human-action-simulation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "android-b-edge/**"
+      - "release/android.json"
+      - "release/android_candidate.json"
+      - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      - ".github/workflows/android-human-action-simulation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-android-human-action-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  emulator-ui-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Install Android emulator image
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;google_apis;x86_64"
+          echo "no" | avdmanager create avd -n bcp_api35 -k "system-images;android-35;google_apis;x86_64" --force
+
+      - name: Build exact debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle :android-b-edge:assembleDebug --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
+          APK="android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk"
+          test -s "$APK"
+          sha256sum "$APK" | tee android-emulator-apk.sha256
+          aapt dump badging "$APK" | tee android-emulator-apk.badging.txt
+          grep -F "package: name='com.blessing.bcpedge.evergreen'" android-emulator-apk.badging.txt >/dev/null
+
+      - name: Boot representative Android phone
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo chmod 666 /dev/kvm || true
+          nohup emulator -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
+          adb wait-for-device
+          for i in $(seq 1 120); do
+            BOOT="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+            if [ "$BOOT" = "1" ]; then break; fi
+            sleep 2
+          done
+          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+          adb shell input keyevent 82 || true
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          echo "BCP_ANDROID_EMULATOR_BOOT=PASS"
+
+      - name: Install and launch exact user-facing app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk"
+          adb install -r "$APK" | tee adb-install.txt
+          grep -F "Success" adb-install.txt >/dev/null
+          adb shell am force-stop com.blessing.bcpedge.evergreen || true
+          adb shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-start.txt
+          grep -E "Status: ok|Status:.*ok" activity-start.txt >/dev/null
+          sleep 5
+          PID="$(adb shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
+          test -n "$PID"
+          echo "BCP_ANDROID_APP_PROCESS=PASS pid=$PID"
+
+      - name: Verify visible primary UI and no immediate crash
+        shell: bash
+        run: |
+          set -euo pipefail
+          adb shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
+          adb pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
+          grep -F "BCP Edge Evergreen" bcp-window.xml >/dev/null
+          grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window.xml >/dev/null
+          if adb logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
+            echo "Immediate B-EDGE crash detected"
+            exit 1
+          fi
+          echo "BCP_ANDROID_PRIMARY_UI=PASS"
+
+      - name: Cold relaunch idempotence smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          adb shell am force-stop com.blessing.bcpedge.evergreen
+          sleep 1
+          adb shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-relaunch.txt
+          sleep 4
+          PID="$(adb shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
+          test -n "$PID"
+          adb shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
+          adb pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
+          grep -F "BCP Edge Evergreen" bcp-window-relaunch.xml >/dev/null
+          echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
+
+      - name: Upload representative simulation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bcp-android-human-action-simulation
+          path: |
+            android-emulator-apk.sha256
+            android-emulator-apk.badging.txt
+            activity-start.txt
+            activity-relaunch.txt
+            bcp-window.xml
+            bcp-window-relaunch.xml
+            emulator.log
+          if-no-files-found: ignore
