@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/7",
-  "revision": "2026-09-21-R68",
+  "schema": "bcp.delivery_redundancy_policy/8",
+  "revision": "2026-09-21-R70",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -56,16 +56,16 @@
     }
   },
   "cadence": {
-    "work_slice_minutes": "24-25",
-    "target_minutes": 25,
+    "work_slice_minutes": "29-30",
+    "target_minutes": 30,
     "checkpoint_each_slice": true,
     "mail_each_slice": true,
     "blind_retry_loops": false,
     "start_mail_each_slice": true,
     "end_mail_each_slice": true,
     "end_watchdog_required_at_start": true,
-    "end_watchdog_offset_minutes": 25,
-    "end_watchdog_behavior": "AT_START_CREATE_ONE_SHOT_WATCHDOG; IF_END_MAIL_ALREADY_ACKED_DO_NOTHING; OTHERWISE_SEND_ACCURATE_END_CHECKPOINT; NORMAL_END_MUST_DISABLE_WATCHDOG_AFTER_ACK"
+    "end_watchdog_offset_minutes": 29,
+    "end_watchdog_behavior": "AT_START_CREATE_ONE_SHOT_WATCHDOG_FOR_MINUTE_29; IF_END_MAIL_ALREADY_ACKED DO_NOTHING; OTHERWISE SEND ACCURATE END CHECKPOINT BY MINUTE 30; NORMAL END MUST DISABLE WATCHDOG AFTER ACK"
   },
   "action_message_contract": {
     "one_human_gate_at_a_time": true,
