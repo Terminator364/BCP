@@ -576,6 +576,12 @@ public final class BcpClient {
                 getProject(), kind, payload, requiresPc, 50,
                 resourceClass, new JSONArray());
         if (!local.optBoolean("queued", false)) return local;
+        if (!requiresPc && EdgeLocalTaskEngine.supports(kind)) {
+            JSONObject localRun = runLocalReadyJobs(4);
+            local.put("local_execution", localRun);
+            local.put("executed_locally", localRun.optInt("executed", 0) > 0);
+            if (local.optBoolean("executed_locally", false)) return local;
+        }
         JSONObject resources=EdgeResourceGovernor.snapshot(context);
         if(EdgeResourceGovernor.shouldDefer(resourceClass,resources)){
             local.put("deferred_by_resource_governor",true);
@@ -604,6 +610,54 @@ public final class BcpClient {
             EdgeWorkScheduler.requestImmediate(context, "QUEUE_OFFLINE");
             return local;
         }
+    }
+
+    public JSONObject runLocalReadyJobs(int maxJobs) {
+        JSONObject out = new JSONObject();
+        JSONArray receipts = new JSONArray();
+        int executed = 0;
+        int deferred = 0;
+        try {
+            JSONArray q = orchestrator.pendingJobs(getProject());
+            JSONObject resources = EdgeResourceGovernor.snapshot(context);
+            int limit = Math.max(1, Math.min(16, maxJobs));
+            for (int i = 0; i < q.length() && executed < limit; i++) {
+                JSONObject job = q.optJSONObject(i);
+                if (job == null) continue;
+                if (job.optBoolean("requires_pc", true)) continue;
+                if (!"READY".equals(job.optString("state", ""))) continue;
+                String kind = job.optString("kind", "");
+                if (!EdgeLocalTaskEngine.supports(kind)) continue;
+                String resourceClass = job.optString("resource_class", "EDGE_R1");
+                if (EdgeResourceGovernor.shouldDefer(resourceClass, resources)) {
+                    deferred++;
+                    continue;
+                }
+                JSONObject payload = job.optJSONObject("payload");
+                if (payload == null) payload = new JSONObject();
+                JSONObject result = EdgeLocalTaskEngine.execute(
+                        context, orchestrator, getProject(), kind, payload);
+                JSONObject receipt = orchestrator.acknowledgeLocalJob(job, result);
+                receipts.put(receipt);
+                executed++;
+                telemetry.add("EDGE_LOCAL_TASK_COMMITTED",
+                        kind + ":" + receipt.optString("action_id", ""));
+            }
+            out.put("ok", true);
+            out.put("executor", "B_EDGE_LOCAL_TASK_ENGINE");
+            out.put("executed", executed);
+            out.put("deferred", deferred);
+            out.put("receipts", receipts);
+            out.put("mode", orchestrator.getMode());
+        } catch (Exception e) {
+            try {
+                out.put("ok", false);
+                out.put("error", e.getClass().getSimpleName());
+                out.put("executed", executed);
+                out.put("deferred", deferred);
+            } catch (Exception ignored) {}
+        }
+        return out;
     }
 
     public void flushQueuedJobs() {
@@ -635,6 +689,7 @@ public final class BcpClient {
     public JSONObject syncOrchestrationState() {
         JSONObject out = new JSONObject();
         try {
+            out.put("local_execution", runLocalReadyJobs(8));
             JSONObject st = orchestratorStatus();
             JSONObject sentinel = observePcSentinel(true);
             out.put("mode", orchestrator.getMode());
