@@ -694,6 +694,7 @@ public final class BcpClient {
                         1800, 3500);
                 if ("ACKED".equals(receipt.optString("result", ""))
                         || "ALREADY_ACKED".equals(receipt.optString("result", ""))) {
+                    relay.confirmPcAck(item.optString("delivery_id", ""));
                     delivered++;
                     telemetry.add("EDGE_RELAY_DELIVERED",
                             result.optString("route", "") + ":" +
