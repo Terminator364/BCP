@@ -112,6 +112,8 @@ jobs:
           grep -F 'EdgePresenceAdvertiser' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
           grep -F 'EdgeContentStore' "$CLIENT" >/dev/null
           grep -F 'MAX_QUOTA = 8L * 1024L * 1024L * 1024L' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java >/dev/null
+          grep -F 'DATA_SAVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
+          grep -F 'STORE_AND_FORWARD' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
           echo "EDGE_FULL_NODE_STATIC_GUARDS=PASS"
 
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
