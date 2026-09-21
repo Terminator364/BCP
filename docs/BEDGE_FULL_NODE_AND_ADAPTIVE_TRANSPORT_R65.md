@@ -120,3 +120,41 @@ Primary authority is Android's current platform documentation:
 - Dedicated devices: https://developer.android.com/work/dpc/dedicated-devices/
 
 Practical video/tutorial review is used only for UX/workflow intuition; platform/security claims are grounded in official Android contracts.
+
+
+## R66 — Phone-primary control plane
+
+R66 moves the design farther than "phone as relay". The dedicated Android device now owns a useful control-plane subset even while Windows is unavailable:
+
+- authenticated local project registry/context/memory/jobs API;
+- durable idempotent resume-intent intake;
+- phone-owned PC reachability sentinel;
+- phone-owned Telegram outbound liveness and recovery notices;
+- local durable queue drain independent of the Windows Telegram worker;
+- foreground service + boot/package-replacement restart;
+- low-data network-state adaptation without assuming a SIM.
+
+### Inbound Telegram ownership boundary
+
+The same Telegram bot token MUST NOT be long-polled concurrently by both PC and phone. R66 therefore keeps inbound `getUpdates` ownership on the existing fenced worker and gives the phone independent outbound/liveness ownership. A later PHONE_PRIMARY inbound mode must introduce a durable poller lease with a single active owner and explicit failover/readback.
+
+### Storage utilization direction
+
+The phone's app-private storage is a continuity asset, not spare capacity. The R66/R67 direction is:
+- Room/SQLite project memory, jobs, receipts and checkpoints now;
+- bounded content-addressed recovery cache next;
+- signed/hash-pinned BCP artifacts/manifests may be retained once per hash and served locally to avoid repeated downloads;
+- metered uplinks never prefetch bulk content by default;
+- cache eviction is based on free-space floor, age and canonical pin status.
+
+### Network transport research applied
+
+Official Android platform contracts support the following qualified direction:
+- Wi-Fi Direct service discovery for direct sockets without a router;
+- Wi-Fi Aware where hardware supports it, for direct peer discovery/data paths;
+- LocalOnlyHotspot for routerless local communication without Internet;
+- CompanionDeviceManager for one-time nearby-device association and background/FGS-related companion privileges;
+- foreground `connectedDevice` / `remoteMessaging` service types for the active node duties;
+- Device Owner / fully-managed mode as an optional deeper-control phase only after explicit provisioning-impact approval.
+
+Practical old-phone server demonstrations also confirm the general viability of using Android as an always-on lightweight home/edge server, but BCP platform/security decisions remain grounded in Android's official APIs rather than tutorial-specific shortcuts such as arbitrary public tunnels.
