@@ -1,18 +1,18 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/12",
+  "schema": "bcp.interactive_work_cadence_policy/13",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
-  "target_minutes": 30,
+  "target_minutes": 25,
   "acceptable_window_minutes": [
-    26,
-    30
+    23,
+    25
   ],
   "principles": [
     "Send Gmail START and persist provider message_id before substantive work.",
-    "Target 26 minutes of useful work inside a 30-minute wall-clock tranche, while allowing an earlier close only for a true human gate, tool/safety failure, or a completed atomic action that should not be artificially prolonged.",
-    "Reserve the final 4 minutes for closeout; do not start optional product mutations after the close reserve begins.",
+    "Target 23 minutes of useful work inside a 25-minute wall-clock tranche; close earlier only for a true human gate, tool/safety failure, or completed atomic action that should not be artificially prolonged.",
+    "Reserve the final 2 minutes for closeout; do not start optional product mutations after minute 23.",
     "The ChatGPT visible thinking-duration indicator is not authoritative for total work and must never be presented as proof of tranche duration.",
-    "Primary assistant owns normal END delivery. Scheduled jobs are backup-only and have zero authority unless Gmail SENT/readback exists.",
+    "PRIMARY_ASSISTANT owns normal END delivery. Normal closeout must not depend on automations or watchdogs.",
     "Persist CLOSE_INTENT before END, search Gmail by delivery_key, send exactly once if missing, persist END_ACKNOWLEDGED/CLOSED, then reply in ChatGPT.",
     "Every tranche ends with durable evidence: commits/tests/readbacks/receipts and next atomic action."
   ],
@@ -20,17 +20,17 @@
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T19:01:00+01:00",
-  "target_internal_work_minutes": 26,
+  "updated_at": "2026-09-21T21:17:00+01:00",
+  "target_internal_work_minutes": 23,
   "acceptable_internal_work_window_minutes": [
     20,
-    26
+    23
   ],
   "user_visible_target_window_minutes": [
-    26,
-    30
+    23,
+    25
   ],
-  "cutoff_strategy": "TARGET_26_MIN_USEFUL_WORK_THEN_4_MIN_CLOSEOUT; SHADOW_BACKUP_28; HARD_GUARD_29; DEADLINE_30",
+  "cutoff_strategy": "TARGET_23_MIN_USEFUL_WORK_THEN_2_MIN_PRIMARY_CLOSEOUT; BACKUP_DISABLED_BY_DEFAULT",
   "measurement_truth": {
     "chatgpt_thinking_indicator": "NOT_AUTHORITATIVE; MAY_BE MUCH SHORTER_THAN TOTAL_TOOL_ORCHESTRATION; NEVER_USED_AS_WORK_PROOF",
     "manual_stopwatch": "USEFUL_IF_START_AND_STOP_ARE_SYNCHRONIZED",
@@ -48,11 +48,11 @@
   },
   "response_timing": {
     "user_visible_target_minutes": [
-      26,
-      30
+      23,
+      25
     ],
     "useful_work_minimum_minutes": 20,
-    "internal_soft_cutoff_minutes": 26,
+    "internal_soft_cutoff_minutes": 23,
     "checkpoint_before_optional_overrun": true,
     "true_gate_may_return_early": true,
     "transport_latency_is_separate_from_useful_work": true,
@@ -60,18 +60,18 @@
     "end_email_before_chat_pointer": true,
     "end_email_retry_until_provider_ack": true,
     "chat_output_before_end_ack_forbidden": true,
-    "end_watchdog_required": true,
+    "end_watchdog_required": false,
     "watchdog_noop_if_end_already_acked": true,
     "disable_watchdog_after_normal_end_ack": true,
-    "preclose_snapshot_offset_minutes": 26,
-    "normal_closeout_offset_minutes": 26,
-    "hard_close_guard_offset_minutes": 29,
-    "absolute_end_deadline_minutes": 30,
+    "preclose_snapshot_offset_minutes": 22,
+    "normal_closeout_offset_minutes": 23,
+    "hard_close_guard_offset_minutes": 25,
+    "absolute_end_deadline_minutes": 25,
     "foreground_end_send_primary": true,
     "scheduler_completion_is_not_delivery_proof": true,
     "backup_minimal_end_payload": true,
-    "useful_work_target_minutes": 26,
-    "normal_close_reserve_minutes": 4,
-    "backup_earliest_offset_minutes": 28
+    "useful_work_target_minutes": 23,
+    "normal_close_reserve_minutes": 2,
+    "backup_earliest_offset_minutes": 24
   }
 }
