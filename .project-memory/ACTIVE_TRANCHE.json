@@ -6,8 +6,8 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
   "status": "ACTIVE",
   "started_at_kinshasa": "2026-09-21T22:51:26+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T23:14:26+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "final_app_reply_gate": "END_ACK_REQUIRED",
@@ -47,5 +47,27 @@
     "status": "CLOSED"
   },
   "tranche_number_collision_note": "The external START reused R77 at 22:51 after earlier R77 closures. Delivery key is unique. Internal engineering line advances as R78; next user-visible tranche label MUST be R78 or higher.",
-  "no_more_product_mutations": false
+  "no_more_product_mutations": true,
+  "close_intent_at_kinshasa": "2026-09-21T23:14:00+01:00",
+  "close_checkpoint": {
+    "branch": "work/bcp/r78-abc-reconcile-ci-20260921-2251",
+    "pr": 149,
+    "head_sha": "5ce449fbcf5e7de36ce44234e58e19d66d708808",
+    "abc_functional_macro_percent": 57,
+    "abc_evidence_maturity_percent": 45.35,
+    "ci_pass": [
+      "CURRENT Release Contract #1294",
+      "Telegram Observability #756",
+      "Nexus One-Shot #330",
+      "Nexus Transport #719",
+      "Field Ecosystem Preflight #1252",
+      "Android Build #661",
+      "Coordinated Product Qualification #1345"
+    ],
+    "ci_pending": [
+      "Android Human-Action Simulation #235"
+    ],
+    "integration_state": "PR_OPEN_NOT_MERGED",
+    "no_user_install_requested": true
+  }
 }
