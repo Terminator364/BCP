@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R74_COMMUNICATION_STATE_MACHINE_CANDIDATE",
-  "last_completed_atomic_action": "R73 missing END was provider-acknowledged at Gmail message 1a0c520e8cc2673f after search proved no prior END existed. R74 START was provider-acknowledged at message 1a0c5216e9b71648. BCP now ports the stronger KINLINK communication model: delivery_key, explicit delivery states, PRIMARY_ASSISTANT close owner, CLOSE_INTENT, append-only delivery ledger, search-before-send, provider-ack/readback closure, and scheduled guards as backup-only.",
-  "next_action": "Finish R74 exact-head qualification and merge the communication state-machine port. Then continue coherent B-EDGE full-node/server work from the current durable phone branch; no micro-beta or install instruction before exact-head product gates. Re-check Telegram transport/phone relay registration from fresh field telemetry.",
+  "status": "R74_COMMUNICATION_AND_PHONE_LOCAL_EXECUTOR_EXACT_HEAD_CI",
+  "last_completed_atomic_action": "R74 ports the stronger KINLINK communication delivery model into BCP and adds a safe allowlisted Android local task executor so deterministic EDGE jobs can complete on the dedicated phone without waiting for the PC. CURRENT contract run #1190 is PASS on PR #144 exact head. Fresh Drive field telemetry proves BCP 0.7.16 is UP_TO_DATE on MBMPC; Telegram direct transport is still in DIRECT_TRANSPORT_OUTAGE and edge relay is currently inactive/unregistered in the installed 2.1.2 field app, confirming the need for the coherent 2.2.0 full-node release.",
+  "next_action": "Finish PR #144 exact-head qualification. If green, merge through the writer fence and verify post-merge. Continue 2.2.0 full-node as one coherent candidate: prove local executor behavior in Android CI/emulator, relay registration and Telegram route readback, then sign/publish Drive CURRENT only after all release gates. Do not ask for another phone install before that coherent gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2525,5 +2525,42 @@
     "takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     "source_model_reference": "KINLINK_COMMUNICATION_PROTOCOL_V4",
     "scheduler_guards": "BACKUP_ONLY"
+  },
+  "latest_runtime_readback_r74": {
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "modified_at_utc": "2026-09-21T18:16:57.824Z",
+    "runtime_updated_at_utc": "2026-09-21T18:14:37+00:00",
+    "server_version": "0.7.16",
+    "server_pid": 2948,
+    "pc_name": "MBMPC",
+    "paired": true,
+    "server_sha256": "582110afc0fbb59361d24750236f11a48bbaad3fb93b8dd3d001c29db40aae95",
+    "server_update_state": "UP_TO_DATE",
+    "telegram_companion_state": "DIRECT_TRANSPORT_OUTAGE",
+    "telegram_companion_version": "2026.09.21-comms-survival-v22",
+    "telegram_consecutive_failures": 217,
+    "telegram_transport_route": "UNKNOWN",
+    "telegram_transport_route_status": "NOT_OBSERVED",
+    "edge_relay_active": false,
+    "edge_relay_version": "2.1.2-rc1-edge-relay",
+    "nexus_state": "HUMAN_AUTH_REQUIRED",
+    "pc_memory_load_percent": 83,
+    "pc_available_memory_mb": 598,
+    "pc_power_source": "AC"
+  },
+  "r74_phone_local_executor": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_RUNNING",
+    "source": "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeLocalTaskEngine.java",
+    "allowlisted_jobs": [
+      "LOCAL_CONTEXT_SNAPSHOT",
+      "LOCAL_HEALTH_SNAPSHOT",
+      "LOCAL_QUEUE_SUMMARY",
+      "LOCAL_MEMORY_COMPACT"
+    ],
+    "arbitrary_code_execution": false,
+    "durable_receipt_before_queue_delete": true,
+    "edge_only_capable": true,
+    "current_release_published": false,
+    "candidate_version": "2.2.0-full-node-evergreen"
   }
 }
