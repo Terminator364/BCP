@@ -1,3 +1,44 @@
+# R81 Fresh Conversation Handoff — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## Communication contract — P0
+
+Normal tranche = **25 minutes**, owned end-to-end by the active foreground assistant:
+`Gmail START provider-ACK -> ~23 min substantive work -> ~2 min PRIMARY_ASSISTANT closeout -> Gmail END provider-ACK/SENT readback -> ChatGPT pointer only`.
+
+A scheduled automation is **not** the normal close owner. It may only be an emergency recovery path after a genuine platform interruption. A visible ChatGPT “Réfléchi pendant…” duration is neither the mission clock nor a close trigger.
+
+Current R81:
+- START Gmail id: `1a0c650734064dba`;
+- delivery key: `BCP25-20260922-0033-R81`;
+- branch: `work/bcp/r81-abc-fullnode-20260922-0033`;
+- base main: `faecd48e7735be4e7577280a95ed3fddcb9f04e4`.
+
+## Product authority — A+B+C
+
+Every product mutation/release decision MUST load:
+- `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`;
+- `.project-memory/BCP_ABC_COVERAGE.json`;
+- `docs/BCP_CANONICAL_SPEC_ABC.md`.
+
+A = original preconception/promises. B = research-backed realistic expansion. C = all field feedback/corrections/preferences. No subsystem fragment may silently become the denominator.
+
+R81 advances a coherent phone-governance vertical slice:
+- Room schema v5;
+- durable capability registry;
+- append-only memory claim ledger with source/authority/evidence/idempotency;
+- explicit ADMITTED/REJECTED and supersession semantics;
+- local Context Builder includes capability + memory claim evidence;
+- authenticated `/v1/node/capability-registry` and `/v1/node/memory-claims`;
+- server cockpit surfaces real capability/claim counts.
+
+Macro functional coverage candidate: **56.1%**; evidence maturity remains **42.2%** until exact-head qualification and device migration proof. No 2.2 install is authorized yet.
+
+Next action: exact-head CI -> auto-fix regressions -> main reread/writer fence -> reconcile if moved -> serialized merge if green -> post-merge readback. Then continue the largest A+B+C gaps, especially encrypted authenticated LAN, field relay proof, black-start/direct-boot and bulk-media plane.
+
+---
+
 # R79 A+B+C / UCMF V9 / 25-minute automatic communication handoff — 2026-09-21
 
 Canonical continuation: `BCPGO BCP`. UCMF scoped continuation: `UCMF001` or `BCPGO UCMF001`.
