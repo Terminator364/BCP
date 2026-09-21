@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R71_COMMUNICATION_SURVIVAL_AND_FULL_PHONE_NODE_CANDIDATE_CI",
-  "last_completed_atomic_action": "R71 hardened cross-conversation communication recovery: 30-minute Gmail START/END with provider ACK, one-shot END watchdog, BCP-labeled mail, BCPGO BCP cold recovery, phone-primary local store-and-forward node, Telegram direct->B-EDGE relay fallback, deterministic Drive runtime recovery, and anti-false-success evidence rules. R70 Android full-node candidate remains on PR #138; the exact-head lint blocker was identified as missing ACCESS_COARSE_LOCATION alongside legacy ACCESS_FINE_LOCATION and has been fixed on the active branch.",
-  "next_action": "Finish exact-head PR #138 qualification after the Android manifest lint fix and R71 communication-policy changes. Fix any remaining CI defects automatically. Do not ask the user to install another phone build until the coherent full-node release is exact-head green, Evergreen-signed v2/v3, Drive CURRENT replaced/read back, and the remaining production transport/security gaps are either closed or explicitly nonblocking.",
+  "status": "R71_COMMUNICATION_SURVIVAL_FULL_NODE_EXACT_HEAD_CI",
+  "last_completed_atomic_action": "R71 communication-survival fabric is implemented on the active full-node branch. Gmail START/END+ACK and 30-minute watchdog are durable; BCPGO cold recovery now loads communication survival policy; a detailed private Drive recovery document exists; Telegram now persists whether the working path was direct, B-EDGE relay, or no route, and BCP external telemetry exports that proof. BCP server candidate advanced to 0.7.16 and Telegram companion to communication-survival V22. Android manifest coarse/fine location lint contract was repaired rather than suppressed.",
+  "next_action": "Finish exact-head PR #138 CI. Automatically repair any remaining full-node/communication failures. Do not request another phone install until the coherent 2.2.0 full-node candidate is exact-head green, signed with the pinned Evergreen identity (v2/v3), published to Drive CURRENT with exact hash readback, and production-critical transport/security gaps are closed or explicitly classified nonblocking.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -85,7 +85,8 @@
     "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
     "communication_survival_policy": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
-    "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md"
+    "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -159,7 +160,8 @@
     ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json",
     ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json",
     ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
-    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md"
+    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -2397,7 +2399,8 @@
       "ANDROID_WIFI_DIRECT_SERVICE_DISCOVERY",
       "ANDROID_NSD",
       "ANDROID_FOREGROUND_CONNECTED_DEVICE_REMOTE_MESSAGING",
-      "ANDROID_DEDICATED_DEVICE_OWNER_AS_OPTIONAL_LATER_HARDENING"
+      "ANDROID_WIFI_AWARE_OPTIONAL_CAPABILITY",
+      "ANDROID_DEVICE_OWNER_OPTIONAL_ADVANCED_DEDICATED_MODE"
     ],
     "permission_principle": "REQUEST_REAL_CAPABILITY_PERMISSIONS_ONLY_NOT_PERMISSION_THEATER",
     "pc_role": "WINDOWS_AND_HEAVY_COMPUTE_EXECUTOR_NOT_SOLE_COMMUNICATIONS_CENTER",
@@ -2411,7 +2414,8 @@
       "EXACT_HEAD_ANDROID_EMULATOR_FULL_NODE_PASS",
       "PINNED_EVERGREEN_SIGNING_V2_V3_AND_DRIVE_CURRENT_HASH_READBACK"
     ],
-    "release_gate": "NO_USER_INSTALL_UNTIL_REMAINING_FULL_NODE_GAPS_ARE_CLOSED_OR_EXPLICITLY_CLASSIFIED_AS_POST_FIELD_NONBLOCKING"
+    "release_gate": "NO_USER_INSTALL_UNTIL_REMAINING_FULL_NODE_GAPS_ARE_CLOSED_OR_EXPLICITLY_CLASSIFIED_AS_POST_FIELD_NONBLOCKING",
+    "coordinated_server_version": "0.7.16"
   },
   "r71_communication_survival": {
     "status": "IMPLEMENTED_CANDIDATE_CI",
@@ -2427,6 +2431,12 @@
     "deterministic_drive_runtime_path": "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
     "user_reexplanation_on_new_conversation": false,
     "runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
-    "anti_false_success": true
+    "anti_false_success": true,
+    "target_server_version": "0.7.16",
+    "target_telegram_version": "2026.09.21-comms-survival-v22",
+    "telegram_route_receipt": "state/telegram_transport_route.json",
+    "external_route_readback": true,
+    "private_recovery_document": "API_BCP/03_DOCUMENTATION/BCP — PLAN DE SECOURS COMMUNICATION & REPRISE R71",
+    "research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
   }
 }
