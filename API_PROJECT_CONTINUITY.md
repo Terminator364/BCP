@@ -13,16 +13,16 @@ On a fresh conversation, this code means:
 - never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
-### START/END Gmail handshake — R59
+### START/END Gmail handshake — R60
 For every user-invoked continuation/relaunch/message that starts project work:
 1. perform only the minimum routing/context lookup needed to know the project;
 2. send Gmail START with Kinshasa day/date/time, project and tranche scope;
 3. perform the substantive work;
 4. persist evidence/checkpoint;
-5. send Gmail END with the complete checkpoint;
-6. in ChatGPT show only: “Va sur Gmail” + Kinshasa day/date/time + checkpoint id.
+5. send Gmail END with the complete checkpoint and retry automatically until the provider returns a successful send acknowledgement;
+6. only after that END acknowledgement, in ChatGPT show: “Va sur Gmail” + Kinshasa day/date/time + checkpoint id.
 
-If the START mail fails, do not begin the substantive tranche. If the END mail fails, do not claim completion or show a success pointer.
+If the START mail fails, do not begin the substantive tranche. If the END mail fails, emit no ChatGPT end message at all; retry the END mail until acknowledged.
 
 Current durable integration truth:
 - R58 is merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`;
