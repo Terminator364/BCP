@@ -2037,7 +2037,7 @@ The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be u
 Fresh-conversation code `BCPGO BCP` MUST load `.project-memory/NEW_CONVERSATION_TAKEOVER.json` and reconcile any open delivery state before starting new work.
 
 
-## P0 — Integral A+B+C product denominator — R77
+## P0 — Integral A+B+C product denominator — R79 / UCMF V9
 
 BCP scope MUST be evaluated against the cumulative **A+B+C** denominator:
 
@@ -2049,11 +2049,14 @@ Machine-readable authority:
 - `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`
 - `.project-memory/BCP_ABC_COVERAGE.json`
 - `docs/BCP_CANONICAL_SPEC_ABC.md`
+- `.project-memory/UCMF001_CONTINUITY.json`
+
+The current Drive UCMF001 master is verified through **Postulate 9 / V9 FINAL RESILIENCE CLOSURE**. Postulates 1–9 are part of the active BCP denominator: source intent, Chronicle/memory, phone appliance, fast path, destructive failure research, black-start/absence-human, gray-failure/direct-boot, bulk-media separation and ChatGPT/provider-degraded mission survival.
 
 A partial subsystem, one Android screen, one Telegram route or one incident fix MUST NOT be presented as overall product completion. Any completion percentage MUST name its denominator and source-completeness caveat.
 
 The coherent-release rule is strengthened: no micro-beta install loop. A user-facing phone update should advance a meaningful vertical slice across the active A+B+C gaps and carry exact-head CI/device evidence before installation is requested.
 
-The dedicated Android phone is a first-rank B-EDGE node. Current P0 direction is a local-first API/server appliance with durable Chronicle, memory, scheduler, queues, store-and-forward, context building, multi-transport discovery, resource governance and a server-first cockpit. The PC remains a heavy Windows worker/replica, not the sole communications center.
+The dedicated Android phone is a first-rank B-EDGE node. It MUST durably host `BCP_MISSION_STEP_ENVELOPE_V1` / provider-state recovery for steps that may outlive a ChatGPT conversation or remote provider attempt. Mission progress is established by durable receipts/checkpoints, not by a chat spinner or visible thinking duration. Current P0 direction is a local-first API/server appliance with durable Chronicle, memory, scheduler, queues, store-and-forward, context building, multi-transport discovery, resource governance and a server-first cockpit. The PC remains a heavy Windows worker/replica, not the sole communications center.
 
 The current cleartext LAN API is POC-only. Production target remains authenticated **and encrypted** local transport.
