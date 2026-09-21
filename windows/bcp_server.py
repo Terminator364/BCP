@@ -31,7 +31,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.14"
+SERVER_VERSION = "0.7.15"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -5212,6 +5212,32 @@ def selftest():
             job_cols = {r[1] for r in cx.execute("PRAGMA table_info(jobs)").fetchall()}
             assert {"evidence_class","source_id","pinned","expires_at","supersedes_key"} <= mem_cols
             assert {"action_id","priority","resource_class","expected_revision","input_hash","coordinator_epoch","evidence_contract"} <= job_cols
+            comm_cols = {r[1] for r in cx.execute("PRAGMA table_info(communication_outbox)").fetchall()}
+            assert {"delivery_id","dedupe_key","payload_class","payload_json","priority","attempt_count"} <= comm_cols
+
+        comm1 = communication_outbox_enqueue(
+            "MISSION_STATE", {"text": "R63 relay selftest", "silent": False},
+            "selftest-relay", 80
+        )
+        comm2 = communication_outbox_enqueue(
+            "MISSION_STATE", {"text": "R63 relay selftest", "silent": False},
+            "selftest-relay", 80
+        )
+        assert comm1["result"] == "QUEUED"
+        assert comm2["result"] == "ALREADY_QUEUED"
+        batch = communication_outbox_pull(5)
+        assert batch["count"] == 1
+        assert batch["items"][0]["delivery_id"] == comm1["delivery_id"]
+        ack = communication_outbox_ack(
+            comm1["delivery_id"], "BEDGE_DIRECT_TELEGRAM_CELLULAR",
+            "B_EDGE_SELFTEST", "42"
+        )
+        assert ack["result"] == "ACKED" and ack["depth"] == 0
+        again = communication_outbox_ack(
+            comm1["delivery_id"], "BEDGE_DIRECT_TELEGRAM_CELLULAR",
+            "B_EDGE_SELFTEST", "42"
+        )
+        assert again["result"] == "ALREADY_ACKED"
 
         memory_put(
             "buildhub", "PROJECT_MEMORY", "goal", {"value": "final product"}, "selftest",
