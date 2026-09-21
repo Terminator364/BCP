@@ -1,78 +1,44 @@
-# R64 Fresh Conversation Handoff — 2026-09-21
+# R66 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
 
-R64 closes a real implementation gap: the dedicated old phone is infrastructure, not a passive client.
+R66 invariants:
+- Gmail START before substantive work; Gmail END provider-acknowledged before any ChatGPT end output; both messages use subject prefix `[BCP]` and Gmail label `BCP`;
+- target tranche is ~25 minutes with the one-shot end watchdog armed at START;
+- the dedicated old Android phone is PHONE_PRIMARY continuity infrastructure, not a passive client;
+- preserve authenticated phone-local project/context/memory/jobs API, durable resume intents, Room store-forward, phone-owned PC sentinel and phone-owned Telegram outbound liveness;
+- never assume a SIM in the old phone;
+- do not run two Telegram `getUpdates` pollers against the same bot token; inbound ownership remains single-writer until a durable poller lease exists;
+- Wi-Fi Direct / Wi-Fi Aware / LocalOnlyHotspot / Bluetooth companion / USB are capability-gated fallback transports, not claims of field verification;
+- Windows remains the fenced heavy worker for Windows-only work, not the sole continuity authority;
+- do not ask the user to retry/install the R66 phone candidate until exact-head CI and signed-package/readback gates pass.
 
 Current candidate:
-- PR #133 on branch `work/bcp/r64-phone-edge-adaptive-comms-20260921-1312`;
-- BCP 0.7.15: fresh private-LAN B-EDGE relay registration + relay liveness in runtime telemetry;
-- B-EDGE 2.1.2 candidate: dedicated remote-messaging foreground relay, Room/WorkManager continuity retained;
-- Telegram V21: direct Bot API first, then B-EDGE HTTPS CONNECT failover only on network transport failure;
-- relay target is strictly `api.telegram.org:443`; no GitHub/Drive/APK/bulk relay;
-- Telegram TLS remains end-to-end; B-EDGE does not need the Telegram bot token;
-- no SIM is assumed in the old phone. It uses any available Wi-Fi uplink; without uplink, remote delivery waits durably and local state survives.
+- PR #134, branch `work/bcp/r65-phone-server-full-node-20260921-1345`;
+- BCP server target 0.7.16;
+- B-EDGE source candidate 2.1.4-rc1-phone-primary-comms-evergreen;
+- R66 adds phone-owned liveness plus local project/context/memory/jobs and durable resume-intent endpoints;
+- exact-head CI must be reread after the latest R66 commits.
 
-Normal recovery:
-1. Gmail START before substantive work.
-2. Target ~25 minutes.
-3. Finish/read exact-head PR #133 CI; auto-fix simulation failures without user retry.
-4. Merge only through the single-writer fence.
-5. Field-promote server/phone/Telegram only after exact version/hash/signing/readback gates.
-6. Gmail END must be provider-acknowledged before any ChatGPT end output.
-7. ChatGPT remains pointer-only after successful END.
+# R65 Fresh Conversation Handoff — 2026-09-21
 
-Do not ask the user to reinstall or repeat clicks while R64 is still CI/field-unverified.
+Canonical continuation code: `BCPGO BCP`.
 
----
+### R65 dedicated phone full-node invariant
 
-# R62 Post-Merge Communication Handoff — 2026-09-21
+On every fresh recovery:
+- load `docs/BEDGE_FULL_NODE_AND_ADAPTIVE_TRANSPORT_R65.md` and current R65 requirements before planning communications;
+- treat the old dedicated Android phone as first-class BCP server infrastructure, not merely a UI/telemetry client;
+- preserve the phone-local authenticated API, Room store-and-forward queue, PC sentinel, local communication ownership and adaptive transport state;
+- never assume the old phone has a SIM;
+- if no Internet uplink exists, preserve queued work locally and report `NETWORK_WAIT`; do not fake remote delivery;
+- never auto-copy the Telegram BotFather secret over cleartext LAN;
+- Wi-Fi Direct/Bluetooth/USB/LocalOnlyHotspot remain transport candidates until their exact paths are qualified;
+- preserve PC as fenced heavy worker and do not silently migrate canonical Git/project writer authority to Android.
 
-Canonical main integration:
-- R62 merge SHA: `3a20c14fea1644c48e5bfaf3970d6010159e93bc`;
-- exact qualified PR head: `03d9b2b76356ef093f1680ee86f16286ff8dafca`;
-- exact-head required CI: PASS;
-- target resident server: BCP 0.7.14;
-- target Telegram companion: 2026.09.21-comms-autonomy-v20.
+### R65 communication invariant
 
-Current field truth after merge:
-- resident MBMPC is still observed on BCP 0.7.13;
-- server update check is CHECK_FAILED;
-- direct Telegram transport is flapping and latest readback is DEGRADED_RETRY / WinError10060;
-- Nexus remains STAGE_FAILED / DNS_RESOLUTION_FAILED;
-- therefore source integration is complete but resident convergence is not yet field-proven.
-
-Do not ask the user to reinstall BCP, re-enter the Telegram token, repeatedly click the Nexus helper, or switch networks again merely for diagnosis.
-
-Next recovery path:
-1. finish/read post-merge CI;
-2. observe automatic convergence to 0.7.14 + Telegram V20;
-3. if raw GitHub/DNS prevents convergence, implement a Drive-local update/failover lane so communication recovery does not depend on a single Internet hostname;
-4. only after the R62 runtime is field-proven may a remaining Cloudflare consent gate be exposed;
-5. provider-authenticated readback remains mandatory before Nexus success.
-
-# R62 Communication Autonomy Handoff — 2026-09-21
-
-Current field truth:
-- MBMPC is alive on BCP 0.7.13.
-- After the user switched from failing home Wi-Fi to mobile hotspot, direct Telegram is ACTIVE, last poll is fresh, and consecutive failures are 0.
-- The bot was therefore alive; the human-facing failure was prolonged silence because healthy polling alone did not emit a liveness notice.
-- Nexus currently reports STAGE_FAILED / DNS_RESOLUTION_FAILED. The user-facing one-shot showed NO_HUMAN_AUTH_RETRY_NEEDED even though this was a network-stage condition, so no additional manual retry is justified on the old runtime.
-
-R62 candidate:
-- BCP 0.7.14 preserves a prior Nexus human-auth gate across transient staging-network failures and can recover it from the durable receipt.
-- A network-stage one-shot now retries staging once and otherwise reports NETWORK_RECOVERY_PENDING with automatic recovery instead of misleading success/no-retry.
-- Telegram V20 sends a compact online notice after a genuine restart, a reconnect notice after network recovery, and at most one silent alive proof every 90 minutes.
-- No Telegram token re-entry, BCP reinstall, or repeated user clicking is part of the recovery path.
-
-Next:
-1. exact-head CI;
-2. writer-fenced merge;
-3. automatic resident convergence to BCP 0.7.14 + Telegram V20;
-4. Drive/Telegram readback;
-5. only then expose any remaining irreducible Cloudflare human authorization gate.
-
-# R60 Fresh Conversation Handoff — 2026-09-21
+Communication recovery order is durable intent -> direct lane -> phone relay -> phone store-forward -> later replay/readback. Gmail START/END is still mandatory for ChatGPT work tranches. Telegram must be treated as a recoverable cockpit transport, not canonical state.
 
 Canonical continuation code for a new conversation:
 

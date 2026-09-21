@@ -27,9 +27,9 @@ Field evidence on 2026-09-19 showed:
 
 3. SELECTIVE_TRANSPORT_FAILOVER
    - Telegram/API control traffic may fail over independently from bulk project traffic.
-   - B-EDGE is a dedicated old phone on the same home Wi-Fi as the PC; no cellular capability is assumed for B-EDGE.
+   - B-EDGE is the dedicated old phone and a first-class local BCP server node; no SIM/cellular capability is assumed. It may use any available Wi-Fi/hotspot uplink while continuing local-LAN service when Internet is absent.
    - The user's current phone may use Wi-Fi or mobile data, but is a human client only and MUST NOT be required as an infrastructure relay.
-   - Preferred target: PC and B-EDGE exchange control state over the local LAN, while a small zero-cost HTTPS BCP Nexus/webhook relay handles Telegram when direct home-WiFi Telegram egress is degraded.
+   - Preferred target: PC and B-EDGE exchange compact control state over authenticated local transport. Direct Telegram is tried first; when it fails, the PC may use the B-EDGE TLS relay, then the B-EDGE durable store-and-forward queue. Nexus/webhook remains an optional remote lane, not the sole authority.
    - Alternative zero-cost relays may be evaluated only after field validation and must not introduce paid spend or false geography.
 
 4. OFFLINE_FIRST_QUEUEING
@@ -51,15 +51,18 @@ Field evidence on 2026-09-19 showed:
 
 ## Telegram transport target
 
-Preferred steady-state path:
+Preferred adaptive path:
 
-Telegram cloud <-> BCP Nexus HTTPS webhook/relay
-                     ^
-                     | compact authenticated HTTPS
-                     |
-B-EDGE <------ authenticated home-LAN ------> BCP PC
+Telegram cloud
+   ^                       (when phone uplink exists)
+   | direct HTTPS / B-EDGE outbound
+B-EDGE full node (Room queue + local API + relay)
+   ^
+   | authenticated LAN/hotspot; future Wi-Fi Direct/Bluetooth/USB adapters
+   v
+BCP PC heavy worker
 
-Both PC and B-EDGE remain on the home Wi-Fi. The current phone can independently use Wi-Fi or mobile data to access Telegram, but it is never required to relay BCP traffic.
+BCP Nexus is an optional remote ingress/witness lane. The old dedicated phone is infrastructure; the user's current personal phone is never a required infrastructure relay. The old phone does not require a SIM.
 
 ## Acceptance gates
 
@@ -87,3 +90,12 @@ Full-PC mobile hotspot and the user's current phone as a relay are diagnostic/em
 
 Detailed topology, progress and update architecture:
 `docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
+
+
+## R65 dedicated-phone data path
+
+The PC must not consume mobile data merely because it can. When B-EDGE is locally reachable, compact BCP control traffic should stay PC<->phone and let the phone own queueing/retry. Bulk downloads/build artifacts remain deferred on metered paths unless the user explicitly requests them.
+
+When the old phone has no Internet but remains locally reachable, it still serves the local API and persists messages/jobs. Remote transport state is `NETWORK_WAIT`.
+
+When the PC and old phone lack a common LAN/router, the next qualified local transport target is Wi-Fi Direct. Bluetooth/BLE is reserved for tiny bootstrap/control traffic and USB for explicit recovery/bootstrap. These are not advertised as FIELD_VERIFIED until device tests pass.

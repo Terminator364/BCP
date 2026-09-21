@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.21-edge-relay-v21",
+  "version": "2026.09.21-phone-node-v22",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "71c4fd11b3bcbfff985d4b9109ef7c430fa6e6554ed75489d1b225e31e02bc24",
+  "sha256": "25f2d9e9e71ad5cec7980b8d50c3700ccbea457bd925bae227dd7c77808d6d45",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V21 keeps R62 liveness notices and adds direct-network-error failover through a fresh authenticated B-EDGE api.telegram.org:443 TLS tunnel without copying the bot token to the phone.",
-  "requirements_revision": "2026-09-21-R64"
+  "notes": "Telegram V22 remains backward compatible with the existing direct/relay transport contract; when BCP 0.7.16+ advertises EDGE_NODE_V1 it can additionally persist compact failed sendMessage payloads on the dedicated phone. Queued is never claimed as delivered.",
+  "requirements_revision": "2026-09-21-R66"
 }

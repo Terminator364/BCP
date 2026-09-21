@@ -33,7 +33,19 @@
     "email_end_checkpoint_before_chat_pointer": true,
     "email_end_retry_until_provider_ack": true,
     "chat_output_before_end_ack_forbidden": true,
-    "chat_pointer_only_after_end_ack": true
+    "chat_pointer_only_after_end_ack": true,
+    "bcp_phone_full_node_requirements_ref": "docs/BEDGE_FULL_NODE_AND_ADAPTIVE_TRANSPORT_R65.md",
+    "load_phone_full_node_requirements_for_bcp": true,
+    "old_dedicated_phone_is_first_class_bcp_infrastructure": true,
+    "no_sim_assumption_for_old_phone": true,
+    "communication_store_forward_before_remote_retry": true,
+    "bcp_gmail_label_required": "BCP",
+    "bcp_gmail_subject_prefix_required": "[BCP]",
+    "apply_gmail_label_after_provider_ack": true,
+    "phone_primary_communications": true,
+    "phone_owned_liveness_without_pc": true,
+    "phone_local_project_api": true,
+    "phone_durable_resume_intent": true
   },
   "universal": [
     {

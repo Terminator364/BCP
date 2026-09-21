@@ -32,7 +32,7 @@ DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
 EDGE_RELAY_STATE_PATH = STATE_DIR / "edge_relay.json"
-SERVER_VERSION = "0.7.15"
+SERVER_VERSION = "0.7.16"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -107,13 +107,19 @@ def edge_relay_status(now_epoch: int | None = None) -> dict:
         and raw.get("capability") == "HTTPS_CONNECT_TELEGRAM"
         and expires > now
     )
+    node_port = int(raw.get("node_port") or 0)
+    node_active = bool(active and node_port == 8877)
     return {
-        "schema": "bcp.edge_relay_registration/1",
+        "schema": "bcp.edge_relay_registration/2",
         "active": active,
         "relay_host": str(raw.get("relay_host") or "") if active else "",
         "relay_port": int(raw.get("relay_port") or 0) if active else 0,
         "capability": str(raw.get("capability") or ""),
         "edge_version": str(raw.get("edge_version") or ""),
+        "node_active": node_active,
+        "node_host": str(raw.get("relay_host") or "") if node_active else "",
+        "node_port": node_port if node_active else 0,
+        "capabilities": list(raw.get("capabilities") or []),
         "registered_at": str(raw.get("registered_at") or ""),
         "expires_epoch": expires,
         "expires_in_seconds": max(0, expires - now),
@@ -130,12 +136,32 @@ def register_edge_relay(remote_ip: str, body: dict) -> dict:
         raise ValueError("edge_relay_port_not_allowed")
     if capability != "HTTPS_CONNECT_TELEGRAM":
         raise ValueError("edge_relay_capability_not_allowed")
+    node_port = int(body.get("node_port") or 0)
+    if node_port not in (0, 8877):
+        raise ValueError("edge_node_port_not_allowed")
+    allowed_caps = {
+        "HTTPS_CONNECT_TELEGRAM",
+        "EDGE_NODE_V1",
+        "DURABLE_STORE_FORWARD",
+        "LOCAL_TELEGRAM_OUTBOUND",
+    }
+    capabilities = []
+    for raw_cap in body.get("capabilities") or []:
+        cap = str(raw_cap or "").strip()
+        if cap in allowed_caps and cap not in capabilities:
+            capabilities.append(cap)
+    if "HTTPS_CONNECT_TELEGRAM" not in capabilities:
+        capabilities.insert(0, "HTTPS_CONNECT_TELEGRAM")
+    if node_port == 8877 and "EDGE_NODE_V1" not in capabilities:
+        capabilities.append("EDGE_NODE_V1")
     now = int(time.time())
     rec = {
-        "schema": "bcp.edge_relay_registration/1",
+        "schema": "bcp.edge_relay_registration/2",
         "relay_host": remote_ip,
         "relay_port": port,
+        "node_port": node_port,
         "capability": capability,
+        "capabilities": capabilities,
         "edge_version": str(body.get("edge_version") or "")[:80],
         "registered_at": utc_now(),
         "registered_epoch": now,
@@ -596,6 +622,9 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "edge_relay_capability": edge_relay["capability"],
         "edge_relay_edge_version": edge_relay["edge_version"],
         "edge_relay_expires_in_seconds": edge_relay["expires_in_seconds"],
+        "edge_node_active": edge_relay.get("node_active", False),
+        "edge_node_host": edge_relay.get("node_host", ""),
+        "edge_node_port": edge_relay.get("node_port", 0),
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],

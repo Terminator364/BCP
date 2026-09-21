@@ -1,13 +1,13 @@
 {
   "schema": "bcp.android_source_candidate/1",
   "channel": "ci-candidate",
-  "version_code": 212,
-  "version_name": "2.1.2-rc1-edge-relay-evergreen",
+  "version_code": 214,
+  "version_name": "2.1.4-rc1-phone-primary-comms-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
-  "coordinated_server_version": "0.7.15",
-  "requirements_revision": "2026-09-21-R64",
+  "coordinated_server_version": "0.7.16",
+  "requirements_revision": "2026-09-21-R66",
   "base_distributed_version_code": 210,
   "base_distributed_version_name": "2.1.0-rc1-sentinel-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -21,18 +21,20 @@
     "IN_PLACE_UPDATE_NO_UNINSTALL"
   ],
   "features": [
-    "single authoritative reconciliation scheduler",
-    "legacy WorkManager compatibility shim without scheduling policy",
-    "connected-network constraint for periodic and one-shot work",
-    "bounded exponential WorkManager backoff",
-    "unique KEEP one-shot reconciliation",
-    "process-level validated Wi-Fi return trigger",
-    "15-minute periodic safety net",
-    "dedicated authenticated B-EDGE HTTPS CONNECT relay for Telegram control plane",
-    "strict api.telegram.org:443 allowlist with paired BCP bearer authentication",
-    "end-to-end PC-to-Telegram TLS preserved through B-EDGE tunnel",
-    "bounded four-connection relay with connect and idle timeouts",
-    "short-lived relay registration refreshed to the paired PC"
+    "dedicated B-EDGE full-node API on authenticated private LAN TCP/8877",
+    "phone-owned project registry/context/memory/pending-job read API independent of PC availability",
+    "durable idempotent MISSION_RESUME intent accepted by phone and replayed when PC returns",
+    "Room-backed idempotent durable store-and-forward queue with NETWORK_WAIT",
+    "phone-owned Telegram outbound liveness independent of the Windows Telegram worker",
+    "PC lost/recovered, phone uplink recovered, startup and sparse 90-minute alive notices with anti-spam policy",
+    "existing strict api.telegram.org:443 TLS CONNECT relay on TCP/8876",
+    "adaptive Wi-Fi/hotspot/cellular/local-only connectivity classification without SIM assumption",
+    "boot and package-replacement recovery for the foreground node service",
+    "combined remoteMessaging + connectedDevice foreground-service declaration",
+    "local Telegram credential option encrypted with Android Keystore AES-GCM; no automatic cleartext LAN secret copy",
+    "PC failed compact Telegram sendMessage persistence to B-EDGE node",
+    "dedicated server cockpit UI exposing node/network/queue status",
+    "Wi-Fi Direct, Wi-Fi Aware, LocalOnlyHotspot, Bluetooth companion and USB remain gated transport expansions until exact-path qualification"
   ],
-  "release_train": "BCP-0.7.15_EDGE-2.1.2-candidate_NEXUS-0.2.6"
+  "release_train": "BCP-0.7.16_EDGE-2.1.4-candidate_NEXUS-0.2.6"
 }

@@ -434,6 +434,73 @@ class Http:
         except Exception:
             return None
 
+    @staticmethod
+    def _edge_node() -> tuple[str, int, str] | None:
+        try:
+            state = read_json(EDGE_RELAY_STATE_PATH, {}) or {}
+            if int(state.get("expires_epoch") or 0) <= int(time.time()):
+                return None
+            host = str(state.get("relay_host") or "").strip()
+            port = int(state.get("node_port") or 0)
+            caps = set(str(x) for x in (state.get("capabilities") or []))
+            if not host or port != 8877 or "EDGE_NODE_V1" not in caps:
+                return None
+            pair_token = BCP_PAIR_TOKEN_PATH.read_text(encoding="utf-8").strip()
+            if not pair_token:
+                return None
+            return host, port, pair_token
+        except Exception:
+            return None
+
+    def _enqueue_edge_send(self, text: str) -> bool:
+        node = self._edge_node()
+        if node is None:
+            return False
+        host, port, pair_token = node
+        compact = str(text or "")[:3900]
+        if not compact:
+            return False
+        bucket = int(time.time()) // 300
+        idem = "edge-msg-" + hashlib.sha256(
+            (str(bucket) + "\n" + compact).encode("utf-8")
+        ).hexdigest()[:40]
+        payload = {
+            "project_id": "API/BCP",
+            "kind": "TELEGRAM_SEND",
+            "payload": {"channel": "TELEGRAM", "text": compact},
+            "requires_pc": False,
+            "priority": 90,
+            "resource_class": "EDGE_R1",
+            "idempotency_key": idem,
+        }
+        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        conn = http.client.HTTPConnection(host, port, timeout=5)
+        try:
+            conn.request(
+                "POST",
+                "/v1/node/enqueue",
+                body=body,
+                headers={
+                    "Authorization": "Bearer " + pair_token,
+                    "Idempotency-Key": idem,
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Accept": "application/json",
+                },
+            )
+            res = conn.getresponse()
+            raw = res.read()
+            ok = int(res.status) in (200, 202)
+            append_log(
+                "EDGE_STORE_FORWARD_ENQUEUE",
+                status=int(res.status),
+                node_host=host,
+                idempotency_key=idem,
+                accepted=ok,
+            )
+            return ok
+        finally:
+            conn.close()
+
     def _json_via_edge(self, url: str, method: str, body: bytes | None,
                        headers: dict, timeout: int) -> tuple[int, Any]:
         parsed = urlsplit(url)
@@ -495,12 +562,32 @@ class Http:
             try:
                 return self._json_via_edge(url, method, body, hdr, timeout)
             except Exception as relay_error:
+                queued = False
+                try:
+                    parsed = urlsplit(url)
+                    if (
+                        method.upper() == "POST"
+                        and parsed.hostname == "api.telegram.org"
+                        and parsed.path.endswith("/sendMessage")
+                        and isinstance(payload, dict)
+                        and payload.get("text")
+                    ):
+                        queued = self._enqueue_edge_send(str(payload.get("text") or ""))
+                except Exception as queue_error:
+                    append_log(
+                        "EDGE_STORE_FORWARD_FAILED",
+                        error_class=type(queue_error).__name__,
+                        detail=clean(queue_error, 140),
+                    )
                 append_log(
                     "EDGE_RELAY_FALLBACK_FAILED",
                     direct_error_class=type(direct_error).__name__,
                     relay_error_class=type(relay_error).__name__,
                     detail=clean(relay_error, 140),
+                    edge_store_forward_queued=queued,
                 )
+                if queued:
+                    raise RuntimeError("telegram_edge_store_forward_queued")
                 raise direct_error
 
 

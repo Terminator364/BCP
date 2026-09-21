@@ -201,6 +201,111 @@ public final class EdgeOrchestrator {
         }
     }
 
+    public JSONObject queueJobWithIdempotency(String projectId, String kind, JSONObject payload,
+                                                  boolean requiresPc, int priority, String resourceClass,
+                                                  JSONArray dependencies, String idempotencyKey) {
+        JSONObject out = new JSONObject();
+        try {
+            String idem = idempotencyKey == null ? "" : idempotencyKey.trim();
+            if (!EdgeNodePolicy.isSafeIdempotencyKey(idem)) {
+                out.put("result", "HOLD_INVALID_IDEMPOTENCY_KEY");
+                out.put("queued", false);
+                return out;
+            }
+            if (dao.receiptCount(idem) > 0) {
+                out.put("result", "ALREADY_COMMITTED");
+                out.put("queued", false);
+                out.put("idempotency_key", idem);
+                return out;
+            }
+            EdgeJobEntity existing = dao.jobByIdempotency(projectId, idem);
+            if (existing != null) {
+                out.put("result", "ALREADY_QUEUED");
+                out.put("queued", true);
+                out.put("local_id", existing.localId);
+                out.put("idempotency_key", existing.idempotencyKey);
+                out.put("state", existing.state);
+                return out;
+            }
+            if (dao.countPendingJobs() >= EdgePolicy.boundedQueueLimit()) {
+                out.put("result", "HOLD_BACKPRESSURE");
+                out.put("state", "HOLD");
+                out.put("reason", "DURABLE_QUEUE_CAPACITY_REACHED");
+                out.put("queued", false);
+                return out;
+            }
+            String id = UUID.randomUUID().toString();
+            long now = System.currentTimeMillis();
+            String state = dependencies != null && dependencies.length() > 0
+                    ? "BLOCKED" : EdgePolicy.nextState(requiresPc, getMode());
+            EdgeJobEntity job = new EdgeJobEntity(
+                    id, projectId, kind, payload.toString(), state, requiresPc,
+                    EdgeNodePolicy.boundedPriority(priority),
+                    resourceClass == null ? (requiresPc ? "PC_R3" : "EDGE_R1") : resourceClass,
+                    idem, now, now
+            );
+            long inserted = dao.insertJob(job);
+            if (inserted == -1L) {
+                EdgeJobEntity raced = dao.jobByIdempotency(projectId, idem);
+                out.put("result", raced == null ? "HOLD_PERSISTENCE_RACE" : "ALREADY_QUEUED");
+                out.put("queued", raced != null);
+                if (raced != null) {
+                    out.put("local_id", raced.localId);
+                    out.put("state", raced.state);
+                }
+                out.put("idempotency_key", idem);
+                return out;
+            }
+            if (dependencies != null) {
+                for (int i = 0; i < dependencies.length(); i++) {
+                    String dep = dependencies.optString(i, "");
+                    if (!dep.isEmpty()) dao.insertDependency(
+                            new com.blessing.bcpedge.storage.EdgeDependencyEntity(id, dep));
+                }
+            }
+            out.put("result", "QUEUED");
+            out.put("queued", true);
+            out.put("local_id", id);
+            out.put("idempotency_key", idem);
+            out.put("state", state);
+            out.put("project_id", projectId);
+            out.put("kind", kind);
+            return out;
+        } catch (Exception e) {
+            try {
+                out.put("result", "HOLD_PERSISTENCE_ERROR");
+                out.put("queued", false);
+                out.put("error", e.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+            return out;
+        }
+    }
+
+    public void setJobState(String localId, String state) {
+        if (localId == null || localId.isEmpty()) return;
+        dao.setJobState(localId, state == null ? "HOLD" : state, System.currentTimeMillis());
+    }
+
+    public void acknowledgeLocalJob(String projectId, JSONObject job, JSONObject receipt) {
+        try {
+            String localId = job.optString("local_id", "");
+            String idem = job.optString("idempotency_key", "");
+            if (localId.isEmpty() || idem.isEmpty()) return;
+            String raw = receipt == null ? "{}" : receipt.toString();
+            String result = (receipt == null ? "SUCCESS" : receipt.optString("result", "SUCCESS"))
+                    .trim().toUpperCase();
+            if (result.isEmpty()) result = "SUCCESS";
+            long revision = receipt == null ? 0L : receipt.optLong("revision", 0L);
+            String actionId = "edge-local-" + sha256(idem + "\n" + raw);
+            dao.insertReceipt(new EdgeReceiptEntity(
+                    actionId, localId, projectId, idem, result,
+                    sha256(raw), revision, System.currentTimeMillis()
+            ));
+            dao.setJobState(localId, "COMMITTED", System.currentTimeMillis());
+            dao.deleteJob(localId);
+        } catch (Exception ignored) {}
+    }
+
     public JSONArray pendingJobs(String projectId) {
         JSONArray out = new JSONArray();
         for (EdgeJobEntity j : dao.pendingJobs(projectId, 128)) {

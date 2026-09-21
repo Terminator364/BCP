@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.graphics.Typeface;
+import android.text.InputType;
 import android.view.View;
 import android.widget.*;
 import org.json.JSONObject;
@@ -35,13 +36,13 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("BCP Edge Evergreen · B-EDGE");
+        title.setText("B-EDGE · Nœud serveur");
         title.setTextSize(25);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Mémoire durable · orchestration · reprise · télémétrie · mises à jour vérifiées");
+        subtitle.setText("Serveur local · file durable · relais Telegram · mémoire · reprise automatique");
         subtitle.setPadding(0,dp(6),0,dp(16));
         root.addView(subtitle);
 
@@ -188,6 +189,8 @@ public class MainActivity extends Activity {
 
     private void showSettings() {
         final String[] choices = new String[] {
+                "État du nœud serveur",
+                "Configurer Telegram local (une fois)",
                 "État des versions",
                 "État ChatGPT-PC",
                 "Réparer ChatGPT-PC maintenant",
@@ -200,6 +203,10 @@ public class MainActivity extends Activity {
                 .setTitle("Paramètres BCP")
                 .setItems(choices, (dialog, which) -> {
                     if (which == 0) {
+                        showNodeStatus();
+                    } else if (which == 1) {
+                        showTelegramSetup();
+                    } else if (which == 2) {
                         runAction("VERSIONS", () -> {
                             JSONObject s = client.serverUpdateStatus();
                             JSONObject out = new JSONObject();
@@ -210,9 +217,9 @@ public class MainActivity extends Activity {
                             out.put("server_auto_update", s.optBoolean("auto_update", true));
                             return out;
                         });
-                    } else if (which == 1) {
+                    } else if (which == 3) {
                         runAction("CHATGPT-PC", () -> client.chatgptPcStatus());
-                    } else if (which == 2) {
+                    } else if (which == 4) {
                         new AlertDialog.Builder(this)
                                 .setTitle("Réparer ChatGPT-PC")
                                 .setMessage("Lancer le Recovery Plane borné avec la cible déjà vérifiée ?")
@@ -220,22 +227,81 @@ public class MainActivity extends Activity {
                                         runAction("RÉCUPÉRATION CHATGPT-PC", () -> client.recoverChatgptPc()))
                                 .setNegativeButton("ANNULER", null)
                                 .show();
-                    } else if (which == 3) {
-                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
-                    } else if (which == 4) {
-                        updates.check(true);
                     } else if (which == 5) {
+                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
+                    } else if (which == 6) {
+                        updates.check(true);
+                    } else if (which == 7) {
                         runAction("ORCHESTRATEUR", () -> {
                             JSONObject out = client.orchestratorStatus();
                             JSONObject ctx = client.contextPack();
                             out.put("context_pack_cached", ctx.length() > 0);
                             return out;
                         });
-                    } else if (which == 6) {
+                    } else if (which == 8) {
                         runAction("TEST RAPIDE B-EDGE", () -> client.runQuickAcceptance());
                     }
                 })
                 .setNegativeButton("FERMER", null)
+                .show();
+    }
+
+    private void showNodeStatus() {
+        runAction("NŒUD SERVEUR", () -> {
+            JSONObject out = new JSONObject();
+            out.put("role", "B_EDGE_FULL_NODE");
+            out.put("edge_version", client.getEdgeVersion());
+            out.put("node_port", EdgeNodePolicy.NODE_PORT);
+            out.put("relay_port", EdgeRelayPolicy.RELAY_PORT);
+            out.put("network", EdgeConnectivity.snapshot(this));
+            out.put("sentinel", client.sentinelStatus());
+            out.put("telegram_outbound_configured", new TelegramCredentialStore(this).configured());
+            out.put("project", client.getProject());
+            return out;
+        });
+    }
+
+    private void showTelegramSetup() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int p = dp(12);
+        box.setPadding(p, p, p, p);
+
+        TextView note = new TextView(this);
+        note.setText("Configuration locale unique. Le token reste chiffré dans Android Keystore et n’est jamais envoyé à ChatGPT, GitHub ou Drive.");
+        box.addView(note);
+
+        EditText token = new EditText(this);
+        token.setHint("Token BotFather");
+        token.setSingleLine(true);
+        token.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        box.addView(token);
+
+        EditText chat = new EditText(this);
+        chat.setHint("ID du chat Telegram autorisé");
+        chat.setSingleLine(true);
+        chat.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        box.addView(chat);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Telegram local B-EDGE")
+                .setView(box)
+                .setPositiveButton("ENREGISTRER", (d, w) -> {
+                    try {
+                        String t = token.getText().toString().trim();
+                        long chatId = Long.parseLong(chat.getText().toString().trim());
+                        new TelegramCredentialStore(this).put(t, chatId);
+                        client.recordEvent("EDGE_TELEGRAM_LOCAL_CONFIGURED", "keystore");
+                        com.blessing.bcpedge.work.EdgeWorkScheduler.requestImmediate(
+                                this, "TELEGRAM_LOCAL_CONFIGURED");
+                        status.setText("TELEGRAM LOCAL PRÊT");
+                        detail.setText("Secret chiffré localement · file store-and-forward activée");
+                    } catch (Exception ex) {
+                        status.setText("CONFIGURATION TELEGRAM ÉCHOUÉE");
+                        detail.setText("Vérifie uniquement le token et l’ID du chat.");
+                    }
+                })
+                .setNegativeButton("ANNULER", null)
                 .show();
     }
 

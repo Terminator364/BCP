@@ -104,7 +104,7 @@ def main() -> int:
         "registerDefaultNetworkCallback",
         "TRANSPORT_WIFI",
         "NET_CAPABILITY_VALIDATED",
-        "WIFI_VALIDATED_RETURN",
+        "NETWORK_VALIDATED_RETURN",
         "MIN_REENTRY_TRIGGER_MS",
     )
     require(edge_manifest, 'android:name=".BcpEdgeApplication"')
@@ -118,7 +118,7 @@ def main() -> int:
         rdc,
         "home Wi-Fi TCP/443 to Telegram times out on the PC",
         "SELECTIVE_TRANSPORT_FAILOVER",
-        "BCP Nexus HTTPS webhook/relay",
+        "Nexus/webhook remains an optional remote lane",
         "OFFLINE_FIRST_QUEUEING",
         "bounded exponential backoff",
         "MOBILE_DATA_IS_SCARCE",

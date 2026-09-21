@@ -148,8 +148,13 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
-          grep -F "BCP Edge Evergreen" bcp-window.xml >/dev/null
-          grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window.xml >/dev/null
+          grep -F "B-EDGE · Nœud serveur" bcp-window.xml >/dev/null
+          grep -F "Serveur local · file durable · relais Telegram · mémoire · reprise automatique" bcp-window.xml >/dev/null
+          "$ADB" shell input swipe 500 1450 500 450 350 || true
+          sleep 1
+          "$ADB" shell uiautomator dump /sdcard/bcp-window-actions.xml >/dev/null
+          "$ADB" pull /sdcard/bcp-window-actions.xml bcp-window-actions.xml >/dev/null
+          grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window-actions.xml >/dev/null
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
@@ -187,6 +192,7 @@ jobs:
             launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml
+            bcp-window-actions.xml
             bcp-window-relaunch.xml
             emulator.log
             avd-list-created.txt

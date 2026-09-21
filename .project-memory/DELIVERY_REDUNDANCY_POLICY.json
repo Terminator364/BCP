@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/6",
-  "revision": "2026-09-21-R61",
+  "schema": "bcp.delivery_redundancy_policy/7",
+  "revision": "2026-09-21-R66",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -40,7 +40,11 @@
       ],
       "end_mail_retry_required": true,
       "end_mail_provider_ack_required": true,
-      "chat_output_before_end_ack_forbidden": true
+      "chat_output_before_end_ack_forbidden": true,
+      "gmail_label_required": "BCP",
+      "subject_prefix_required": "[BCP]",
+      "label_apply_after_send_ack": true,
+      "label_failure_behavior": "RETRY_LABEL_APPLY_WITHOUT_DUPLICATING_EMAIL"
     },
     "telegram": {
       "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",

@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R64
+Revision: 2026-09-21-R66
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1883,3 +1883,86 @@ No R64 user-facing install/update may be requested until:
 4. server registration accepts only authenticated private-LAN B-EDGE state;
 5. CURRENT/server/Android/Telegram versions and hashes are coordinated;
 6. field installation/readback proves the signed B-EDGE runtime before the relay is represented as FIELD_ACTIVE.
+
+
+## P0 — Dedicated phone full-node authority — R65
+
+The old Android phone is fully dedicated infrastructure and MUST be used as a first-class BCP Edge server node, not as a passive client.
+
+Required R65+ behavior:
+- expose an authenticated private-LAN B-EDGE node API with bounded request size/concurrency and stable idempotency keys;
+- keep durable local state, jobs, communication outbox and receipts in Room/SQLite;
+- own lightweight communication/store-and-forward jobs that do not require the PC;
+- continue serving local control-plane requests even when the phone has no Internet uplink;
+- distinguish `LOCAL_ONLY_OR_UNVALIDATED`, `INTERNET_READY` and `OFFLINE` rather than equating Wi-Fi with Internet;
+- recover after boot/package replacement through the qualified Android lifecycle path;
+- keep PC-heavy work on the PC while using phone RAM/storage for HOT/WARM state, queue, context/cache and lightweight services;
+- support adaptive route selection without assuming a SIM in the old phone;
+- prefer local PC<->phone transport for compact control traffic to reduce metered PC data;
+- preserve remote-delivery truth: no uplink means durable `NETWORK_WAIT`, never fake Telegram/cloud success.
+
+Transport roadmap:
+1. shared LAN/hotspot authenticated sockets/API;
+2. existing narrow B-EDGE Telegram TLS CONNECT relay;
+3. durable PC->phone store-and-forward queue;
+4. Wi-Fi Direct/P2P as the next no-router local transport candidate;
+5. Bluetooth/BLE as low-bandwidth bootstrap/control fallback;
+6. USB as explicit recovery/bootstrap fallback;
+7. LocalOnlyHotspot only after Windows/OEM reconnect behavior is field-qualified.
+
+The Telegram bot secret MUST NOT be auto-copied over cleartext LAN. If independent phone-side Telegram outbound is enabled, the secret is provisioned explicitly on-device and stored with Android Keystore protection.
+
+Device-owner / fully-managed Android mode is a deliberate optional hardening phase because provisioning may be disruptive or require a reset/unprovisioned state. It MUST NOT be silently enabled.
+
+Canonical design:
+`docs/BEDGE_FULL_NODE_AND_ADAPTIVE_TRANSPORT_R65.md`.
+
+## P0 — Communication liveness under bad network — R65
+
+Communication is a multi-lane durable protocol, not one fragile notification call.
+
+For each material human-facing checkpoint or alert:
+- retain durable local intent before attempting a remote transport;
+- use bounded retry/backoff and stable deduplication;
+- separate GENERATED, QUEUED_LOCAL, TRANSPORT_ACCEPTED, MIRRORED and USER_SEEN evidence;
+- a transport failure MUST preserve the message for a later qualified lane;
+- direct Telegram failure may fall back to the live phone TLS relay and then to the phone durable outbox;
+- Gmail START/END remains the primary detailed ChatGPT-work checkpoint protocol;
+- Telegram is a secondary cockpit/witness and MUST recover automatically after PC/network changes;
+- ChatGPT/platform interruption is never mission completion.
+
+The user MUST NOT need to send “eh oh”, screenshots, IPs, logs or repeated install attempts merely to cause a checkpoint or communication retry.
+
+
+## P0 — Phone-primary communications and local API — R66
+
+The dedicated old Android phone MUST be treated as a first-class low-power BCP server node, not merely as a passive client or secondary telemetry screen.
+
+Concrete R66 duties:
+- keep an authenticated private-LAN phone API available independently of PC Internet;
+- expose phone-local project registry, cached context, memory and pending-job state;
+- accept idempotent durable resume intents while the PC is unavailable and replay/synchronize them when the PC returns;
+- own compact outbound communication liveness independently of the Windows Telegram worker when local Telegram credentials and a validated phone uplink exist;
+- emit bounded phone-node startup, PC lost/recovered, uplink recovered and sparse alive notices without spam;
+- retain Room/SQLite store-and-forward state through PC/network outages;
+- remain useful with no SIM in the dedicated phone;
+- keep Windows as the heavy/fenced worker for Windows-only duties rather than as the sole continuity authority.
+
+Transport expansion order is capability-driven:
+1. existing shared LAN/hotspot;
+2. Wi-Fi Direct or Wi-Fi Aware when exact hardware/API support is proven;
+3. LocalOnlyHotspot where routerless local networking is useful;
+4. Bluetooth/BLE companion lane for bootstrap/control;
+5. USB recovery/bootstrap lane;
+6. optional Device Owner / fully-managed hardening only after explicit human approval and provisioning-impact review.
+
+Do not run two concurrent Telegram `getUpdates` pollers against the same bot token. If inbound ownership later moves to the phone, introduce an explicit durable poller-ownership lease with PHONE_PRIMARY / PC_FALLBACK fencing.
+
+The phone's app-private storage SHOULD progressively host bounded content-addressed recovery/cache artifacts, project context, receipts and manifests to reduce repeated downloads. Large prefetch is forbidden on metered uplinks unless explicitly justified; hashes/signatures and eviction policy remain mandatory.
+
+## P0 — BCP Gmail classification — R66
+
+Every BCP START/END email MUST:
+- use subject prefix `[BCP]`;
+- carry Gmail label `BCP` after provider send acknowledgement;
+- retry label application without sending a duplicate email if labeling fails.
