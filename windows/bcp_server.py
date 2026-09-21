@@ -1646,11 +1646,60 @@ def apply_nexus_bootstrap_delivery(auto_launch: bool = True, explicit_human_retr
     with NEXUS_BOOTSTRAP_LOCK:
         if explicit_human_retry:
             prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
-            if str(prior.get("state") or "") != "HUMAN_AUTH_REQUIRED":
+            prior_state = str(prior.get("state") or "")
+            receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
+            receipt_state = str(receipt.get("status") or receipt.get("state") or "")
+
+            # A transient manifest/DNS failure must not erase an already-proven
+            # Cloudflare human gate. Recover it from the durable receipt.
+            if prior_state != "HUMAN_AUTH_REQUIRED" and receipt_state == "HUMAN_AUTH_REQUIRED":
+                prior = dict(prior)
+                prior.update({
+                    "state": "HUMAN_AUTH_REQUIRED",
+                    "bundle_version": str(prior.get("bundle_version") or receipt.get("bundle_version") or ""),
+                    "recovered_human_gate_from_receipt": True,
+                    "updated_at": utc_now(),
+                })
+                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, prior)
+                prior_state = "HUMAN_AUTH_REQUIRED"
+
+            # If the last state was only a network-stage failure and no durable
+            # human gate exists, retry staging once now. If the network is still
+            # unavailable, return a truthful automatic-recovery state instead
+            # of the misleading NO_HUMAN_AUTH_RETRY_NEEDED result.
+            if prior_state != "HUMAN_AUTH_REQUIRED":
+                prior_error = str(prior.get("error_class") or prior.get("last_stage_check_error_class") or "")
+                if prior_state == "STAGE_FAILED" and prior_error in {
+                    "DNS_RESOLUTION_FAILED", "OUTBOUND_TIMEOUT", "TLS_FAILURE", "CONNECTION_REFUSED"
+                }:
+                    try:
+                        result = _apply_nexus_bootstrap_delivery_locked(auto_launch=auto_launch)
+                        result["network_recovery_retry"] = True
+                        return result
+                    except Exception as exc:
+                        error_class, error_detail = _transport_error_detail(exc)
+                        preserved = dict(prior)
+                        preserved.update({
+                            "schema": "bcp.nexus_bootstrap_delivery/1",
+                            "state": "STAGE_FAILED",
+                            "last_stage_check_state": "STAGE_FAILED",
+                            "last_stage_check_error_class": error_class,
+                            "last_stage_check_error": error_detail,
+                            "updated_at": utc_now(),
+                            "spend_usd": 0.0,
+                        })
+                        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, preserved)
+                        return {
+                            "ok": True,
+                            "result": "NETWORK_RECOVERY_PENDING",
+                            "state": "STAGE_FAILED",
+                            "error_class": error_class,
+                            "automatic_retry": True,
+                        }
                 return {
                     "ok": True,
                     "result": "NO_HUMAN_AUTH_RETRY_NEEDED",
-                    "state": str(prior.get("state") or ""),
+                    "state": prior_state,
                     "bundle_version": str(prior.get("bundle_version") or ""),
                 }
             archived = _archive_nexus_auth_receipt("EXPLICIT_FRESH_DEVICE_FLOW_RETRY")
@@ -1994,15 +2043,22 @@ def start_auto_update_worker(http_server, bind: str, port: int) -> None:
                 apply_nexus_bootstrap_delivery(auto_launch=True)
             except Exception as nexus_error:
                 error_class, error_detail = _transport_error_detail(nexus_error)
-                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+                prior_nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+                failed = dict(prior_nexus)
+                failed.update({
                     "schema": "bcp.nexus_bootstrap_delivery/1",
-                    "state": "STAGE_FAILED",
-                    "bundle_version": "",
                     "updated_at": utc_now(),
-                    "error_class": error_class,
-                    "error": error_detail,
+                    "last_stage_check_state": "STAGE_FAILED",
+                    "last_stage_check_error_class": error_class,
+                    "last_stage_check_error": error_detail,
                     "spend_usd": 0.0,
                 })
+                if str(failed.get("state") or "") in ("", "NONE"):
+                    failed["state"] = "STAGE_FAILED"
+                    failed["bundle_version"] = str(failed.get("bundle_version") or "")
+                    failed["error_class"] = error_class
+                    failed["error"] = error_detail
+                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, failed)
                 mirror_telemetry_status("NEXUS_BOOTSTRAP_UPDATE_FAILED", {
                     "status": "DEGRADED",
                     "update_result": type(nexus_error).__name__,
