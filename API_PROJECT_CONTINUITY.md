@@ -1,43 +1,56 @@
-# R77 A+B+C Integral Handoff — 2026-09-21
+# R78 A+B+C Source-Reconciled Handoff — 2026-09-21
 
 Continuation code: `BCPGO BCP`
 
-Mandatory cold-resume order now includes:
+Mandatory cold-resume order includes:
 - `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`
 - `.project-memory/BCP_ABC_COVERAGE.json`
 - `docs/BCP_CANONICAL_SPEC_ABC.md`
 - communication protocol/state/active tranche/delivery ledger
-- writer fence, project_state and current release manifests.
+- writer fence, `project_state.json` and current release manifests.
 
 Product denominator is **A+B+C**:
 - A = sealed/original preconception + promised functions;
 - B = realistic research-backed expansion;
 - C = accumulated field feedback and work constraints.
-Do not score or release against a fragment of this denominator.
+No completion/release claim may be scoped to a convenient fragment.
 
-R77 communication contract:
-- 25-minute tranche;
-- target 23 minutes useful work + 2 minutes PRIMARY_ASSISTANT closeout;
+R78 source reconciliation:
+- `APIAX07_HANDOFF.md` read from Library;
+- `BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf` parsed/read;
+- `UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx` Postulates 1–4 read;
+- sealed V0.7 ZIP remains preserved by SHA/manifest pointer and is **not** falsely claimed byte-reread.
+
+Source-derived A invariants now explicit:
+- API/BCP is a personal digital control/continuity plane, not merely an HTTP API;
+- Universal Chronicle exact events are separated from derived canonical memory;
+- B-EDGE dedicated phone is a first-class continuity appliance and future logical memory/session/journal/mission coordinator after fencing/replication proof;
+- BCP_FASTPATH_P0 forbids global search/network wait/expensive derived work from blocking the normal interactive control path when sufficient local state exists;
+- PC remains heavy Windows worker/verified replica, not the sole communications center.
+
+Current macro evidence audit after source reconciliation + Chronicle implementation:
+- functional coverage: **57.0%**;
+- evidence maturity: **45.35%**;
+- these are conservative macro evidence scores, not an absolute “product complete” percentage.
+
+R78 communication contract:
+- total tranche = **25 minutes**;
+- target **23 minutes useful work + ~2 minutes PRIMARY_ASSISTANT closeout**;
 - Gmail START provider ACK before substantive work;
-- normal Gmail END is sent directly by the active assistant, not by an automation dependency;
-- search-before-send by delivery_key, provider message_id/SENT readback required;
+- normal Gmail END is sent directly by the active assistant — no automation dependency;
+- search-before-send by delivery_key; provider message_id + Gmail SENT readback required;
 - only then ChatGPT pointer;
-- next tranche label must be monotonic (R78+) because R77 was accidentally reused at 22:21 although its delivery key remained unique.
+- external START at 22:51 accidentally reused label R77; delivery key remains unique; **next external tranche label must be R78+**.
 
-R77 phone full-node advance:
-- candidate remains 2.2.0 full-node, not yet another field install;
-- Room local store advances to v3 with append-only `edge_events` Universal Chronicle;
-- observable B-EDGE events are persisted with truth status, payload SHA-256 and project-scoped idempotency;
-- authenticated local API adds `GET/POST /v1/node/events`;
-- this is the first concrete UCMF Chronicle slice hosted on the dedicated phone.
+Current product line:
+- candidate stays `2.2.0-full-node-evergreen`; no micro-beta field install;
+- Room v3 Universal Chronicle `edge_events` + authenticated `GET/POST /v1/node/events` are implemented;
+- PR #148 exact-head Field Ecosystem failed only on a stale validator expecting `addMigrations(MIGRATION_1_2)`; R78 fixes the validator to require the real v1→v2→v3 migration chain;
+- next coherent gaps: authenticated+encrypted LAN, memory admission/provenance/supersession, source/capability registry, Telegram phone relay field proof, full server-first UI, then 2.2 device field promotion.
 
-Initial macro audit against currently indexed A+B+C sources:
-- functional coverage: 53.7%;
-- evidence maturity: 41.45%;
-- provisional until the sealed V0.7 source package itself is rematerialized/re-audited.
+Current reconciliation branch: `work/bcp/r78-abc-reconcile-ci-20260921-2251`.
+Next action: exact-head qualification -> reread `main` -> reconcile if moved -> serialized merge -> post-merge readback -> continue full-node vertical slice.
 
-Current R77 branch: `work/bcp/r77-abc-integral-25min-20260921-2221`.
-Current next action: exact-head qualification -> reconcile moved main if needed -> serialized merge -> continue encrypted LAN, memory admission/supersession, source capabilities, Telegram relay and full server cockpit before another user install.
 
 ---
 
