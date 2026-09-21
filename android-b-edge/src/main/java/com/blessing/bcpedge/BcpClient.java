@@ -309,7 +309,12 @@ public final class BcpClient {
             out.put("project", getProject());
             out.put("refreshed", receipts.length());
             out.put("receipts", receipts);
-            out.put("registry", localCapabilityRegistry(64, ""));
+            JSONObject registry = localCapabilityRegistry(64, "");
+            out.put("registry", registry);
+            prefs.edit()
+                    .putString("capability_registry_snapshot", registry.toString())
+                    .putLong("capability_registry_snapshot_at", System.currentTimeMillis())
+                    .apply();
         } catch (Exception ex) {
             try {
                 out.put("ok", false);
@@ -363,6 +368,26 @@ public final class BcpClient {
             } catch (Exception ignored) {}
         }
         return out;
+    }
+
+    public JSONObject cachedCapabilityRegistry() {
+        try {
+            String raw = prefs.getString("capability_registry_snapshot", "");
+            if (raw.isEmpty()) {
+                JSONObject empty = new JSONObject();
+                empty.put("ok", false);
+                empty.put("count", 0);
+                empty.put("state", "WARMING");
+                empty.put("capabilities", new JSONArray());
+                return empty;
+            }
+            JSONObject out = new JSONObject(raw);
+            out.put("snapshot_at_ms", prefs.getLong("capability_registry_snapshot_at", 0L));
+            out.put("cached", true);
+            return out;
+        } catch (Exception ex) {
+            return new JSONObject();
+        }
     }
 
     private static JSONObject capabilityJson(EdgeCapabilityEntity row) throws Exception {
