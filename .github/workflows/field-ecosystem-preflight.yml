@@ -12,6 +12,7 @@ on:
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
       - "tools/validate_field_ecosystem.py"
       - "tools/test_bedge_relay_contract.py"
+      - "tools/test_phone_primary_edge_server_contract.py"
       - ".github/workflows/field-ecosystem-preflight.yml"
   push:
     paths:
@@ -42,6 +43,9 @@ jobs:
         run: python tools/validate_field_ecosystem.py
       - name: Validate B-EDGE adaptive relay contract
         run: python tools/test_bedge_relay_contract.py
+
+      - name: Validate first-class phone server contract
+        run: python tools/test_phone_primary_edge_server_contract.py
 
   windows-field-shaped:
     runs-on: windows-latest
