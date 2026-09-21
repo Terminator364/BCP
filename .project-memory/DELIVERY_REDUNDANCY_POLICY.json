@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/5",
-  "revision": "2026-09-21-R60",
+  "schema": "bcp.delivery_redundancy_policy/6",
+  "revision": "2026-09-21-R61",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -55,7 +55,10 @@
     "mail_each_slice": true,
     "blind_retry_loops": false,
     "start_mail_each_slice": true,
-    "end_mail_each_slice": true
+    "end_mail_each_slice": true,
+    "end_watchdog_required_at_start": true,
+    "end_watchdog_offset_minutes": 25,
+    "end_watchdog_behavior": "AT_START_CREATE_ONE_SHOT_WATCHDOG; IF_END_MAIL_ALREADY_ACKED_DO_NOTHING; OTHERWISE_SEND_ACCURATE_END_CHECKPOINT; NORMAL_END_MUST_DISABLE_WATCHDOG_AFTER_ACK"
   },
   "action_message_contract": {
     "one_human_gate_at_a_time": true,
@@ -84,6 +87,8 @@
     "primary_surface": "EMAIL_START_AND_END",
     "advanced_surface": "REPORTS_AND_TECHNICAL_EVIDENCE",
     "progressive_disclosure_required": true,
-    "chatgpt_surface": "NO_OUTPUT_BEFORE_END_MAIL_ACK_THEN_POINTER_ONLY"
+    "chatgpt_surface": "NO_OUTPUT_BEFORE_END_MAIL_ACK_THEN_POINTER_ONLY",
+    "start_mail_before_substantive_work": true,
+    "end_watchdog_prevents_user_relaunch_dependency": true
   }
 }

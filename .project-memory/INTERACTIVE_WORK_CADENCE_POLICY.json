@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/7",
+  "schema": "bcp.interactive_work_cadence_policy/8",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 25,
@@ -16,13 +16,14 @@
     "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
     "Resume from that durable checkpoint on the next Continue invocation.",
     "Before the ChatGPT pointer is shown, send the full checkpoint by the configured email mirror whenever the mail connector is available.",
-    "At the end of each tranche, send the full Gmail END checkpoint and retry automatically until the mail provider returns a successful send acknowledgement; before that acknowledgement ChatGPT emits no end message; after it, ChatGPT remains pointer-only."
+    "At the end of each tranche, send the full Gmail END checkpoint and retry automatically until the mail provider returns a successful send acknowledgement; before that acknowledgement ChatGPT emits no end message; after it, ChatGPT remains pointer-only.",
+    "A one-shot END watchdog is armed at START for the 25-minute target so the user never needs to send a relaunch message merely to obtain the END mail."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T08:22:00+01:00",
+  "updated_at": "2026-09-21T09:00:00+01:00",
   "target_internal_work_minutes": 25,
   "acceptable_internal_work_window_minutes": [
     24,
@@ -60,6 +61,10 @@
     "start_email_before_substantive_work": true,
     "end_email_before_chat_pointer": true,
     "end_email_retry_until_provider_ack": true,
-    "chat_output_before_end_ack_forbidden": true
+    "chat_output_before_end_ack_forbidden": true,
+    "end_watchdog_required": true,
+    "end_watchdog_offset_minutes": 25,
+    "watchdog_noop_if_end_already_acked": true,
+    "disable_watchdog_after_normal_end_ack": true
   }
 }

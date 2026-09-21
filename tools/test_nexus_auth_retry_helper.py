@@ -39,6 +39,8 @@ def main():
     ck("end-mail-provider-ack", '"end_mail_provider_ack_required": true' in policy)
     ck("end-mail-retry", '"end_mail_retry_required": true' in policy)
     ck("chat-before-end-ack-forbidden", '"chat_output_before_end_ack_forbidden": true' in policy)
+    ck("end-watchdog-at-start", '"end_watchdog_required_at_start": true' in policy)
+    ck("end-watchdog-25-min", '"end_watchdog_offset_minutes": 25' in policy)
     ck("chat-no-full-body", '"detailed_checkpoint_body_forbidden_after_successful_email": true' in policy)
     ck("mail-before-chat-pointer", '"send_before_chat_pointer": true' in policy)
     ck("continuation-loads-delivery-policy", "DELIVERY_REDUNDANCY_POLICY.json" in registry and "DELIVERY_REDUNDANCY_POLICY.json" in continuity)

@@ -56,7 +56,7 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.20-cadence-telemetry-v18",
+    "version": "2026.09.21-comms-resilience-v19",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -147,7 +147,11 @@
       "rendered-PDF visual smoke inspection and duplicate-title regression protection",
       "R54 human timestamps: Africa/Kinshasa for normal user-facing views while machine evidence stays UTC",
       "R54 PDF quality: title hierarchy, WinAnsi French accents, pagination and page footer",
-      "R54 Nexus PDF fallback parity with local Telegram renderer"
+      "R54 Nexus PDF fallback parity with local Telegram renderer",
+      "sustained direct Telegram timeout classified as DIRECT_TRANSPORT_OUTAGE after bounded consecutive failures",
+      "telegram_transport_outage.json durable outage/recovery receipt",
+      "fresh Nexus authorization surfaced as the qualified recovery action when direct Bot API egress remains unavailable",
+      "25-minute tranche END watchdog prevents dependence on user relaunch for completion email"
     ]
   }
 }

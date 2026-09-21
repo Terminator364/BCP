@@ -104,6 +104,11 @@ def main() -> int:
         fail("end_email_provider_ack_contract")
     if email.get("chat_output_before_end_ack_forbidden") is not True:
         fail("chat_before_end_email_ack_forbidden_contract")
+    cadence_delivery = delivery.get("cadence") or {}
+    if cadence_delivery.get("end_watchdog_required_at_start") is not True:
+        fail("end_watchdog_required_at_start_contract")
+    if int(cadence_delivery.get("end_watchdog_offset_minutes") or 0) != 25:
+        fail("end_watchdog_offset_contract")
     if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
         fail("start_work_end_chat_order_contract")
     if pre_human.get("default_rule") != "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE":
