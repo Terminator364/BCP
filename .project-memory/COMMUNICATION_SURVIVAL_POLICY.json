@@ -1,6 +1,6 @@
 {
   "schema": "bcp.communication_survival_policy/4",
-  "revision": "2026-09-21-R74",
+  "revision": "2026-09-21-R75",
   "status": "CANONICAL_CANDIDATE",
   "objective": "Preserve user-visible communication and durable mission continuity across ChatGPT UI instability, PC Internet loss, home Wi-Fi failure, PC reboot/offline periods, Telegram direct transport outage, and conversation handoff.",
   "principles": [
@@ -82,7 +82,9 @@
         "BLE_PRESENCE_CONTROL",
         "USB_FUTURE_FIELD_GATED"
       ],
-      "no_uplink_behavior": "QUEUE_DURABLY_AND_REPLAY_IDEMPOTENTLY"
+      "no_uplink_behavior": "QUEUE_DURABLY_AND_REPLAY_IDEMPOTENTLY",
+      "durable_communication_journal": true,
+      "communication_journal_api": "/v1/node/communications"
     },
     "drive": {
       "priority": 4,
@@ -128,7 +130,11 @@
     "useful_work_target_minutes": 26,
     "useful_work_minimum_minutes": 20,
     "normal_close_reserve_minutes": 4,
-    "backup_earliest_offset_minutes": 28
+    "backup_earliest_offset_minutes": 28,
+    "provider_delivery_authority": "GMAIL_SENT_PLUS_MESSAGE_ID_PLUS_DURABLE_LEDGER",
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "reply_rejection_recovery": "SEARCH_SENT_BY_DELIVERY_KEY_THEN_STANDALONE_IF_ABSENT",
+    "open_delivery_failure_recovery": "RECONCILE_BEFORE_NEW_WORK"
   },
   "cold_recovery": {
     "code": "BCPGO BCP",

@@ -50,6 +50,33 @@ public final class BcpClient {
     static String edgeVersionForTelemetry() { return EDGE_VERSION; }
     public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
+    public JSONArray communicationHistory() { return orchestrator.communicationHistory(getProject()); }
+
+    public JSONObject recordCommunication(JSONObject payload) throws Exception {
+        JSONObject body = payload == null ? new JSONObject() : new JSONObject(payload.toString());
+        String idem = body.optString("idempotency_key",
+                body.optString("record_id", "")).trim();
+        if (idem.isEmpty() || idem.length() > 160) {
+            throw new IllegalArgumentException("COMMUNICATION_ID_REQUIRED");
+        }
+        JSONArray history = communicationHistory();
+        for (int i = 0; i < history.length(); i++) {
+            JSONObject row = history.optJSONObject(i);
+            if (row != null && idem.equals(row.optString("record_id", ""))) {
+                JSONObject out = new JSONObject();
+                out.put("ok", true);
+                out.put("result", "ALREADY_COMMITTED");
+                out.put("record_id", idem);
+                out.put("duplicate_suppressed", true);
+                return out;
+            }
+        }
+        body.put("idempotency_key", idem);
+        JSONObject out = queueJob("LOCAL_COMMUNICATION_RECORD", body, false);
+        out.put("record_id", idem);
+        out.put("duplicate_suppressed", false);
+        return out;
+    }
 
     public JSONObject localContextPack() {
         JSONObject out = new JSONObject();

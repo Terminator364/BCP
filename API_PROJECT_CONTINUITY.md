@@ -1,3 +1,70 @@
+# R75 KINLINK-Grade Communication + Full-Node Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+## Communication truth
+
+- R74 START: Gmail message id `1a0c5216e9b71648`.
+- R74 END: Gmail message id `1a0c539e52ecf523`, delivered by `SHADOW_BACKUP` after the foreground closeout path was interrupted.
+- R75 START: Gmail message id `1a0c55545f24526f`.
+- R75 delivery key: `BCP30-20260921-1958-R75`.
+
+The communication contract is now KINLINK-grade:
+1. `PRIMARY_ASSISTANT` owns normal closeout.
+2. `SHADOW_BACKUP` and `HARD_GUARD` are backup-only.
+3. Every tranche has a unique delivery key.
+4. START/END provider message IDs and thread IDs are durable evidence.
+5. CLOSE_INTENT is persisted before END.
+6. END is search-before-send and idempotent.
+7. If a reply-to-thread send is rejected, search SENT again and use a standalone fallback only if no END exists.
+8. Scheduler completion has zero delivery authority.
+9. Gmail SENT + provider message_id + durable ledger receipt is the only END authority.
+10. ChatGPT final output is blocked until `END_ACKNOWLEDGED` or `CLOSED`.
+11. The user message is never a closeout trigger.
+12. A fresh conversation must reconcile any open or `OPEN_DELIVERY_FAILURE` tranche before starting new work.
+
+### About the visible “Réfléchi pendant…” indicator
+
+The assistant cannot force or set the duration displayed by the ChatGPT UI. That indicator is not accepted as work proof. R75 still targets a 30-minute wall-clock tranche with 26 minutes of useful work and 4 minutes of closeout. Work is proven by durable outputs: commits, CI, Gmail receipts, Drive readbacks and field telemetry.
+
+## R75 fresh field communication truth
+
+Fresh machine readback from `API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json` at 2026-09-21T19:09:37Z shows:
+- BCP 0.7.16 is UP_TO_DATE on MBMPC;
+- Telegram companion is `DIRECT_TRANSPORT_OUTAGE` with `URLError` and 256 consecutive failures;
+- Telegram route is still `UNKNOWN / NOT_OBSERVED`;
+- installed B-EDGE 2.1.2 relay is currently inactive/unregistered;
+- Nexus remains HUMAN_AUTH_REQUIRED.
+
+Therefore communication recovery is not claimed. The 2.2.0 full-node candidate remains the correct path: persistent phone server, durable communication journal, relay registration/readback and store-and-forward must be qualified before another install.
+
+## Phone full-node progress
+
+The 2.2.0 full-node candidate now goes beyond relay-only behavior:
+- allowlisted deterministic local task execution already runs EDGE jobs without the PC;
+- the phone now adds an authenticated durable communication journal at `/v1/node/communications`;
+- records are persisted locally on the phone with idempotency keys and bounded retention;
+- the server dashboard exposes the communication-journal count;
+- the emulator qualification now verifies the full-node public capabilities and that the communication journal remains private/401 without authentication.
+
+This is still one coherent 2.2.0 candidate. Do not publish another micro-beta or ask for another phone install until exact-head qualification, signing, Drive CURRENT replacement and readback all pass.
+
+## Fresh conversation takeover
+
+On `BCPGO BCP`, load:
+- `.project-memory/NEW_CONVERSATION_TAKEOVER.json`;
+- `.project-memory/COMMUNICATION_PROTOCOL.json`;
+- `.project-memory/COMMUNICATION_STATE_MACHINE.json`;
+- `.project-memory/ACTIVE_TRANCHE.json`;
+- `.project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl`;
+- delivery/cadence/survival policies;
+- Git writer fence;
+- `project_state.json`, this continuity file and `release/current.json`.
+
+Do not ask the user to restate communication rules, the 30-minute cadence, or the dedicated-phone architecture.
+
+---
+
 # R74 KINLINK-Style Communication State-Machine Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.

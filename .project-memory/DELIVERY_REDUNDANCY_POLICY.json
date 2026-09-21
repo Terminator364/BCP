@@ -1,6 +1,6 @@
 {
   "schema": "bcp.delivery_redundancy_policy/11",
-  "revision": "2026-09-21-R74",
+  "revision": "2026-09-21-R75",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -59,7 +59,11 @@
       "start_message_id_persist_required": true,
       "end_message_id_persist_required": true,
       "prefer_reply_to_start_thread": true,
-      "reply_rejection_fallback": "SEARCH_SENT_BY_DELIVERY_KEY_THEN_STANDALONE_SEND"
+      "reply_rejection_fallback": "SEARCH_SENT_BY_DELIVERY_KEY_THEN_STANDALONE_SEND",
+      "delivery_authority": "GMAIL_SENT_SEARCH_PLUS_PROVIDER_MESSAGE_ID_PLUS_DURABLE_LEDGER",
+      "reply_to_start_thread_preferred": true,
+      "reply_failure_requires_sent_search_before_standalone_fallback": true,
+      "open_delivery_failure_must_be_reconciled_before_new_work": true
     },
     "telegram": {
       "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",
@@ -126,6 +130,8 @@
     "backup_owner": "SHADOW_BACKUP",
     "hard_guard_owner": "HARD_GUARD",
     "scheduler_is_backup_only": true,
-    "user_message_is_never_trigger": true
+    "user_message_is_never_trigger": true,
+    "primary_must_persist_close_intent": true,
+    "backup_must_not_override_primary_ack": true
   }
 }

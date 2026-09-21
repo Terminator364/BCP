@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R74_COMMUNICATION_AND_PHONE_LOCAL_EXECUTOR_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R74 ports the stronger KINLINK communication delivery model into BCP and adds a safe allowlisted Android local task executor so deterministic EDGE jobs can complete on the dedicated phone without waiting for the PC. CURRENT contract run #1190 is PASS on PR #144 exact head. Fresh Drive field telemetry proves BCP 0.7.16 is UP_TO_DATE on MBMPC; Telegram direct transport is still in DIRECT_TRANSPORT_OUTAGE and edge relay is currently inactive/unregistered in the installed 2.1.2 field app, confirming the need for the coherent 2.2.0 full-node release.",
-  "next_action": "Finish PR #144 exact-head qualification. If green, merge through the writer fence and verify post-merge. Continue 2.2.0 full-node as one coherent candidate: prove local executor behavior in Android CI/emulator, relay registration and Telegram route readback, then sign/publish Drive CURRENT only after all release gates. Do not ask for another phone install before that coherent gate.",
+  "status": "R75_KINLINK_GRADE_COMMS_AND_PHONE_JOURNAL_CANDIDATE_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "R74 PR #144 is merged on main at 9572c899269856f9dda2f47f181808fc3701ba51. R74 END was provider-acknowledged by Gmail message 1a0c539e52ecf523. R75 reconciles that close, opens a new provider-proof tranche, upgrades the communication protocol/state machine to KINLINK-grade semantics, and extends B-EDGE 2.2.0 full-node with an authenticated durable phone-local communication journal plus emulator auth-boundary checks. Fresh Drive runtime telemetry at 19:09Z confirms BCP 0.7.16 healthy on MBMPC, Telegram direct transport still in outage with 256 consecutive failures, and the installed 2.1.2 edge relay inactive/unregistered; R75 therefore continues the 2.2 full-node communication substrate rather than asking the user to retry Telegram manually.",
+  "next_action": "Run exact-head R75 qualification. Fix any CI defects automatically. If green, reread main and merge through the writer fence, verify post-merge, then continue the same coherent B-EDGE 2.2.0 candidate toward relay registration/Telegram route readback and encrypted authenticated LAN transport. Do not ask for another phone install before the coherent release gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -254,7 +254,11 @@
     "P0_end_mail_provider_readback": true,
     "P0_scheduler_completion_is_not_delivery_proof": true,
     "P0_foreground_end_send_primary": true,
-    "P0_backup_minimal_end_payload": true
+    "P0_backup_minimal_end_payload": true,
+    "P0_phone_durable_communication_journal": true,
+    "P0_provider_proof_delivery_ledger": true,
+    "P0_open_delivery_failure_reconciliation": true,
+    "P0_primary_assistant_close_owner": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2562,5 +2566,52 @@
     "edge_only_capable": true,
     "current_release_published": false,
     "candidate_version": "2.2.0-full-node-evergreen"
+  },
+  "r75_communication": {
+    "revision": "2026-09-21-R75",
+    "delivery_key": "BCP30-20260921-1958-R75",
+    "start_message_id": "1a0c55545f24526f",
+    "prior_r74_end_message_id": "1a0c539e52ecf523",
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "backup_owner": "SHADOW_BACKUP",
+    "hard_guard_owner": "HARD_GUARD",
+    "delivery_authority": "GMAIL_SENT_PLUS_PROVIDER_MESSAGE_ID_PLUS_DURABLE_LEDGER",
+    "ui_thinking_indicator_authoritative": false,
+    "visible_thinking_duration_guaranteed": false
+  },
+  "r75_phone_communication_journal": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "candidate_version": "2.2.0-full-node-evergreen",
+    "endpoint": "/v1/node/communications",
+    "auth": "PAIRED_BEARER_REQUIRED",
+    "persistence": "ROOM_BACKED_HISTORY_VIA_EDGE_ORCHESTRATOR",
+    "idempotency_key_required": true,
+    "retention_days": 14,
+    "edge_only_capable": true,
+    "arbitrary_shell": false,
+    "emulator_capability_and_unauthorized_boundary_test": true
+  },
+  "latest_runtime_readback_r75": {
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "drive_modified_at_utc": "2026-09-21T19:10:26.675Z",
+    "runtime_updated_at_utc": "2026-09-21T19:09:37+00:00",
+    "evidence_status": "MACHINE_READBACK",
+    "pc_name": "MBMPC",
+    "server_version": "0.7.16",
+    "server_sha256": "582110afc0fbb59361d24750236f11a48bbaad3fb93b8dd3d001c29db40aae95",
+    "telegram_companion_state": "DIRECT_TRANSPORT_OUTAGE",
+    "telegram_companion_error_class": "URLError",
+    "telegram_companion_consecutive_failures": 256,
+    "telegram_transport_route": "UNKNOWN",
+    "telegram_transport_route_status": "NOT_OBSERVED",
+    "edge_relay_active": false,
+    "edge_relay_host": "",
+    "edge_relay_port": 0,
+    "edge_relay_edge_version": "2.1.2-rc1-edge-relay",
+    "nexus_bootstrap_state": "HUMAN_AUTH_REQUIRED",
+    "pc_memory_load_percent": 81,
+    "pc_available_memory_mb": 708,
+    "pc_power_source": "AC",
+    "interpretation": "PC runtime is healthy/up-to-date but Telegram direct transport remains in outage and the installed 2.1.2 phone relay is not currently registered. This materially justifies the 2.2.0 full-node phone communication path; no claim of Telegram recovery is allowed until route readback becomes observed."
   }
 }

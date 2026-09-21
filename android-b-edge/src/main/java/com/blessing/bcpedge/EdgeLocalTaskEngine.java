@@ -20,7 +20,8 @@ public final class EdgeLocalTaskEngine {
         return "LOCAL_CONTEXT_SNAPSHOT".equals(k)
                 || "LOCAL_HEALTH_SNAPSHOT".equals(k)
                 || "LOCAL_QUEUE_SUMMARY".equals(k)
-                || "LOCAL_MEMORY_COMPACT".equals(k);
+                || "LOCAL_MEMORY_COMPACT".equals(k)
+                || "LOCAL_COMMUNICATION_RECORD".equals(k);
     }
 
     public static JSONObject execute(Context context, EdgeOrchestrator orchestrator,
@@ -62,6 +63,32 @@ public final class EdgeLocalTaskEngine {
                 out.put("expired_entries_removed", removed);
                 return out;
             }
+            if ("LOCAL_COMMUNICATION_RECORD".equals(k)) {
+                String recordId = payload.optString("idempotency_key",
+                        payload.optString("record_id", "")).trim();
+                if (recordId.isEmpty() || recordId.length() > 160) {
+                    out.put("result", "HOLD");
+                    out.put("error", "COMMUNICATION_ID_REQUIRED");
+                    return out;
+                }
+                JSONObject record = new JSONObject();
+                record.put("record_id", recordId);
+                record.put("channel", bounded(payload.optString("channel", "BCP"), 40));
+                record.put("direction", bounded(payload.optString("direction", "LOCAL"), 24));
+                record.put("kind", bounded(payload.optString("kind", "CHECKPOINT"), 48));
+                record.put("state", bounded(payload.optString("state", "STAGED"), 40));
+                record.put("text", bounded(payload.optString("text", ""), 8192));
+                record.put("source_node", bounded(payload.optString("source_node", "B-EDGE"), 64));
+                record.put("created_at_ms", payload.optLong("created_at_ms", System.currentTimeMillis()));
+                record.put("stored_at_ms", System.currentTimeMillis());
+                long expiresAt = System.currentTimeMillis() + 14L * 24L * 60L * 60L * 1000L;
+                orchestrator.putMemory(projectId, "HISTORY", "comm:" + recordId,
+                        record, "MACHINE_READBACK", false, expiresAt);
+                out.put("record_id", recordId);
+                out.put("communication_record", record);
+                out.put("journal", "B_EDGE_DURABLE_COMMUNICATION_HISTORY");
+                return out;
+            }
 
             out.put("result", "HOLD");
             out.put("error", "UNSUPPORTED_LOCAL_TASK");
@@ -72,6 +99,11 @@ public final class EdgeLocalTaskEngine {
             } catch (Exception ignored) {}
         }
         return out;
+    }
+
+    private static String bounded(String value, int max) {
+        String v = value == null ? "" : value;
+        return v.length() <= max ? v : v.substring(0, max);
     }
 
     private static String normalize(String kind) {

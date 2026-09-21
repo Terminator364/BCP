@@ -32,6 +32,9 @@ public class EdgeRelayPolicyTest {
         assertTrue(EdgeRelayPolicy.isAllowedApiPath("GET", "/v1/node/status"));
         assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/sync"));
         assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/jobs"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("GET", "/v1/node/communications"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/communications"));
+        assertFalse(EdgeRelayPolicy.isPublicApiPath("GET", "/v1/node/communications"));
         assertFalse(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/shell"));
         assertFalse(EdgeRelayPolicy.isAllowedApiPath("GET", "/etc/passwd"));
     }

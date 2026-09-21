@@ -20,7 +20,7 @@
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T19:01:00+01:00",
+  "updated_at": "2026-09-21T19:58:00+01:00",
   "target_internal_work_minutes": 26,
   "acceptable_internal_work_window_minutes": [
     20,
@@ -38,7 +38,10 @@
     "bcp_mirror_timestamp": "AUTHORITATIVE_FOR_LOCAL_MIRROR",
     "telegram_send_receipt": "AUTHORITATIVE_FOR_TELEGRAM_API_ACCEPTANCE_ONLY",
     "explicit_seen_ack": "AUTHORITATIVE_FOR_USER_ACK_ONLY",
-    "work_proof": "GIT_COMMITS_CI_RUNS_PROVIDER_ACKS_DRIVE_READBACKS_FIELD_TELEMETRY"
+    "work_proof": "GIT_COMMITS_CI_RUNS_PROVIDER_ACKS_DRIVE_READBACKS_FIELD_TELEMETRY",
+    "visible_thinking_duration_guaranteed": false,
+    "assistant_can_force_ui_thinking_duration": false,
+    "user_requested_deep_reasoning": true
   },
   "inheritance": {
     "current_projects": "DEFAULT_ON_NEXT_RECOVERY",
@@ -72,6 +75,10 @@
     "backup_minimal_end_payload": true,
     "useful_work_target_minutes": 26,
     "normal_close_reserve_minutes": 4,
-    "backup_earliest_offset_minutes": 28
-  }
+    "backup_earliest_offset_minutes": 28,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "backup_owner": "SHADOW_BACKUP",
+    "hard_guard_owner": "HARD_GUARD"
+  },
+  "revision": "2026-09-21-R75"
 }

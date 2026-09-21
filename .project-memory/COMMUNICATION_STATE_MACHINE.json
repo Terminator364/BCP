@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.communication_state_machine/1",
-  "revision": "2026-09-21-R74",
+  "schema": "bcp.communication_state_machine/2",
+  "revision": "2026-09-21-R75",
   "cadence_minutes": 30,
   "useful_work_minutes": 26,
   "normal_close_reserve_minutes": 4,
@@ -19,7 +19,8 @@
     "CLOSE_INTENT_PERSISTED",
     "END_SEND_PENDING",
     "END_ACKNOWLEDGED",
-    "CLOSED"
+    "CLOSED",
+    "OPEN_DELIVERY_FAILURE"
   ],
   "owners": [
     "PRIMARY_ASSISTANT",
@@ -42,7 +43,7 @@
     },
     {
       "window": "after CLOSE_INTENT before Gmail send",
-      "recovery": "search delivery_key then send exactly one END if absent"
+      "recovery": "search same delivery_key then send exactly one END if absent"
     },
     {
       "window": "after Gmail END send before durable receipt",
@@ -50,7 +51,11 @@
     },
     {
       "window": "scheduler says completed but Gmail END absent",
-      "recovery": "treat tranche as OPEN_DELIVERY_FAILURE; send END; scheduler status has zero authority"
+      "recovery": "set OPEN_DELIVERY_FAILURE; send END; scheduler status has zero authority"
+    },
+    {
+      "window": "reply-to-thread rejected",
+      "recovery": "search SENT by delivery_key; if absent send standalone END; persist actual provider message_id"
     }
   ],
   "timing": {
@@ -62,9 +67,11 @@
   "invariants": [
     "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
     "new work cannot reuse a CLOSED tranche",
+    "new work cannot silently overwrite an OPEN_DELIVERY_FAILURE tranche",
     "a scheduler completion is never Gmail delivery proof",
     "the user message is never a closeout trigger",
     "delivery_key is unique per tranche",
-    "END send is search-before-send and idempotent"
+    "END send is search-before-send and idempotent",
+    "provider message_id and SENT readback are authoritative delivery evidence"
   ]
 }

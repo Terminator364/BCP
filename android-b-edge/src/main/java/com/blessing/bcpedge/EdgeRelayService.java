@@ -243,11 +243,13 @@ public final class EdgeRelayService extends Service {
             caps.put("local_api", true);
             caps.put("durable_queue", true);
             caps.put("local_allowlisted_executor", true);
+            caps.put("durable_communication_journal", true);
             caps.put("local_executor_kinds", new org.json.JSONArray()
                     .put("LOCAL_CONTEXT_SNAPSHOT")
                     .put("LOCAL_HEALTH_SNAPSHOT")
                     .put("LOCAL_QUEUE_SUMMARY")
-                    .put("LOCAL_MEMORY_COMPACT"));
+                    .put("LOCAL_MEMORY_COMPACT")
+                    .put("LOCAL_COMMUNICATION_RECORD"));
             caps.put("content_addressed_private_cache", true);
             caps.put("store_and_forward", true);
             caps.put("telegram_https_connect_relay", true);
@@ -288,8 +290,38 @@ public final class EdgeRelayService extends Service {
             JSONObject queued = new BcpClient(this).queueJob(kind, payload, requiresPc);
             queued.put("ok", queued.optBoolean("queued", false)
                     || "QUEUED".equals(queued.optString("result", ""))
-                    || "ALREADY_QUEUED".equals(queued.optString("result", "")));
+                    || "ALREADY_QUEUED".equals(queued.optString("result", ""))
+                    || queued.optBoolean("executed_locally", false));
             writeJson(out, 202, queued);
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/communications".equals(path)) {
+            BcpClient client = new BcpClient(this);
+            JSONObject result = new JSONObject();
+            result.put("ok", true);
+            result.put("project", client.getProject());
+            result.put("records", client.communicationHistory());
+            writeJson(out, 200, result);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/communications".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            String idem = body.optString("idempotency_key", "").trim();
+            if (idem.isEmpty() || idem.length() > 160) {
+                writeJson(out, 400, json("ok", false, "error", "idempotency_key_required"));
+                return;
+            }
+            JSONObject payload = new JSONObject(body.toString());
+            payload.put("idempotency_key", idem);
+            JSONObject queued = new BcpClient(this).recordCommunication(payload);
+            queued.put("ok", queued.optBoolean("ok", false)
+                    || queued.optBoolean("executed_locally", false)
+                    || queued.optBoolean("queued", false)
+                    || "COMMITTED".equals(queued.optString("result", ""))
+                    || "ALREADY_COMMITTED".equals(queued.optString("result", ""))
+                    || "QUEUED".equals(queued.optString("result", "")));
+            writeJson(out, 202, queued);
+            return;
         }
     }
 
@@ -308,6 +340,7 @@ public final class EdgeRelayService extends Service {
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());
             out.put("local_executor", "ALLOWLISTED_ACTIVE");
+            out.put("communication_records", client.communicationHistory().length());
             out.put("presence", presenceState);
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             out.put("listener_state", p.getString("state", ""));

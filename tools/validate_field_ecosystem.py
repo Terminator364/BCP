@@ -470,17 +470,18 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["scheduler_completion_is_not_delivery_proof"] is True
     assert delivery_policy["channels"]["email"]["foreground_end_send_primary"] is True
     assert communication_policy["anti_false_success"]["scheduler_completed_is_not_delivery"] is True
-    assert comm_protocol["schema"] == "bcp.communication_protocol/1"
+    assert comm_protocol["schema"] == "bcp.communication_protocol/2"
     assert comm_protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert comm_protocol["cadence_minutes"] == 30
     assert comm_protocol["primary_work_budget_minutes"] == 26
     assert comm_protocol["normal_close_reserve_minutes"] == 4
     assert comm_protocol["backup_earliest_offset_minutes"] == 28
     assert comm_protocol["hard_guard_offset_minutes"] == 29
-    assert comm_state_machine["schema"] == "bcp.communication_state_machine/1"
+    assert comm_state_machine["schema"] == "bcp.communication_state_machine/2"
     assert comm_state_machine["useful_work_minutes"] == 26
     assert comm_state_machine["normal_close_reserve_minutes"] == 4
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in comm_state_machine["normal_path"]
+    assert "OPEN_DELIVERY_FAILURE" in comm_state_machine["delivery_states"]
     assert takeover["trigger_code"] == "BCPGO BCP"
     assert takeover["communication_contract"]["normal_close_owner"] == "PRIMARY_ASSISTANT"
 

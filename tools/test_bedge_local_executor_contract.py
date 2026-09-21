@@ -41,6 +41,10 @@ def main() -> int:
         'local.put("executed_locally"',
         'out.put("local_execution", runLocalReadyJobs(8))',
         "EDGE_LOCAL_TASK_COMMITTED",
+        "communicationHistory",
+        "recordCommunication",
+        '"ALREADY_COMMITTED"',
+        '"duplicate_suppressed"',
     )
     need(
         orch,
@@ -56,7 +60,10 @@ def main() -> int:
         '"LOCAL_HEALTH_SNAPSHOT"',
         '"LOCAL_QUEUE_SUMMARY"',
         '"LOCAL_MEMORY_COMPACT"',
+        '"LOCAL_COMMUNICATION_RECORD"',
         '"local_executor", "ALLOWLISTED_ACTIVE"',
+        '"durable_communication_journal", true',
+        '"/v1/node/communications"',
     )
     print("BCP_BEDGE_LOCAL_EXECUTOR_CONTRACT=PASS")
     return 0

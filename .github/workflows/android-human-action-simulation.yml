@@ -201,6 +201,7 @@ jobs:
           assert obj["ok"] is True
           assert obj["local_api"] is True
           assert obj["durable_queue"] is True
+          assert obj["durable_communication_journal"] is True
           assert obj["content_addressed_private_cache"] is True
           assert obj["store_and_forward"] is True
           assert obj["telegram_https_connect_relay"] is True
@@ -211,7 +212,29 @@ jobs:
           PRIVATE_CODE="$(curl -sS -o edge-private-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/status)"
           test "$PRIVATE_CODE" = "401"
           grep -F '"unauthorized"' edge-private-unauthorized.json >/dev/null
+          COMM_CODE="$(curl -sS -o edge-communications-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/communications)"
+          test "$COMM_CODE" = "401"
+          grep -F '"unauthorized"' edge-communications-unauthorized.json >/dev/null
           echo "BCP_ANDROID_LOCAL_API_SERVER=PASS"
+
+      - name: Prove phone-local durable communication journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          test "$("$ADB" get-state)" = "device"
+          gradle :android-b-edge:connectedDebugAndroidTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
+          TEST_ROOT="android-b-edge/build/outputs/androidTest-results/connected"
+          test -d "$TEST_ROOT"
+          find "$TEST_ROOT" -type f -name '*.xml' -print | tee android-instrumentation-results.txt
+          test -s android-instrumentation-results.txt
+          grep -R -F 'EdgeCommunicationJournalInstrumentedTest' "$TEST_ROOT" >/dev/null
+          if grep -R -E 'failures="[1-9]|errors="[1-9]' "$TEST_ROOT"; then
+            echo "BCP_ANDROID_PHONE_COMMUNICATION_JOURNAL=FAIL"
+            exit 1
+          fi
+          echo "BCP_ANDROID_PHONE_COMMUNICATION_JOURNAL=PASS"
 
       - name: Cold relaunch idempotence smoke
         shell: bash
@@ -253,7 +276,11 @@ jobs:
             edge-health.json
             edge-capabilities.json
             edge-private-unauthorized.json
+            edge-communications-unauthorized.json
             edge-health-relaunch.json
+            android-instrumentation-results.txt
+            android-b-edge/build/outputs/androidTest-results/connected/
+            android-b-edge/build/reports/androidTests/connected/
             emulator.log
             avd-list-created.txt
             avd-list-boot.txt
