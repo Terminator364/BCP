@@ -3407,22 +3407,20 @@ class Telegram:
                     # Keep producing durable human-facing state even when getUpdates
                     # itself is unreachable. Telegram.send() queues failed messages
                     # for the B-EDGE relay without claiming provider delivery.
-                    for fn in (
-                        self._push_transport_liveness,
-                        self._push_presence,
-                        self._push_watchdog_notice,
-                        self._push_attention_transition,
-                        self._push_system_presence,
-                    ):
+                    pushers = (
+                        ("transport_liveness", lambda: self._push_transport_liveness(0)),
+                        ("presence", self._push_presence),
+                        ("watchdog", self._push_watchdog_notice),
+                        ("attention", self._push_attention_transition),
+                        ("system_presence", self._push_system_presence),
+                    )
+                    for source_name, fn in pushers:
                         try:
-                            if fn is self._push_transport_liveness:
-                                fn(0)
-                            else:
-                                fn()
+                            fn()
                         except Exception as relay_exc:
                             append_log(
                                 "BEDGE_RELAY_CAPTURE",
-                                source=getattr(fn, "__name__", "push"),
+                                source=source_name,
                                 error_class=type(relay_exc).__name__,
                             )
                 time.sleep(delay)
