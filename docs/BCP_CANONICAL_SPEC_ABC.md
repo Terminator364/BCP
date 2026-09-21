@@ -1,7 +1,7 @@
 # BCP — Cahier des charges intégral A+B+C
 
-Status: CANONICAL CANDIDATE R79 · SOURCE-RECONCILED UCMF V9  
-Revision: 2026-09-21-R79
+Status: CANONICAL CANDIDATE R81 · SOURCE-RECONCILED UCMF V9  
+Revision: 2026-09-22-R81
 
 ## 1. Autorité
 
@@ -166,3 +166,18 @@ Chaque candidate doit publier :
 - readback terrain.
 
 Le prochain incrément téléphone doit au minimum intégrer la Chronicle locale et renforcer son cockpit avant d'être envisagé comme nouvelle installation.
+
+
+## 8. Vertical slice R81 — gouvernance locale téléphone
+
+R81 ferme une partie structurante de deux gaps A+B+C sans créer une nouvelle micro-bêta :
+
+- **registre local de capacités** Room v5 : chaque capacité observée porte nœud, provider, type, état, transport, détails, classe de preuve, observed_at, expiry et updated_at ;
+- **journal append-only des claims mémoire** : chaque tentative d'admission porte source, autorité, evidence_class, idempotency_key, état ADMITTED/REJECTED et lien de supersession ;
+- la mémoire canonique dérivée n'est modifiée qu'après passage de la politique de précédence ; un claim plus faible ne peut pas écraser silencieusement une mémoire mieux prouvée/pinnée ;
+- le Context Builder local inclut désormais capacités observées + ledger des claims, sans dépendre du PC ;
+- API privée authentifiée : `GET/POST /v1/node/capability-registry` et `GET/POST /v1/node/memory-claims` ;
+- cockpit serveur : affiche le nombre de capacités et de claims/provenances réellement présents ;
+- migration Room **v4→v5** explicite ; aucune destructive migration autorisée.
+
+Cette tranche augmente la couverture fonctionnelle macro provisoire à **56,1 %** tout en gardant la maturité de preuve à **42,2 %** tant que l'exact-head CI et la migration sur appareil 2.2 ne sont pas prouvés. Elle ne constitue donc pas une autorisation d'installation.
