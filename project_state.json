@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R65_PHONE_FULL_NODE_CANDIDATE_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R65 promotes the dedicated old Android phone from a selective relay into first-class BCP infrastructure: authenticated private-LAN node API on TCP/8877, Room-backed idempotent store-and-forward queue, phone-owned communication jobs, adaptive network classification, boot/package recovery, PC failed-Telegram persistence to the phone node, existing TLS relay on TCP/8876, and a dedicated server cockpit. BCP server target is 0.7.16, B-EDGE candidate is 2.1.3, Telegram companion candidate is V22. No user install is requested before exact-head simulation/CI.",
-  "next_action": "Finish exact-head PR #134 qualification. Fix every CI/emulator/static defect automatically. If all required gates pass, reread main and the writer fence before serialized merge. After merge, verify BCP 0.7.16 field update/readback, build/sign/promote B-EDGE 2.1.3 through the pinned Android signing identity, then field-prove old-phone reboot recovery, LAN/hotspot switching, node API idempotency, relay/store-forward and low-data behavior. Independent phone Telegram outbound requires explicit on-device secret provisioning; never auto-copy BotFather token over cleartext LAN.",
+  "status": "R66_PHONE_PRIMARY_COMMS_CANDIDATE_EXACT_HEAD_CI",
+  "last_completed_atomic_action": "R66 concretely promotes the dedicated Android phone beyond relay duty: phone-owned Telegram liveness independent of Windows, authenticated local project/context/memory/jobs API, durable idempotent resume intents, PC reachability sentinel, existing Room store-forward, and exact-head validator fixes. Gmail START messages now use [BCP] and label BCP; 37 recent sent BCP messages were backfilled into the BCP label.",
+  "next_action": "Finish exact-head CI on PR #134 after R66 changes. Auto-fix failures without user retry. If all required checks pass, reread main and merge through the writer fence, then build/sign/publish the same-identity B-EDGE 2.1.4 candidate and request at most one qualified phone setup/install action with exact-path field readback.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1890,7 +1890,7 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R58",
-    "revision": "2026-09-21-R60",
+    "revision": "2026-09-21-R66",
     "target_minutes": 25,
     "work_slice_minutes": "24-25",
     "checkpoint_each_slice": true,
@@ -1907,7 +1907,10 @@
     "email_start_notice_before_substantive_work": true,
     "email_end_checkpoint_before_chat_pointer": true,
     "email_end_retry_until_provider_ack": true,
-    "chat_output_before_end_ack_forbidden": true
+    "chat_output_before_end_ack_forbidden": true,
+    "gmail_label_required": "BCP",
+    "gmail_subject_prefix_required": "[BCP]",
+    "gmail_label_apply_after_send_ack": true
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2287,6 +2290,63 @@
     "start_mail_receipt": "1a0c4002df5d140d",
     "target_minutes": 25,
     "end_mail_provider_ack_required": true,
+    "chat_pointer_only_after_end_ack": true,
+    "end_watchdog_armed": true
+  },
+  "r66_phone_primary_comms": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI",
+    "branch": "work/bcp/r65-phone-server-full-node-20260921-1345",
+    "pull_request": 134,
+    "base_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3",
+    "server_target_version": "0.7.16",
+    "edge_candidate_version": "2.1.4-rc1-phone-primary-comms-evergreen",
+    "dedicated_phone_role": "PHONE_PRIMARY_CONTINUITY_NODE",
+    "phone_local_api": {
+      "port": 8877,
+      "private_lan_only": true,
+      "authenticated": true,
+      "endpoints": [
+        "/v1/node/status",
+        "/v1/node/projects",
+        "/v1/node/context",
+        "/v1/node/memory",
+        "/v1/node/jobs",
+        "/v1/node/enqueue",
+        "/v1/node/resume-intent",
+        "/v1/node/reconcile"
+      ]
+    },
+    "phone_owned_communications": {
+      "telegram_outbound_liveness": true,
+      "startup_notice": true,
+      "pc_lost_recovered_notices": true,
+      "uplink_recovered_notice": true,
+      "sparse_alive_minutes": 90,
+      "windows_telegram_worker_required_for_outbound_liveness": false,
+      "concurrent_getupdates_pollers_forbidden": true
+    },
+    "no_sim_assumed": true,
+    "store_forward": true,
+    "durable_resume_intent": true,
+    "project_context_cache": true,
+    "future_transports": [
+      "WIFI_DIRECT",
+      "WIFI_AWARE",
+      "LOCAL_ONLY_HOTSPOT",
+      "BLUETOOTH_COMPANION",
+      "USB_RECOVERY"
+    ],
+    "device_owner_mode": "OPTIONAL_AFTER_EXPLICIT_PROVISIONING_APPROVAL",
+    "storage_direction": "BOUNDED_CONTENT_ADDRESSED_RECOVERY_CACHE_NEXT",
+    "field_verified": false
+  },
+  "communication_tranche_r66": {
+    "checkpoint_start": "BCP-R66-PHONE-SERVER-FULL-START-20260921-1420",
+    "start_mail_receipt": "1a0c420226e9323c",
+    "start_mail_label": "BCP",
+    "target_minutes": 25,
+    "end_mail_provider_ack_required": true,
+    "end_mail_label_required": "BCP",
     "chat_pointer_only_after_end_ack": true,
     "end_watchdog_armed": true
   }
