@@ -104,7 +104,7 @@ def main() -> int:
         "registerDefaultNetworkCallback",
         "TRANSPORT_WIFI",
         "NET_CAPABILITY_VALIDATED",
-        "WIFI_VALIDATED_RETURN",
+        "NETWORK_VALIDATED_RETURN",
         "MIN_REENTRY_TRIGGER_MS",
     )
     require(edge_manifest, 'android:name=".BcpEdgeApplication"')
