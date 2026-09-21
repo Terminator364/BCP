@@ -34,7 +34,7 @@ def main() -> int:
     assert '"proxy-authorization"' in relay
     assert "CredentialStore(this).getToken()" in relay
     assert "FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING" in relay
-    assert 'android:foregroundServiceType="remoteMessaging"' in manifest
+    assert 'android:foregroundServiceType="remoteMessaging|connectedDevice"' in manifest
     assert "FOREGROUND_SERVICE_REMOTE_MESSAGING" in manifest
 
     assert "http.client.HTTPSConnection" in telegram
