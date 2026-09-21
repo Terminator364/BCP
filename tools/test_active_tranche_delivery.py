@@ -26,7 +26,7 @@ def main() -> int:
         if line.strip()
     ]
 
-    assert active["schema"] == "bcp.active_tranche/4"
+    assert active["schema"] == "bcp.active_tranche/5"
     assert active["project"] == "API/BCP"
     assert active["cadence_minutes"] == 25
     assert active["useful_work_minutes"] == 23
