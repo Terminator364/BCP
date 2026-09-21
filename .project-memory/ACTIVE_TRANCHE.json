@@ -6,9 +6,9 @@
   "cadence_minutes": 30,
   "useful_work_minutes": 26,
   "normal_close_reserve_minutes": 4,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSING",
   "started_at_kinshasa": "2026-09-21T19:01:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T19:27:00+01:00",
   "backup_earliest_kinshasa": "2026-09-21T19:29:00+01:00",
@@ -20,7 +20,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "final_app_reply_gate": "END_ACK_REQUIRED",
   "communication_guard": {
@@ -44,5 +44,19 @@
     "end_email_message_id": "1a0c520e8cc2673f",
     "checkpoint_id": "BCP-R73-COMMS-END-20260921-1900",
     "closure_reason": "CORRECTIVE_AFTER_SCHEDULER_COMPLETED_WITHOUT_GMAIL_END"
+  },
+  "close_intent_at_kinshasa": "2026-09-21T19:24:00+01:00",
+  "final_technical_checkpoint": {
+    "merge_sha": "9572c899269856f9dda2f47f181808fc3701ba51",
+    "exact_head_sha": "cb9233da67dd5024aec20be2e02ee1bfde17c4ec",
+    "exact_head_ci": "PASS_ALL_12_CRITICAL_WORKFLOWS",
+    "current_release_contract_run": 1191,
+    "android_build_run": 575,
+    "android_human_action_simulation_run": 191,
+    "field_ecosystem_preflight_run": 1145,
+    "phone_candidate": "2.2.0-full-node-evergreen",
+    "phone_local_executor": "IMPLEMENTED_AND_CI_QUALIFIED",
+    "field_telegram_state": "DIRECT_TRANSPORT_OUTAGE",
+    "field_edge_relay_active": false
   }
 }
