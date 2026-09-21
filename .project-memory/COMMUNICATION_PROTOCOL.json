@@ -1,58 +1,72 @@
 {
-  "schema": "bcp.communication_protocol/1",
+  "schema": "bcp.communication_protocol/2",
   "project": "API/BCP",
-  "revision": "2026-09-21-R74",
+  "revision": "2026-09-21-R75",
   "cadence_minutes": 30,
   "primary_work_budget_minutes": 26,
   "normal_close_reserve_minutes": 4,
   "normal_close_owner": "PRIMARY_ASSISTANT",
+  "backup_owner": "SHADOW_BACKUP",
+  "hard_guard_owner": "HARD_GUARD",
   "backup_earliest_offset_minutes": 28,
   "hard_guard_offset_minutes": 29,
   "absolute_end_deadline_minutes": 30,
   "gmail_label": "BCP",
   "continuation_code": "BCPGO BCP",
+  "rule_priority": "P0_COMMUNICATION_CONTINUITY_THEN_DELIVERY_SECURITY_THEN_PRODUCT",
   "start_sequence": [
     "RECONCILE_OR_CLOSE_ANY_PRIOR_TRANCHE",
-    "LOAD_COMMUNICATION_AND_DELIVERY_POLICIES",
+    "LOAD_DELIVERY_SECURITY_AND_COMMUNICATION_POLICIES",
     "SEND_GMAIL_START",
-    "VERIFY_START_PROVIDER_ACK_MESSAGE_ID",
+    "VERIFY_START_PROVIDER_ACK_MESSAGE_ID_AND_THREAD_ID",
     "APPLY_GMAIL_LABEL_BCP",
     "PERSIST_ACTIVE_TRANCHE_START_RECEIPT",
     "BEGIN_WORK"
   ],
   "feedback_during_tranche": "QUEUE_AND_INTEGRATE_WITHOUT_BREAKING_ACTIVE_TRANCHE",
-  "only_early_stop": "TRUE_HUMAN_GATE_OR_TOOL_SAFETY_FAILURE_OBJECTIVELY_REQUIRED_TO_CONTINUE",
+  "only_early_stop": "TRUE_HUMAN_GATE_OBJECTIVELY_REQUIRED_TO_CONTINUE_OR_TOOL_SAFETY_FAILURE",
   "normal_end_sequence": [
     "ENTER_NORMAL_CLOSE_RESERVE_AT_T_PLUS_26",
     "STOP_NEW_PRODUCT_MUTATIONS",
     "PERSIST_FINAL_TECHNICAL_CHECKPOINT_AND_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
-    "SEND_COMPLETE_GMAIL_END_IF_MISSING",
+    "PREFER_REPLY_TO_START_THREAD",
+    "ON_REPLY_REJECTION_SEARCH_SENT_AGAIN_THEN_USE_STANDALONE_FALLBACK",
     "VERIFY_END_PROVIDER_ACK_MESSAGE_ID_AND_SENT_READBACK",
     "APPLY_GMAIL_LABEL_BCP",
+    "APPEND_END_ACK_TO_DELIVERY_LEDGER",
     "PERSIST_END_ACKNOWLEDGED_AND_CLOSED",
     "ONLY_THEN_REPLY_IN_CHAT_APP"
   ],
-  "chat_app_reply": "VA_SUR_GMAIL_PLUS_KINSHASA_DATE_TIME_PLUS_CHECKPOINT_ONLY",
   "final_reply_gate": {
     "required_delivery_state": "END_ACKNOWLEDGED_OR_CLOSED",
     "rule": "NO_FINAL_CHAT_APP_RESPONSE_BEFORE_GMAIL_END_PROVIDER_ACK_AND_DURABLE_LEDGER_RECEIPT"
   },
   "idempotency": "DELIVERY_KEY_PLUS_GMAIL_SEARCH_PLUS_PROVIDER_MESSAGE_ID",
-  "threading": "PREFER_END_REPLY_TO_START_THREAD; IF_REPLY_REJECTED, SEARCH_FOR_EXISTING_END_THEN_SEND_STANDALONE_FALLBACK",
+  "threading": "PREFER_END_REPLY_TO_START_THREAD_WITH_VERIFIED_STANDALONE_FALLBACK",
   "network_interruption_policy": "PERSIST_CHECKPOINT_AND_RESUME_SAME_TRANCHE_NEVER_SILENTLY_ABANDON",
   "no_app_reply_before_end_mail": true,
   "end_mail_required_even_if_user_sends_intermediate_feedback": true,
+  "violation_recovery": "IF_END_MAIL_MISSING_SEND_IT_BEFORE_ANY_OTHER_FINAL_APP_REPLY",
+  "platform_hold_rule": "SECURITY_HOLD_IS_NOT_MISSION_COMPLETION; CHECKPOINT_AND_RESUME_WITHOUT_BYPASS",
   "backup_semantics": {
-    "normal_backup": "SHADOW_BACKUP",
-    "hard_guard": "HARD_GUARD",
+    "scheduler_is_backup_only": true,
     "scheduler_completion_is_delivery_proof": false,
     "backups_must_search_gmail_before_send": true,
     "backups_must_not_close_over_primary_ack": true,
-    "minimal_precomposed_payload_allowed": true
+    "minimal_precomposed_payload_allowed": true,
+    "backup_may_close_only_if_primary_end_missing": true
+  },
+  "crash_recovery": {
+    "after_start_ack_before_close_intent": "RESUME_FROM_DURABLE_WORK_CHECKPOINT",
+    "after_close_intent_before_gmail_send": "SEARCH_DELIVERY_KEY_THEN_SEND_ONE_END_IF_ABSENT",
+    "after_gmail_send_before_repo_receipt": "SEARCH_SENT_BY_DELIVERY_KEY_OR_MESSAGE_ID_AND_PERSIST_ACK_WITHOUT_RESEND",
+    "scheduler_completed_without_gmail_end": "KEEP_TRANCHE_OPEN_AND_SEND_END; SCHEDULER_STATUS_HAS_ZERO_AUTHORITY"
   },
   "work_proof": {
     "chatgpt_thinking_indicator": "NOT_AUTHORITATIVE_FOR_TRANCHE_DURATION_OR_WORK_AMOUNT",
+    "ui_indicator_control": "ASSISTANT_CANNOT_FORCE_OR_SET_THE_VISIBLE_UI_THINKING_DURATION",
+    "target_reasoning_mode": "DEEP_REASONING_WITH_SUBSTANTIVE_TOOL_WORK",
     "authoritative_evidence": [
       "git_commits",
       "ci_runs",
@@ -61,6 +75,11 @@
       "durable_receipts",
       "field_telemetry"
     ],
-    "rule": "NEVER_CLAIM_30_MINUTES_OF_CONTINUOUS_MODEL_THINKING_FROM_UI_INDICATOR"
+    "rule": "NEVER_CLAIM_A_VISIBLE_THINKING_DURATION; PROVE_WORK_WITH DURABLE OUTPUTS"
+  },
+  "field_feedback_intake": {
+    "rule": "SCREENSHOTS_OR_FIELD_EVIDENCE_TRIGGER_AUTOMATIC_COUNTER_AUDIT_BEFORE_USER_IS_ASKED_TO_DIAGNOSE",
+    "communication": "OPEN_OR_RESUME_TRANCHE_WITH_GMAIL_START_ACK_BEFORE_SUBSTANTIVE_REPAIR",
+    "closeout": "GMAIL_END_ACK_AND_DURABLE_END_ACK_REQUIRED"
   }
 }
