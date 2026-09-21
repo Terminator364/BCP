@@ -22,10 +22,10 @@
       "CHECKPOINT_ID"
     ],
     "cadence_window_minutes": [
-      26,
-      30
+      23,
+      25
     ],
-    "cadence_target_minutes": 30,
+    "cadence_target_minutes": 25,
     "pre_human_action_simulation_policy_ref": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     "load_pre_human_action_simulation_policy_before_user_action": true,
     "load_delivery_policy_before_substantive_work": true,
@@ -49,6 +49,9 @@
     "new_conversation_user_reexplanation_required": false,
     "bcpgo_bcp_load_order": [
       ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+      ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+      ".project-memory/BCP_ABC_COVERAGE.json",
+      "docs/BCP_CANONICAL_SPEC_ABC.md",
       ".project-memory/COMMUNICATION_PROTOCOL.json",
       ".project-memory/COMMUNICATION_STATE_MACHINE.json",
       ".project-memory/ACTIVE_TRANCHE.json",
@@ -63,11 +66,8 @@
       "API_PROJECT_CONTINUITY.md",
       "release/current.json"
     ],
-    "preclose_snapshot_offset_minutes": 26,
-    "normal_closeout_offset_minutes": 26,
-    "hard_close_guard_offset_minutes": 29,
-    "absolute_end_deadline_minutes": 30,
-    "dual_end_guard_required": true,
+    "preclose_snapshot_offset_minutes": 23,
+    "normal_closeout_offset_minutes": 23,
     "user_message_is_not_closeout_trigger": true,
     "active_tranche_state_ref": ".project-memory/ACTIVE_TRANCHE.json",
     "load_active_tranche_before_resume": true,
@@ -78,18 +78,21 @@
     "gmail_end_requires_sent_search_readback": true,
     "end_failsafe_template_ref": ".project-memory/END_FAILSAFE_TEMPLATE.json",
     "load_end_failsafe_template_before_resume": true,
-    "useful_work_target_minutes": 26,
+    "useful_work_target_minutes": 23,
     "useful_work_minimum_minutes": 20,
-    "normal_close_reserve_minutes": 4,
-    "backup_earliest_offset_minutes": 28,
+    "normal_close_reserve_minutes": 2,
     "communication_protocol_ref": ".project-memory/COMMUNICATION_PROTOCOL.json",
     "communication_state_machine_ref": ".project-memory/COMMUNICATION_STATE_MACHINE.json",
     "communication_delivery_ledger_ref": ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
     "new_conversation_takeover_ref": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     "delivery_key_required": true,
     "primary_close_owner": "PRIMARY_ASSISTANT",
-    "scheduled_close_guards_are_backup_only": true,
-    "chatgpt_thinking_indicator_is_work_proof": false
+    "scheduled_close_guards_are_backup_only": false,
+    "chatgpt_thinking_indicator_is_work_proof": false,
+    "scheduled_close_guards_required": false,
+    "abc_source_registry_ref": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "abc_coverage_ref": ".project-memory/BCP_ABC_COVERAGE.json",
+    "abc_canonical_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC.md"
   },
   "universal": [
     {
@@ -126,7 +129,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R74_PROVIDER_PROOF_STATE_MACHINE_30MIN_PHONE_FULL_SERVER_AND_MAIL_CONTRACT",
+      "status": "VALID_SCOPED_ALIAS_WITH_R77_ABC_INTEGRAL_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
       "fallback": "BCPGO BCP"
     },
     {
