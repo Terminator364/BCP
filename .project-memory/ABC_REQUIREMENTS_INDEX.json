@@ -1,0 +1,619 @@
+{
+  "schema": "bcp.abc_requirements_index/1",
+  "revision": "2026-09-21-R77",
+  "status": "CANONICAL_CANDIDATE",
+  "model": {
+    "A": "Original sealed preconception, original intent, promised functions and preserved architecture.",
+    "B": "Research-driven expansion: realistic best practices, technical possibilities and improvements beyond A.",
+    "C": "Accumulated field feedback, user work preferences, corrections and later requirements."
+  },
+  "source_authorities": {
+    "A": [
+      "BCP_PRECONCEPTION_V0_7_AX15GO_SEALED.zip (authority pointer in APIAX07_CONTINUITY.json)",
+      "BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf authority pointer",
+      "README.md",
+      "API_PROJECT_CONTINUITY.md"
+    ],
+    "B": [
+      "UCMF001 Postulates 2-3",
+      "docs/BEDGE_RUNTIME_V2_HARDENING.md",
+      "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+      "Official Android documentation research captured in BCP_CANONICAL_SPEC_ABC_R77.md"
+    ],
+    "C": [
+      "project_state.json durable feedback history",
+      "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+      "COMMUNICATION_* policies",
+      "User field screenshots/observations reflected in project state"
+    ]
+  },
+  "scoring_rule": "Per requirement: 0 missing, 1 designed/researched, 2 implemented partial/candidate, 3 CI/process qualified, 4 field verified. The maturity score does not substitute for separate field verification.",
+  "summary": {
+    "requirement_count": 45,
+    "score_scale": {
+      "0": "MISSING",
+      "1": "DESIGNED_OR_RESEARCHED",
+      "2": "IMPLEMENTED_PARTIAL_OR_CANDIDATE",
+      "3": "QUALIFIED_CI_OR_PROCESS",
+      "4": "FIELD_VERIFIED"
+    },
+    "maturity_points_obtained": 104,
+    "maturity_points_max": 180,
+    "maturity_percent": 57.8,
+    "implementation_or_better_count": 39,
+    "implementation_or_better_percent": 86.7,
+    "qualified_or_better_count": 19,
+    "qualified_or_better_percent": 42.2,
+    "field_verified_count": 1,
+    "field_verified_percent": 2.2
+  },
+  "requirements": [
+    {
+      "id": "A01",
+      "layer": "A",
+      "title": "Personal control/continuity plane independent of any single chat",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "API_PROJECT_CONTINUITY.md",
+        "project_state.json"
+      ],
+      "gap": "Still not universally gated across every native ChatGPT turn."
+    },
+    {
+      "id": "A02",
+      "layer": "A",
+      "title": "Durable canonical state, revisions, checkpoints and exact recovery",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "project_state.json",
+        "windows/bcp_server.py"
+      ],
+      "gap": "Cross-node authority migration not fully field-qualified."
+    },
+    {
+      "id": "A03",
+      "layer": "A",
+      "title": "Universal Chronicle append-only event ledger",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "windows/bcp_server.py"
+      ],
+      "gap": "Universal source coverage and full BCP_EVENT_V1 are incomplete."
+    },
+    {
+      "id": "A04",
+      "layer": "A",
+      "title": "Evidence vault with exact payload/hash references",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Exact vault lifecycle and retention are incomplete."
+    },
+    {
+      "id": "A05",
+      "layer": "A",
+      "title": "Canonical memory admission, supersession and truth status",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Promotion/supersession engine not fully implemented."
+    },
+    {
+      "id": "A06",
+      "layer": "A",
+      "title": "Conversation/session/turn/event model",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "windows/bcp_server.py"
+      ],
+      "gap": "Provider identity coverage remains incomplete."
+    },
+    {
+      "id": "A07",
+      "layer": "A",
+      "title": "Source capability registry with honest observability modes",
+      "priority": "P1",
+      "score": 1,
+      "status": "DESIGNED",
+      "evidence": [
+        "UCMF001"
+      ],
+      "gap": "Machine-readable registry/adapters not complete."
+    },
+    {
+      "id": "A08",
+      "layer": "A",
+      "title": "BCPGO durable preflight, policies and recovery",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+        ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      ],
+      "gap": "Needs repeated cold-chat field proof."
+    },
+    {
+      "id": "A09",
+      "layer": "A",
+      "title": "Dedicated old Android phone as persistent BCP appliance",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "android-b-edge/**",
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ],
+      "gap": "2.2 full-node candidate not yet field-installed/verified."
+    },
+    {
+      "id": "A10",
+      "layer": "A",
+      "title": "Windows PC as heavy/Windows worker, not sole communications center",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+        "project_state.json"
+      ],
+      "gap": "Phone-first failover still not field-proven end-to-end."
+    },
+    {
+      "id": "A11",
+      "layer": "A",
+      "title": "Offline-first durable queue/store-and-forward/replay",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "android-b-edge/**",
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      ],
+      "gap": "Phone-only field outage/replay proof incomplete."
+    },
+    {
+      "id": "A12",
+      "layer": "A",
+      "title": "Local deterministic scheduler/DAG before model calls",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeLocalTaskEngine.java",
+        "EdgeOrchestrator.java"
+      ],
+      "gap": "General multi-project DAG remains incomplete."
+    },
+    {
+      "id": "A13",
+      "layer": "A",
+      "title": "Provider-neutral zero-cost model broker and quota routing",
+      "priority": "P1",
+      "score": 1,
+      "status": "DESIGNED",
+      "evidence": [
+        "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
+      ],
+      "gap": "Not yet operationally integrated."
+    },
+    {
+      "id": "A14",
+      "layer": "A",
+      "title": "Adapters for ChatGPT, Telegram, GitHub, Drive, BuildHub, browser/YouTube where observable",
+      "priority": "P1",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "YouTube/native ChatGPT observability remains inherently partial."
+    },
+    {
+      "id": "A15",
+      "layer": "A",
+      "title": "RDC constraints: zero paid spend, unstable power/network, low RAM and battery-aware",
+      "priority": "P0",
+      "score": 4,
+      "status": "FIELD_EVIDENCED_CONSTRAINT",
+      "evidence": [
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md",
+        "BCP_RUNTIME_LATEST.json"
+      ],
+      "gap": "Constraint is proven; not every subsystem yet satisfies it."
+    },
+    {
+      "id": "B01",
+      "layer": "B",
+      "title": "Event-sourced chronicle + provenance model",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001"
+      ],
+      "gap": "Full BCP_EVENT_V1/provenance graph incomplete."
+    },
+    {
+      "id": "B02",
+      "layer": "B",
+      "title": "Room/SQLite transactional durable phone state",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "android-b-edge/storage/**"
+      ],
+      "gap": "Authority migration from shadow/partial state not field complete."
+    },
+    {
+      "id": "B03",
+      "layer": "B",
+      "title": "WorkManager for persistent/deferred reconciliation",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "android-b-edge/work/**"
+      ],
+      "gap": "Long-duration field reboot/Doze proof remains."
+    },
+    {
+      "id": "B04",
+      "layer": "B",
+      "title": "Typed foreground service for connected-device/remote-messaging work",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "android-b-edge/AndroidManifest.xml",
+        "EdgeRelayService.java"
+      ],
+      "gap": "OEM-specific long-run behavior still field-gated."
+    },
+    {
+      "id": "B05",
+      "layer": "B",
+      "title": "NSD/mDNS local service discovery",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "EdgePresenceAdvertiser.java",
+        "NsdDiscovery.java"
+      ],
+      "gap": "Home-router multicast reliability needs field measurement."
+    },
+    {
+      "id": "B06",
+      "layer": "B",
+      "title": "Wi-Fi Direct service discovery when LAN/hotspot is unavailable or isolated",
+      "priority": "P1",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "EdgePresenceAdvertiser.java"
+      ],
+      "gap": "Peer data channel and field compatibility incomplete."
+    },
+    {
+      "id": "B07",
+      "layer": "B",
+      "title": "BLE low-power presence/control fallback",
+      "priority": "P1",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "EdgePresenceAdvertiser.java",
+        "EdgePermissionManager.java"
+      ],
+      "gap": "Bounded command protocol and field pairing not complete."
+    },
+    {
+      "id": "B08",
+      "layer": "B",
+      "title": "Adaptive network state via ConnectivityManager callbacks and data-saver routing",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "EdgeNetworkState.java",
+        "BcpEdgeApplication.java"
+      ],
+      "gap": "Multi-network route policy needs field failover proof."
+    },
+    {
+      "id": "B09",
+      "layer": "B",
+      "title": "Authenticated encrypted LAN transport replacing clear HTTP production path",
+      "priority": "P0",
+      "score": 1,
+      "status": "DESIGNED_GAP",
+      "evidence": [
+        "docs/BEDGE_RUNTIME_V2_HARDENING.md"
+      ],
+      "gap": "Production TLS/mTLS or equivalent identity-bound channel not implemented."
+    },
+    {
+      "id": "B10",
+      "layer": "B",
+      "title": "Optional fully-managed dedicated-device mode (DPC/device owner), never required baseline",
+      "priority": "P2",
+      "score": 1,
+      "status": "RESEARCHED_OPTION",
+      "evidence": [
+        "Android dedicated devices research"
+      ],
+      "gap": "Requires deliberate provisioning/factory reset; no implementation yet."
+    },
+    {
+      "id": "B11",
+      "layer": "B",
+      "title": "Resource governor for RAM/thermal/battery/storage/network classes",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "EdgeResourceGovernor.java",
+        "EdgeContentStore.java"
+      ],
+      "gap": "Field-shaped stress/thermal/storage-pressure qualification incomplete."
+    },
+    {
+      "id": "B12",
+      "layer": "B",
+      "title": "Minimal Context Capsule builder, FTS/BM25 before embeddings-first complexity",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "EdgeLocalTaskEngine.java"
+      ],
+      "gap": "Full memory-layer retrieval and stale-fact suppression incomplete."
+    },
+    {
+      "id": "B13",
+      "layer": "B",
+      "title": "Transactional outbox, idempotency, effect receipts and fencing",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "windows/bcp_server.py",
+        "android-b-edge/storage/**"
+      ],
+      "gap": "Cross-node split-brain field drills remain."
+    },
+    {
+      "id": "B14",
+      "layer": "B",
+      "title": "Crash/reboot/network-partition benchmark and failure matrix",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "UCMF001",
+        "docs/BEDGE_V2_TEST_MATRIX.md"
+      ],
+      "gap": "Many native/field rows still unexecuted."
+    },
+    {
+      "id": "B15",
+      "layer": "B",
+      "title": "Mature server UI exposing node health, transports, queues, memory, permissions and diagnostics",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "MainActivity.java"
+      ],
+      "gap": "Current field UI is still below target; full server dashboard not field-proven."
+    },
+    {
+      "id": "C01",
+      "layer": "C",
+      "title": "Stop underusing the dedicated phone; make it the primary low-power BCP Edge/API appliance",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "project_state.json",
+        "android-b-edge/**"
+      ],
+      "gap": "2.2 full-node not field-installed/verified."
+    },
+    {
+      "id": "C02",
+      "layer": "C",
+      "title": "Use 4 GB RAM / 64 GB storage aggressively but safely with adaptive quotas",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "EdgeResourceGovernor.java",
+        "EdgeContentStore.java"
+      ],
+      "gap": "Real device quota/thermal/storage measurements incomplete."
+    },
+    {
+      "id": "C03",
+      "layer": "C",
+      "title": "PC is a compute/Windows node, not the mandatory center of all communication",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "Phone-only control path still not fully field proven."
+    },
+    {
+      "id": "C04",
+      "layer": "C",
+      "title": "Old phone must not require its own SIM; use available Wi-Fi/hotspot/local transports",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "project_state.json",
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      ],
+      "gap": "Wi-Fi Direct/BLE data fallback still needs device proof."
+    },
+    {
+      "id": "C05",
+      "layer": "C",
+      "title": "Minimize mobile-data use on PC; prefer local phone relay/cache/control paths",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_PARTIAL",
+      "evidence": [
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      ],
+      "gap": "Automatic measurable data-saving policy needs field counters."
+    },
+    {
+      "id": "C06",
+      "layer": "C",
+      "title": "25-minute tranche = 23 min useful work + 2 min closeout",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE_R77",
+      "evidence": [
+        ".project-memory/COMMUNICATION_PROTOCOL.json"
+      ],
+      "gap": "Needs repeated field proof without user relaunch."
+    },
+    {
+      "id": "C07",
+      "layer": "C",
+      "title": "ChatGPT app shows only Gmail pointer after provider-acknowledged END",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_PROCESS",
+      "evidence": [
+        ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      ],
+      "gap": "Past misses mean recurrence guard must be re-proven."
+    },
+    {
+      "id": "C08",
+      "layer": "C",
+      "title": "Normal closeout must not depend on automations/watchdogs",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE_R77",
+      "evidence": [
+        ".project-memory/COMMUNICATION_STATE_MACHINE.json"
+      ],
+      "gap": "Needs next-tranche field proof."
+    },
+    {
+      "id": "C09",
+      "layer": "C",
+      "title": "Gmail START/END labeled BCP with provider message-id and SENT readback",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_PROCESS",
+      "evidence": [
+        "Gmail receipts",
+        "COMMUNICATION_DELIVERY_LEDGER.jsonl"
+      ],
+      "gap": "END reliability history requires ongoing proof."
+    },
+    {
+      "id": "C10",
+      "layer": "C",
+      "title": "Telegram resilient: direct -> phone relay/Nexus, with truthful provider delivery proof",
+      "priority": "P0",
+      "score": 1,
+      "status": "FIELD_BLOCKED",
+      "evidence": [
+        "BCP_RUNTIME_LATEST.json"
+      ],
+      "gap": "Direct transport outage and inactive field phone relay remain."
+    },
+    {
+      "id": "C11",
+      "layer": "C",
+      "title": "No micro-beta install loop; user sees coherent coordinated releases",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_POLICY",
+      "evidence": [
+        "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
+      ],
+      "gap": "2.2 coherent release still pending."
+    },
+    {
+      "id": "C12",
+      "layer": "C",
+      "title": "Simulate Windows/Android user path before asking for clicks",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "android-human-action-simulation.yml",
+        "Nexus one-shot qualification"
+      ],
+      "gap": "Physical/OEM/provider gates remain irreducible."
+    },
+    {
+      "id": "C13",
+      "layer": "C",
+      "title": "Professional concrete UI, not a simplistic beta screen",
+      "priority": "P0",
+      "score": 1,
+      "status": "FIELD_GAP",
+      "evidence": [
+        "User screenshot of B-EDGE 2.1.2"
+      ],
+      "gap": "Requires full dashboard UX pass and emulator screenshot assertions."
+    },
+    {
+      "id": "C14",
+      "layer": "C",
+      "title": "Real permission onboarding for useful capabilities, optional dedicated-device provisioning",
+      "priority": "P0",
+      "score": 2,
+      "status": "IMPLEMENTED_CANDIDATE",
+      "evidence": [
+        "EdgePermissionManager.java"
+      ],
+      "gap": "Real phone permission grant matrix and optional DPC path incomplete."
+    },
+    {
+      "id": "C15",
+      "layer": "C",
+      "title": "BCPGO BCP cold takeover loads A+B+C and communication contract without user re-explanation",
+      "priority": "P0",
+      "score": 3,
+      "status": "QUALIFIED_CI",
+      "evidence": [
+        "NEW_CONVERSATION_TAKEOVER.json",
+        "UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      ],
+      "gap": "Needs repeated fresh-conversation field proof."
+    }
+  ]
+}
