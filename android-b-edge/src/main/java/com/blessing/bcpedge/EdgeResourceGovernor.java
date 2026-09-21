@@ -68,23 +68,41 @@ public final class EdgeResourceGovernor {
     }
 
     public static boolean shouldDefer(String resourceClass, JSONObject s){
-        if("EDGE_R0".equals(resourceClass)) return false;
-        boolean low=s.optBoolean("low_memory",false)
-                || s.optInt("memory_load_percent",0)>=92;
-        boolean storage=s.optBoolean("storage_pressure",false);
-        boolean power=s.optBoolean("power_save",false);
-        int battery=s.optInt("battery_pct",-1);
-        int thermal=s.optInt("thermal_status",-1);
-        boolean hot=thermal>=0 && thermal>=PowerManager.THERMAL_STATUS_SEVERE;
-        if("PC_R3".equals(resourceClass))
-            // Heavy execution happens on the PC. Do not block the lightweight dispatch
-            // because the phone itself is under RAM/thermal pressure.
-            return false;
-        if("EDGE_R2".equals(resourceClass))
-            return low || storage || power || hot || (battery>=0 && battery<25 && !s.optBoolean("charging",false));
-        if("REMOTE_AI".equals(resourceClass))
-            return storage || !s.optBoolean("internet_validated",false) || power || hot
-                    || (battery>=0 && battery<15 && !s.optBoolean("charging",false));
-        return low || storage || hot;
+        return shouldDeferSignals(
+                resourceClass,
+                s.optBoolean("low_memory",false),
+                s.optInt("memory_load_percent",0),
+                s.optBoolean("storage_pressure",false),
+                s.optBoolean("power_save",false),
+                s.optInt("battery_pct",-1),
+                s.optBoolean("charging",false),
+                s.optInt("thermal_status",-1),
+                s.optBoolean("internet_validated",false));
+    }
+
+    // Pure deterministic admission function so the safety policy is testable
+    // without an Android runtime/JSONObject implementation.
+    public static boolean shouldDeferSignals(
+            String resourceClass,
+            boolean lowMemory,
+            int memoryLoadPercent,
+            boolean storagePressure,
+            boolean powerSave,
+            int batteryPercent,
+            boolean charging,
+            int thermalStatus,
+            boolean internetValidated) {
+        if ("EDGE_R0".equals(resourceClass)) return false;
+        boolean low = lowMemory || memoryLoadPercent >= 92;
+        boolean hot = thermalStatus >= 0
+                && thermalStatus >= PowerManager.THERMAL_STATUS_SEVERE;
+        if ("PC_R3".equals(resourceClass)) return false;
+        if ("EDGE_R2".equals(resourceClass))
+            return low || storagePressure || powerSave || hot
+                    || (batteryPercent >= 0 && batteryPercent < 25 && !charging);
+        if ("REMOTE_AI".equals(resourceClass))
+            return storagePressure || !internetValidated || powerSave || hot
+                    || (batteryPercent >= 0 && batteryPercent < 15 && !charging);
+        return low || storagePressure || hot;
     }
 }
