@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.12",
+  "version": "0.7.13",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "2d9df519f53fef94326f417e371ee8f1c54cf2f4c37b5c26940073b11e4c4b83",
+  "sha256": "cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-20-R54",
-  "release_train": "BCP-0.7.12_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.5",
-  "notes": "BCP 0.7.12 adds explicit fresh Cloudflare device-flow retry semantics. A user-confirmed retry archives the stale auth receipt, writes an explicit retry nonce, relaunches the device-flow path, and never reuses localhost:8976 or an expired code."
+  "requirements_revision": "2026-09-21-R57",
+  "release_train": "BCP-0.7.13_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
+  "notes": "BCP 0.7.13 fixes explicit Nexus device-flow retry HTTP 500 by importing the uuid dependency used for retry nonce/archive generation. Fresh auth semantics, zero-USD policy, and no localhost:8976 fallback remain unchanged."
 }
