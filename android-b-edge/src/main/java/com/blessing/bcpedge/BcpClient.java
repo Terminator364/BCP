@@ -51,6 +51,33 @@ public final class BcpClient {
     public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
 
+    public JSONObject localContextPack() {
+        JSONObject out = new JSONObject();
+        try {
+            out.put("project", getProject());
+            out.put("edge_version", getEdgeVersion());
+            out.put("mode", orchestrator.getMode());
+            out.put("sentinel", orchestrator.sentinelStatus(getProject()));
+            out.put("pending_jobs", orchestrator.pendingJobs(getProject()));
+            out.put("memory", orchestrator.memorySnapshot(getProject()));
+            out.put("content_store", contentStore.status());
+            out.put("network", EdgeNetworkState.snapshot(context));
+            out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
+            out.put("offline_capable", true);
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    public void recordValidatedRecipe(String key, JSONObject recipe) {
+        orchestrator.putMemory(getProject(), "TECHNICAL_KNOWLEDGE",
+                "validated_recipe:" + key, recipe, "VALIDATED", true, null);
+    }
+
+    public void recordProviderState(String provider, JSONObject state) {
+        orchestrator.putMemory(getProject(), "OPERATING_STATE",
+                "provider:" + provider, state, "MACHINE_READBACK", false, null);
+    }
+
     public JSONObject observePcSentinel(boolean reachable) {
         JSONObject s = orchestrator.observePcReachability(getProject(), reachable);
         if (s.optBoolean("transitioned", false)) {
