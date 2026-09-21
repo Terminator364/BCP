@@ -70,7 +70,7 @@ def main():
     ck("new-conversation-takeover", '"trigger_code": "BCPGO BCP"' in takeover and "NEW_CONVERSATION_TAKEOVER.json" in registry)
     ck("checkpoint-subject-policy", 'subject_must_include_checkpoint_id' in policy)
     ck("nested-zip-forbidden", 'nested_zip_for_user_action_forbidden' in policy)
-    print("R77_25MIN_DELIVERY_STATE_MACHINE_AND_NEXUS_HELPER=PASS")
+    print("R81_25MIN_FOREGROUND_DELIVERY_STATE_MACHINE_AND_NEXUS_HELPER=PASS")
     return 0
 
 if __name__=="__main__":
