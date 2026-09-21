@@ -144,7 +144,7 @@ def main() -> int:
     require(
         edge_local_executor,
         "LOCAL_CONTEXT_SNAPSHOT", "LOCAL_HEALTH_SNAPSHOT",
-        "LOCAL_QUEUE_SUMMARY", "LOCAL_MEMORY_COMPACT",
+        "LOCAL_QUEUE_SUMMARY", "LOCAL_CAPABILITY_SNAPSHOT", "LOCAL_MEMORY_COMPACT",
         "B_EDGE_LOCAL_TASK_ENGINE",
     )
     assert "ProcessBuilder" not in edge_local_executor
