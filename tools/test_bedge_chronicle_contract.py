@@ -27,7 +27,7 @@ def main() -> int:
          "occurredAt",
          "ingestedAt")
     need(db,
-         "version = 4",
+         "version = 5",
          "MIGRATION_2_3",
          "CREATE TABLE IF NOT EXISTS edge_events",
          "index_edge_events_projectId_idempotencyKey")
