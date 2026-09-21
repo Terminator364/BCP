@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSEOUT",
   "started_at_kinshasa": "2026-09-21T23:27:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T23:50:00+01:00",
   "normal_end_target_kinshasa": "2026-09-21T23:52:00+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "final_app_reply_gate": "END_ACK_REQUIRED",
@@ -45,5 +45,8 @@
     "gmail_end_message_id": "1a0c609b60dbc048",
     "closed_at_kinshasa": "2026-09-21T23:15:20+01:00",
     "status": "CLOSED"
-  }
+  },
+  "close_intent_at_kinshasa": "2026-09-21T23:45:00+01:00",
+  "no_more_product_mutations": true,
+  "product_merge_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4"
 }
