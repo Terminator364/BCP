@@ -161,14 +161,31 @@ jobs:
           "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
           grep -F "BCP Edge Server" bcp-window.xml >/dev/null
           grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null
-          grep -F "AUTORISATIONS SERVEUR" bcp-window.xml >/dev/null
-          grep -F "ACTIVER / RENFORCER LE MODE SERVEUR 24/7" bcp-window.xml >/dev/null
+          "$ADB" exec-out screencap -p > bcp-server-dashboard-top.png
+          test -s bcp-server-dashboard-top.png
+
+          # The server-first dashboard is intentionally taller than one phone viewport.
+          # Exercise the real scroll path instead of assuming every control is visible
+          # in the initial UI hierarchy.
+          FOUND=0
+          for i in 1 2 3; do
+            "$ADB" shell input swipe 540 1500 540 450 350
+            sleep 1
+            "$ADB" shell uiautomator dump /sdcard/bcp-window-scrolled.xml >/dev/null
+            "$ADB" pull /sdcard/bcp-window-scrolled.xml bcp-window-scrolled.xml >/dev/null
+            if grep -F "AUTORISATIONS SERVEUR" bcp-window-scrolled.xml >/dev/null \
+               && grep -F "ACTIVER / RENFORCER LE MODE SERVEUR 24/7" bcp-window-scrolled.xml >/dev/null; then
+              FOUND=1
+              break
+            fi
+          done
+          test "$FOUND" = "1"
+          "$ADB" exec-out screencap -p > bcp-server-dashboard-permissions.png
+          test -s bcp-server-dashboard-permissions.png
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
           fi
-          "$ADB" exec-out screencap -p > bcp-server-dashboard.png
-          test -s bcp-server-dashboard.png
           echo "BCP_ANDROID_PRIMARY_UI=PASS"
 
       - name: Verify real local phone API server surface
@@ -248,7 +265,9 @@ jobs:
             launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml
-            bcp-server-dashboard.png
+            bcp-server-dashboard-top.png
+            bcp-server-dashboard-permissions.png
+            bcp-window-scrolled.xml
             bcp-window-relaunch.xml
             edge-health.json
             edge-capabilities.json
