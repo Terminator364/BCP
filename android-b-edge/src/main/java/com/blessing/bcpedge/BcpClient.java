@@ -56,6 +56,135 @@ public final class BcpClient {
     public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
 
+    public JSONObject refreshCapabilityRegistry() {
+        JSONObject out = new JSONObject();
+        try {
+            long now = System.currentTimeMillis();
+            long expiry = now + 5L * 60L * 1000L;
+            JSONObject network = EdgeNetworkState.snapshot(context);
+            JSONObject permissions = EdgePermissionManager.status(context);
+            JSONObject resources = EdgeResourceGovernor.snapshot(context);
+            JSONObject sentinel = orchestrator.sentinelStatus(getProject());
+
+            JSONObject api = new JSONObject();
+            api.put("port", EdgeRelayPolicy.RELAY_PORT);
+            api.put("authenticated_private_endpoints", true);
+            api.put("public_surface", "health+static_capabilities_only");
+            orchestrator.putCapability(getProject(), "LOCAL_API_SERVER", "B-EDGE",
+                    "B_EDGE", "SERVER", "READY", "LAN", api,
+                    "MACHINE_READBACK", now, expiry);
+
+            JSONObject durable = new JSONObject();
+            durable.put("room_wal", true);
+            durable.put("universal_chronicle", true);
+            durable.put("mission_step_envelope_v1", true);
+            durable.put("memory_claim_ledger", true);
+            orchestrator.putCapability(getProject(), "DURABLE_STATE_CORE", "B-EDGE",
+                    "B_EDGE", "DURABILITY", "READY", "LOCAL_STORAGE", durable,
+                    "MACHINE_READBACK", now, expiry);
+
+            JSONObject executor = new JSONObject();
+            executor.put("arbitrary_shell", false);
+            executor.put("allowlisted_jobs", new JSONArray()
+                    .put("LOCAL_CONTEXT_SNAPSHOT")
+                    .put("LOCAL_HEALTH_SNAPSHOT")
+                    .put("LOCAL_QUEUE_SUMMARY")
+                    .put("LOCAL_MEMORY_COMPACT"));
+            orchestrator.putCapability(getProject(), "LOCAL_EXECUTOR", "B-EDGE",
+                    "B_EDGE", "EXECUTION", "READY", "LOCAL", executor,
+                    "MACHINE_READBACK", now, expiry);
+
+            orchestrator.putCapability(getProject(), "NETWORK_UPLINK", "B-EDGE",
+                    "ANDROID", "NETWORK", network.optString("state", "UNKNOWN"),
+                    network.optString("transport", "OTHER"), network,
+                    "MACHINE_READBACK", now, expiry);
+
+            orchestrator.putCapability(getProject(), "NEARBY_DISCOVERY", "B-EDGE",
+                    "ANDROID", "DISCOVERY",
+                    permissions.optBoolean("runtime_permissions_ready", false) ? "READY" : "PERMISSION_REQUIRED",
+                    "NSD_WIFI_DIRECT_BLE", permissions,
+                    "MACHINE_READBACK", now, expiry);
+
+            orchestrator.putCapability(getProject(), "RESOURCE_GOVERNOR", "B-EDGE",
+                    "B_EDGE", "RESOURCE", "READY", "LOCAL", resources,
+                    "MACHINE_READBACK", now, expiry);
+
+            orchestrator.putCapability(getProject(), "PC_HEAVY_WORKER_LINK", "MBMPC",
+                    "BCP_PC", "WORKER_LINK", sentinel.optString("state", "NOT_OBSERVED"),
+                    "LAN_OR_STORE_FORWARD", sentinel,
+                    "MACHINE_READBACK", now, expiry);
+
+            JSONObject relay = new JSONObject();
+            relay.put("target", "api.telegram.org:443");
+            relay.put("end_to_end_tls", true);
+            relay.put("arbitrary_proxy", false);
+            orchestrator.putCapability(getProject(), "TELEGRAM_CONNECT_RELAY", "B-EDGE",
+                    "B_EDGE", "COMMUNICATION_RELAY", "READY", "HTTPS_CONNECT", relay,
+                    "SYSTEM_POLICY", now, expiry);
+
+            JSONArray caps = orchestrator.capabilityRegistry(getProject(), 64);
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("count", caps.length());
+            out.put("capabilities", caps);
+            out.put("authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY");
+        } catch (Exception e) {
+            try {
+                out.put("ok", false);
+                out.put("error", e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    public JSONObject localCapabilities() {
+        JSONObject out = refreshCapabilityRegistry();
+        if (!out.optBoolean("ok", false)) {
+            try {
+                JSONArray caps = orchestrator.capabilityRegistry(getProject(), 64);
+                out.put("capabilities", caps);
+                out.put("count", caps.length());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    public JSONObject admitMemoryClaim(JSONObject body) {
+        if (body == null) body = new JSONObject();
+        Object value = body.opt("value");
+        return orchestrator.admitMemoryClaim(
+                getProject(),
+                body.optString("scope", ""),
+                body.optString("memory_key", ""),
+                value == null ? JSONObject.NULL : value,
+                body.optString("evidence_class", "UNVERIFIED"),
+                body.optString("source", "REMOTE_CLIENT"),
+                body.optString("authority", "UNSPECIFIED"),
+                body.optString("supersedes_claim_id", ""),
+                body.optString("idempotency_key", ""),
+                body.optBoolean("pinned", false),
+                body.has("expires_at_ms") ? Long.valueOf(body.optLong("expires_at_ms")) : null
+        );
+    }
+
+    public JSONObject localMemoryClaims(int requestedLimit) {
+        JSONObject out = new JSONObject();
+        try {
+            JSONArray claims = orchestrator.memoryClaimLedger(getProject(), requestedLimit);
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("claims", claims);
+            out.put("count", claims.length());
+            out.put("authority", "B_EDGE_MEMORY_ADMISSION_LEDGER");
+        } catch (Exception e) {
+            try {
+                out.put("ok", false);
+                out.put("error", e.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
     public JSONObject localContextPack() {
         JSONObject out = new JSONObject();
         try {
@@ -68,6 +197,8 @@ public final class BcpClient {
             out.put("content_store", contentStore.status());
             out.put("network", EdgeNetworkState.snapshot(context));
             out.put("mission_steps", localMissionSteps(8, true));
+            out.put("capabilities", localCapabilities().optJSONArray("capabilities"));
+            out.put("memory_claims", localMemoryClaims(24).optJSONArray("claims"));
             out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
             out.put("offline_capable", true);
         } catch (Exception ignored) {}
