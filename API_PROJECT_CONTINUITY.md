@@ -41,19 +41,19 @@ Stable Drive CURRENT is now replaced in place with:
 
 The install action, when exposed, is **in-place only**: do not uninstall and do not re-pair unless a field failure proves it necessary.
 
-## Current integration gate
+## Current merged state and field gate
 
-R68 work branch: `work/bcp/r68-bedgerelease-continuity-20260921-1524`.
-Base main: `61736e160c65ee47be77f384a9c3369a33c122a3`.
+R68 exact-head CI passed on `4196c0ac93cc6442d460a4b79bb2c8afa7fbc060`.
+PR #136 merged to `main` at `546c5d4042660e80a60fa10eff0d760301e48bdc`.
+Main readback confirms B-EDGE 2.1.2, exact APK SHA, pinned certificate metadata, server 0.7.15 coordination, R68 mail-label policy and phone-primary Edge continuity.
 
-Before integration:
-1. finish exact-head CI for the R68 metadata/continuity candidate;
-2. reread `main` and writer fence;
-3. if main moved, reconcile and requalify;
-4. merge with exact expected head SHA;
-5. verify main readback.
+The next legitimate human field gate is now exactly one **in-place** install:
+- open `API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk`;
+- install/update over the existing BCP Edge app;
+- **do not uninstall** first;
+- do not re-pair unless subsequent machine evidence proves pairing was lost.
 
-After integration, the next field gate is: install B-EDGE 2.1.2 over the existing app, then verify version readback, pairing continuity, foreground relay, relay registration, and one Telegram round-trip.
+After install, verify in order: version 2.1.2 readback, existing pairing continuity, foreground relay service/notification, relay registration at BCP 0.7.15, and one Telegram round-trip. Any failure should be diagnosed from telemetry and fixed automatically before asking the user to repeat actions.
 
 ---
 
