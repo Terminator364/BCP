@@ -14,7 +14,7 @@ import androidx.room.PrimaryKey;
         indices = {
                 @Index(value = {"projectId", "occurredAt"}),
                 @Index(value = {"eventType", "occurredAt"}),
-                @Index(value = {"idempotencyKey"}, unique = true)
+                @Index(value = {"projectId", "idempotencyKey"}, unique = true)
         }
 )
 public final class EdgeEventEntity {
