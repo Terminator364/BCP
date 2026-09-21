@@ -39,6 +39,12 @@ def main() -> int:
     assert '"/v1/node/status"' in policy
     assert '"/v1/node/sync"' in policy
     assert '"/v1/node/jobs"' in policy
+    assert '"/v1/node/capability-registry"' in policy
+    public_block = policy.split("isPublicApiPath", 1)[1].split("isAllowedApiPath", 1)[0]
+    assert '"/v1/node/capability-registry"' not in public_block
+    assert '"capability_registry", true' in relay
+    assert "localCapabilityRegistry" in relay
+    assert "observeLocalCapability" in relay
     assert '"/v1/node/shell"' not in policy
     assert "EdgePresenceAdvertiser" in relay
     assert 'android:foregroundServiceType="remoteMessaging|connectedDevice"' in manifest
