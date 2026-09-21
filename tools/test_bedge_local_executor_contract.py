@@ -42,6 +42,9 @@ def main() -> int:
         'out.put("local_execution", runLocalReadyJobs(8))',
         "EDGE_LOCAL_TASK_COMMITTED",
         "communicationHistory",
+        "recordCommunication",
+        '"ALREADY_COMMITTED"',
+        '"duplicate_suppressed"',
     )
     need(
         orch,
