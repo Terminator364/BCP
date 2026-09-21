@@ -1,0 +1,946 @@
+{
+  "schema": "bcp.full_product_spec_abc/1",
+  "revision": "2026-09-21-R77",
+  "status": "CANONICAL_CANDIDATE_EVIDENCE_MAPPED",
+  "authority": {
+    "A": "BCP V0.7 AX15GO SEALED / APIAX07 continuity and preconception lineage",
+    "B": "R77 research-backed engineering expansion using current Android/edge/local-first constraints",
+    "C": "accumulated field feedback and operating rules through 2026-09-21"
+  },
+  "doctrine": {
+    "formula": "PRODUCT_SPEC = A + B + C",
+    "merge_semantics": "MERGE_REFINE_PRESERVE",
+    "partial_scope_may_not_claim_product_complete": true,
+    "unknown_evidence_fails_closed": true
+  },
+  "evidence_states": {
+    "FIELD_PROVEN": {
+      "score": 1,
+      "meaning": "machine/user field evidence"
+    },
+    "CI_PROVEN": {
+      "score": 0.8,
+      "meaning": "exact representative CI/emulator/simulation evidence"
+    },
+    "CODE_PRESENT": {
+      "score": 0.6,
+      "meaning": "implementation exists but not fully field-proven"
+    },
+    "DESIGN_ONLY": {
+      "score": 0.3,
+      "meaning": "durable design/spec exists; implementation proof incomplete"
+    },
+    "GAP_OPEN": {
+      "score": 0,
+      "meaning": "required capability not yet implemented/qualified"
+    }
+  },
+  "current_weighted_maturity_pct": null,
+  "current_by_origin_pct": {
+    "A": null,
+    "B": null,
+    "C": null
+  },
+  "note": "This is a conservative evidence-maturity score, not a marketing completion number. Evidence state must be updated by readback/CI/field proof, never by prose alone.",
+  "requirements": [
+    {
+      "id": "A01",
+      "origin": "A",
+      "title": "Canonical project identity/state",
+      "requirement": "One canonical project identity, revision/head and current mission state survive conversations/devices.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "project_state.json",
+        "API_PROJECT_CONTINUITY.md"
+      ]
+    },
+    {
+      "id": "A02",
+      "origin": "A",
+      "title": "Operational memory",
+      "requirement": "Structured project/user/technical/operating/history/policy memory with provenance and authority classes.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "A03",
+      "origin": "A",
+      "title": "Bounded permissions",
+      "requirement": "Named operations, least privilege, R0-R4-style bounded authority; no arbitrary shell as normal API.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/API_SCOPE_PROFILE.json",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ]
+    },
+    {
+      "id": "A04",
+      "origin": "A",
+      "title": "Idempotent jobs",
+      "requirement": "Jobs have stable IDs/idempotency, bounded retries and duplicate suppression.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "project_state.json",
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "A05",
+      "origin": "A",
+      "title": "Receipts and evidence",
+      "requirement": "Side effects produce machine-readable receipts/readback before COMMITTED/SUCCESS.",
+      "priority": "P0",
+      "current_state": "CI_PROVEN",
+      "evidence": [
+        "project_state.json",
+        ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      ]
+    },
+    {
+      "id": "A06",
+      "origin": "A",
+      "title": "Offline continuity",
+      "requirement": "Loss of Internet must not destroy project state or queued work.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ]
+    },
+    {
+      "id": "A07",
+      "origin": "A",
+      "title": "Deterministic recovery",
+      "requirement": "Recovery resumes the next uncommitted action rather than replaying committed work.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "API_PROJECT_CONTINUITY.md",
+        ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      ]
+    },
+    {
+      "id": "A08",
+      "origin": "A",
+      "title": "ChatGPT orchestration",
+      "requirement": "ChatGPT reasons/orchestrates while durable external state remains authoritative.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/WHY_API_EXISTS.json",
+        "API_PROJECT_CONTINUITY.md"
+      ]
+    },
+    {
+      "id": "A09",
+      "origin": "A",
+      "title": "ChatGPT-PC Windows worker",
+      "requirement": "Windows node executes bounded Windows-only/heavy work and exposes telemetry/receipts.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "A10",
+      "origin": "A",
+      "title": "Dedicated Android B-EDGE",
+      "requirement": "Old Android phone is a permanent dedicated B-EDGE node, not merely a UI accessory.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        "release/android.json",
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "A11",
+      "origin": "A",
+      "title": "BuildHub build factory",
+      "requirement": "Build/test packaging is offloaded to a build factory/CI path instead of overloading low-RAM PC.",
+      "priority": "P1",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "A12",
+      "origin": "A",
+      "title": "Drive durable mirror",
+      "requirement": "Drive holds CURRENT/installers/telemetry/recovery/context projections with readback.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        "API_PROJECT_CONTINUITY.md",
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "A13",
+      "origin": "A",
+      "title": "GitHub source + CI authority",
+      "requirement": "Repository branches/PRs/exact-head CI govern code integration.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md"
+      ]
+    },
+    {
+      "id": "A14",
+      "origin": "A",
+      "title": "Gmail checkpoint channel",
+      "requirement": "Detailed human START/END checkpoints use Gmail with provider acknowledgement.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      ]
+    },
+    {
+      "id": "A15",
+      "origin": "A",
+      "title": "Telegram cockpit",
+      "requirement": "Telegram provides human-visible status/cockpit and secondary communication path.",
+      "priority": "P0",
+      "current_state": "GAP_OPEN",
+      "evidence": [
+        "project_state.json",
+        "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md"
+      ]
+    },
+    {
+      "id": "A16",
+      "origin": "A",
+      "title": "CORE/ADAPTER separation",
+      "requirement": "Core state/orchestration is separated from replaceable providers/adapters.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "API_PROJECT_CONTINUITY.md"
+      ]
+    },
+    {
+      "id": "A17",
+      "origin": "A",
+      "title": "PROJECT_HEAD semantics",
+      "requirement": "Canonical mutations advance a fenced head/revision, never silent multi-master state.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "docs/GIT_WRITER_LEASE_AND_BRANCH_PROTOCOL.md",
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "A18",
+      "origin": "A",
+      "title": "Error ledger",
+      "requirement": "Failures become durable generalized evidence rather than ephemeral chat text.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "A19",
+      "origin": "A",
+      "title": "Inbox/outbox",
+      "requirement": "Durable inbox/outbox queues support disconnected work and later reconciliation.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ]
+    },
+    {
+      "id": "A20",
+      "origin": "A",
+      "title": "Model/provider broker",
+      "requirement": "Multiple free/available providers are replaceable; quota failure is HOLD/retry, never forced payment.",
+      "priority": "P1",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/FREE_API_MODEL_BROKER_AUTONOMY_REQUIREMENTS.md"
+      ]
+    },
+    {
+      "id": "A21",
+      "origin": "A",
+      "title": "Checkpointed jobs",
+      "requirement": "Long work is split into durable checkpoints with resumable next action.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        "project_state.json",
+        "API_PROJECT_CONTINUITY.md"
+      ]
+    },
+    {
+      "id": "A22",
+      "origin": "A",
+      "title": "Content-addressed vault/cache",
+      "requirement": "Large/reusable artifacts and context are addressed by content hash with bounded local storage.",
+      "priority": "P1",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "A23",
+      "origin": "A",
+      "title": "Time trust",
+      "requirement": "Receipts/events carry explicit observed/generated times and avoid assuming wall-clock truth after outages.",
+      "priority": "P1",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "A24",
+      "origin": "A",
+      "title": "LAN anti-entropy",
+      "requirement": "Nodes reconcile state after local partitions without silently creating conflicting canonical heads.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "A25",
+      "origin": "A",
+      "title": "Incarnation/epoch/fencing",
+      "requirement": "Restarts and coordinator changes are protected by epoch/fencing/revision preconditions.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "A26",
+      "origin": "A",
+      "title": "Security classes",
+      "requirement": "Operations are categorized by risk/permission and unsafe ambiguity fails closed.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/API_SCOPE_PROFILE.json",
+        ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+      ]
+    },
+    {
+      "id": "A27",
+      "origin": "A",
+      "title": "Zero-dollar default",
+      "requirement": "No automatic purchase, paid API, recharge or mandatory paid cloud dependency.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/AI_PROVIDER_PLAN_RDC.json"
+      ]
+    },
+    {
+      "id": "A28",
+      "origin": "A",
+      "title": "Secret separation",
+      "requirement": "Tokens/pairing secrets never live in public repo or exported context projections.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json"
+      ]
+    },
+    {
+      "id": "A29",
+      "origin": "A",
+      "title": "Low-resource PC profile",
+      "requirement": "PC work is bounded for ~4GB RAM, one heavy job at a time, degraded modes under pressure.",
+      "priority": "P0",
+      "current_state": "CI_PROVEN",
+      "evidence": [
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "A30",
+      "origin": "A",
+      "title": "Three-level durability",
+      "requirement": "Hot local state, durable local DB/receipts, and external recovery mirrors cooperate without one single point of failure.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "B31",
+      "origin": "B",
+      "title": "Phone-primary Edge/API appliance",
+      "requirement": "Dedicated phone is preferred persistent low-power appliance node; PC is not communications center.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json",
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B32",
+      "origin": "B",
+      "title": "Authenticated local phone API",
+      "requirement": "Phone exposes bounded authenticated status/sync/jobs/context surfaces and public minimal health/capabilities.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ]
+    },
+    {
+      "id": "B33",
+      "origin": "B",
+      "title": "Phone durable Room/SQLite authority",
+      "requirement": "Phone keeps queue, receipts, memory/index and store-forward state in transactional local DB.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B34",
+      "origin": "B",
+      "title": "Phone local scheduler",
+      "requirement": "Deterministic local jobs run on phone without waiting for PC where capability permits.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B35",
+      "origin": "B",
+      "title": "Phone context compiler",
+      "requirement": "Phone can build compact project/context packs locally and serve them through authenticated API.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B36",
+      "origin": "B",
+      "title": "Adaptive private cache",
+      "requirement": "Phone uses bounded app-private cache/content store with reserve; never consumes entire 64GB device.",
+      "priority": "P1",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B37",
+      "origin": "B",
+      "title": "Foreground server lifecycle",
+      "requirement": "A user-visible foreground connected-device/remote-messaging service hosts the persistent local node when allowed.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "android-b-edge/src/main/AndroidManifest.xml",
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ]
+    },
+    {
+      "id": "B38",
+      "origin": "B",
+      "title": "Boot/package restore",
+      "requirement": "Phone restores server capability after reboot/package replacement under Android lifecycle rules.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "android-b-edge/src/main/AndroidManifest.xml",
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B39",
+      "origin": "B",
+      "title": "WorkManager reconciliation",
+      "requirement": "Deferrable reconciliation/drain work uses WorkManager rather than assuming immortal process residency.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B40",
+      "origin": "B",
+      "title": "LAN NSD discovery",
+      "requirement": "Phone advertises/discovers BCP services on shared LAN without manual IP entry.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json",
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B41",
+      "origin": "B",
+      "title": "Wi-Fi Direct fallback",
+      "requirement": "Phone/PC may discover/connect directly without normal LAN/hotspot when hardware/permission supports it.",
+      "priority": "P1",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json",
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B42",
+      "origin": "B",
+      "title": "BLE control/presence fallback",
+      "requirement": "BLE is available for low-bandwidth discovery/control hints, not bulk payload transport.",
+      "priority": "P1",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json",
+        "android-b-edge/src/main/AndroidManifest.xml"
+      ]
+    },
+    {
+      "id": "B43",
+      "origin": "B",
+      "title": "USB fallback path",
+      "requirement": "Architecture reserves USB/tether/local link as a manual last-resort local path when practical.",
+      "priority": "P2",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B44",
+      "origin": "B",
+      "title": "Metered/data-saver routing",
+      "requirement": "Phone and PC classify metered/unmetered connectivity and minimize PC mobile-data use.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B45",
+      "origin": "B",
+      "title": "Store-and-forward communications",
+      "requirement": "Messages/commands/telemetry queue durably when no uplink exists and drain idempotently later.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B46",
+      "origin": "B",
+      "title": "Telegram selective phone relay",
+      "requirement": "Phone can relay Telegram-bound control traffic while preserving Telegram TLS and strict allowlist.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java"
+      ]
+    },
+    {
+      "id": "B47",
+      "origin": "B",
+      "title": "Telegram ownership lease",
+      "requirement": "Only one active inbound Telegram poller/webhook owner exists; failover is explicit/leased to avoid conflicts.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/TELEGRAM_MISSION_COCKPIT_AND_PROGRESS_JOURNAL.md"
+      ]
+    },
+    {
+      "id": "B48",
+      "origin": "B",
+      "title": "Adaptive transport scoring",
+      "requirement": "Runtime chooses LAN/hotspot/Wi-Fi Direct/BLE/USB/remote based on reachability, cost, power and payload class.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B49",
+      "origin": "B",
+      "title": "Resumable chunk transfer",
+      "requirement": "Large artifacts use chunking/hash/resume and do not restart from zero after weak-network interruption.",
+      "priority": "P1",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      ]
+    },
+    {
+      "id": "B50",
+      "origin": "B",
+      "title": "Resource governor",
+      "requirement": "Phone/PC throttle CPU, RAM, wakeups, retries, cache and transfer rates under heat/battery/memory pressure.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B51",
+      "origin": "B",
+      "title": "Permission onboarding",
+      "requirement": "Dedicated-phone UI requests only capabilities actually used: notifications, Nearby Wi-Fi/Bluetooth, battery mode, etc.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "android-b-edge/src/main/AndroidManifest.xml",
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "B52",
+      "origin": "B",
+      "title": "Android lifecycle compliance",
+      "requirement": "Foreground/background restrictions, Doze and modern target-SDK limits are explicitly handled instead of assuming an immortal service.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B53",
+      "origin": "B",
+      "title": "Device-owner advanced mode optional",
+      "requirement": "An invasive dedicated-device mode may be evaluated separately, never hidden as baseline or factory-reset requirement.",
+      "priority": "P2",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+      ]
+    },
+    {
+      "id": "B54",
+      "origin": "B",
+      "title": "Chronicle + supersession memory",
+      "requirement": "Memory tracks lineage/supersession/conflicts rather than replacing one giant summary file.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "B55",
+      "origin": "B",
+      "title": "Context pack integrity",
+      "requirement": "Context projections carry revisions/hashes/freshness/export class and are reproducible from source revision.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json"
+      ]
+    },
+    {
+      "id": "B56",
+      "origin": "B",
+      "title": "Fast BCPGO bootstrap",
+      "requirement": "Fresh conversation loads compact bootstrap/project context rather than broad Drive/GitHub scans.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md",
+        ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      ]
+    },
+    {
+      "id": "B57",
+      "origin": "B",
+      "title": "Per-turn delta protocol",
+      "requirement": "Consumers use UNCHANGED/DELTA/FULL_REFRESH/CONFLICT/DEGRADED/HOLD semantics for revision-aware context refresh.",
+      "priority": "P1",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        ".project-memory/BCP_CONTEXT_FABRIC_POLICY.json"
+      ]
+    },
+    {
+      "id": "B58",
+      "origin": "B",
+      "title": "Three-node partition safety",
+      "requirement": "B-EDGE, PC-WORKER and NEXUS survive pairwise partitions without split-brain PROJECT_HEAD.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "B59",
+      "origin": "B",
+      "title": "Pre-human representative simulation",
+      "requirement": "User click/install/retry paths are simulated in Windows/Android CI when technically reproducible.",
+      "priority": "P0",
+      "current_state": "CI_PROVEN",
+      "evidence": [
+        ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      ]
+    },
+    {
+      "id": "B60",
+      "origin": "B",
+      "title": "Server-first human UI",
+      "requirement": "Phone UI shows node health, transports, queue, memory, permissions, autonomy and diagnostics instead of pretending to be only a PC client.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java"
+      ]
+    },
+    {
+      "id": "C61",
+      "origin": "C",
+      "title": "Gmail START before work",
+      "requirement": "Every user-invoked tranche sends/acks labeled BCP START before substantive work.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      ]
+    },
+    {
+      "id": "C62",
+      "origin": "C",
+      "title": "Gmail END before app reply",
+      "requirement": "Every tranche sends complete END and verifies SENT/provider message_id before ChatGPT final pointer.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      ]
+    },
+    {
+      "id": "C63",
+      "origin": "C",
+      "title": "25-minute cadence",
+      "requirement": "Canonical cadence is 25 minutes total: ~23 useful work + ~2 closeout reserve.",
+      "priority": "P0",
+      "current_state": "GAP_OPEN",
+      "evidence": [
+        ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
+      ]
+    },
+    {
+      "id": "C64",
+      "origin": "C",
+      "title": "Primary close owner, no normal automation dependency",
+      "requirement": "Active assistant owns normal close; scheduled guards are not the normal path.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/COMMUNICATION_PROTOCOL.json"
+      ]
+    },
+    {
+      "id": "C65",
+      "origin": "C",
+      "title": "Delivery-key idempotence",
+      "requirement": "START/END are tracked by unique delivery key + Gmail search + provider message_id to prevent duplicates/missing closes.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/COMMUNICATION_PROTOCOL.json"
+      ]
+    },
+    {
+      "id": "C66",
+      "origin": "C",
+      "title": "Append-only communication ledger",
+      "requirement": "Communication receipts survive chat/UI loss and allow crash-window recovery.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
+      ]
+    },
+    {
+      "id": "C67",
+      "origin": "C",
+      "title": "ChatGPT pointer-only after END",
+      "requirement": "Detailed checkpoint stays in Gmail; app shows only Gmail/date/time/checkpoint after ACK.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      ]
+    },
+    {
+      "id": "C68",
+      "origin": "C",
+      "title": "BCP Gmail label",
+      "requirement": "All BCP START/END mail is labeled BCP for deterministic recovery/search.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
+      ]
+    },
+    {
+      "id": "C69",
+      "origin": "C",
+      "title": "Fresh conversation without re-explanation",
+      "requirement": "BCPGO BCP reloads communication, A+B+C spec, writer fence, state and next action without asking user to reconstruct history.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/NEW_CONVERSATION_TAKEOVER.json"
+      ]
+    },
+    {
+      "id": "C70",
+      "origin": "C",
+      "title": "User not telemetry bus",
+      "requirement": "System checks GitHub/Drive/telemetry/connectors itself before asking for screenshots/commands.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/WHY_API_EXISTS.json"
+      ]
+    },
+    {
+      "id": "C71",
+      "origin": "C",
+      "title": "No micro-beta install loop",
+      "requirement": "Do not repeatedly make user install tiny increments; publish one coherent qualified full-node candidate.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json",
+        "project_state.json"
+      ]
+    },
+    {
+      "id": "C72",
+      "origin": "C",
+      "title": "Full use of dedicated phone",
+      "requirement": "4GB/64GB dedicated Android carries meaningful memory, orchestration, communication and local execution workload.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "C73",
+      "origin": "C",
+      "title": "PC is specialized worker, not sole center",
+      "requirement": "PC handles Windows/heavy compute/build/sign/compatibility while communications/state can survive without it.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/BCP_CONTEXT_FABRIC_THREE_NODE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "C74",
+      "origin": "C",
+      "title": "No SIM assumption on old phone",
+      "requirement": "Phone full-node works on LAN/hotspot/local links and does not require its own SIM.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "release/android_candidate.json"
+      ]
+    },
+    {
+      "id": "C75",
+      "origin": "C",
+      "title": "RDC unstable network/power",
+      "requirement": "Architecture treats brownouts, poor Wi-Fi, mobile hotspot changes and abrupt device loss as normal test cases.",
+      "priority": "P0",
+      "current_state": "DESIGN_ONLY",
+      "evidence": [
+        "docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md"
+      ]
+    },
+    {
+      "id": "C76",
+      "origin": "C",
+      "title": "Zero additional spend",
+      "requirement": "Existing/free resources only; quota exhaustion becomes checkpoint/HOLD/retry, not payment.",
+      "priority": "P0",
+      "current_state": "FIELD_PROVEN",
+      "evidence": [
+        ".project-memory/AI_PROVIDER_PLAN_RDC.json"
+      ]
+    },
+    {
+      "id": "C77",
+      "origin": "C",
+      "title": "Concrete UI before field install",
+      "requirement": "Android emulator must verify actual screens/buttons/permissions/status before asking user to install.",
+      "priority": "P0",
+      "current_state": "CI_PROVEN",
+      "evidence": [
+        ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      ]
+    },
+    {
+      "id": "C78",
+      "origin": "C",
+      "title": "Communication P0 over product polish",
+      "requirement": "Continuity/Gmail/Telegram/ledger failures are repaired before cosmetic/product expansion.",
+      "priority": "P0",
+      "current_state": "CODE_PRESENT",
+      "evidence": [
+        ".project-memory/COMMUNICATION_PROTOCOL.json"
+      ]
+    },
+    {
+      "id": "C79",
+      "origin": "C",
+      "title": "A+B+C coverage gate",
+      "requirement": "Every release/change maps to the whole A+B+C ledger; partial-scope success cannot masquerade as product completion.",
+      "priority": "P0",
+      "current_state": "GAP_OPEN",
+      "evidence": []
+    },
+    {
+      "id": "C80",
+      "origin": "C",
+      "title": "Truthful completion percentage",
+      "requirement": "Completion percentage is computed from evidence-backed capability states and distinguishes design/code/CI/field proof.",
+      "priority": "P0",
+      "current_state": "GAP_OPEN",
+      "evidence": []
+    }
+  ]
+}
