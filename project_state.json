@@ -3,8 +3,8 @@
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R59_GMAIL_START_END_HANDSHAKE_CANDIDATE",
-  "last_completed_atomic_action": "R59 communication invariant persisted: Gmail START before substantive user-invoked project work, Gmail END full checkpoint before ChatGPT response, then ChatGPT pointer-only. The current tranche START email was sent successfully on 2026-09-21 at 02:23 Kinshasa.",
-  "next_action": "Finish this tranche, send the R59 END checkpoint by Gmail, then return only the Gmail/date-time/checkpoint pointer in ChatGPT. Subsequent BCPGO/Continue/user relaunches must repeat START -> WORK -> END -> CHAT POINTER.",
+  "last_completed_atomic_action": "R59 START/END Gmail handshake persisted and exercised in the live tranche: START receipt 1a0c1901b19bbc69, END receipt 1a0c192170100621. ChatGPT response for this tranche is pointer-only.",
+  "next_action": "On the next user invocation, send Gmail START before substantive work, continue from PR #127 / head 011debc0ab4306447bd34e41e4542806f5a4721d, then send Gmail END and only then show the ChatGPT pointer.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2046,7 +2046,7 @@
     "exact_head_ci": "PASS"
   },
   "r59_gmail_handshake": {
-    "status": "IMPLEMENTED_CANDIDATE",
+    "status": "END_MAIL_SENT_CHAT_POINTER_PENDING",
     "revision": "2026-09-21-R59",
     "tranche_target_minutes": 25,
     "order": [
@@ -2064,6 +2064,7 @@
     ],
     "current_start_mail_receipt": "1a0c1901b19bbc69",
     "current_start_mail_local_time": "2026-09-21T02:23:00+01:00",
-    "current_end_mail_receipt": null
+    "current_end_mail_receipt": "1a0c192170100621",
+    "current_end_mail_local_time": "2026-09-21T02:25:00+01:00"
   }
 }
