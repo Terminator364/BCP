@@ -1,0 +1,31 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r77-abc-integral-20260921-2117",
+  "project_or_mission": "API/BCP R77 canonical A+B+C reconstruction and 25-minute communication stabilization",
+  "base_main_sha": "3c82dc3d40dc59db50d2825e9914a809e63f815d",
+  "created_at": "2026-09-21T21:17:00+01:00",
+  "work_branch": "work/bcp/r77-abc-integral-20260921-2117",
+  "intended_file_scope": [
+    ".project-memory/COMMUNICATION_PROTOCOL.json",
+    ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/ABC_REQUIREMENTS_INDEX.json",
+    "docs/BCP_CANONICAL_SPEC_ABC_R77.md",
+    "docs/BCP_ABC_COVERAGE_MATRIX_R77.md",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "API_PROJECT_CONTINUITY.md",
+    "project_state.json",
+    "tools/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Field Ecosystem Preflight",
+    "BCP Coordinated Product Qualification",
+    "BCP Android Human-Action Simulation"
+  ]
+}
