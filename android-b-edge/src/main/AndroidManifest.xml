@@ -41,7 +41,7 @@
     <application
         android:name=".BcpEdgeApplication"
         android:allowBackup="false"
-        android:label="BCP Edge Server"
+        android:label="BCP Edge Evergreen"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
         <provider
