@@ -10,8 +10,8 @@ android {
         applicationId "com.blessing.bcpedge.evergreen"
         minSdk 26
         targetSdk 35
-        versionCode 213
-        versionName "2.1.3-rc1-full-node-evergreen"
+        versionCode 214
+        versionName "2.1.4-rc1-phone-primary-comms-evergreen"
     }
 
     buildTypes {
