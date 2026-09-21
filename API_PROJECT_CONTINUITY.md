@@ -800,3 +800,18 @@ The old phone is a first-class BCP node. The Windows PC remains an important Win
 ### Pre-human action simulation invariant
 
 Before asking the user to click, install, authorize, reboot, retry, or replace a CURRENT artifact, load `.project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json` and exercise the exact path in representative CI/simulation when technically feasible. Windows actions should run on a Windows runner; Android behavior should use unit/lint/build and emulator/instrumented tests when the platform behavior matters. Simulation may qualify everything up to a real provider/user-consent boundary, but cannot be promoted to FIELD_VERIFIED without real field evidence. If simulation fails, keep fixing automatically and do not ask the user to repeat the same action.
+
+## R76 A+B+C full-product invariant
+
+On every `BCPGO BCP` recovery, load `docs/BCP_CANONICAL_SPEC_ABC_R76.md` and `.project-memory/ABC_REQUIREMENTS_TRACEABILITY.json` before selecting product work.
+
+The full product specification is **A+B+C**:
+- A = sealed original preconception / promised functions / architecture;
+- B = feasible research-driven expansion beyond A;
+- C = all accumulated field feedback and working rules.
+
+Never present a subset or micro-feature as the BCP product. The R76 baseline weighted maturity is 45.9%; recompute only from the machine traceability matrix and evidence tiers.
+
+Phone role: primary low-power Edge/API appliance and continuity replica. PC role: Windows/heavy specialist worker, not the sole communication center.
+
+Communication contract: 25-minute wall-clock target, ~23 minutes useful work and 2 minutes close reserve. PRIMARY_ASSISTANT owns normal Gmail END delivery. Scheduled automations are not required for normal close. Gmail END is complete only after provider message_id + SENT readback + durable receipt, then ChatGPT is pointer-only.
