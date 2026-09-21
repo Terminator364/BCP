@@ -121,15 +121,20 @@ jobs:
         run: |
           import json, pathlib, re, hashlib
           sr=json.loads(pathlib.Path("release/server.json").read_text())
-          ar=json.loads(pathlib.Path("release/android.json").read_text())
+          candidate_path=pathlib.Path("release/android_candidate.json")
+          ar=json.loads((candidate_path if candidate_path.is_file() else pathlib.Path("release/android.json")).read_text())
           server=pathlib.Path("windows/bcp_server.py").read_bytes()
           client=pathlib.Path("android-b-edge/src/main/java/com/blessing/bcpedge/BcpClient.java").read_text()
           def version_tuple(value): return tuple(int(x) if x.isdigit() else 0 for x in str(value).split("-", 1)[0].split("."))
           assert version_tuple(sr["version"]) >= version_tuple(ar["minimum_server_version"])
           assert sr["version"] == ar["coordinated_server_version"]
-          assert sr["coordinated_edge_version"] == ar["version_name"]
-          if sr.get("release_train") or ar.get("release_train"):
-              assert sr.get("release_train") == ar.get("release_train")
+          if ar.get("publication_allowed", True):
+              assert sr["coordinated_edge_version"] == ar["version_name"]
+              if sr.get("release_train") or ar.get("release_train"):
+                  assert sr.get("release_train") == ar.get("release_train")
+          else:
+              assert ar.get("distribution_status") == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
+              assert sr["coordinated_edge_version"] == ar["version_name"]
           assert hashlib.sha256(server).hexdigest() == sr["sha256"]
           for endpoint in ["/v1/orchestrator/status", "/context", "/jobs"]:
               assert endpoint in client or endpoint in server.decode()
