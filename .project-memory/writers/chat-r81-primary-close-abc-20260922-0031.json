@@ -1,0 +1,29 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r81-primary-close-abc-20260922-0031",
+  "project_or_mission": "API/BCP R81 foreground-owned 25-minute tranche + A+B+C full-node continuation",
+  "base_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+  "created_at": "2026-09-22T00:31:00+01:00",
+  "work_branch": "work/bcp/r81-primary-close-abc-20260922-0031",
+  "intended_file_scope": [
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/COMMUNICATION_PROTOCOL.json",
+    ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "API_PROJECT_CONTINUITY.md",
+    "project_state.json",
+    "docs/BCP_CANONICAL_SPEC_ABC.md",
+    ".project-memory/BCP_ABC_COVERAGE.json",
+    "android-b-edge/**",
+    "tools/**",
+    ".github/workflows/**"
+  ],
+  "expected_ci_gates": [
+    "CURRENT release contract",
+    "Field ecosystem preflight",
+    "Android human-action simulation",
+    "Coordinated product qualification"
+  ]
+}
