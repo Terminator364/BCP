@@ -178,10 +178,14 @@ public class MainActivity extends Activity {
             JSONObject storage = client.contentStoreStatus();
             JSONObject net = EdgeNetworkState.snapshot(this);
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
+            JSONObject capabilities = client.localCapabilities();
+            JSONObject claims = client.localMemoryClaims(100);
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
             autonomyInfo.setText(
-                    "File durable Room: active"
+                    "File durable Room v5: active"
+                            + "\nRegistre capacités: " + capabilities.optInt("count", 0) + " observées"
+                            + "\nJournal mémoire/provenance: " + claims.optInt("count", 0) + " claims"
                             + "\nCache privé téléphone: " + usedMiB + " MiB / " + quotaGiB + " GiB"
                             + "\nRéseau: " + net.optString("transport", "AUCUN")
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
