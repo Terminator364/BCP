@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 35
         versionCode 220
-        versionName "2.2.0-rc1-full-node-evergreen"
+        versionName "2.2.0-full-node-evergreen"
     }
 
     buildTypes {
