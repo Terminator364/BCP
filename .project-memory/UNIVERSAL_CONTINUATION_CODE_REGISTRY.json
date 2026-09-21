@@ -92,7 +92,9 @@
     "scheduled_close_guards_required": false,
     "abc_source_registry_ref": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage_ref": ".project-memory/BCP_ABC_COVERAGE.json",
-    "abc_canonical_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC.md"
+    "abc_canonical_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "absolute_end_deadline_minutes": 25,
+    "load_abc_spec_before_product_mutation": true
   },
   "universal": [
     {
@@ -129,7 +131,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R77_ABC_INTEGRAL_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
+      "status": "VALID_SCOPED_ALIAS_WITH_R78_ABC_SOURCE_RECONCILED_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
       "fallback": "BCPGO BCP"
     },
     {
