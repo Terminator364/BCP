@@ -23,6 +23,10 @@ on:
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
       - ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json"
+      - "project_state.json"
+      - "API_PROJECT_CONTINUITY.md"
+      - ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
+      - ".project-memory/ACTIVE_TRANCHE.json"
       - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
       - ".github/workflows/current-release-contract.yml"
   push:
@@ -70,6 +74,10 @@ jobs:
           python -m json.tool .project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json > /dev/null
           python -m json.tool .project-memory/DELIVERY_REDUNDANCY_POLICY.json > /dev/null
           python -m json.tool .project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json > /dev/null
+          python -m json.tool .project-memory/COMMUNICATION_SURVIVAL_POLICY.json > /dev/null
+          python -m json.tool .project-memory/ACTIVE_TRANCHE.json > /dev/null
+          python -m json.tool .project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json > /dev/null
+          python -m json.tool project_state.json > /dev/null
 
       - name: Validate CURRENT truth contract
         run: python tools/validate_current_release.py
