@@ -13,6 +13,12 @@ On a fresh conversation, this code means:
 - never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
+### R61 communication recovery state
+
+Fresh field telemetry after the PC was powered on proves BCP 0.7.13 is alive and UP_TO_DATE, while the Telegram companion process is alive but the direct Bot API path is timing out with WinError 10060 and repeated failures. Treat this as a transport outage, not as a dead process and not as evidence that Telegram messages are being delivered.
+
+R60 post-merge qualification is fully green. The next real recovery boundary for remote Telegram is the already-qualified Nexus path. R61 companion V19 adds explicit `DIRECT_TRANSPORT_OUTAGE` state plus durable outage/recovery receipts. After R61 exact-head qualification and merge, exactly one fresh Nexus/Cloudflare device authorization is the next legitimate human gate; after authorization require provider-authenticated readback before Telegram webhook/Nexus ownership is declared restored.
+
 ### 25-minute END watchdog — R61
 
 At each Gmail START, arm a one-shot assistant watchdog for +25 minutes. The watchdog must check whether this tranche's END Gmail already has a provider send acknowledgement. If yes, it does nothing. If no, it sends an accurate END checkpoint from the latest durable state and only then may a ChatGPT pointer appear. A normal successful END disables the watchdog. This removes dependence on the user sending “eh oh” or another relaunch just to close a tranche.
