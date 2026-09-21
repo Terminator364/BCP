@@ -81,8 +81,8 @@ def main() -> int:
     if int(cadence.get("target_minutes") or 0) != 25:
         fail("cadence_target_not_25")
     window = cadence.get("acceptable_window_minutes") or []
-    if window != [20, 25]:
-        fail("cadence_window_not_20_25")
+    if window != [24, 25]:
+        fail("cadence_window_not_24_25")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
     if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT":
