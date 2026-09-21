@@ -412,9 +412,9 @@ def main() -> int:
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
     communication_policy = load(".project-memory/COMMUNICATION_SURVIVAL_POLICY.json")
-    assert cadence_policy["acceptable_window_minutes"] == [29, 30]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [29, 30]
-    assert delivery_policy["cadence"]["work_slice_minutes"] == "29-30"
+    assert cadence_policy["acceptable_window_minutes"] == [27, 30]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [27, 30]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "27-30"
     assert delivery_policy["cadence"]["target_minutes"] == 30
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
@@ -425,6 +425,10 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["end_mail_retry_required"] is True
     assert delivery_policy["channels"]["email"]["end_mail_provider_ack_required"] is True
     assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
+    assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 27
+    assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] == 28
+    assert delivery_policy["cadence"]["absolute_end_deadline_minutes"] == 30
+    assert delivery_policy["cadence"]["user_relaunch_must_never_be_required"] is True
     assert delivery_policy["checkpoint_delivery_order"] == [
         "EMAIL_START_NOTICE", "SUBSTANTIVE_WORK",
         "EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK",
