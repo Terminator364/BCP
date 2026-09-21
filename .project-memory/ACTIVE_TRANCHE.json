@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSING",
   "started_at_kinshasa": "2026-09-22T00:33:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-22T00:56:00+01:00",
   "normal_end_target_kinshasa": "2026-09-22T00:58:00+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "final_app_reply_gate": "END_ACK_REQUIRED",
@@ -47,5 +47,19 @@
     "gmail_end_message_id": "1a0c650159e431f8",
     "closed_at_kinshasa": "2026-09-22T00:32:00+01:00",
     "status": "CLOSED_CORRECTIVE"
+  },
+  "no_more_product_mutations": true,
+  "close_intent_at_kinshasa": "2026-09-22T00:56:00+01:00",
+  "candidate_head_sha": "fb16ccd83883f06704b1209ad04ee8d5a996a1ae",
+  "pr_number": 150,
+  "closeout_truth": {
+    "current_release_contract": "PASS_RUN_1397",
+    "nexus_one_shot": "PASS_RUN_375",
+    "android_build": "PASS_RUN_761",
+    "android_human_action_simulation": "IN_PROGRESS_RUN_291_AFTER_SCROLL_FIX",
+    "field_ecosystem": "IN_PROGRESS_RUN_1355_DETERMINISTIC_SUBJOB_PASS",
+    "coordinated_product": "QUEUED_RUN_1443",
+    "merge_performed": false,
+    "install_authorized": false
   }
 }
