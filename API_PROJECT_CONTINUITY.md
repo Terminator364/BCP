@@ -1,3 +1,61 @@
+# R69 Fresh Conversation Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+A fresh conversation MUST load durable state first, send the **BCP-labeled Gmail START**, preserve the ~25-minute tranche contract, and never ask the user to restate the dedicated-phone architecture.
+
+## Field truth recovered from the installed phone
+
+The user has installed B-EDGE 2.1.2 in place. The visible phone UI reports CONNECTÉ / MBMPC / server 0.7.15, and machine telemetry independently confirms:
+- BCP 0.7.15 resident on MBMPC;
+- paired=true;
+- B-EDGE relay active at the phone LAN address on port 8876;
+- B-EDGE field version 2.1.2-rc1-edge-relay;
+- Telegram direct transport is currently in outage, so the phone relay path is materially relevant.
+
+This proves the installed 2.1.2 app is real and active, but it also proves the user's criticism: 2.1.2 is still an Edge-relay release, not the completed dedicated-phone server appliance.
+
+## Active R69 product direction
+
+The old Android phone is the **primary persistent low-power BCP appliance node**. It MUST be used beyond a passive client/relay role:
+- foreground local API server;
+- durable Room/WAL project memory, receipts and job queue;
+- store-and-forward and idempotent reconciliation;
+- boot/package-replacement restoration;
+- local LAN NSD presence;
+- Wi-Fi Direct DNS-SD presence when supported/authorized;
+- low-power BLE presence beacon when supported/authorized;
+- bounded authenticated node API for status/sync/job admission;
+- strict Telegram HTTPS CONNECT relay retained;
+- PC is a Windows/heavy-compute worker, not the sole communication center;
+- no SIM in the old phone is assumed.
+
+Current R69 candidate branch:
+`work/bcp/r69-phone-server-fullnode-20260921-1554`
+
+Candidate identity:
+- versionCode: **220**;
+- versionName: **2.2.0-rc1-full-node-evergreen**;
+- applicationId remains `com.blessing.bcpedge.evergreen`;
+- in-place update only; never uninstall merely to upgrade.
+
+The candidate introduces meaningful Android permission/onboarding for dedicated-server use, a compact server-oriented UI, local API health/capabilities/private endpoints, boot restore, NSD/Wi-Fi-Direct/BLE presence, and representative Android-emulator API-server testing.
+
+Do not expose 2.2.0 to the user until exact-head CI/build/emulator qualification passes and a signed APK with the pinned Evergreen certificate is published/read back into `API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk`.
+
+## Communication/continuity contract
+
+1. Every BCP tranche: Gmail START with label **BCP** before substantive work.
+2. Target ~25 minutes; watchdog is fail-safe, not a substitute for normal closeout.
+3. Gmail END contains the complete checkpoint and must have provider send acknowledgement.
+4. ChatGPT emits no end message before END acknowledgement.
+5. After END acknowledgement, ChatGPT is pointer-only.
+6. Telegram is secondary witness/control; durable state remains repo/BCP/phone/Drive as applicable.
+7. Before user install/click/retry, exact representative simulation must pass.
+8. All repo mutation obeys the single-writer Git fence.
+
+---
+
 # R68 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
