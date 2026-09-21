@@ -217,6 +217,20 @@ jobs:
           grep -F '"unauthorized"' edge-communications-unauthorized.json >/dev/null
           echo "BCP_ANDROID_LOCAL_API_SERVER=PASS"
 
+      - name: Prove phone-local durable communication journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          test "$("$ADB" get-state)" = "device"
+          gradle :android-b-edge:connectedDebugAndroidTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1536m -Dfile.encoding=UTF-8"
+          TEST_XML="android-b-edge/build/outputs/androidTest-results/connected/debug/TEST-com.blessing.bcpedge.EdgeCommunicationJournalInstrumentedTest.xml"
+          test -s "$TEST_XML"
+          grep -F 'failures="0"' "$TEST_XML" >/dev/null
+          grep -F 'errors="0"' "$TEST_XML" >/dev/null
+          echo "BCP_ANDROID_PHONE_COMMUNICATION_JOURNAL=PASS"
+
       - name: Cold relaunch idempotence smoke
         shell: bash
         run: |
@@ -259,6 +273,8 @@ jobs:
             edge-private-unauthorized.json
             edge-communications-unauthorized.json
             edge-health-relaunch.json
+            android-b-edge/build/outputs/androidTest-results/connected/debug/
+            android-b-edge/build/reports/androidTests/connected/
             emulator.log
             avd-list-created.txt
             avd-list-boot.txt
