@@ -83,6 +83,7 @@ public final class EdgeRelayService extends Service {
         registration.scheduleWithFixedDelay(() -> {
             try {
                 BcpClient client = new BcpClient(EdgeRelayService.this);
+                client.refreshBuiltinCapabilities();
                 client.registerEdgeRelay();
                 client.recordEvent("EDGE_SERVER_HEARTBEAT", nodeSummary().toString());
             } catch (Throwable ignored) {}
@@ -245,6 +246,8 @@ public final class EdgeRelayService extends Service {
             caps.put("universal_event_ledger", true);
             caps.put("universal_event_ledger_mode", "APPEND_ONLY_LOCAL_CHRONICLE");
             caps.put("mission_step_envelope_v1", true);
+            caps.put("capability_registry", true);
+            caps.put("capability_registry_authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY");
             caps.put("provider_degraded_resume", true);
             caps.put("mission_authority", "DURABLE_BCP_STATE_NOT_CHAT_UI");
             caps.put("local_allowlisted_executor", true);
@@ -279,6 +282,18 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/mission-steps".equals(path)) {
             writeJson(out, 200, new BcpClient(this).localMissionSteps(50, true));
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/capability-registry".equals(path)) {
+            BcpClient client = new BcpClient(this);
+            client.refreshBuiltinCapabilities();
+            writeJson(out, 200, client.localCapabilityRegistry(100, ""));
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/capability-registry".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).observeLocalCapability(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 400, receipt);
             return;
         }
         if ("POST".equals(method) && "/v1/node/events".equals(path)) {
@@ -342,6 +357,7 @@ public final class EdgeRelayService extends Service {
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
             out.put("mission_steps", client.localMissionSteps(8, true));
+            out.put("capability_registry", client.localCapabilityRegistry(24, ""));
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());
