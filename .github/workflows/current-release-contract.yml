@@ -17,6 +17,7 @@ on:
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
       - "tools/test_active_tranche_delivery.py"
+      - "tools/test_bedge_local_executor_contract.py"
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -103,6 +104,9 @@ jobs:
 
       - name: Validate active-tranche delivery proof
         run: python tools/test_active_tranche_delivery.py
+
+      - name: Validate B-EDGE local executor contract
+        run: python tools/test_bedge_local_executor_contract.py
 
       - name: Server update self-test
         run: python windows/bcp_server.py --selftest
