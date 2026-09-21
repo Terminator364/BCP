@@ -1,3 +1,21 @@
+# R79 A+B+C / UCMF V9 / 25-minute automatic communication handoff — 2026-09-21
+
+Canonical continuation: `BCPGO BCP`. UCMF scoped continuation: `UCMF001` or `BCPGO UCMF001`.
+
+A fresh conversation MUST NOT ask the user to reconstruct the prior chat. After the minimal routing read it MUST load the takeover/communication/writer-fence/A+B+C/UCMF pointers, reconcile any unclosed tranche, send and verify the BCP-labeled Gmail START, then resume the durable next action. Normal cadence is 25 minutes: target ~23 minutes substantive work + ~2 minutes PRIMARY_ASSISTANT closeout. Normal close does not depend on a scheduled automation. END is successful only after Gmail provider message_id + SENT readback + durable CLOSED receipt; only then may the app show the short Gmail pointer.
+
+The current UCMF001 Drive master has been directly resolved and verified through **Postulate 9 / V9 FINAL RESILIENCE CLOSURE**. Postulate 9 makes mission state independent of ChatGPT conversation state. R79 therefore adds a phone-resident `BCP_MISSION_STEP_ENVELOPE_V1`/provider-state surface so a model/provider interruption can resume from durable local state rather than chat scrollback.
+
+A+B+C source of truth:
+- A: sealed preconception pointer + understanding dossier + original UCMF source intent;
+- B: research expansion, now including UCMF Postulates 2–9;
+- C: cumulative field/workflow feedback.
+Current conservative macro audit after expanding the denominator to V9: **53.9% functional / 42.2% evidence maturity**. These are evidence scores, not marketing completion.
+
+Current engineering line: PR #149 / `work/bcp/r78-abc-reconcile-ci-20260921-2251`, now advanced as R79. Do not publish another phone micro-beta. Qualify the coherent 2.2 full-node vertical slice, including Chronicle, mission-step resilience, server-first UI, memory/source-capability gaps, transport security and field relay evidence.
+
+---
+
 # R78 A+B+C Source-Reconciled Handoff — 2026-09-21
 
 Continuation code: `BCPGO BCP`
