@@ -66,7 +66,7 @@ def main():
     ck("communication-survival-policy", "COMMUNICATION_SURVIVAL_POLICY.json" in registry and "R74 KINLINK-Style Communication State-Machine Handoff" in continuity)
     ck("communication-no-reexplanation", '"user_reexplanation_required": false' in communication)
     ck("communication-phone-store-forward", '"store_and_forward": true' in communication)
-    ck("communication-protocol-ref", '"schema": "bcp.communication_protocol/1"' in comm_protocol and '"normal_close_owner": "PRIMARY_ASSISTANT"' in comm_protocol)
+    ck("communication-protocol-ref", '"schema": "bcp.communication_protocol/2"' in comm_protocol and '"normal_close_owner": "PRIMARY_ASSISTANT"' in comm_protocol)
     ck("communication-state-machine", '"schema": "bcp.communication_state_machine/1"' in comm_state and 'END_SEND_PENDING->END_ACKNOWLEDGED' in comm_state)
     ck("communication-delivery-key", '"delivery_key_required": true' in policy and '"delivery_key_required": true' in registry)
     ck("new-conversation-takeover", '"trigger_code": "BCPGO BCP"' in takeover and "NEW_CONVERSATION_TAKEOVER.json" in registry)
