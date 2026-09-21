@@ -57,7 +57,7 @@ public abstract class EdgeDatabase extends RoomDatabase {
                     "ingestedAt INTEGER NOT NULL)");
             db.execSQL("CREATE INDEX IF NOT EXISTS index_edge_events_projectId_occurredAt ON edge_events(projectId, occurredAt)");
             db.execSQL("CREATE INDEX IF NOT EXISTS index_edge_events_eventType_occurredAt ON edge_events(eventType, occurredAt)");
-            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_edge_events_idempotencyKey ON edge_events(idempotencyKey)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_edge_events_projectId_idempotencyKey ON edge_events(projectId, idempotencyKey)");
         }
     };
 
