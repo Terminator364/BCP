@@ -1,6 +1,6 @@
 {
   "schema": "bcp.human_action_qualification_matrix/1",
-  "revision": "2026-09-21-R69",
+  "revision": "2026-09-21-R70",
   "status": "CANONICAL_CANDIDATE",
   "rule": "A user-facing action may be requested only when its representative_preflight is PASS on the exact candidate head/package, unless the remaining uncertainty is explicitly an irreducible external/provider/physical field boundary.",
   "actions": [
@@ -118,15 +118,19 @@
         "private_node_status_rejects_unauthenticated_request_401",
         "nearby_runtime_permissions_declared",
         "boot_restore_receiver_declared",
-        "cold_relaunch_restores_local_api"
+        "cold_relaunch_restores_local_api",
+        "capabilities_private_content_cache_true",
+        "adaptive_network_state_exposed",
+        "local_context_builder_private_endpoint_declared",
+        "no_micro_beta_release_gate_satisfied_before_field_install"
       ],
       "remaining_field_boundary": [
         "actual old phone OEM/Android image and runtime permission dialogs",
         "actual battery-optimization vendor policy",
         "actual home Wi-Fi/mDNS/Wi-Fi Direct/Bluetooth radio behavior",
         "real reboot persistence on the dedicated phone",
-        "real PC-to-phone authenticated API and Telegram relay round-trip",
-        "battery/power interruptions"
+        "battery/power interruptions",
+        "real encrypted authenticated PC-to-phone production transport after R70 cleartext POC retirement"
       ],
       "field_readback_required_before_completion": true
     }
