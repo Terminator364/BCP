@@ -67,6 +67,7 @@ public final class BcpClient {
             out.put("memory", orchestrator.memorySnapshot(getProject()));
             out.put("content_store", contentStore.status());
             out.put("network", EdgeNetworkState.snapshot(context));
+            out.put("mission_steps", localMissionSteps(8, true));
             out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
             out.put("offline_capable", true);
         } catch (Exception ignored) {}
