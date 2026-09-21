@@ -440,7 +440,7 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["end_mail_provider_ack_required"] is True
     assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
     assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 23
-    assert delivery_policy["cadence"]["backup_earliest_offset_minutes"] == 28
+    assert delivery_policy["cadence"]["backup_earliest_offset_minutes"] is None
     assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] is None
     assert delivery_policy["cadence"]["absolute_end_deadline_minutes"] == 25
     assert delivery_policy["cadence"]["user_relaunch_must_never_be_required"] is True
@@ -481,7 +481,7 @@ def main() -> int:
     assert comm_protocol["cadence_minutes"] == 25
     assert comm_protocol["primary_work_budget_minutes"] == 23
     assert comm_protocol["normal_close_reserve_minutes"] == 4
-    assert comm_protocol["backup_earliest_offset_minutes"] == 28
+    assert comm_protocol["backup_earliest_offset_minutes"] is None
     assert comm_protocol["hard_guard_offset_minutes"] is None
     assert comm_state_machine["schema"] == "bcp.communication_state_machine/1"
     assert comm_state_machine["useful_work_minutes"] == 23
