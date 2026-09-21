@@ -1,4 +1,22 @@
-# R70 Fresh Conversation Handoff — 2026-09-21
+# R71 Communication-Survival Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+A fresh conversation MUST load `.project-memory/COMMUNICATION_SURVIVAL_POLICY.json` before resuming work. The user MUST NOT be asked to reconstruct communication rules, the 30-minute cadence, phone-primary architecture, or current field state.
+
+## R71 communication survival / cross-conversation recovery
+
+The durable communication fabric is:
+1. Gmail START/END for detailed human checkpoints, with provider ACK required;
+2. Telegram as secondary witness/alert, direct first then B-EDGE relay when qualified;
+3. dedicated Android phone as persistent low-power queue/API/store-and-forward node;
+4. Drive as durable replicated telemetry/recovery evidence;
+5. ChatGPT as interactive reasoning/pointer surface, never canonical state.
+
+If ChatGPT UI stalls or the conversation is replaced, `BCPGO BCP` resumes from durable state. The user does not need to send an “eh oh” message to obtain a checkpoint. The END watchdog is armed at START, and Gmail END is retried until provider acknowledgement before any ChatGPT end output.
+
+Detailed technical recovery runbook:
+`docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
 
 Canonical continuation code: `BCPGO BCP`.
 
