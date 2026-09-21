@@ -190,7 +190,7 @@ def main() -> int:
         fail("foreground_end_send_primary_contract")
     if email.get("delivery_key_required") is not True:
         fail("email_delivery_key_contract")
-    if comm_protocol.get("schema") != "bcp.communication_protocol/2":
+    if comm_protocol.get("schema") != "bcp.communication_protocol/3":
         fail("communication_protocol_schema")
     if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("communication_primary_owner")
@@ -200,7 +200,12 @@ def main() -> int:
         fail("communication_close_reserve")
     if comm_protocol.get("scheduled_backup_required") is not False:
         fail("communication_scheduled_backup_dependency")
-    if comm_state_machine.get("schema") != "bcp.communication_state_machine/2":
+    backup = comm_protocol.get("backup_semantics") or {}
+    if backup.get("must_not_replace_primary_useful_work") is not True:
+        fail("communication_backup_replaces_work")
+    if backup.get("role") != "EMERGENCY_ONLY_IF_PRIMARY_TURN_IS_INTERRUPTED_OR_GMAIL_END_CANNOT_COMPLETE":
+        fail("communication_backup_role")
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/3":
         fail("communication_state_machine_schema")
     if comm_state_machine.get("useful_work_minutes") != 23 or comm_state_machine.get("normal_close_reserve_minutes") != 2:
         fail("communication_state_machine_cadence")
