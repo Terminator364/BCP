@@ -188,6 +188,110 @@ def append_log(event: str, **fields: Any) -> None:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+def _ensure_relay_outbox_schema(cx) -> None:
+    cx.execute(
+        """CREATE TABLE IF NOT EXISTS communication_outbox(
+            delivery_id TEXT PRIMARY KEY,
+            dedupe_key TEXT NOT NULL UNIQUE,
+            payload_class TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            priority INTEGER NOT NULL DEFAULT 50,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            attempt_count INTEGER NOT NULL DEFAULT 0,
+            last_attempt_at TEXT NOT NULL DEFAULT '',
+            last_error TEXT NOT NULL DEFAULT ''
+        )"""
+    )
+    cx.execute(
+        """CREATE TABLE IF NOT EXISTS communication_delivery_receipts(
+            delivery_id TEXT PRIMARY KEY,
+            dedupe_key TEXT NOT NULL,
+            payload_class TEXT NOT NULL,
+            route TEXT NOT NULL,
+            delivered_at TEXT NOT NULL,
+            receiver_node TEXT NOT NULL,
+            provider_message_id TEXT NOT NULL DEFAULT ''
+        )"""
+    )
+
+
+def relay_outbox_key(text: str, silent: bool) -> str:
+    safe = redact_text(text)[:3900]
+    return hashlib.sha256(
+        ("telegram-control\n" + ("silent" if silent else "normal") + "\n" + safe).encode("utf-8")
+    ).hexdigest()
+
+
+def relay_outbox_enqueue(text: str, silent: bool = False,
+                         payload_class: str = "MISSION_STATE", priority: int = 60) -> str:
+    """Persist a compact notification for B-EDGE before giving up on delivery."""
+    safe = redact_text(text)[:3900]
+    payload = {
+        "text": safe,
+        "silent": bool(silent),
+        "source": "PC_TELEGRAM_COMPANION",
+    }
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(raw.encode("utf-8")) > 16 * 1024:
+        raise RuntimeError("relay_payload_too_large")
+    cls = str(payload_class or "MISSION_STATE").upper()
+    if cls not in {"ALERT", "CHECKPOINT_POINTER", "MISSION_STATE", "ACK", "COMMAND_RECEIPT"}:
+        cls = "MISSION_STATE"
+    dedupe = relay_outbox_key(safe, silent)
+    delivery_id = "comm-" + hashlib.sha256(
+        (dedupe + ":" + utc_now()).encode("utf-8")
+    ).hexdigest()[:32]
+    now = utc_now()
+    cx = sqlite3.connect(DB_PATH, timeout=10)
+    try:
+        _ensure_relay_outbox_schema(cx)
+        cx.execute(
+            """INSERT INTO communication_outbox(
+                   delivery_id,dedupe_key,payload_class,payload_json,priority,
+                   created_at,updated_at,attempt_count,last_attempt_at,last_error
+               ) VALUES(?,?,?,?,?,?,?,0,'','')
+               ON CONFLICT(dedupe_key) DO UPDATE SET
+                   updated_at=excluded.updated_at,
+                   priority=MAX(communication_outbox.priority,excluded.priority),
+                   payload_json=excluded.payload_json""",
+            (delivery_id, dedupe, cls, raw, max(0, min(100, int(priority))), now, now),
+        )
+        cx.commit()
+    finally:
+        cx.close()
+    append_log("BEDGE_RELAY_QUEUED", payload_class=cls, dedupe_key=dedupe[:16])
+    return dedupe
+
+
+def relay_outbox_direct_delivered(dedupe_key: str, provider_message_id: str = "") -> None:
+    """Cancel a pending edge copy when direct PC Telegram succeeded first."""
+    if not dedupe_key:
+        return
+    cx = sqlite3.connect(DB_PATH, timeout=10)
+    try:
+        _ensure_relay_outbox_schema(cx)
+        row = cx.execute(
+            "SELECT delivery_id,payload_class FROM communication_outbox WHERE dedupe_key=?",
+            (dedupe_key,),
+        ).fetchone()
+        if not row:
+            return
+        delivery_id, payload_class = str(row[0]), str(row[1])
+        cx.execute(
+            """INSERT OR IGNORE INTO communication_delivery_receipts(
+                   delivery_id,dedupe_key,payload_class,route,delivered_at,
+                   receiver_node,provider_message_id
+               ) VALUES(?,?,?,?,?,?,?)""",
+            (delivery_id, dedupe_key, payload_class, "DIRECT_PC_TELEGRAM",
+             utc_now(), "PC_WORKER", str(provider_message_id or "")[:120]),
+        )
+        cx.execute("DELETE FROM communication_outbox WHERE delivery_id=?", (delivery_id,))
+        cx.commit()
+    finally:
+        cx.close()
+
+
 def direct_transport_state(failures: int) -> str:
     return "DIRECT_TRANSPORT_OUTAGE" if int(failures) >= DIRECT_OUTAGE_FAILURE_THRESHOLD else "DEGRADED_RETRY"
 
@@ -2728,20 +2832,30 @@ class Telegram:
         return obj
 
     def send(self, text: str, with_keyboard: bool = True, silent: bool = False) -> int | None:
+        safe_text = redact_text(text)[:3900]
         payload = {
             "chat_id": self.chat_id,
-            "text": redact_text(text)[:3900],
+            "text": safe_text,
             "disable_web_page_preview": True,
             "disable_notification": bool(silent),
         }
         if with_keyboard:
             payload["reply_markup"] = self.keyboard()
-        obj = self.api("sendMessage", payload, 20)
+        dedupe = relay_outbox_key(safe_text, bool(silent))
+        try:
+            obj = self.api("sendMessage", payload, 20)
+        except Exception:
+            # Do not convert queueing into fake Telegram success. The caller still
+            # receives the transport failure while B-EDGE gains a durable copy.
+            relay_outbox_enqueue(safe_text, bool(silent), "MISSION_STATE", 70)
+            raise
         result = obj.get("result") or {}
         try:
-            return int(result.get("message_id"))
+            message_id = int(result.get("message_id"))
         except Exception:
-            return None
+            message_id = 0
+        relay_outbox_direct_delivered(dedupe, str(message_id or ""))
+        return message_id or None
 
     def send_rich(self, rich_html: str, fallback_text: str) -> int | None:
         """Prefer Bot API 10.3 Rich Messages; V9 plain text is mandatory fallback."""
@@ -3289,6 +3403,28 @@ class Telegram:
                     nexus_state=nexus_state,
                     recovery_action=direct_recovery_action(nexus_state, sustained),
                 )
+                if sustained:
+                    # Keep producing durable human-facing state even when getUpdates
+                    # itself is unreachable. Telegram.send() queues failed messages
+                    # for the B-EDGE relay without claiming provider delivery.
+                    for fn in (
+                        self._push_transport_liveness,
+                        self._push_presence,
+                        self._push_watchdog_notice,
+                        self._push_attention_transition,
+                        self._push_system_presence,
+                    ):
+                        try:
+                            if fn is self._push_transport_liveness:
+                                fn(0)
+                            else:
+                                fn()
+                        except Exception as relay_exc:
+                            append_log(
+                                "BEDGE_RELAY_CAPTURE",
+                                source=getattr(fn, "__name__", "push"),
+                                error_class=type(relay_exc).__name__,
+                            )
                 time.sleep(delay)
             except Exception as e:
                 detail = clean(e, 180)
