@@ -1,0 +1,24 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r81-abc-fullnode-20260922-0033",
+  "project_or_mission": "API/BCP R81 25-minute primary close + A+B+C full-node advancement",
+  "base_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+  "created_at": "2026-09-22T00:33:00+01:00",
+  "work_branch": "work/bcp/r81-abc-fullnode-20260922-0033",
+  "intended_file_scope": [
+    ".project-memory/**",
+    "API_PROJECT_CONTINUITY.md",
+    "project_state.json",
+    "android-b-edge/**",
+    "tools/**",
+    ".github/workflows/**",
+    "docs/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Field Ecosystem Preflight",
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Coordinated Product Qualification"
+  ]
+}
