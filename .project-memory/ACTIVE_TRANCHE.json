@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSE_INTENT_PERSISTED",
   "started_at_kinshasa": "2026-09-21T20:37:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T21:00:00+01:00",
   "absolute_end_deadline_kinshasa": "2026-09-21T21:02:00+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "final_app_reply_gate": "END_ACK_REQUIRED",
   "communication_guard": {
@@ -48,5 +48,24 @@
       "delivery_state": "CLOSED",
       "close_owner": "HARD_GUARD"
     }
-  }
+  },
+  "no_more_product_mutations": true,
+  "close_intent_at_kinshasa": "2026-09-21T21:00:02+01:00",
+  "exact_product_head_before_close": "394bab5ad59e7d38c525443bb95662178af05bcc",
+  "closeout_summary": {
+    "abc_spec_created": true,
+    "abc_weighted_maturity_percent": 45.9,
+    "phone_storage_policy": "ADAPTIVE_UP_TO_32_GIB_WITH_DEVICE_RESERVE",
+    "phone_local_recovery_checkpoint_added": true,
+    "communication_cadence": "25_TOTAL_23_WORK_2_CLOSEOUT",
+    "scheduled_close_automation_required": false,
+    "pr_number": 146,
+    "ci_truth": "NOT_GREEN_AT_CLOSE_INTENT",
+    "known_ci_gaps": [
+      "CURRENT validator still reports communication_survival_schema on the last completed exact-head run",
+      "Android build static guard/unit path still fails after storage-policy change",
+      "later CI jobs remain queued/in progress"
+    ]
+  },
+  "next_atomic_action": "On next tranche, Gmail START first. Fix only the remaining exact-head CI regressions discovered by R76, rerun full Android/CURRENT/Field gates, then merge PR #146 only if main is unchanged and every mandatory gate is green. No APK install before coherent A+B+C 2.2 gate."
 }
