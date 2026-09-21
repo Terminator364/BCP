@@ -2186,7 +2186,7 @@
     "base_main_sha": "a69600c84a957b774fcbb73ac0b8f0f740fc4350",
     "branch": "work/bcp/r62-comms-autonomy-20260921",
     "target_server_version": "0.7.14",
-    "target_server_sha256": "965a36812de2bce89a140aef781af6cc56215f167f4c69ec2f766b09514794df",
+    "target_server_sha256": "74746f61a3b24be481ba771c5237a77720c6b9eeb2a7f3b15aed39513a1c9b06",
     "target_telegram_version": "2026.09.21-comms-autonomy-v20",
     "target_telegram_sha256": "f0b58573cb083c48fac30f09cdf96feaec0a6f3a7c4bd4329c8af919b461fa94",
     "field_input": {
@@ -2203,7 +2203,8 @@
       "TELEGRAM_SPARSE_90_MIN_ALIVE_PROOF",
       "NEXUS_PRESERVE_HUMAN_GATE_ACROSS_STAGE_NETWORK_FAILURE",
       "NEXUS_RECOVER_HUMAN_GATE_FROM_DURABLE_RECEIPT",
-      "NEXUS_TRUTHFUL_NETWORK_RECOVERY_PENDING"
+      "NEXUS_TRUTHFUL_NETWORK_RECOVERY_PENDING",
+      "EXTERNAL_RUNTIME_TELEGRAM_NOTICE_READBACK"
     ],
     "field_verified": false
   }
