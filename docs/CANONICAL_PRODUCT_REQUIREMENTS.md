@@ -1254,7 +1254,7 @@ BCP MUST NOT imply continuous access to arbitrary private ChatGPT UI history. St
 When durable work evidence exists but expected downstream message-delivery evidence does not appear within a bounded interval, BCP SHOULD raise a deduplicated delivery-gap signal. This signal is observational and MUST NOT infer hidden ChatGPT model/UI state.
 
 ### Bounded interactive cadence
-During active human development sessions, checkpoint/report cadence SHOULD be bounded (target around five minutes when practical) so long tool/reasoning sequences do not leave the user unable to distinguish work, network/UI loss, or interruption. This is not a ChatGPT scheduled/background automation.
+During active human development sessions, checkpoint/report cadence SHOULD target approximately 25 minutes of useful work, reserving roughly the final minute for durable checkpoint/email delivery so long tool/reasoning sequences do not leave the user unable to distinguish work, network/UI loss, or interruption. This is not a ChatGPT scheduled/background automation.
 
 Canonical detailed requirement:
 - `docs/CONVERSATION_DELIVERY_LEDGER_AND_TELEGRAM_INBOX_R23.md`
@@ -1332,7 +1332,7 @@ Canonical detail:
 
 ### Interactive work cadence default
 
-For active technical project work where this project context is available, use bounded work tranches with a target of about **5 minutes** and an acceptable practical window of **5–7 minutes**, followed by a visible durable checkpoint.
+For active technical project work where this project context is available, use bounded work tranches targeting **25 minutes**, with a practical **24–25 minute** window before the durable checkpoint unless a real gate requires earlier return.
 
 The cadence policy MUST NOT be treated as a background-execution promise: after ChatGPT responds, another invocation is required for the next ChatGPT tranche. Resident BCP components may continue independently where explicitly implemented.
 
@@ -1634,12 +1634,12 @@ The canonical guide is:
 - docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md
 
 ### Interactive tranche and exact mail mirror
-The active API/BCP work cadence is now 8–10 minutes by user request.
-When email is available, the exact checkpoint body MUST be sent by email before the final ChatGPT checkpoint is surfaced. The email body and ChatGPT final body MUST be textually identical.
+The active API/BCP work cadence now targets 25 minutes, with a practical 24–25 minute window unless a real gate requires earlier return.
+When email is available, the complete checkpoint body MUST be sent by email first. After positive Gmail send receipt, the ChatGPT application MUST show only the short pointer containing mail confirmation, Kinshasa date/time, and checkpoint identifier; it MUST NOT duplicate the detailed checkpoint body.
 
 Checkpoint delivery order is normative:
-1. EMAIL_EXACT_MIRROR;
-2. CHATGPT_FINAL;
+1. EMAIL_FULL_CHECKPOINT;
+2. CHATGPT_POINTER_ONLY;
 3. TELEGRAM_WITNESS_OPTIONAL.
 
 A failed email send MUST remain an explicit EMAIL_DELIVERY_HOLD; the system MUST NOT claim that the mail was sent.
@@ -1725,7 +1725,7 @@ Target presentation revision: **R54**.
 This requirement is additive and supersedes only the human checkpoint delivery surface from R53/R54; all underlying execution, telemetry, evidence, rollback, security and product requirements remain active.
 
 ### Human-facing delivery rule
-For every normal 8–10 minute active technical work tranche:
+For every normal active technical work tranche targeting 25 minutes (practical 24–25 minute window):
 1. execute useful project work first;
 2. persist the durable checkpoint and evidence;
 3. send the complete human-readable checkpoint by email;
@@ -1758,7 +1758,7 @@ If Gmail delivery fails:
 - do not silently fall back to a full in-app checkpoint unless the user explicitly asks for that exception.
 
 ### Cadence
-The canonical interactive tranche target is now 8–10 minutes for BCP. Earlier 5–6 minute or 5–7 minute human-facing checkpoint cadence rules are superseded by R55 for this project.
+The canonical interactive tranche target is now approximately 25 minutes for BCP, with a practical 24–25 minute window. Earlier 5–6, 5–7, and 8–10 minute human-facing checkpoint cadence rules are superseded by R58 for this project.
 
 Canonical machine policy:
 - `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`
