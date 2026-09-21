@@ -69,6 +69,7 @@ public final class BcpClient {
             out.put("content_store", contentStore.status());
             out.put("network", EdgeNetworkState.snapshot(context));
             out.put("mission_steps", localMissionSteps(8, true));
+            out.put("capability_registry", localCapabilityRegistry(32, ""));
             out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
             out.put("offline_capable", true);
         } catch (Exception ignored) {}
@@ -1135,6 +1136,7 @@ public final class BcpClient {
         JSONObject out = new JSONObject();
         try {
             out.put("local_execution", runLocalReadyJobs(8));
+            out.put("capability_refresh", refreshBuiltinCapabilities());
             JSONObject st = orchestratorStatus();
             JSONObject sentinel = observePcSentinel(true);
             out.put("mode", orchestrator.getMode());
