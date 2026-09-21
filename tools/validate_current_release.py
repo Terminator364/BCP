@@ -168,7 +168,7 @@ def main() -> int:
         fail("foreground_end_send_primary_contract")
     if email.get("delivery_key_required") is not True:
         fail("email_delivery_key_contract")
-    if comm_protocol.get("schema") != "bcp.communication_protocol/1":
+    if comm_protocol.get("schema") != "bcp.communication_protocol/2":
         fail("communication_protocol_schema")
     if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("communication_primary_owner")
