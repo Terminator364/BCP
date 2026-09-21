@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-21-R60",
+  "requirements_revision": "2026-09-21-R62",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.13",
+      "version": "0.7.14",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe"
+        "sha256": "74746f61a3b24be481ba771c5237a77720c6b9eeb2a7f3b15aed39513a1c9b06"
       },
-      "notes": "BCP 0.7.13 fixes the explicit Nexus auth retry HTTP 500 caused by a missing uuid runtime import, preserving fresh device-flow semantics and no stale-code reuse."
+      "notes": "BCP 0.7.14 preserves the Nexus human gate across transient network/DNS staging failures and makes the one-shot retry truthfully autonomous under transport recovery."
     },
     "android_b_edge": {
       "version": "2.1.0-rc1-sentinel-evergreen",
@@ -50,13 +50,13 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "a06f675966a8f73ea42ed55d0b2e614b03b8a83851a1f2dd5f6ac681925f9238"
+        "sha256": "579fd24ab450191e7717418c60f084ca2606a494d7717de45cb9986c36c68203"
       },
       "notes": "Nexus 0.2.6 R54 remains device-flow-only, reconciles Worker health version, and mirrors the compact human cockpit plus WinAnsi/Bold/paginated PDF fallback with Kinshasa-time captions."
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.21-comms-resilience-v19",
+    "version": "2026.09.21-comms-autonomy-v20",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -151,7 +151,11 @@
       "sustained direct Telegram timeout classified as DIRECT_TRANSPORT_OUTAGE after bounded consecutive failures",
       "telegram_transport_outage.json durable outage/recovery receipt",
       "fresh Nexus authorization surfaced as the qualified recovery action when direct Bot API egress remains unavailable",
-      "25-minute tranche END watchdog prevents dependence on user relaunch for completion email"
+      "25-minute tranche END watchdog prevents dependence on user relaunch for completion email",
+      "one-shot Telegram online notice after PC/worker restart when not recently announced",
+      "explicit Telegram transport recovery notice after network outage or Wi-Fi/hotspot change",
+      "silent sparse 90-minute Telegram alive proof while the PC remains on",
+      "Nexus STAGE_FAILED network recovery preserves prior human-auth receipt and avoids misleading NO_RETRY success"
     ]
   }
 }

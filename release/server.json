@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.13",
+  "version": "0.7.14",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe",
+  "sha256": "74746f61a3b24be481ba771c5237a77720c6b9eeb2a7f3b15aed39513a1c9b06",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-21-R60",
-  "release_train": "BCP-0.7.13_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
-  "notes": "BCP 0.7.13 fixes explicit Nexus device-flow retry HTTP 500 by importing the uuid dependency used for retry nonce/archive generation. Fresh auth semantics, zero-USD policy, and no localhost:8976 fallback remain unchanged."
+  "requirements_revision": "2026-09-21-R62",
+  "release_train": "BCP-0.7.14_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
+  "notes": "BCP 0.7.14 preserves Nexus human-auth state across transient DNS/transport staging failures, recovers a durable HUMAN_AUTH_REQUIRED receipt when present, and turns network-stage retries into truthful automatic recovery instead of misleading NO_RETRY success."
 }

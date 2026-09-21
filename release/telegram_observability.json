@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.21-comms-resilience-v19",
+  "version": "2026.09.21-comms-autonomy-v20",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "e67c7b8c2130d91e0950708388d89fea68ad20b9838f73a3425a0853e7ce9ef6",
+  "sha256": "f0b58573cb083c48fac30f09cdf96feaec0a6f3a7c4bd4329c8af919b461fa94",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V19 R61 classifies sustained direct Bot API timeout as DIRECT_TRANSPORT_OUTAGE, persists outage/recovery evidence, exposes when a fresh Nexus authorization is the qualified recovery action, and keeps bounded direct retry without pretending the bot is healthy.",
-  "requirements_revision": "2026-09-21-R60"
+  "notes": "Telegram V20 R62 adds one-shot PC/worker online notice, explicit recovery notice after direct transport outage, and a sparse silent 90-minute alive proof so the cockpit does not appear to disappear across reboot or Wi-Fi/hotspot changes.",
+  "requirements_revision": "2026-09-21-R62"
 }

@@ -35,8 +35,12 @@ if ($status -eq "LAUNCHED") {
     Write-Host "NEXUS_FRESH_DEVICE_FLOW_STARTED"
     exit 0
 }
+if ($status -eq "NETWORK_RECOVERY_PENDING") {
+    Write-Host "NEXUS_NETWORK_RECOVERY_PENDING :: aucune action requise, BCP retente automatiquement quand le reseau/DNS revient"
+    exit 10
+}
 if ($status -eq "NO_HUMAN_AUTH_RETRY_NEEDED" -or $status -eq "ALREADY_CONFIGURED") {
-    Write-Host ("NEXUS_NO_RETRY_NEEDED :: " + $status)
+    Write-Host ("NEXUS_NO_RETRY_NEEDED :: " + $status + " :: aucune action manuelle necessaire")
     exit 0
 }
 

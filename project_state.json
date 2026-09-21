@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R61_MERGED_POSTMERGE_GREEN_NEXUS_HUMAN_GATE_READY",
-  "last_completed_atomic_action": "R61 merged to main at 66cbeeb2cd1315369fddbdc1d611fd7e38e5803e after exact-head CI PASS. All observed R61 post-merge workflows are PASS: CURRENT #796, PC Sanity #320, Nexus One-Shot #141, Nexus Transport #513, Telegram Observability #550, Field Ecosystem #727. Fresh MBMPC runtime remains BCP 0.7.13 exact SHA and UP_TO_DATE; direct Telegram remains unavailable due WinError 10060 transport timeouts, not a dead worker.",
-  "next_action": "Human gate is now legitimate: perform exactly one fresh Nexus/Cloudflare device authorization through API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip. Do not reuse an old device code, reinstall BCP, re-enter Telegram token, or use localhost:8976. After authorization, obtain provider-authenticated whoami/readback and verify Telegram receiver ownership moves from DIRECT_TELEGRAM to NEXUS/webhook before declaring communications restored.",
+  "status": "R62_COMMS_AUTONOMY_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R62 diagnosed current field state after home-WiFi failure and mobile hotspot switch: BCP 0.7.13 remains alive; direct Telegram is ACTIVE and polling with zero consecutive failures, proving the bot process is not dead; lack of messages is a liveness-notice gap. Nexus is STAGE_FAILED due DNS_RESOLUTION_FAILED, which caused the one-shot helper to return misleading NO_HUMAN_AUTH_RETRY_NEEDED. R62 source fixes both classes before another user action.",
+  "next_action": "Qualify exact R62 head for BCP 0.7.14 + Telegram V20. On PASS, reread main and merge. Then wait for automatic resident convergence and verify BCP_RUNTIME_LATEST + Telegram transport notice readback. Do not ask the user to reinstall/retry while the new release is converging.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2180,5 +2180,32 @@
       "PROVIDER_AUTHENTICATED_WHOAMI_READBACK",
       "TELEGRAM_NEXUS_WEBHOOK_OWNERSHIP_READBACK"
     ]
+  },
+  "r62_comms_autonomy": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "base_main_sha": "a69600c84a957b774fcbb73ac0b8f0f740fc4350",
+    "branch": "work/bcp/r62-comms-autonomy-20260921",
+    "target_server_version": "0.7.14",
+    "target_server_sha256": "74746f61a3b24be481ba771c5237a77720c6b9eeb2a7f3b15aed39513a1c9b06",
+    "target_telegram_version": "2026.09.21-comms-autonomy-v20",
+    "target_telegram_sha256": "f0b58573cb083c48fac30f09cdf96feaec0a6f3a7c4bd4329c8af919b461fa94",
+    "field_input": {
+      "server_version": "0.7.13",
+      "telegram_state": "ACTIVE",
+      "telegram_last_poll_at_utc": "2026-09-21T10:51:09+00:00",
+      "telegram_consecutive_failures": 0,
+      "nexus_state": "STAGE_FAILED",
+      "nexus_error_class": "DNS_RESOLUTION_FAILED"
+    },
+    "fixes": [
+      "TELEGRAM_START_NOTICE_AFTER_REAL_RESTART",
+      "TELEGRAM_RECOVERY_NOTICE_AFTER_NETWORK_RETURN",
+      "TELEGRAM_SPARSE_90_MIN_ALIVE_PROOF",
+      "NEXUS_PRESERVE_HUMAN_GATE_ACROSS_STAGE_NETWORK_FAILURE",
+      "NEXUS_RECOVER_HUMAN_GATE_FROM_DURABLE_RECEIPT",
+      "NEXUS_TRUTHFUL_NETWORK_RECOVERY_PENDING",
+      "EXTERNAL_RUNTIME_TELEGRAM_NOTICE_READBACK"
+    ],
+    "field_verified": false
   }
 }

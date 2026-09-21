@@ -8,6 +8,8 @@ set RC=%ERRORLEVEL%
 echo.
 if "%RC%"=="0" (
   echo RESULTAT: OK
+) else if "%RC%"=="10" (
+  echo RESULTAT: ATTENTE RESEAU - reprise automatique, rien a refaire
 ) else (
   echo RESULTAT: HOLD/ECHEC code %RC%
 )

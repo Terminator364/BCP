@@ -43,6 +43,9 @@ ATTENTION_ACK_STATE_PATH = STATE_DIR / "telegram_attention_ack.json"
 ATTENTION_PENDING_STATE_PATH = STATE_DIR / "telegram_attention_pending.json"
 NOTIFICATION_BUDGET_STATE_PATH = STATE_DIR / "telegram_notification_budget.json"
 TRANSPORT_OUTAGE_PATH = STATE_DIR / "telegram_transport_outage.json"
+TRANSPORT_NOTICE_PATH = STATE_DIR / "telegram_transport_notice.json"
+TRANSPORT_START_NOTICE_MIN_INTERVAL_SECONDS = 15 * 60
+TRANSPORT_ALIVE_NOTICE_INTERVAL_SECONDS = 90 * 60
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
 DIRECT_OUTAGE_FAILURE_THRESHOLD = 3
 
@@ -2658,6 +2661,11 @@ class Telegram:
             self.max_events_per_push = max(1, min(12, int(presence.get("max_events_per_push", 6))))
         except Exception:
             self.max_events_per_push = 6
+        self.worker_started_at = utc_now()
+        self.worker_session_id = hashlib.sha256(
+            (str(os.getpid()) + ":" + self.worker_started_at).encode("utf-8")
+        ).hexdigest()[:20]
+        self._startup_transport_checked = False
 
     @staticmethod
     def keyboard() -> dict:
@@ -2910,6 +2918,69 @@ class Telegram:
         else:
             self.send(response)
 
+    def _push_transport_liveness(self, recovered_failures: int = 0) -> None:
+        """Give the human a sparse proof that the resident communication path is alive.
+
+        This is intentionally low-data: one notice after a real worker/network recovery,
+        then at most one silent alive notice every 90 minutes while the PC remains on.
+        """
+        prior = read_json(TRANSPORT_NOTICE_PATH, {}) or {}
+        now = dt.datetime.now(dt.timezone.utc)
+        last = _parse_timestamp(prior.get("sent_at"))
+        elapsed = None if last is None else max(0, int((now - last.astimezone(dt.timezone.utc)).total_seconds()))
+
+        kind = ""
+        text = ""
+        silent = False
+        with_keyboard = True
+
+        if int(recovered_failures or 0) > 0:
+            kind = "RECOVERED"
+            text = (
+                "✅ Telegram reconnecté\n"
+                "Le réseau est revenu ou a changé. BCP a repris automatiquement. "
+                "Aucune réinstallation n’est nécessaire."
+            )
+        elif not self._startup_transport_checked:
+            self._startup_transport_checked = True
+            if elapsed is None or elapsed >= TRANSPORT_START_NOTICE_MIN_INTERVAL_SECONDS:
+                kind = "STARTED"
+                text = (
+                    "🟢 BCP connecté\n"
+                    "Le PC et le cockpit Telegram sont opérationnels. "
+                    "Les alertes et reprises automatiques sont actives."
+                )
+        elif elapsed is None or elapsed >= TRANSPORT_ALIVE_NOTICE_INTERVAL_SECONDS:
+            kind = "ALIVE"
+            text = "🟢 BCP toujours en ligne · Telegram et le PC répondent. Aucune action requise."
+            silent = True
+            with_keyboard = False
+
+        if not kind:
+            return
+
+        try:
+            message_id = self.send(text, with_keyboard=with_keyboard, silent=silent)
+        except Exception as e:
+            append_log(
+                "TRANSPORT_NOTICE_DEFERRED",
+                notice_kind=kind,
+                error_class=type(e).__name__,
+                detail=clean(e, 140),
+            )
+            return
+
+        atomic_json(TRANSPORT_NOTICE_PATH, {
+            "schema": "bcp.telegram_transport_notice/1",
+            "kind": kind,
+            "sent_at": utc_now(),
+            "message_id": int(message_id or 0),
+            "worker_session_id": self.worker_session_id,
+            "recovered_failures": int(recovered_failures or 0),
+            "transport": "DIRECT_TELEGRAM",
+        })
+        append_log("TRANSPORT_NOTICE_SENT", notice_kind=kind, message_id=int(message_id or 0))
+
     def _push_presence(self) -> None:
         if not self.auto_push:
             return
@@ -3122,6 +3193,7 @@ class Telegram:
                     transport_outage=False,
                     transport_outage_state="RECOVERED" if recovered_failures else "NONE",
                 )
+                self._push_transport_liveness(recovered_failures)
                 for upd in updates:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
@@ -3872,6 +3944,9 @@ def selftest() -> int:
         assert Nexus.__name__ == "Nexus"
         assert HEALTH_PATH.name == "telegram_worker_health.json"
         assert TRANSPORT_OUTAGE_PATH.name == "telegram_transport_outage.json"
+        assert TRANSPORT_NOTICE_PATH.name == "telegram_transport_notice.json"
+        assert TRANSPORT_START_NOTICE_MIN_INTERVAL_SECONDS == 15 * 60
+        assert TRANSPORT_ALIVE_NOTICE_INTERVAL_SECONDS == 90 * 60
         assert DIRECT_OUTAGE_FAILURE_THRESHOLD == 3
         assert direct_transport_state(2) == "DEGRADED_RETRY"
         assert direct_transport_state(3) == "DIRECT_TRANSPORT_OUTAGE"

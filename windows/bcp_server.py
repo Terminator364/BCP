@@ -31,13 +31,14 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.13"
+SERVER_VERSION = "0.7.14"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
 TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
 TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
 TELEGRAM_COMPANION_HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
+TELEGRAM_COMPANION_NOTICE_PATH = STATE_DIR / "telegram_transport_notice.json"
 TELEGRAM_COMPANION_WATCHDOG_PATH = STATE_DIR / "telegram_companion_watchdog.json"
 MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
 MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
@@ -433,6 +434,7 @@ def windows_resource_status() -> dict:
 def telegram_companion_runtime_status() -> dict:
     health = read_json(TELEGRAM_COMPANION_HEALTH_PATH, {}) or {}
     update = read_json(TELEGRAM_COMPANION_STATE_PATH, {}) or {}
+    notice = read_json(TELEGRAM_COMPANION_NOTICE_PATH, {}) or {}
     age = None
     try:
         if TELEGRAM_COMPANION_HEALTH_PATH.is_file():
@@ -454,6 +456,9 @@ def telegram_companion_runtime_status() -> dict:
         "update_state": str(update.get("state") or "NONE")[:80],
         "target_version": str(update.get("target_version") or "")[:80],
         "installed_sha256": str(update.get("installed_sha256") or "")[:64],
+        "notice_kind": str(notice.get("kind") or "")[:40],
+        "notice_sent_at": str(notice.get("sent_at") or "")[:80],
+        "notice_message_id": int(notice.get("message_id") or 0),
     }
 
 
@@ -526,6 +531,9 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "telegram_companion_last_callback_data": telegram["last_callback_data"],
         "telegram_companion_last_callback_received_at": telegram["last_callback_received_at"],
         "telegram_companion_last_callback_handled_at": telegram["last_callback_handled_at"],
+        "telegram_companion_notice_kind": telegram["notice_kind"],
+        "telegram_companion_notice_sent_at": telegram["notice_sent_at"],
+        "telegram_companion_notice_message_id": telegram["notice_message_id"],
         "telegram_companion_error_class": telegram["error_class"],
         "telegram_companion_error_detail": telegram["error_detail"],
         "telegram_companion_consecutive_failures": telegram["consecutive_failures"],
@@ -1646,11 +1654,60 @@ def apply_nexus_bootstrap_delivery(auto_launch: bool = True, explicit_human_retr
     with NEXUS_BOOTSTRAP_LOCK:
         if explicit_human_retry:
             prior = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
-            if str(prior.get("state") or "") != "HUMAN_AUTH_REQUIRED":
+            prior_state = str(prior.get("state") or "")
+            receipt = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
+            receipt_state = str(receipt.get("status") or receipt.get("state") or "")
+
+            # A transient manifest/DNS failure must not erase an already-proven
+            # Cloudflare human gate. Recover it from the durable receipt.
+            if prior_state != "HUMAN_AUTH_REQUIRED" and receipt_state == "HUMAN_AUTH_REQUIRED":
+                prior = dict(prior)
+                prior.update({
+                    "state": "HUMAN_AUTH_REQUIRED",
+                    "bundle_version": str(prior.get("bundle_version") or receipt.get("bundle_version") or ""),
+                    "recovered_human_gate_from_receipt": True,
+                    "updated_at": utc_now(),
+                })
+                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, prior)
+                prior_state = "HUMAN_AUTH_REQUIRED"
+
+            # If the last state was only a network-stage failure and no durable
+            # human gate exists, retry staging once now. If the network is still
+            # unavailable, return a truthful automatic-recovery state instead
+            # of the misleading NO_HUMAN_AUTH_RETRY_NEEDED result.
+            if prior_state != "HUMAN_AUTH_REQUIRED":
+                prior_error = str(prior.get("error_class") or prior.get("last_stage_check_error_class") or "")
+                if prior_state == "STAGE_FAILED" and prior_error in {
+                    "DNS_RESOLUTION_FAILED", "OUTBOUND_TIMEOUT", "TLS_FAILURE", "CONNECTION_REFUSED"
+                }:
+                    try:
+                        result = _apply_nexus_bootstrap_delivery_locked(auto_launch=auto_launch)
+                        result["network_recovery_retry"] = True
+                        return result
+                    except Exception as exc:
+                        error_class, error_detail = _transport_error_detail(exc)
+                        preserved = dict(prior)
+                        preserved.update({
+                            "schema": "bcp.nexus_bootstrap_delivery/1",
+                            "state": "STAGE_FAILED",
+                            "last_stage_check_state": "STAGE_FAILED",
+                            "last_stage_check_error_class": error_class,
+                            "last_stage_check_error": error_detail,
+                            "updated_at": utc_now(),
+                            "spend_usd": 0.0,
+                        })
+                        atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, preserved)
+                        return {
+                            "ok": True,
+                            "result": "NETWORK_RECOVERY_PENDING",
+                            "state": "STAGE_FAILED",
+                            "error_class": error_class,
+                            "automatic_retry": True,
+                        }
                 return {
                     "ok": True,
                     "result": "NO_HUMAN_AUTH_RETRY_NEEDED",
-                    "state": str(prior.get("state") or ""),
+                    "state": prior_state,
                     "bundle_version": str(prior.get("bundle_version") or ""),
                 }
             archived = _archive_nexus_auth_receipt("EXPLICIT_FRESH_DEVICE_FLOW_RETRY")
@@ -1994,15 +2051,22 @@ def start_auto_update_worker(http_server, bind: str, port: int) -> None:
                 apply_nexus_bootstrap_delivery(auto_launch=True)
             except Exception as nexus_error:
                 error_class, error_detail = _transport_error_detail(nexus_error)
-                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, {
+                prior_nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
+                failed = dict(prior_nexus)
+                failed.update({
                     "schema": "bcp.nexus_bootstrap_delivery/1",
-                    "state": "STAGE_FAILED",
-                    "bundle_version": "",
                     "updated_at": utc_now(),
-                    "error_class": error_class,
-                    "error": error_detail,
+                    "last_stage_check_state": "STAGE_FAILED",
+                    "last_stage_check_error_class": error_class,
+                    "last_stage_check_error": error_detail,
                     "spend_usd": 0.0,
                 })
+                if str(failed.get("state") or "") in ("", "NONE"):
+                    failed["state"] = "STAGE_FAILED"
+                    failed["bundle_version"] = str(failed.get("bundle_version") or "")
+                    failed["error_class"] = error_class
+                    failed["error"] = error_detail
+                atomic_json(NEXUS_BOOTSTRAP_STATE_PATH, failed)
                 mirror_telemetry_status("NEXUS_BOOTSTRAP_UPDATE_FAILED", {
                     "status": "DEGRADED",
                     "update_result": type(nexus_error).__name__,
