@@ -31,7 +31,8 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.7.14"
+EDGE_RELAY_STATE_PATH = STATE_DIR / "edge_relay.json"
+SERVER_VERSION = "0.7.15"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -94,6 +95,55 @@ def private_or_loopback(addr: str) -> bool:
         return bool(a.is_private or a.is_loopback or a.is_link_local)
     except Exception:
         return False
+
+
+def edge_relay_status(now_epoch: int | None = None) -> dict:
+    now = int(time.time()) if now_epoch is None else int(now_epoch)
+    raw = read_json(EDGE_RELAY_STATE_PATH, {}) or {}
+    expires = int(raw.get("expires_epoch") or 0)
+    active = bool(
+        raw.get("relay_host")
+        and int(raw.get("relay_port") or 0) == 8876
+        and raw.get("capability") == "HTTPS_CONNECT_TELEGRAM"
+        and expires > now
+    )
+    return {
+        "schema": "bcp.edge_relay_registration/1",
+        "active": active,
+        "relay_host": str(raw.get("relay_host") or "") if active else "",
+        "relay_port": int(raw.get("relay_port") or 0) if active else 0,
+        "capability": str(raw.get("capability") or ""),
+        "edge_version": str(raw.get("edge_version") or ""),
+        "registered_at": str(raw.get("registered_at") or ""),
+        "expires_epoch": expires,
+        "expires_in_seconds": max(0, expires - now),
+    }
+
+
+def register_edge_relay(remote_ip: str, body: dict) -> dict:
+    if not private_or_loopback(remote_ip):
+        raise ValueError("edge_relay_requires_private_lan")
+    port = int(body.get("port") or 0)
+    capability = str(body.get("capability") or "").strip()
+    ttl = max(60, min(int(body.get("ttl_seconds") or 300), 600))
+    if port != 8876:
+        raise ValueError("edge_relay_port_not_allowed")
+    if capability != "HTTPS_CONNECT_TELEGRAM":
+        raise ValueError("edge_relay_capability_not_allowed")
+    now = int(time.time())
+    rec = {
+        "schema": "bcp.edge_relay_registration/1",
+        "relay_host": remote_ip,
+        "relay_port": port,
+        "capability": capability,
+        "edge_version": str(body.get("edge_version") or "")[:80],
+        "registered_at": utc_now(),
+        "registered_epoch": now,
+        "expires_epoch": now + ttl,
+        "ttl_seconds": ttl,
+    }
+    atomic_json(EDGE_RELAY_STATE_PATH, rec)
+    return {"ok": True, **edge_relay_status(now)}
 
 
 def read_json(path: Path, default=None):
@@ -501,6 +551,7 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
     nexus = read_json(NEXUS_BOOTSTRAP_STATE_PATH, {}) or {}
     chat = chatgpt_pc_status()
     telegram = telegram_companion_runtime_status()
+    edge_relay = edge_relay_status()
     resources = windows_resource_status()
     mission_watchdog = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
     resume_request = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
@@ -539,6 +590,12 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "telegram_companion_consecutive_failures": telegram["consecutive_failures"],
         "telegram_companion_update_state": telegram["update_state"],
         "telegram_companion_target_version": telegram["target_version"],
+        "edge_relay_active": edge_relay["active"],
+        "edge_relay_host": edge_relay["relay_host"],
+        "edge_relay_port": edge_relay["relay_port"],
+        "edge_relay_capability": edge_relay["capability"],
+        "edge_relay_edge_version": edge_relay["edge_version"],
+        "edge_relay_expires_in_seconds": edge_relay["expires_in_seconds"],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],
@@ -4285,6 +4342,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(401, {"error": "unauthorized"})
             return
 
+        if path == "/v1/edge/relay":
+            self.send_json(200, {"ok": True, **edge_relay_status()})
+            return
+
         if path == "/v1/system/chatgpt-pc":
             try:
                 self.send_json(200, chatgpt_pc_status())
@@ -4552,6 +4613,16 @@ class Handler(BaseHTTPRequestHandler):
 
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/v1/edge/relay/register":
+            try:
+                body = self.read_json()
+                self.send_json(200, register_edge_relay(self.remote_ip(), body))
+            except ValueError as e:
+                self.send_json(400, {"ok": False, "error": "edge_relay_registration_rejected", "detail": str(e)[:240]})
+            except Exception as e:
+                self.send_json(500, {"ok": False, "error": "edge_relay_registration_failed", "detail": str(e)[:240]})
             return
 
         if path == "/v1/system/chatgpt-pc/recover":

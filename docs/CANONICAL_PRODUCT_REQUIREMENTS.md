@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R62
+Revision: 2026-09-21-R64
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1837,3 +1837,49 @@ The communication plane MUST therefore:
 Target coordinated release:
 - BCP server **0.7.14**;
 - Telegram companion **2026.09.21-comms-autonomy-v20**.
+
+## P0 — R64 dedicated B-EDGE adaptive communications plane
+
+The dedicated old Android phone is infrastructure. It MUST be used as a real B-EDGE continuity/relay node and MUST NOT regress to a passive telemetry client.
+
+Field topology is uplink-agnostic and MUST NOT assume a SIM in B-EDGE:
+- B-EDGE may obtain Internet through home Wi-Fi or another Wi-Fi uplink such as the user's temporary hotspot;
+- PC<->B-EDGE uses the best qualified local path and MUST continue local store-and-forward even when neither node has Internet;
+- loss of the user's temporary hotspot MUST NOT erase project state, queue entries, receipts, checkpoints or communication intents;
+- without any Internet uplink, remote Telegram delivery is truthfully `NETWORK_WAIT`; it is queued, never fabricated;
+- a future Bluetooth/Companion/Wi-Fi-Direct local path may preserve PC<->B-EDGE reachability when no common LAN exists, but it is not FIELD_VERIFIED until exercised on the real devices.
+
+### Selective low-data relay
+
+When direct PC->Telegram transport is degraded and B-EDGE has a validated Internet uplink, B-EDGE SHALL be eligible to relay only the tiny Telegram control plane before any broader traffic is considered.
+
+R64 baseline relay contract:
+- PC discovers/registers the paired B-EDGE relay over the authenticated local BCP channel;
+- relay registration is short-lived and bound to the observed private-LAN source address;
+- B-EDGE accepts authenticated HTTP CONNECT only for `api.telegram.org:443`;
+- TLS remains end-to-end PC<->Telegram; B-EDGE does not receive the Telegram bot token or message payload in plaintext;
+- proxy authentication uses the existing paired BCP credential, never the Telegram token;
+- the relay has bounded concurrent connections, connect timeout and idle timeout;
+- GitHub, Drive, APK/ZIP/PDF and other bulk traffic are forbidden from this control-only relay unless a later separately qualified policy explicitly allows them;
+- direct Telegram is attempted normally; B-EDGE relay is a transport failover on direct network errors;
+- relay liveness/expiry is externalized in BCP runtime telemetry;
+- when B-EDGE has no usable uplink, messages remain durable and retry on network return.
+
+### Data-saver invariant
+
+A metered/mobile path MUST change policy, not merely network address:
+- heavy downloads/build sync/update artifacts are deferred unless explicitly required;
+- compact control messages, receipts and state deltas have priority;
+- unchanged-version downloads remain zero;
+- PC and B-EDGE caches are preferred over remote re-fetch;
+- the user's current phone is not required to remain present for correctness.
+
+### Promotion gate
+
+No R64 user-facing install/update may be requested until:
+1. Android unit/lint/build and emulator human-action simulation pass on the exact candidate head;
+2. relay allowlist/authentication/expiry negative controls pass;
+3. Windows Telegram fallback contract passes without exposing the bot token to B-EDGE;
+4. server registration accepts only authenticated private-LAN B-EDGE state;
+5. CURRENT/server/Android/Telegram versions and hashes are coordinated;
+6. field installation/readback proves the signed B-EDGE runtime before the relay is represented as FIELD_ACTIVE.

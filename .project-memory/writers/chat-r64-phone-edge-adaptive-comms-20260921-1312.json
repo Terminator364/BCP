@@ -1,0 +1,28 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r64-phone-edge-adaptive-comms-20260921-1312",
+  "project_or_mission": "API/BCP R64 dedicated B-EDGE adaptive communications",
+  "base_main_sha": "e76fd72d24c72bdc48ef1847175329a9bb1bb8c5",
+  "created_at": "2026-09-21T13:12:00+01:00",
+  "intended_file_scope": [
+    "android-b-edge/**",
+    "windows/bcp_server.py",
+    "windows/bcp_telegram_observability.py",
+    "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "docs/*EDGE*",
+    "docs/*TELEGRAM*",
+    ".project-memory/**",
+    "release/**",
+    "tools/**",
+    ".github/workflows/**",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Coordinated Product Qualification",
+    "BCP Android Human-Action Simulation",
+    "BCP Field Ecosystem Preflight",
+    "BCP Telegram Observability Qualification"
+  ]
+}
