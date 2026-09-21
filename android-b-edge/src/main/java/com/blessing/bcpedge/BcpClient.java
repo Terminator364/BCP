@@ -45,6 +45,7 @@ public final class BcpClient {
     }
     public JSONArray projectRegistry() { return orchestrator.projectRegistry(); }
     public String getEdgeVersion() { return EDGE_VERSION; }
+    static String edgeVersionForTelemetry() { return EDGE_VERSION; }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
 
     public JSONObject observePcSentinel(boolean reachable) {
