@@ -78,7 +78,7 @@ jobs:
           assert f'versionName "{name}"' in gradle, 'versionName drift'
           assert f'private static final String EDGE_VERSION = "{core}";' in client, 'EDGE_VERSION drift'
           PY
-          grep -F 'BCP Edge Evergreen' "$MANIFEST" >/dev/null
+          grep -F 'BCP Edge Server' "$MANIFEST" >/dev/null
           grep -F '0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617' "$UPDATE" >/dev/null
           grep -F '/v1/edge/update' "$UPDATE" >/dev/null
           grep -F '/v1/edge/update/apk' "$UPDATE" >/dev/null
