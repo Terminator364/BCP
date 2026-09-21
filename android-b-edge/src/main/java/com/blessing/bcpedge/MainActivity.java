@@ -177,6 +177,8 @@ public class MainActivity extends Activity {
 
             JSONObject storage = client.contentStoreStatus();
             JSONObject net = EdgeNetworkState.snapshot(this);
+            JSONObject route = client.routeStatus();
+            JSONObject comms = client.communicationStatus();
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
@@ -185,9 +187,12 @@ public class MainActivity extends Activity {
                             + "\nCache privé téléphone: " + usedMiB + " MiB / " + quotaGiB + " GiB"
                             + "\nRéseau: " + net.optString("transport", "AUCUN")
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
+                            + "\nRoute BCP: " + route.optString("preferred_route", "STORE_AND_FORWARD")
+                            + "\nJournal communication: " + comms.optInt("entries_current_segment", 0) + " événements"
                             + "\nLAN/API + NSD: actif"
                             + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
-                            + "\nStore-and-forward: actif");
+                            + "\nStore-and-forward: actif"
+                            + "\nCahier produit: A+B+C");
         } catch (Exception ignored) {}
     }
 
