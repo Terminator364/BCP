@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R65
+Revision: 2026-09-21-R66
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1932,3 +1932,37 @@ For each material human-facing checkpoint or alert:
 - ChatGPT/platform interruption is never mission completion.
 
 The user MUST NOT need to send “eh oh”, screenshots, IPs, logs or repeated install attempts merely to cause a checkpoint or communication retry.
+
+
+## P0 — Phone-primary communications and local API — R66
+
+The dedicated old Android phone MUST be treated as a first-class low-power BCP server node, not merely as a passive client or secondary telemetry screen.
+
+Concrete R66 duties:
+- keep an authenticated private-LAN phone API available independently of PC Internet;
+- expose phone-local project registry, cached context, memory and pending-job state;
+- accept idempotent durable resume intents while the PC is unavailable and replay/synchronize them when the PC returns;
+- own compact outbound communication liveness independently of the Windows Telegram worker when local Telegram credentials and a validated phone uplink exist;
+- emit bounded phone-node startup, PC lost/recovered, uplink recovered and sparse alive notices without spam;
+- retain Room/SQLite store-and-forward state through PC/network outages;
+- remain useful with no SIM in the dedicated phone;
+- keep Windows as the heavy/fenced worker for Windows-only duties rather than as the sole continuity authority.
+
+Transport expansion order is capability-driven:
+1. existing shared LAN/hotspot;
+2. Wi-Fi Direct or Wi-Fi Aware when exact hardware/API support is proven;
+3. LocalOnlyHotspot where routerless local networking is useful;
+4. Bluetooth/BLE companion lane for bootstrap/control;
+5. USB recovery/bootstrap lane;
+6. optional Device Owner / fully-managed hardening only after explicit human approval and provisioning-impact review.
+
+Do not run two concurrent Telegram `getUpdates` pollers against the same bot token. If inbound ownership later moves to the phone, introduce an explicit durable poller-ownership lease with PHONE_PRIMARY / PC_FALLBACK fencing.
+
+The phone's app-private storage SHOULD progressively host bounded content-addressed recovery/cache artifacts, project context, receipts and manifests to reduce repeated downloads. Large prefetch is forbidden on metered uplinks unless explicitly justified; hashes/signatures and eviction policy remain mandatory.
+
+## P0 — BCP Gmail classification — R66
+
+Every BCP START/END email MUST:
+- use subject prefix `[BCP]`;
+- carry Gmail label `BCP` after provider send acknowledgement;
+- retry label application without sending a duplicate email if labeling fails.
