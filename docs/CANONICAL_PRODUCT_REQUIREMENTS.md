@@ -1791,3 +1791,21 @@ For the current Nexus authorization path, qualification includes both the server
 Normal interactive technical work uses a ~25-minute useful-work tranche: target 25 minutes, with approximately the final minute reserved for durable checkpoint/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. The full checkpoint is sent by email first; ChatGPT then shows only the short Gmail/date-time/checkpoint pointer after confirmed mail delivery.
 
 The durable `project_state.json` must expose the currently active cadence and simulation-gate policy so a fresh `BCPGO BCP` recovery cannot regress to a superseded 5–7 or 8–10 minute rule or ask the user to repeat an unqualified action path.
+
+
+## P0 — Gmail START/END tranche handshake — R59
+
+For every user-invoked active technical tranche where Gmail is available:
+
+- a **START** email MUST be sent before substantive project work begins; only minimal routing/context lookup needed to identify the active project is allowed before this message;
+- the START email MUST include project, Kinshasa-local day/date/time, tranche target, and work scope;
+- the normal tranche target remains approximately 25 minutes;
+- at the end, a **full END checkpoint** MUST be sent by Gmail before any user-visible ChatGPT completion response;
+- after successful END mail delivery, ChatGPT MUST be pointer-only: “Va sur Gmail” + Kinshasa-local day/date/time + checkpoint identifier;
+- detailed work results MUST NOT be duplicated into the ChatGPT app after the mail succeeds;
+- START-mail failure blocks substantive work; END-mail failure creates an explicit delivery hold and MUST NOT be reported as a completed checkpoint.
+
+Canonical machine policies:
+- `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`
+- `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`
+- `.project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json`
