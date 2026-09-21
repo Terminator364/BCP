@@ -10,6 +10,8 @@ import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 
+import org.json.JSONObject;
+
 import androidx.annotation.Nullable;
 import androidx.core.app.ServiceCompat;
 
@@ -70,8 +72,11 @@ public final class EdgeRelayService extends Service {
         registration.scheduleWithFixedDelay(() -> {
             try {
                 BcpClient client = new BcpClient(EdgeRelayService.this);
-                client.registerEdgeRelay();
+                JSONObject relay = client.registerEdgeRelay();
+                boolean pcReachable = relay.optBoolean("ok", false);
+                client.observePcSentinel(pcReachable);
                 EdgeLocalExecutor.drain(EdgeRelayService.this, client);
+                new EdgeCommunicationWatchdog(EdgeRelayService.this).tick(client, pcReachable);
             } catch (Throwable ignored) {}
         }, 1, 120, TimeUnit.SECONDS);
         mark("STARTING", "");
