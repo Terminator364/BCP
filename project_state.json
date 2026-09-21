@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R71_COMMUNICATION_SURVIVAL_FULL_NODE_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R71 communication-survival fabric is implemented on the active full-node branch. Gmail START/END+ACK and 30-minute watchdog are durable; BCPGO cold recovery now loads communication survival policy; a detailed private Drive recovery document exists; Telegram now persists whether the working path was direct, B-EDGE relay, or no route, and BCP external telemetry exports that proof. BCP server candidate advanced to 0.7.16 and Telegram companion to communication-survival V22. Android manifest coarse/fine location lint contract was repaired rather than suppressed.",
-  "next_action": "Finish exact-head PR #138 CI. Automatically repair any remaining full-node/communication failures. Do not request another phone install until the coherent 2.2.0 full-node candidate is exact-head green, signed with the pinned Evergreen identity (v2/v3), published to Drive CURRENT with exact hash readback, and production-critical transport/security gaps are closed or explicitly classified nonblocking.",
+  "status": "R71_MERGED_POSTMERGE_FIELD_CONVERGENCE_PENDING",
+  "last_completed_atomic_action": "PR #138 merged to main at ed67963c97130078b1442c8b369fbe6fb41f19a2 after all 12 critical workflows passed on exact head d00deaff968bb10df7d87c0a959d03ed4d3faf43. Main readback confirms BCP 0.7.16, Telegram communication-survival V22, R71 communication policy, 30-minute Gmail START/END cadence, BCPGO cold recovery, and the global exact-head qualification trigger.",
+  "next_action": "Observe post-merge CI and machine-readable field convergence. Verify MBMPC auto-updates to BCP 0.7.16 and Telegram companion V22, with telegram_transport_route proving DIRECT_TELEGRAM, B_EDGE_RELAY, or no route. Keep installed phone B-EDGE 2.1.2 until the 2.2.0 full-node APK is Evergreen-signed v2/v3 and Drive CURRENT is replaced/read back by exact hash; then request one coherent in-place install, not another micro-beta.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2418,7 +2418,7 @@
     "coordinated_server_version": "0.7.16"
   },
   "r71_communication_survival": {
-    "status": "IMPLEMENTED_CANDIDATE_CI",
+    "status": "MERGED_MAIN_FIELD_CONVERGENCE_PENDING",
     "revision": "2026-09-21-R71",
     "continuation_code": "BCPGO BCP",
     "tranche_target_minutes": 30,
@@ -2437,6 +2437,12 @@
     "telegram_route_receipt": "state/telegram_transport_route.json",
     "external_route_readback": true,
     "private_recovery_document": "API_BCP/03_DOCUMENTATION/BCP — PLAN DE SECOURS COMMUNICATION & REPRISE R71",
-    "research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md"
+    "research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
+    "merge_sha": "ed67963c97130078b1442c8b369fbe6fb41f19a2",
+    "exact_head_sha": "d00deaff968bb10df7d87c0a959d03ed4d3faf43",
+    "exact_head_all_critical_ci": "PASS",
+    "field_server_target": "0.7.16",
+    "field_telegram_target": "2026.09.21-comms-survival-v22",
+    "phone_full_node_install_gate": "NOT_YET_PUBLISHED_SIGNED_CURRENT"
   }
 }
