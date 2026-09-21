@@ -7,8 +7,8 @@
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
-  "coordinated_edge_version": "2.1.3-rc1-full-node-evergreen",
-  "requirements_revision": "2026-09-21-R65",
-  "release_train": "BCP-0.7.16_EDGE-2.1.3-candidate_NEXUS-0.2.6",
-  "notes": "BCP 0.7.16 learns the authenticated B-EDGE full-node endpoint registration (TCP/8877) and phone store-and-forward capability while preserving the 0.7.15 Telegram TLS relay."
+  "coordinated_edge_version": "2.1.4-rc1-phone-primary-comms-evergreen",
+  "requirements_revision": "2026-09-21-R66",
+  "release_train": "BCP-0.7.16_EDGE-2.1.4-candidate_NEXUS-0.2.6",
+  "notes": "BCP 0.7.16 coordinates the R66 phone-primary B-EDGE node: authenticated local project/context API, durable resume intents, phone-owned Telegram liveness, and store-and-forward while preserving the 0.7.15 selective TLS relay."
 }
