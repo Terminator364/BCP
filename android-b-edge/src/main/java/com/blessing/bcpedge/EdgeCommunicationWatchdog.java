@@ -11,9 +11,6 @@ import org.json.JSONObject;
  */
 public final class EdgeCommunicationWatchdog {
     private static final String PREFS = "bcp_edge_comm_watchdog";
-    private static final long STARTUP_NOTICE_MIN_MS = 6L * 60L * 60L * 1000L;
-    private static final long ALIVE_NOTICE_MS = 90L * 60L * 1000L;
-
     private final Context context;
     private final SharedPreferences prefs;
 
@@ -38,33 +35,26 @@ public final class EdgeCommunicationWatchdog {
 
             boolean telegramReady = telegram.configured()
                     && network.optBoolean("validated_internet", false);
-            String noticeKind = "";
-            String message = "";
-
             long lastStartup = prefs.getLong("last_startup_notice_at", 0L);
             long lastAlive = prefs.getLong("last_alive_notice_at", 0L);
-
-            if (telegramReady && (lastStartup == 0L || now - lastStartup >= STARTUP_NOTICE_MIN_MS)) {
-                noticeKind = "PHONE_NODE_ONLINE";
+            String noticeKind = EdgeCommunicationPolicy.chooseNotice(
+                    now, telegramReady, pcReachable, previousPc, networkState, previousNetwork,
+                    network.optBoolean("validated_internet", false), lastStartup, lastAlive);
+            String message = "";
+            if ("PHONE_NODE_ONLINE".equals(noticeKind)) {
                 message = "🟢 B-EDGE actif · téléphone serveur opérationnel · PC "
                         + (pcReachable ? "joignable" : "hors ligne")
                         + " · réseau " + network.optString("transport", "inconnu");
-            } else if (telegramReady && !"UNKNOWN".equals(previousPc) && !previousPc.equals(pcState)) {
-                noticeKind = pcReachable ? "PC_RECONNECTED" : "PC_UNREACHABLE";
-                message = pcReachable
-                        ? "🟢 BCP : PC retrouvé par le téléphone serveur. File locale en reprise."
-                        : "🟠 BCP : PC non joignable. Le téléphone serveur reste actif et conserve la file.";
-            } else if (telegramReady && !"UNKNOWN".equals(previousNetwork)
-                    && !previousNetwork.equals(networkState)
-                    && network.optBoolean("validated_internet", false)) {
-                noticeKind = "PHONE_UPLINK_RECOVERED";
+            } else if ("PC_RECONNECTED".equals(noticeKind)) {
+                message = "🟢 BCP : PC retrouvé par le téléphone serveur. File locale en reprise.";
+            } else if ("PC_UNREACHABLE".equals(noticeKind)) {
+                message = "🟠 BCP : PC non joignable. Le téléphone serveur reste actif et conserve la file.";
+            } else if ("PHONE_UPLINK_RECOVERED".equals(noticeKind)) {
                 message = "🟢 B-EDGE : accès Internet revenu sur le téléphone serveur · "
                         + network.optString("transport", "réseau") + ".";
-            } else if (telegramReady && (lastAlive == 0L || now - lastAlive >= ALIVE_NOTICE_MS)) {
-                noticeKind = "PHONE_NODE_ALIVE";
+            } else if ("PHONE_NODE_ALIVE".equals(noticeKind)) {
                 message = "🟢 B-EDGE vivant · PC " + (pcReachable ? "joignable" : "hors ligne")
-                        + " · file locale conservée · "
-                        + network.optString("transport", "réseau");
+                        + " · file locale conservée · " + network.optString("transport", "réseau");
             }
 
             long messageId = 0L;
