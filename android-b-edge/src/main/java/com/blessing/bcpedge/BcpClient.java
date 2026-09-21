@@ -221,25 +221,118 @@ public final class BcpClient {
         String naturalKey = getProject() + "\n" + type + "\n" + provider + "\n" + sourceKind;
         String capabilityId = "cap-" + sha256Hex(naturalKey).substring(0, 32);
 
+        String metadataHash = sha256Hex(metadataJson);
+        EdgeCapabilityEntity previous =
+                EdgeDatabase.get(context).edgeDao().capabilityById(capabilityId);
         EdgeCapabilityEntity row = new EdgeCapabilityEntity(
                 capabilityId, getProject(), type, provider, sourceKind, state, evidence,
-                endpointHint, metadataJson, sha256Hex(metadataJson), observedAt, now, expiresAt);
+                endpointHint, metadataJson, metadataHash, observedAt, now, expiresAt);
         EdgeDatabase.get(context).edgeDao().putCapability(row);
 
-        JSONObject event = new JSONObject();
-        event.put("capability_id", capabilityId);
-        event.put("capability_type", type);
-        event.put("provider", provider);
-        event.put("availability_state", state);
-        event.put("evidence_class", evidence);
-        appendLocalEvent("CAPABILITY_OBSERVED", event, "OBSERVED",
-                "capability:" + capabilityId + ":" + now);
+        boolean changed = previous == null
+                || !state.equals(previous.availabilityState)
+                || !evidence.equals(previous.evidenceClass)
+                || !metadataHash.equals(previous.metadataSha256)
+                || !endpointHint.equals(previous.endpointHint);
+        if (changed) {
+            JSONObject event = new JSONObject();
+            event.put("capability_id", capabilityId);
+            event.put("capability_type", type);
+            event.put("provider", provider);
+            event.put("availability_state", state);
+            event.put("evidence_class", evidence);
+            appendLocalEvent("CAPABILITY_OBSERVED", event, "OBSERVED",
+                    "capability:" + capabilityId + ":" + metadataHash + ":" + state);
+        }
 
         JSONObject out = capabilityJson(row);
         out.put("ok", true);
-        out.put("result", "CAPABILITY_DURABLE");
+        out.put("result", changed ? "CAPABILITY_DURABLE_CHANGED" : "CAPABILITY_REFRESHED");
+        out.put("changed", changed);
         out.put("authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY");
         return out;
+    }
+
+    public JSONObject refreshBuiltinCapabilities() {
+        JSONObject out = new JSONObject();
+        JSONArray receipts = new JSONArray();
+        try {
+            JSONObject net = EdgeNetworkState.snapshot(context);
+            JSONObject resources = EdgeResourceGovernor.snapshot(context);
+
+            receipts.put(observeBuiltinCapability(
+                    "LOCAL_API_SERVER", "B-EDGE", "PHONE_LOCAL",
+                    "AVAILABLE", "LOCAL_PROBE", "127.0.0.1:" + EdgeRelayPolicy.RELAY_PORT,
+                    new JSONObject().put("port", EdgeRelayPolicy.RELAY_PORT)
+                            .put("server_mode_enabled", true)
+                            .put("transport", net.optString("transport", "UNKNOWN"))));
+
+            receipts.put(observeBuiltinCapability(
+                    "LOCAL_ALLOWLISTED_EXECUTOR", "B-EDGE", "PHONE_LOCAL",
+                    "AVAILABLE", "LOCAL_PROBE", "local",
+                    new JSONObject().put("arbitrary_shell", false)
+                            .put("kinds", new JSONArray()
+                                    .put("LOCAL_CONTEXT_SNAPSHOT")
+                                    .put("LOCAL_HEALTH_SNAPSHOT")
+                                    .put("LOCAL_QUEUE_SUMMARY")
+                                    .put("LOCAL_MEMORY_COMPACT"))));
+
+            receipts.put(observeBuiltinCapability(
+                    "DURABLE_STORE_FORWARD", "B-EDGE", "PHONE_LOCAL",
+                    "AVAILABLE", "LOCAL_PROBE", "room://edge",
+                    new JSONObject().put("pending_jobs", orchestrator.pendingCount())
+                            .put("mode", orchestrator.getMode())));
+
+            String pcState = (getServer().isEmpty() || getToken().isEmpty())
+                    ? "WAITING_AUTH" : "AVAILABLE";
+            receipts.put(observeBuiltinCapability(
+                    "PC_HEAVY_WORKER", "MBMPC", "PAIRED_PC",
+                    pcState, "CONFIGURED", getServer(),
+                    new JSONObject().put("paired", !getToken().isEmpty())
+                            .put("server_known", !getServer().isEmpty())));
+
+            receipts.put(observeBuiltinCapability(
+                    "TELEGRAM_CONNECT_RELAY", "api.telegram.org", "PHONE_EGRESS",
+                    net.optBoolean("connected", false) ? "AVAILABLE" : "DEGRADED",
+                    "LOCAL_PROBE", "api.telegram.org:443",
+                    new JSONObject().put("tls_end_to_end", true)
+                            .put("proxy_scope", "api.telegram.org:443")
+                            .put("network", net)));
+
+            receipts.put(observeBuiltinCapability(
+                    "RESOURCE_GOVERNOR", "B-EDGE", "PHONE_LOCAL",
+                    "AVAILABLE", "LOCAL_PROBE", "local",
+                    resources));
+
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("refreshed", receipts.length());
+            out.put("receipts", receipts);
+            out.put("registry", localCapabilityRegistry(64, ""));
+        } catch (Exception ex) {
+            try {
+                out.put("ok", false);
+                out.put("error", ex.getClass().getSimpleName());
+                out.put("receipts", receipts);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    private JSONObject observeBuiltinCapability(String type, String provider, String sourceKind,
+                                                String availability, String evidence,
+                                                String endpointHint, JSONObject metadata)
+            throws Exception {
+        JSONObject body = new JSONObject();
+        body.put("capability_type", type);
+        body.put("provider", provider);
+        body.put("source_kind", sourceKind);
+        body.put("availability_state", availability);
+        body.put("evidence_class", evidence);
+        body.put("endpoint_hint", endpointHint == null ? "" : endpointHint);
+        body.put("metadata", metadata == null ? new JSONObject() : metadata);
+        body.put("ttl_ms", 10L * 60L * 1000L);
+        return observeLocalCapability(body);
     }
 
     public JSONObject localCapabilityRegistry(int requestedLimit, String requestedType) {
