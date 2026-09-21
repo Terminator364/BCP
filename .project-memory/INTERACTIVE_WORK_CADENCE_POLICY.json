@@ -54,7 +54,13 @@
     "close_reserve_minutes": 2,
     "end_email_before_chat_pointer": true,
     "end_email_retry_until_provider_ack": true,
-    "chat_output_before_end_ack_forbidden": true
+    "chat_output_before_end_ack_forbidden": true,
+    "user_visible_target_minutes": [
+      23,
+      25
+    ],
+    "normal_closeout_begins_minute": 23,
+    "absolute_end_target_minute": 25
   },
   "useful_work_target_minutes": 23,
   "normal_close_reserve_minutes": 2,
