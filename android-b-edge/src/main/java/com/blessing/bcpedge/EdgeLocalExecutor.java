@@ -18,10 +18,6 @@ public final class EdgeLocalExecutor {
             EdgeTelegramSender telegram = new EdgeTelegramSender(context);
             JSONObject network = EdgeConnectivity.snapshot(context);
 
-            if (!telegram.configured() && !client.getServer().isEmpty() && !client.getToken().isEmpty()) {
-                telegram.bootstrapFromPairedPc(client);
-            }
-
             JSONArray jobs = orchestrator.pendingJobs(client.getProject());
             for (int i = 0; i < jobs.length() && attempted < 24; i++) {
                 JSONObject job = jobs.optJSONObject(i);
