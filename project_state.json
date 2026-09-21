@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R68_SIGNED_BEDGE_2_1_2_DISTRIBUTED_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "Signed B-EDGE 2.1.2 exact main source artifact with the pinned Evergreen certificate, verified APK Signature Scheme v2/v3, replaced stable Drive BCP_EDGE_CURRENT.apk in place, read back exact bytes/hash, preserved the previous 2.1.0 APK as rollback, and synchronized release/current + continuity candidate metadata.",
-  "next_action": "Open/qualify the R68 PR on exact head. If required CI passes, reread main and writer fence, merge with expected head SHA, verify main readback, then expose one in-place B-EDGE 2.1.2 install action and field-verify version/pairing/foreground relay/registration/Telegram round-trip.",
+  "status": "R68_MERGED_INSTALLABLE_BEDGE_2_1_2_FIELD_INSTALL_READY",
+  "last_completed_atomic_action": "R68 exact-head CI passed on head 4196c0ac93cc6442d460a4b79bb2c8afa7fbc060; PR #136 merged to main at 546c5d4042660e80a60fa10eff0d760301e48bdc. Main readback confirms signed B-EDGE 2.1.2 CURRENT metadata, server 0.7.15 coordination, phone-primary Edge continuity, BCP Gmail label policy, exact stable Drive APK SHA and rollback evidence.",
+  "next_action": "Human field gate is now one in-place installation of API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk over the existing BCP Edge app. Do not uninstall. After install, field-verify version 2.1.2, pairing continuity, foreground relay notification/service, relay registration readback and one Telegram round-trip; auto-fix any failure before asking for repeated user actions.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2263,7 +2263,7 @@
     "field_verified": false
   },
   "current_installable_edge_release": {
-    "status": "SIGNED_DISTRIBUTED_FIELD_RUNTIME_UNVERIFIED",
+    "status": "SIGNED_DISTRIBUTED_MERGED_INSTALL_READY_FIELD_RUNTIME_UNVERIFIED",
     "version_code": 212,
     "version_name": "2.1.2-rc1-edge-relay-evergreen",
     "package_id": "com.blessing.bcpedge.evergreen",
@@ -2278,10 +2278,15 @@
     "drive_readback": "PASS",
     "rollback_drive_file_id": "1_AO0vZSw-ERbhYDzKAjbN-9AfYoqFsrr",
     "install_mode": "IN_PLACE_NO_UNINSTALL",
-    "field_verified": false
+    "field_verified": false,
+    "r68_exact_head_ci": "PASS_ALL_REQUIRED",
+    "r68_exact_head_sha": "4196c0ac93cc6442d460a4b79bb2c8afa7fbc060",
+    "r68_merge_sha": "546c5d4042660e80a60fa10eff0d760301e48bdc",
+    "user_action_ready": true,
+    "user_action": "INSTALL_IN_PLACE_OVER_EXISTING_APP"
   },
   "r68_phone_primary_node": {
-    "status": "CANONICAL_CANDIDATE",
+    "status": "MERGED_FIELD_INSTALL_GATE",
     "dedicated_phone_role": "PRIMARY_EDGE_SERVER_NODE",
     "pc_role": "WINDOWS_AND_HEAVY_COMPUTE_NODE_NOT_SOLE_COMMS_CENTER",
     "sim_required": false,
@@ -2309,6 +2314,10 @@
     "chatgpt_pointer_only_after_end_ack": true,
     "end_watchdog_fail_safe": true,
     "current_branch": "work/bcp/r68-bedgerelease-continuity-20260921-1524",
-    "base_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3"
+    "base_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3",
+    "merge_sha": "546c5d4042660e80a60fa10eff0d760301e48bdc",
+    "exact_head_sha": "4196c0ac93cc6442d460a4b79bb2c8afa7fbc060",
+    "exact_head_ci": "PASS_ALL_REQUIRED",
+    "current_human_gate": "INSTALL_BEDGE_2_1_2_IN_PLACE"
   }
 }
