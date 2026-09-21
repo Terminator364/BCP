@@ -21,6 +21,8 @@ CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.jso
 DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
 PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
 HUMAN_ACTION_MATRIX = ROOT / ".project-memory" / "HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+ABC_TRACEABILITY = ROOT / ".project-memory" / "ABC_REQUIREMENTS_TRACEABILITY.json"
+ABC_SPEC = ROOT / "docs" / "BCP_CANONICAL_SPEC_ABC_R76.md"
 COMMUNICATION_POLICY = ROOT / ".project-memory" / "COMMUNICATION_SURVIVAL_POLICY.json"
 COMM_PROTOCOL = ROOT / ".project-memory" / "COMMUNICATION_PROTOCOL.json"
 COMM_STATE_MACHINE = ROOT / ".project-memory" / "COMMUNICATION_STATE_MACHINE.json"
@@ -70,6 +72,8 @@ def main() -> int:
     pre_human = load(PRE_HUMAN_POLICY)
     active_tranche = load(ROOT / ".project-memory" / "ACTIVE_TRANCHE.json")
     human_actions = load(HUMAN_ACTION_MATRIX)
+    abc = load(ABC_TRACEABILITY)
+    abc_spec = ABC_SPEC.read_text(encoding="utf-8")
     communication = load(COMMUNICATION_POLICY)
     comm_protocol = load(COMM_PROTOCOL)
     comm_state_machine = load(COMM_STATE_MACHINE)
@@ -184,6 +188,16 @@ def main() -> int:
         fail("new_conversation_takeover_code")
     if takeover.get("communication_contract", {}).get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("new_conversation_takeover_close_owner")
+    if abc.get("schema") != "bcp.abc_requirements_traceability/1":
+        fail("abc_traceability_schema")
+    if abc.get("scoring", {}).get("weights_total") != 100:
+        fail("abc_traceability_weight_total")
+    if "A+B+C" not in abc_spec:
+        fail("abc_spec_rule_missing")
+    if android_candidate.get("abc_spec_revision") != "2026-09-21-R76":
+        fail("android_candidate_abc_spec_revision")
+    if android_candidate.get("abc_traceability_ref") != ".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json":
+        fail("android_candidate_abc_traceability_ref")
     if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
         fail("human_action_matrix_schema")
     actions = human_actions.get("actions") or []
