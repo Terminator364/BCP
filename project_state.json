@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R72_MERGED_DUAL_CLOSEOUT_ACTIVE_TRANCHE_OPEN",
-  "last_completed_atomic_action": "R72 exact-head CI passed across all 12 critical workflows on head be2d79671ac3ea18becc9e9812ae258f3ba4bdc8, main was unchanged, and PR #140 merged through the exact-head writer fence at 7a82599ac3cfbeca1e153b02f035291d1b8f660e. Main readback confirms R72 dual pre-deadline closeout policies, ACTIVE_TRANCHE ledger, BCPGO continuity and requirements R72.",
-  "next_action": "Let the timer-driven R72 normal closeout/hard guard send and verify Gmail END without any user relaunch. Then persist ACTIVE_TRANCHE=CLOSED with Gmail END receipt in a follow-up continuity mutation. After communication closeout proof, continue the coherent B-EDGE 2.2.0 full-node release line and harden Telegram companion delivery with a verified local/Drive fallback lane so raw GitHub is not a single update dependency.",
+  "status": "R73_PROVIDER_PROOF_CLOSEOUT_CANDIDATE",
+  "last_completed_atomic_action": "R72 corrective END was manually resent and provider-acknowledged after Gmail search proved the scheduled guards had completed without producing a SENT message. R73 START was then sent and provider-acknowledged. R73 policies now make foreground END primary, scheduler completion advisory only, and Gmail SENT message-id/readback the delivery authority.",
+  "next_action": "Qualify and merge R73 communication policy. Keep R73 active until its END Gmail is provider-acknowledged. Then resume B-EDGE 2.2.0 full-node coherent product work from durable state; do not request another phone install until signed CURRENT exact-hash qualification closes.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -241,7 +241,10 @@
     "P0_dual_predeadline_end_guards": true,
     "P0_user_message_never_closeout_trigger": true,
     "P0_end_mail_search_before_send": true,
-    "P0_end_mail_provider_readback": true
+    "P0_end_mail_provider_readback": true,
+    "P0_scheduler_completion_is_not_delivery_proof": true,
+    "P0_foreground_end_send_primary": true,
+    "P0_backup_minimal_end_payload": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2468,5 +2471,19 @@
     "exact_head_ci": "PASS_ALL_12_CRITICAL",
     "merge_sha": "7a82599ac3cfbeca1e153b02f035291d1b8f660e",
     "end_mail_field_proof": "PENDING_TIMER_DRIVEN_R72_CLOSEOUT"
+  },
+  "r73_closeout": {
+    "status": "CANDIDATE",
+    "revision": "2026-09-21-R73",
+    "r72_corrective_end_message_id": "1a0c4f9478cb3e5a",
+    "r73_start_message_id": "1a0c4f9af98fc491",
+    "target_minutes": 30,
+    "preclose_offset_minutes": 26,
+    "normal_backup_offset_minutes": 27,
+    "hard_backup_offset_minutes": 29,
+    "absolute_deadline_minutes": 30,
+    "scheduler_completion_is_delivery_proof": false,
+    "gmail_sent_message_id_and_readback_required": true,
+    "user_relaunch_required": false
   }
 }
