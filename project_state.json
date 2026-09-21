@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R72_DUAL_CLOSEOUT_COMMS_CANDIDATE_CI_PENDING",
-  "last_completed_atomic_action": "R72 root-cause correction implemented on candidate branch: the prior minute-29 single END watchdog is replaced by a timer-driven dual closeout (preclose snapshot T+26, normal closeout T+27, hard guard T+28, absolute deadline T+30), with Gmail search-before-send, provider ACK/readback, BCP label and no user-message dependency.",
-  "next_action": "Qualify R72 exact head. If green, reread main through the writer fence, reconcile if moved, merge, verify main, then continue the coherent B-EDGE 2.2.0 full-node product line without micro-beta installs.",
+  "status": "R72_MERGED_DUAL_CLOSEOUT_ACTIVE_TRANCHE_OPEN",
+  "last_completed_atomic_action": "R72 exact-head CI passed across all 12 critical workflows on head be2d79671ac3ea18becc9e9812ae258f3ba4bdc8, main was unchanged, and PR #140 merged through the exact-head writer fence at 7a82599ac3cfbeca1e153b02f035291d1b8f660e. Main readback confirms R72 dual pre-deadline closeout policies, ACTIVE_TRANCHE ledger, BCPGO continuity and requirements R72.",
+  "next_action": "Let the timer-driven R72 normal closeout/hard guard send and verify Gmail END without any user relaunch. Then persist ACTIVE_TRANCHE=CLOSED with Gmail END receipt in a follow-up continuity mutation. After communication closeout proof, continue the coherent B-EDGE 2.2.0 full-node release line and harden Telegram companion delivery with a verified local/Drive fallback lane so raw GitHub is not a single update dependency.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2452,7 +2452,7 @@
     "phone_full_node_install_gate": "NOT_YET_PUBLISHED_SIGNED_CURRENT"
   },
   "r72_communication_closeout": {
-    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "status": "MERGED_MAIN_ACTIVE_TRANCHE_OPEN",
     "revision": "2026-09-21-R72",
     "root_cause": "SINGLE_WATCHDOG_AT_MINUTE_29_LEFT_TOO_LITTLE_MARGIN; USER_RELAUNCH_ARRIVED_SECONDS_BEFORE_WATCHDOG",
     "target_minutes": 30,
@@ -2463,6 +2463,10 @@
     "active_tranche_ref": ".project-memory/ACTIVE_TRANCHE.json",
     "user_message_required": false,
     "search_before_send": true,
-    "provider_ack_required": true
+    "provider_ack_required": true,
+    "exact_head_sha": "be2d79671ac3ea18becc9e9812ae258f3ba4bdc8",
+    "exact_head_ci": "PASS_ALL_12_CRITICAL",
+    "merge_sha": "7a82599ac3cfbeca1e153b02f035291d1b8f660e",
+    "end_mail_field_proof": "PENDING_TIMER_DRIVEN_R72_CLOSEOUT"
   }
 }
