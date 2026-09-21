@@ -1,7 +1,7 @@
 {
   "schema": "bcp.abc_source_registry/1",
-  "revision": "2026-09-21-R78",
-  "status": "CANONICAL_CANDIDATE_SOURCE_RECONCILED",
+  "revision": "2026-09-21-R79",
+  "status": "CANONICAL_CANDIDATE_SOURCE_RECONCILED_UCMF_V9",
   "rule": "BCP product scope is the cumulative union A+B+C. No release or completion percentage may be computed from only one layer.",
   "A": {
     "meaning": "ORIGINAL_PRECONCEPTION_AND_PROMISED_PRODUCT",
@@ -26,7 +26,10 @@
         "provider": "Google Drive",
         "title": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master.docx",
         "drive_file_id": "1NPKxO7_JezpVSh9_KRE625sDfXpM7a8m",
-        "role": "Preserves original user-source postulate plus cumulative research; Postulate 1 is source intent, later postulates are refinements."
+        "role": "Preserves original user-source postulate plus cumulative research; Postulate 1 is source intent, later postulates are refinements.",
+        "latest_verified_version": "UCMF001 / V9 FINAL RESILIENCE CLOSURE",
+        "latest_verified_postulate": 9,
+        "verified_at": "2026-09-21"
       },
       {
         "kind": "CURRENT_CANONICAL_REQUIREMENTS",
@@ -88,22 +91,26 @@
         ]
       },
       {
-        "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx",
-        "evidence": "Library parsed 54-page source, targeted postulate reads",
+        "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master.docx",
+        "provider": "Google Drive",
+        "drive_file_id": "1NPKxO7_JezpVSh9_KRE625sDfXpM7a8m",
+        "evidence": "Direct Drive current-file read; Postulates 1-9 located in the same cumulative master document",
         "verified_content": [
-          "Postulate 1 original source requires autonomous total observable activity history across conversations/agents while preserving speed"
+          "Postulate 1 preserves the original user source intent for a universal observable activity history and BCP-gated continuity",
+          "Postulates 2-8 progressively harden Chronicle/memory, dedicated-phone appliance behavior, fast path, chaos/failure resilience and bulk-media separation",
+          "Postulate 9 defines CHATGPT-DEGRADED OPERATING ENVIRONMENT and makes mission progress independent of conversation/UI state"
         ],
-        "classification": "A_SOURCE_INTENT_ONLY_FOR_POSTULATE_1"
+        "classification": "A_SOURCE_INTENT_POSTULATE_1_PLUS_B_RESEARCH_POSTULATES_2_TO_9"
       }
     ],
     "source_completeness": {
       "sealed_v0_7_raw_zip_rematerialized_this_tranche": false,
       "handoff_read": true,
       "understanding_dossier_read": true,
-      "ucmf_v4_read": true,
-      "postulates_1_to_4_targeted_read": true,
-      "status": "SUBSTANTIALLY_RECONSTRUCTED_WITH_SEALED_ZIP_BYTE_AUDIT_POINTER_STILL_NOT_REOPENED",
-      "rule": "Do not claim the sealed ZIP was reread byte-for-byte; preserve its SHA/manifest authority and use source documents plus current canonical requirements."
+      "status": "SUBSTANTIALLY_RECONSTRUCTED_WITH_CURRENT_UCMF_V9_AND_SEALED_ZIP_BYTE_AUDIT_POINTER",
+      "rule": "Do not claim the sealed ZIP was reread byte-for-byte; preserve its SHA/manifest authority and use source documents plus current canonical requirements.",
+      "ucmf_v9_current_drive_read": true,
+      "postulates_1_to_9_verified_present": true
     }
   },
   "B": {
@@ -156,16 +163,30 @@
       "PER_DEPENDENCY_CIRCUIT_BREAKERS",
       "OUTBOUND_REVERSE_RPC_NO_PUBLIC_PHONE_INGRESS",
       "LONG_POLL_VS_WEBSOCKET_MEASURED_AB",
-      "FTS_LOCAL_BASELINE_BEFORE_EMBEDDINGS"
+      "FTS_LOCAL_BASELINE_BEFORE_EMBEDDINGS",
+      "HEALTH_VECTOR_NOT_SINGLE_BOOLEAN",
+      "DIRECT_BOOT_MINIKERNEL_AND_BLACKSTART_RECOVERY",
+      "COMMAND_FRESHNESS_ENVELOPE_AND_MONOTONIC_INTERVALS",
+      "FAST_CONTROL_PLANE_SEPARATE_FROM_BULK_MEDIA_DATA_PLANE",
+      "MISSION_STEP_ENVELOPE_BEFORE_REMOTE_PROVIDER_WAIT",
+      "CHATGPT_EXECUTOR_NOT_MISSION_AUTHORITY",
+      "PROVIDER_STATE_MACHINE_WITH_OUTCOME_UNKNOWN_AND_RECONCILIATION",
+      "LOCAL_DURABLE_STATE_BEFORE_REMOTE_WAIT"
     ],
     "source_read_receipts": [
       {
-        "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx",
-        "classification": "B_RESEARCH_EXPANSION_POSTULATES_2_TO_4",
+        "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master.docx",
+        "provider": "Google Drive",
+        "classification": "B_RESEARCH_EXPANSION_POSTULATES_2_TO_9",
         "verified_content": [
-          "Postulate 2: exact Universal Chronicle + derived canonical memory, SQLite WAL, selective retrieval, transactional outbox",
-          "Postulate 3: dedicated SM-A217F local-first continuity appliance, future logical memory/session/journal/mission coordinator after fencing/replication proof",
-          "Postulate 4: BCP_FASTPATH_P0 with immutable HotSnapshot, writer-arbiter lanes P0-P3, single-turn transactions, per-dependency circuit breakers, no-wait offline behavior, outbound reverse-RPC and long-poll/WebSocket measured challenger"
+          "P2 exact Universal Chronicle + derived canonical memory, SQLite WAL, selective retrieval, transactional outbox",
+          "P3 dedicated SM-A217F local-first continuity appliance and future coordinator after fencing/replication proof",
+          "P4 BCP_FASTPATH_P0 with immutable hot snapshots, writer-arbiter lanes, one-turn transaction, circuit breakers and reverse RPC",
+          "P5 destructive counter-research / chaos with proof-carrying failure mechanisms and negative controls",
+          "P6 FMECA/SFTA/STPA, black-start, absence-human and independent POWER/LAN/INTERNET/AUTHORITY state dimensions",
+          "P7 gray-failure vectors, temporal fault injection, direct-boot mini-kernel, command freshness envelopes, monotonic intervals and protection-can-fail tests",
+          "P8 FAST CONTROL PLANE separated from BULK DATA PLANE, resumable/sealed original evidence and derived artifacts",
+          "P9 mission authority outside ChatGPT, mission-step envelope, explicit provider states, local durable state before remote wait and user never telemetry bus"
         ]
       }
     ]
@@ -196,7 +217,10 @@
       "PRIMARY_ASSISTANT_NORMAL_CLOSE_NO_AUTOMATION_DEPENDENCY",
       "BCPGO_BCP_MUST_COLD_RESUME_WITHOUT_USER_REEXPLANATION",
       "TELEGRAM_AND_OTHER_CHANNELS_REQUIRE_PROVIDER_RECEIPT_NOT_FALSE_SUCCESS",
-      "COMMUNICATION_CONTINUITY_IS_P0_NOT_DECORATION"
+      "COMMUNICATION_CONTINUITY_IS_P0_NOT_DECORATION",
+      "MISSION_MUST_SURVIVE_CHATGPT_CONVERSATION_INTERRUPTION",
+      "VISIBLE_THINKING_SPINNER_IS_NOT_MISSION_PROGRESS",
+      "NO_USER_EH_OH_OR_SCREENSHOT_REQUIRED_FOR_NORMAL_PROGRESS_PROOF"
     ]
   },
   "merge_semantics": {
