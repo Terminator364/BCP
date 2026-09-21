@@ -1,3 +1,24 @@
+# R62 Communication Autonomy Handoff — 2026-09-21
+
+Current field truth:
+- MBMPC is alive on BCP 0.7.13.
+- After the user switched from failing home Wi-Fi to mobile hotspot, direct Telegram is ACTIVE, last poll is fresh, and consecutive failures are 0.
+- The bot was therefore alive; the human-facing failure was prolonged silence because healthy polling alone did not emit a liveness notice.
+- Nexus currently reports STAGE_FAILED / DNS_RESOLUTION_FAILED. The user-facing one-shot showed NO_HUMAN_AUTH_RETRY_NEEDED even though this was a network-stage condition, so no additional manual retry is justified on the old runtime.
+
+R62 candidate:
+- BCP 0.7.14 preserves a prior Nexus human-auth gate across transient staging-network failures and can recover it from the durable receipt.
+- A network-stage one-shot now retries staging once and otherwise reports NETWORK_RECOVERY_PENDING with automatic recovery instead of misleading success/no-retry.
+- Telegram V20 sends a compact online notice after a genuine restart, a reconnect notice after network recovery, and at most one silent alive proof every 90 minutes.
+- No Telegram token re-entry, BCP reinstall, or repeated user clicking is part of the recovery path.
+
+Next:
+1. exact-head CI;
+2. writer-fenced merge;
+3. automatic resident convergence to BCP 0.7.14 + Telegram V20;
+4. Drive/Telegram readback;
+5. only then expose any remaining irreducible Cloudflare human authorization gate.
+
 # R60 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code for a new conversation:
