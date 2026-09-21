@@ -25,18 +25,26 @@ public final class BcpEdgeApplication extends Application {
         if (cm == null) return;
         cm.registerDefaultNetworkCallback(new ConnectivityManager.NetworkCallback() {
             @Override
+            public void onAvailable(Network network) {
+                EdgeWorkScheduler.requestImmediate(BcpEdgeApplication.this, "NETWORK_AVAILABLE");
+            }
+
+            @Override
             public void onCapabilitiesChanged(Network network, NetworkCapabilities caps) {
                 if (caps == null) return;
-                boolean wifi = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
                 boolean internet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
                 boolean validated = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-                if (!wifi || !internet || !validated) return;
+                boolean localReachable = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                        || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+                        || caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
+                if (!localReachable && !internet) return;
 
                 long now = System.currentTimeMillis();
                 long previous = lastReentryTriggerAt.get();
                 if (previous > 0L && now - previous < MIN_REENTRY_TRIGGER_MS) return;
                 if (!lastReentryTriggerAt.compareAndSet(previous, now)) return;
-                EdgeWorkScheduler.requestImmediate(BcpEdgeApplication.this, "WIFI_VALIDATED_RETURN");
+                String reason = validated ? "NETWORK_VALIDATED_RETURN" : "LOCAL_NETWORK_CHANGE";
+                EdgeWorkScheduler.requestImmediate(BcpEdgeApplication.this, reason);
             }
         });
     }
