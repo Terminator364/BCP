@@ -244,6 +244,9 @@ public final class EdgeRelayService extends Service {
             caps.put("durable_queue", true);
             caps.put("universal_event_ledger", true);
             caps.put("universal_event_ledger_mode", "APPEND_ONLY_LOCAL_CHRONICLE");
+            caps.put("mission_step_envelope_v1", true);
+            caps.put("provider_degraded_resume", true);
+            caps.put("mission_authority", "DURABLE_BCP_STATE_NOT_CHAT_UI");
             caps.put("local_allowlisted_executor", true);
             caps.put("local_executor_kinds", new org.json.JSONArray()
                     .put("LOCAL_CONTEXT_SNAPSHOT")
@@ -272,6 +275,10 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/events".equals(path)) {
             writeJson(out, 200, new BcpClient(this).localEventTail(100));
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/mission-steps".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localMissionSteps(50, true));
             return;
         }
         if ("POST".equals(method) && "/v1/node/events".equals(path)) {
