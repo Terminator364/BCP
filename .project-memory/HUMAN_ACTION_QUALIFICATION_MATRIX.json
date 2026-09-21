@@ -94,7 +94,7 @@
       "user_action": "Install/open BCP Edge and use the primary UI",
       "entrypoints": [
         "android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk",
-        "com.blessing.bcpedge.evergreen/.MainActivity"
+        "com.blessing.bcpedge.evergreen/com.blessing.bcpedge.MainActivity"
       ],
       "representative_environment": [
         "android_emulator_api_35"
