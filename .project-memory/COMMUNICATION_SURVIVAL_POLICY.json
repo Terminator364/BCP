@@ -120,7 +120,8 @@
     "if_user_message_arrives_near_deadline": "DO_NOT_TREAT_USER_MESSAGE_AS_CLOSEOUT_TRIGGER; RECONCILE_WITH_TIMER_DRIVEN_END_STATE",
     "foreground_closeout": "PRIMARY_PATH_SEND_END_AND_VERIFY_GMAIL_BEFORE_RETURNING_FROM_ACTIVE_TRANCHE",
     "background_guards": "BACKUP_ONLY; SEARCH_GMAIL_SENT_FOR_EXACT_CHECKPOINT; IF_MISSING_SEND_PRECOMPOSED_MINIMAL_END_THEN_VERIFY_MESSAGE_ID",
-    "scheduler_completion_semantics": "ADVISORY_ONLY_NOT_DELIVERY_PROOF"
+    "scheduler_completion_semantics": "ADVISORY_ONLY_NOT_DELIVERY_PROOF",
+    "backup_end_template_ref": ".project-memory/END_FAILSAFE_TEMPLATE.json"
   },
   "cold_recovery": {
     "code": "BCPGO BCP",
@@ -129,6 +130,7 @@
       ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
       ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
       ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/END_FAILSAFE_TEMPLATE.json",
       ".project-memory/ACTIVE_TRANCHE.json",
       ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
       "project_state.json",
