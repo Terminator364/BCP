@@ -187,8 +187,7 @@ public class MainActivity extends Activity {
         SharedPreferences p = getSharedPreferences(UI_PREFS, MODE_PRIVATE);
         if (p.getBoolean(ONBOARDING_KEY, false)) return;
         p.edit().putBoolean(ONBOARDING_KEY, true).apply();
-        if (EdgePermissionManager.hasCoreRuntimePermissions(this)
-                && EdgePermissionManager.batteryUnrestricted(this)) return;
+        if (EdgePermissionManager.hasCoreRuntimePermissions(this)) return;
 
         new AlertDialog.Builder(this)
                 .setTitle("Activer le vrai mode serveur")
