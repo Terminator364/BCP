@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.15",
+  "version": "0.7.16",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "99a91cef43c771c7cdd9807787517685ec3a1749050e5a5ce52022bb08e269cd",
+  "sha256": "d94be35abbed059d98908afdd6ac155e891c6b1f7eb91e0eb33f3fc420cd10fe",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-21-R64",
-  "release_train": "BCP-0.7.15_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
-  "notes": "BCP 0.7.15 adds short-lived authenticated B-EDGE relay registration and external relay liveness while preserving R62 Nexus network-recovery semantics."
+  "requirements_revision": "2026-09-21-R67",
+  "release_train": "BCP-0.7.16_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
+  "notes": "BCP 0.7.16 promotes the dedicated old phone to a first-class Edge server registration/probe surface and mirrors phone-node connectivity, capabilities and durable queue state while preserving the strict Telegram relay boundary."
 }
