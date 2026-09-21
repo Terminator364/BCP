@@ -7,6 +7,8 @@ import com.blessing.bcpedge.storage.EdgeDao;
 import com.blessing.bcpedge.storage.EdgeDatabase;
 import com.blessing.bcpedge.storage.EdgeJobEntity;
 import com.blessing.bcpedge.storage.EdgeMemoryEntity;
+import com.blessing.bcpedge.storage.EdgeCapabilityEntity;
+import com.blessing.bcpedge.storage.EdgeMemoryClaimEntity;
 import com.blessing.bcpedge.storage.EdgeProjectEntity;
 import com.blessing.bcpedge.storage.EdgeReceiptEntity;
 import com.blessing.bcpedge.storage.EdgeSentinelEntity;
@@ -118,6 +120,161 @@ public final class EdgeOrchestrator {
                 projectId, layer, key, jsonValueString(value),
                 evidence, "B_EDGE", effectivePinned, createdAt, now, expiresAt
         ));
+    }
+
+    public JSONObject admitMemoryClaim(String projectId, String scope, String key, Object value,
+                                       String evidenceClass, String source, String authority,
+                                       String supersedesClaimId, String idempotencyKey,
+                                       boolean pinned, Long expiresAt) {
+        JSONObject out = new JSONObject();
+        long now = System.currentTimeMillis();
+        try {
+            String p = projectId == null ? "" : projectId.trim();
+            String s = scope == null ? "" : scope.trim().toUpperCase();
+            String k = key == null ? "" : key.trim();
+            String evidence = evidenceClass == null ? "UNVERIFIED" : evidenceClass.trim().toUpperCase();
+            String src = source == null ? "UNKNOWN" : source.trim();
+            String auth = authority == null ? "UNSPECIFIED" : authority.trim().toUpperCase();
+            String idem = idempotencyKey == null ? "" : idempotencyKey.trim();
+            String supersedes = supersedesClaimId == null ? "" : supersedesClaimId.trim();
+            if (p.isEmpty() || s.isEmpty() || k.isEmpty()) throw new IllegalArgumentException("invalid_memory_claim_identity");
+            if (k.length() > 160 || s.length() > 64 || src.length() > 160 || auth.length() > 96) {
+                throw new IllegalArgumentException("memory_claim_field_too_long");
+            }
+            if (idem.isEmpty()) idem = "memory-claim:" + sha256(p + "\n" + s + "\n" + k + "\n" + jsonValueString(value) + "\n" + evidence + "\n" + src);
+            if (idem.length() > 192) throw new IllegalArgumentException("idempotency_key_too_long");
+
+            EdgeMemoryClaimEntity prior = dao.memoryClaimByIdempotency(p, idem);
+            if (prior != null) return memoryClaimReceipt(prior, "ALREADY_RECORDED");
+
+            EdgeMemoryEntity old = dao.memoryItem(p, s, k);
+            if (old != null && old.expiresAt != null && old.expiresAt <= now) old = null;
+            boolean admitted = EdgePolicy.canReplaceMemory(
+                    s, old == null ? null : old.evidenceClass,
+                    old != null && old.pinned, evidence);
+            String claimId = "mcl-" + UUID.randomUUID();
+            String state = admitted ? "ADMITTED" : "REJECTED";
+            String reason = admitted ? "PRECEDENCE_ACCEPTED" : "PRECEDENCE_REJECTED";
+            EdgeMemoryClaimEntity claim = new EdgeMemoryClaimEntity(
+                    claimId, p, s, k, jsonValueString(value), evidence,
+                    src.isEmpty() ? "UNKNOWN" : src,
+                    auth.isEmpty() ? "UNSPECIFIED" : auth,
+                    supersedes, state, reason, idem, pinned, now, now);
+            long inserted = dao.insertMemoryClaim(claim);
+            if (inserted == -1L) {
+                EdgeMemoryClaimEntity existing = dao.memoryClaimByIdempotency(p, idem);
+                return memoryClaimReceipt(existing == null ? claim : existing, "ALREADY_RECORDED");
+            }
+
+            if (admitted) {
+                if (!supersedes.isEmpty()) {
+                    dao.setMemoryClaimState(supersedes, "SUPERSEDED", "SUPERSEDED_BY:" + claimId, now);
+                }
+                boolean effectivePinned = pinned || (old != null && old.pinned);
+                long createdAt = old == null ? now : old.createdAt;
+                dao.putMemory(new EdgeMemoryEntity(
+                        p, s, k, jsonValueString(value), evidence,
+                        src.isEmpty() ? "B_EDGE" : src,
+                        effectivePinned, createdAt, now, expiresAt));
+            }
+            out = memoryClaimReceipt(claim, admitted ? "ADMITTED" : "REJECTED");
+            out.put("canonical_memory_updated", admitted);
+        } catch (Exception e) {
+            try {
+                out.put("ok", false);
+                out.put("result", "HOLD");
+                out.put("error", e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    public JSONArray memoryClaimLedger(String projectId, int requestedLimit) {
+        JSONArray out = new JSONArray();
+        int limit = Math.max(1, Math.min(200, requestedLimit));
+        for (EdgeMemoryClaimEntity row : dao.memoryClaims(projectId, limit)) {
+            out.put(memoryClaimJson(row));
+        }
+        return out;
+    }
+
+    public void putCapability(String projectId, String capabilityId, String nodeId,
+                              String provider, String capabilityKind, String state,
+                              String transport, JSONObject details, String evidenceClass,
+                              long observedAt, Long expiresAt) {
+        String cid = capabilityId == null ? "" : capabilityId.trim().toUpperCase();
+        if (cid.isEmpty() || cid.length() > 128) throw new IllegalArgumentException("invalid_capability_id");
+        long now = System.currentTimeMillis();
+        dao.putCapability(new EdgeCapabilityEntity(
+                projectId,
+                cid,
+                nodeId == null || nodeId.trim().isEmpty() ? "B-EDGE" : nodeId.trim(),
+                provider == null ? "LOCAL" : provider.trim().toUpperCase(),
+                capabilityKind == null ? "GENERIC" : capabilityKind.trim().toUpperCase(),
+                state == null ? "UNKNOWN" : state.trim().toUpperCase(),
+                transport == null ? "LOCAL" : transport.trim().toUpperCase(),
+                details == null ? "{}" : details.toString(),
+                evidenceClass == null ? "MACHINE_READBACK" : evidenceClass.trim().toUpperCase(),
+                observedAt <= 0L ? now : observedAt,
+                expiresAt,
+                now
+        ));
+    }
+
+    public JSONArray capabilityRegistry(String projectId, int requestedLimit) {
+        JSONArray out = new JSONArray();
+        int limit = Math.max(1, Math.min(200, requestedLimit));
+        long now = System.currentTimeMillis();
+        for (EdgeCapabilityEntity row : dao.capabilities(projectId, now, limit)) {
+            JSONObject item = new JSONObject();
+            try {
+                item.put("capability_id", row.capabilityId);
+                item.put("node_id", row.nodeId);
+                item.put("provider", row.provider);
+                item.put("kind", row.capabilityKind);
+                item.put("state", row.state);
+                item.put("transport", row.transport);
+                item.put("details", new JSONObject(row.detailsJson));
+                item.put("evidence_class", row.evidenceClass);
+                item.put("observed_at", row.observedAt);
+                item.put("expires_at", row.expiresAt == null ? JSONObject.NULL : row.expiresAt);
+                item.put("updated_at", row.updatedAt);
+            } catch (Exception ignored) {}
+            out.put(item);
+        }
+        return out;
+    }
+
+    private static JSONObject memoryClaimJson(EdgeMemoryClaimEntity row) {
+        JSONObject out = new JSONObject();
+        try {
+            out.put("claim_id", row.claimId);
+            out.put("project_id", row.projectId);
+            out.put("scope", row.scope);
+            out.put("memory_key", row.memoryKey);
+            out.put("value", new JSONObject("{\"v\":" + row.valueJson + "}").opt("v"));
+            out.put("evidence_class", row.evidenceClass);
+            out.put("source", row.source);
+            out.put("authority", row.authority);
+            out.put("supersedes_claim_id", row.supersedesClaimId);
+            out.put("state", row.state);
+            out.put("reason", row.reason);
+            out.put("idempotency_key", row.idempotencyKey);
+            out.put("pinned", row.pinned);
+            out.put("admitted_at", row.admittedAt);
+            out.put("updated_at", row.updatedAt);
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    private static JSONObject memoryClaimReceipt(EdgeMemoryClaimEntity row, String result) {
+        JSONObject out = memoryClaimJson(row);
+        try {
+            out.put("ok", row != null);
+            out.put("result", result);
+            out.put("authority", "B_EDGE_MEMORY_ADMISSION_LEDGER");
+        } catch (Exception ignored) {}
+        return out;
     }
 
     public JSONObject memorySnapshot(String projectId) {
