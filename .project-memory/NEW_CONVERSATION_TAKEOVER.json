@@ -17,7 +17,10 @@
     ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
     ".project-memory/GIT_WRITER_LEASE_POLICY.json",
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
-    "release/current.json"
+    "release/current.json",
+    ".project-memory/ABC_REQUIREMENTS_INDEX.json",
+    "docs/BCP_CANONICAL_SPEC_ABC_R77.md",
+    "docs/BCP_ABC_COVERAGE_MATRIX_R77.md"
   ],
   "takeover_algorithm": [
     "READ_DURABLE_STATE_FIRST",
@@ -27,7 +30,7 @@
     "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
     "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
     "WORK_FROM_PROJECT_STATE_NEXT_ACTION",
-    "ENTER_CLOSE_RESERVE_AT_MINUTE_26",
+    "ENTER_CLOSE_RESERVE_AT_MINUTE_23",
     "PERSIST_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
     "SEND_COMPLETE_GMAIL_END_IF_MISSING",
@@ -36,19 +39,22 @@
     "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
   ],
   "communication_contract": {
-    "cadence_minutes": 30,
-    "useful_work_minutes": 26,
-    "normal_close_reserve_minutes": 4,
+    "cadence_minutes": 25,
+    "useful_work_minutes": 23,
+    "normal_close_reserve_minutes": 2,
     "gmail_label": "BCP",
     "normal_close_owner": "PRIMARY_ASSISTANT",
-    "backup_owner": "SHADOW_BACKUP",
-    "hard_guard_owner": "HARD_GUARD",
+    "backup_owner": "OPTIONAL_SHADOW_BACKUP_IF_EXPLICITLY_ARMED",
+    "hard_guard_owner": "OPTIONAL_HARD_GUARD_IF_EXPLICITLY_ARMED",
     "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
-    "ui_thinking_indicator_authoritative": false
+    "ui_thinking_indicator_authoritative": false,
+    "automations_required_for_normal_close": false
   },
   "product_truth": {
-    "phone_direction": "coherent dedicated Android full-node/server appliance",
+    "phone_direction": "dedicated Android primary low-power Edge/API server appliance with autonomous local memory, queue, orchestration, relay, context builder, resource governor and multi-transport continuity",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
-    "continuation_code": "BCPGO BCP"
+    "continuation_code": "BCPGO BCP",
+    "requirements_model": "A_PLUS_B_PLUS_C",
+    "requirements_index": ".project-memory/ABC_REQUIREMENTS_INDEX.json"
   }
 }
