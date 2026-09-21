@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.SystemClock;
 import com.blessing.bcpedge.work.EdgeWorkScheduler;
+import com.blessing.bcpedge.storage.EdgeCapabilityEntity;
 import com.blessing.bcpedge.storage.EdgeDatabase;
 import com.blessing.bcpedge.storage.EdgeEventEntity;
 import com.blessing.bcpedge.storage.EdgeMissionStepEntity;
@@ -175,6 +176,117 @@ public final class BcpClient {
             } catch (Exception ignored) {}
         }
         return out;
+    }
+
+
+
+    private static final java.util.Set<String> CAPABILITY_AVAILABILITY_STATES =
+            new java.util.HashSet<>(java.util.Arrays.asList(
+                    "AVAILABLE", "DEGRADED", "UNAVAILABLE", "WAITING_AUTH", "UNKNOWN"));
+
+    private static final java.util.Set<String> CAPABILITY_EVIDENCE_CLASSES =
+            new java.util.HashSet<>(java.util.Arrays.asList(
+                    "MACHINE_READBACK", "LOCAL_PROBE", "PROVIDER_ACK",
+                    "USER_CONFIRMED", "CONFIGURED", "UNKNOWN"));
+
+    public JSONObject observeLocalCapability(JSONObject body) throws Exception {
+        if (body == null) body = new JSONObject();
+        String type = body.optString("capability_type", "").trim().toUpperCase(Locale.ROOT);
+        String provider = body.optString("provider", "").trim();
+        String sourceKind = body.optString("source_kind", "B_EDGE_LOCAL").trim().toUpperCase(Locale.ROOT);
+        String state = body.optString("availability_state", "UNKNOWN").trim().toUpperCase(Locale.ROOT);
+        String evidence = body.optString("evidence_class", "UNKNOWN").trim().toUpperCase(Locale.ROOT);
+        String endpointHint = body.optString("endpoint_hint", "").trim();
+        if (type.isEmpty() || type.length() > 96) throw new IllegalArgumentException("invalid_capability_type");
+        if (provider.isEmpty() || provider.length() > 128) throw new IllegalArgumentException("invalid_capability_provider");
+        if (sourceKind.isEmpty() || sourceKind.length() > 64) throw new IllegalArgumentException("invalid_source_kind");
+        if (!CAPABILITY_AVAILABILITY_STATES.contains(state)) throw new IllegalArgumentException("invalid_availability_state");
+        if (!CAPABILITY_EVIDENCE_CLASSES.contains(evidence)) throw new IllegalArgumentException("invalid_evidence_class");
+        if (endpointHint.length() > 512) throw new IllegalArgumentException("endpoint_hint_too_long");
+
+        JSONObject metadata = body.optJSONObject("metadata");
+        if (metadata == null) metadata = new JSONObject();
+        String metadataJson = metadata.toString();
+        if (metadataJson.getBytes(StandardCharsets.UTF_8).length > 32 * 1024) {
+            throw new IllegalArgumentException("capability_metadata_too_large");
+        }
+
+        long now = System.currentTimeMillis();
+        long observedAt = body.optLong("observed_at_ms", now);
+        long ttlMs = body.optLong("ttl_ms", 5L * 60L * 1000L);
+        if (ttlMs < 0L || ttlMs > 7L * 24L * 60L * 60L * 1000L) {
+            throw new IllegalArgumentException("invalid_capability_ttl");
+        }
+        long expiresAt = ttlMs == 0L ? 0L : now + ttlMs;
+        String naturalKey = getProject() + "\n" + type + "\n" + provider + "\n" + sourceKind;
+        String capabilityId = "cap-" + sha256Hex(naturalKey).substring(0, 32);
+
+        EdgeCapabilityEntity row = new EdgeCapabilityEntity(
+                capabilityId, getProject(), type, provider, sourceKind, state, evidence,
+                endpointHint, metadataJson, sha256Hex(metadataJson), observedAt, now, expiresAt);
+        EdgeDatabase.get(context).edgeDao().putCapability(row);
+
+        JSONObject event = new JSONObject();
+        event.put("capability_id", capabilityId);
+        event.put("capability_type", type);
+        event.put("provider", provider);
+        event.put("availability_state", state);
+        event.put("evidence_class", evidence);
+        appendLocalEvent("CAPABILITY_OBSERVED", event, "OBSERVED",
+                "capability:" + capabilityId + ":" + now);
+
+        JSONObject out = capabilityJson(row);
+        out.put("ok", true);
+        out.put("result", "CAPABILITY_DURABLE");
+        out.put("authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY");
+        return out;
+    }
+
+    public JSONObject localCapabilityRegistry(int requestedLimit, String requestedType) {
+        JSONObject out = new JSONObject();
+        JSONArray rows = new JSONArray();
+        try {
+            int limit = Math.max(1, Math.min(200, requestedLimit));
+            long now = System.currentTimeMillis();
+            EdgeDatabase.get(context).edgeDao().deleteExpiredCapabilities(now);
+            String type = requestedType == null ? "" : requestedType.trim().toUpperCase(Locale.ROOT);
+            java.util.List<EdgeCapabilityEntity> capabilities = type.isEmpty()
+                    ? EdgeDatabase.get(context).edgeDao().activeCapabilities(getProject(), now, limit)
+                    : EdgeDatabase.get(context).edgeDao().activeCapabilitiesByType(getProject(), type, now, limit);
+            for (EdgeCapabilityEntity row : capabilities) rows.put(capabilityJson(row));
+            out.put("ok", true);
+            out.put("project", getProject());
+            out.put("capabilities", rows);
+            out.put("count", rows.length());
+            out.put("filter_type", type);
+            out.put("authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY");
+            out.put("offline_capable", true);
+        } catch (Exception ex) {
+            try {
+                out.put("ok", false);
+                out.put("error", ex.getClass().getSimpleName());
+                out.put("capabilities", rows);
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    private static JSONObject capabilityJson(EdgeCapabilityEntity row) throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("capability_id", row.capabilityId);
+        o.put("project_id", row.projectId);
+        o.put("capability_type", row.capabilityType);
+        o.put("provider", row.provider);
+        o.put("source_kind", row.sourceKind);
+        o.put("availability_state", row.availabilityState);
+        o.put("evidence_class", row.evidenceClass);
+        o.put("endpoint_hint", row.endpointHint);
+        o.put("metadata", new JSONObject(row.metadataJson));
+        o.put("metadata_sha256", row.metadataSha256);
+        o.put("observed_at_ms", row.observedAt);
+        o.put("updated_at_ms", row.updatedAt);
+        o.put("expires_at_ms", row.expiresAt);
+        return o;
     }
 
 
