@@ -27,4 +27,10 @@ public class EdgeNodePolicyTest {
         assertEquals(55, EdgeNodePolicy.boundedPriority(55));
         assertEquals(100, EdgeNodePolicy.boundedPriority(500));
     }
+    @Test public void projectIdsAreBounded() {
+        assertTrue(EdgeNodePolicy.isSafeProjectId("API_BCP"));
+        assertTrue(EdgeNodePolicy.isSafeProjectId("buildhub/main"));
+        assertFalse(EdgeNodePolicy.isSafeProjectId(""));
+        assertFalse(EdgeNodePolicy.isSafeProjectId("../../bad project"));
+    }
 }
