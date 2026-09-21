@@ -175,8 +175,12 @@ public class MainActivity extends Activity {
                             + "\nBatterie 24/7: " + (battery ? "SANS RESTRICTION" : "À RENFORCER")
                             + "\nDémarrage après reboot: ACTIVÉ");
 
+            JSONObject storage = client.contentStoreStatus();
+            double quotaGiB = storage.optDouble("quota_gib", 0d);
+            long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
             autonomyInfo.setText(
                     "File durable Room: active"
+                            + "\nCache privé téléphone: " + usedMiB + " MiB / " + quotaGiB + " GiB"
                             + "\nLAN/API + NSD: actif"
                             + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
                             + "\nStore-and-forward: actif");
