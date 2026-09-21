@@ -38,6 +38,7 @@ TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator3
 TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
 TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
 TELEGRAM_COMPANION_HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
+TELEGRAM_COMPANION_NOTICE_PATH = STATE_DIR / "telegram_transport_notice.json"
 TELEGRAM_COMPANION_WATCHDOG_PATH = STATE_DIR / "telegram_companion_watchdog.json"
 MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
 MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
@@ -433,6 +434,7 @@ def windows_resource_status() -> dict:
 def telegram_companion_runtime_status() -> dict:
     health = read_json(TELEGRAM_COMPANION_HEALTH_PATH, {}) or {}
     update = read_json(TELEGRAM_COMPANION_STATE_PATH, {}) or {}
+    notice = read_json(TELEGRAM_COMPANION_NOTICE_PATH, {}) or {}
     age = None
     try:
         if TELEGRAM_COMPANION_HEALTH_PATH.is_file():
@@ -454,6 +456,9 @@ def telegram_companion_runtime_status() -> dict:
         "update_state": str(update.get("state") or "NONE")[:80],
         "target_version": str(update.get("target_version") or "")[:80],
         "installed_sha256": str(update.get("installed_sha256") or "")[:64],
+        "notice_kind": str(notice.get("kind") or "")[:40],
+        "notice_sent_at": str(notice.get("sent_at") or "")[:80],
+        "notice_message_id": int(notice.get("message_id") or 0),
     }
 
 
@@ -526,6 +531,9 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "telegram_companion_last_callback_data": telegram["last_callback_data"],
         "telegram_companion_last_callback_received_at": telegram["last_callback_received_at"],
         "telegram_companion_last_callback_handled_at": telegram["last_callback_handled_at"],
+        "telegram_companion_notice_kind": telegram["notice_kind"],
+        "telegram_companion_notice_sent_at": telegram["notice_sent_at"],
+        "telegram_companion_notice_message_id": telegram["notice_message_id"],
         "telegram_companion_error_class": telegram["error_class"],
         "telegram_companion_error_detail": telegram["error_detail"],
         "telegram_companion_consecutive_failures": telegram["consecutive_failures"],
