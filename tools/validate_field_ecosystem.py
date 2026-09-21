@@ -124,6 +124,20 @@ def main() -> int:
         "MOBILE_DATA_IS_SCARCE",
     )
     require(telegram, "DIRECT_TELEGRAM", 'mode == "NEXUS"', "backoff = [2, 5, 15, 30, 60]")
+    require(
+        telegram,
+        "TRANSPORT_NOTICE_PATH",
+        "TRANSPORT_START_NOTICE_MIN_INTERVAL_SECONDS = 15 * 60",
+        "TRANSPORT_ALIVE_NOTICE_INTERVAL_SECONDS = 90 * 60",
+        "_push_transport_liveness",
+        "TRANSPORT_NOTICE_SENT",
+    )
+    require(
+        server,
+        "NETWORK_RECOVERY_PENDING",
+        "recovered_human_gate_from_receipt",
+        "last_stage_check_error_class",
+    )
     assert telegram.count('"getUpdates"') == 1, "multiple Telegram poller code paths detected"
 
     # Nexus regression: a silent EXIT 1 from system npx/wrangler must never send
