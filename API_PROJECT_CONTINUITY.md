@@ -1,3 +1,56 @@
+# R74 KINLINK-Style Communication State-Machine Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+## Why R74 exists
+
+R73 proved a harder failure than R72: both scheduled close guards reached their scheduler-completed state, yet Gmail SENT still contained no END until the user relaunched the conversation. Therefore BCP now copies the stronger KINLINK communication model instead of treating timers as delivery.
+
+## R74 communication contract
+
+- 30-minute wall-clock tranche.
+- Target useful-work budget: 26 minutes; minimum useful-work target: 20 minutes when no real gate ends earlier.
+- Final 4 minutes are reserved for closeout, not optional product mutations.
+- `PRIMARY_ASSISTANT` owns the normal END path.
+- `SHADOW_BACKUP` and `HARD_GUARD` are backup-only.
+- Every tranche has a unique `delivery_key`.
+- START and END provider message IDs are persisted.
+- CLOSE_INTENT is durable before END send.
+- Every END path performs Gmail SENT search-before-send by delivery_key/checkpoint.
+- Scheduler completion is advisory only and has zero delivery authority.
+- END success requires provider message_id + Gmail SENT readback + BCP label + durable delivery ledger receipt.
+- ChatGPT final output is blocked until delivery state is `END_ACKNOWLEDGED` or `CLOSED`.
+- The visible ChatGPT “Réfléchi” duration is NOT work proof and must never be used as tranche evidence.
+
+New durable communication files:
+- `.project-memory/COMMUNICATION_PROTOCOL.json`
+- `.project-memory/COMMUNICATION_STATE_MACHINE.json`
+- `.project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl`
+- `.project-memory/NEW_CONVERSATION_TAKEOVER.json`
+- `.project-memory/ACTIVE_TRANCHE.json`
+
+R73 corrective END provider message id: `1a0c520e8cc2673f`.
+R74 START provider message id: `1a0c5216e9b71648`.
+Current R74 delivery key: `BCP30-20260921-1901-R74`.
+
+## Fresh-conversation takeover
+
+A fresh conversation receiving `BCPGO BCP` MUST:
+1. read `.project-memory/NEW_CONVERSATION_TAKEOVER.json`;
+2. reconcile any open tranche from ACTIVE_TRANCHE + delivery ledger before new work;
+3. load communication protocol/state-machine + delivery/cadence + writer fence;
+4. send/verify Gmail START before substantive work;
+5. resume only from the durable next action;
+6. enter close reserve at minute 26;
+7. persist CLOSE_INTENT, search Gmail by delivery_key, send/verify END, persist CLOSED;
+8. only then return the short Gmail pointer in ChatGPT.
+
+## Product direction preserved
+
+Communication hardening does not change the product goal: continue B-EDGE as a coherent dedicated Android full-node/API server appliance. Do not regress to a micro-beta chain. The phone remains the persistent low-power server/relay/store-and-forward node; the PC remains the Windows/heavy worker and must not be the sole communication center.
+
+---
+
 # R73 Provider-Proof Closeout Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
