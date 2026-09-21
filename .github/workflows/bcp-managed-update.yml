@@ -4,11 +4,13 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/bcp_server.py"
       - "release/server.json"
       - ".github/workflows/bcp-managed-update.yml"
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/bcp_server.py"
       - "release/server.json"
       - ".github/workflows/bcp-managed-update.yml"

@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "release/current.json"
@@ -26,6 +27,7 @@ on:
       - ".github/workflows/current-release-contract.yml"
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "release/current.json"

@@ -6,6 +6,7 @@ on:
   pull_request:
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "release/server.json"

@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/bcp_server.py"
@@ -15,6 +16,7 @@ on:
       - ".github/workflows/windows-bootstrap-validation.yml"
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/bcp_server.py"

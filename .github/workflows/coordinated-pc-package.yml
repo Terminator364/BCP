@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
@@ -14,6 +15,7 @@ on:
       - ".github/workflows/coordinated-product.yml"
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/INSTALL_BCP_FINAL.cmd"
       - "windows/INSTALL_BCP_FINAL.ps1"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"

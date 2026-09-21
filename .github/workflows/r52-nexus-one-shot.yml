@@ -3,6 +3,7 @@ name: BCP Nexus One-Shot Human-Action Qualification
 on:
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/NEXUS_AUTH_RETRY_CURRENT.ps1"
       - "windows/NEXUS_AUTH_RETRY_CURRENT.cmd"
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
@@ -14,6 +15,7 @@ on:
   push:
     branches: [main]
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/NEXUS_AUTH_RETRY_CURRENT.ps1"
       - "windows/NEXUS_AUTH_RETRY_CURRENT.cmd"
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"

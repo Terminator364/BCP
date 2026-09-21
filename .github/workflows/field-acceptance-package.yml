@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
       - "windows/bcp_server.py"
@@ -11,6 +12,7 @@ on:
       - ".github/workflows/field-acceptance-package.yml"
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
       - "windows/bcp_server.py"

@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/**"
       - "android-b-edge/**"
       - "release/**"
@@ -15,6 +16,7 @@ on:
       - ".github/workflows/field-ecosystem-preflight.yml"
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "windows/**"
       - "android-b-edge/**"
       - "release/**"

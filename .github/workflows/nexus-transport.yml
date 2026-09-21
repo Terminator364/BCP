@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "nexus/**"
       - "windows/bcp_telegram_observability.py"
       - "windows/CONFIGURE_BCP_NEXUS.ps1"
@@ -15,6 +16,7 @@ on:
       - ".github/workflows/nexus-transport.yml"
   push:
     paths:
+      - ".project-memory/QUALIFICATION_TRIGGER.json"
       - "nexus/**"
       - "windows/bcp_telegram_observability.py"
       - "windows/CONFIGURE_BCP_NEXUS.ps1"
