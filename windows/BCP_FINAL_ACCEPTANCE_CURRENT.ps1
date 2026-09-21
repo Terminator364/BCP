@@ -7,7 +7,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$TargetVersion = "0.7.13"
+$TargetVersion = "0.7.14"
 $Project = "buildhub"
 $Port = 8765
 $BaseUrl = "http://127.0.0.1:$Port"
