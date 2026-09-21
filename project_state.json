@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R78_ABC_SOURCE_RECONCILED_CHRONICLE_IMPLEMENTED_CI_REQUALIFICATION",
-  "last_completed_atomic_action": "R78 preserves PR #148's A+B+C/Universal Chronicle work, reads the authoritative APIAX07 handoff, BCP understanding dossier and UCMF001 Postulates 1-4 from Library, fixes the stale Room migration validator that broke exact-head Field Ecosystem CI, refreshes macro A+B+C maturity to 57.0% functional / 45.35% evidence, and synchronizes 25-minute 23+2 PRIMARY_ASSISTANT closeout without normal automation dependency.",
-  "next_action": "Open the R78 superseding reconciliation PR, run exact-head qualification, fix any remaining deterministic gate failures, then reread main and merge through the single-writer fence if unchanged. After integration, continue the coherent B-EDGE 2.2 full-node vertical slice: encrypted/authenticated LAN transport, canonical memory admission/supersession, source/capability registry, Telegram field relay and complete server-first UI before any new user installation.",
+  "status": "R78_ABC_SOURCE_RECONCILED_PR149_CI_REQUALIFICATION_PENDING_FINAL_ANDROID_SIM",
+  "last_completed_atomic_action": "25-minute R77/R78 tranche closed normally by PRIMARY_ASSISTANT: A+B+C sources reconciled from APIAX07 handoff, BCP dossier and UCMF001 v4; Chronicle/coverage refreshed; PR149 created; stale Field validator and punctuation-fragile Nexus continuity tests fixed; core exact-head gates passed on product head 5ce449f..., Android Human-Action Simulation was cancelled by later head advancement and must be rerun on final head. Gmail END provider readback confirmed message 1a0c609b60dbc048.",
+  "next_action": "Next tranche label R78+. Send Gmail START, reload integral A+B+C and PR149 final head, obtain exact-head Android Human-Action Simulation plus all mandatory gates, reread main/writer fence, reconcile or merge PR149, close superseded PR146/147/148 only after preserved-superset verification, then continue encrypted/authenticated LAN + memory supersession + capability registry + Telegram field relay + full server cockpit before any phone reinstall.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2646,6 +2646,9 @@
     "chat_final_before_end_ack_forbidden": true,
     "current_delivery_key": "BCP25-20260921-2251-R77",
     "current_start_message_id": "1a0c5f3d387fc1b3",
-    "next_external_tranche_label": "R78"
+    "next_external_tranche_label": "R78",
+    "current_end_message_id": "1a0c609b60dbc048",
+    "current_end_verified": true,
+    "last_closed_at_kinshasa": "2026-09-21T23:15:20+01:00"
   }
 }
