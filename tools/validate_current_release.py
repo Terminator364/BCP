@@ -15,6 +15,9 @@ TELEGRAM = ROOT / "release" / "telegram_observability.json"
 SERVER_SOURCE = ROOT / "windows" / "bcp_server.py"
 TELEGRAM_SOURCE = ROOT / "windows" / "bcp_telegram_observability.py"
 SPEC = ROOT / "docs" / "CANONICAL_PRODUCT_REQUIREMENTS.md"
+CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.json"
+DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
+PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
 
 
 def fail(message: str) -> None:
@@ -53,6 +56,9 @@ def main() -> int:
     source = SERVER_SOURCE.read_bytes()
     telegram_source = TELEGRAM_SOURCE.read_bytes()
     spec = SPEC.read_text(encoding="utf-8")
+    cadence = load(CADENCE_POLICY)
+    delivery = load(DELIVERY_POLICY)
+    pre_human = load(PRE_HUMAN_POLICY)
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
@@ -71,6 +77,20 @@ def main() -> int:
     for key, expected in required_policy.items():
         if policy.get(key) is not expected:
             fail("policy." + key)
+
+    if int(cadence.get("target_minutes") or 0) != 25:
+        fail("cadence_target_not_25")
+    window = cadence.get("acceptable_window_minutes") or []
+    if window != [20, 25]:
+        fail("cadence_window_not_20_25")
+    if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
+        fail("email_first_delivery_contract")
+    if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT":
+        fail("chat_pointer_only_contract")
+    if pre_human.get("default_rule") != "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE":
+        fail("pre_human_action_simulation_contract")
+    if "RUNTIME_PATH" not in (pre_human.get("required_layers") or []):
+        fail("pre_human_runtime_layer_missing")
 
     m = re.search(r"^Revision:\s*(\S+)", spec, re.M)
     if not m or m.group(1) != cur.get("requirements_revision"):
