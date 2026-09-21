@@ -8,7 +8,7 @@ On a fresh conversation, this code means:
 - load the current durable `project_state.json`, this file, the canonical requirements, R55 delivery policy, writer-fence policy and CURRENT manifests;
 - do not reconstruct the project from chat history;
 - resume from the next uncommitted action only;
-- preserve the 8–10 minute tranche and email-only detailed checkpoint rule;
+- preserve the 25-minute target tranche (practical 24–25 minute window) and email-first / ChatGPT-pointer-only checkpoint rule;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
 Current field truth at the R56 checkpoint:
