@@ -40,6 +40,7 @@ TELEGRAM_COMPANION_PATH = APP_ROOT / "telegram_observability.py"
 TELEGRAM_COMPANION_STATE_PATH = STATE_DIR / "telegram_companion_update.json"
 TELEGRAM_COMPANION_HEALTH_PATH = STATE_DIR / "telegram_worker_health.json"
 TELEGRAM_COMPANION_NOTICE_PATH = STATE_DIR / "telegram_transport_notice.json"
+TELEGRAM_COMPANION_ROUTE_PATH = STATE_DIR / "telegram_transport_route.json"
 TELEGRAM_COMPANION_WATCHDOG_PATH = STATE_DIR / "telegram_companion_watchdog.json"
 MISSION_WATCHDOG_STATE_PATH = STATE_DIR / "mission_watchdog.json"
 MISSION_RESUME_REQUEST_PATH = STATE_DIR / "mission_resume_request.json"
@@ -485,6 +486,7 @@ def telegram_companion_runtime_status() -> dict:
     health = read_json(TELEGRAM_COMPANION_HEALTH_PATH, {}) or {}
     update = read_json(TELEGRAM_COMPANION_STATE_PATH, {}) or {}
     notice = read_json(TELEGRAM_COMPANION_NOTICE_PATH, {}) or {}
+    route = read_json(TELEGRAM_COMPANION_ROUTE_PATH, {}) or {}
     age = None
     try:
         if TELEGRAM_COMPANION_HEALTH_PATH.is_file():
@@ -509,6 +511,11 @@ def telegram_companion_runtime_status() -> dict:
         "notice_kind": str(notice.get("kind") or "")[:40],
         "notice_sent_at": str(notice.get("sent_at") or "")[:80],
         "notice_message_id": int(notice.get("message_id") or 0),
+        "transport_route": str(route.get("route") or "UNKNOWN")[:40],
+        "transport_route_status": str(route.get("status") or "NOT_OBSERVED")[:40],
+        "transport_route_updated_at": str(route.get("updated_at") or "")[:80],
+        "transport_route_relay_host": str(route.get("relay_host") or "")[:80],
+        "transport_route_detail": str(route.get("detail") or "")[:180],
     }
 
 
@@ -590,6 +597,11 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "telegram_companion_consecutive_failures": telegram["consecutive_failures"],
         "telegram_companion_update_state": telegram["update_state"],
         "telegram_companion_target_version": telegram["target_version"],
+        "telegram_transport_route": telegram["transport_route"],
+        "telegram_transport_route_status": telegram["transport_route_status"],
+        "telegram_transport_route_updated_at": telegram["transport_route_updated_at"],
+        "telegram_transport_route_relay_host": telegram["transport_route_relay_host"],
+        "telegram_transport_route_detail": telegram["transport_route_detail"],
         "edge_relay_active": edge_relay["active"],
         "edge_relay_host": edge_relay["relay_host"],
         "edge_relay_port": edge_relay["relay_port"],
