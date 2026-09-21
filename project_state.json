@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R58_MERGED_POSTMERGE_CI_RUNNING_FIELD_UPDATE_PENDING",
-  "last_completed_atomic_action": "R58 merged to main at 0db531771d631ebade0847494baf3ca82c713674 after exact-head CI PASS. BCP 0.7.13 includes the Nexus retry uuid fix. 25-minute target cadence, email-first/ChatGPT-pointer-only delivery, and pre-human action simulation are now canonical. Exact Windows runtime retry simulation and exact one-shot PowerShell success/HTTP500 negative-control simulation passed before merge.",
-  "next_action": "No user action yet. Finish/read post-merge CI and wait for machine-readable field readback proving MBMPC has automatically advanced from BCP 0.7.12 to 0.7.13. Only after 0.7.13 is field-read back may BCP request one fresh Nexus Cloudflare device authorization. After consent, require provider-authenticated whoami/readback before declaring Nexus complete.",
+  "status": "R59_GMAIL_START_END_HANDSHAKE_CANDIDATE",
+  "last_completed_atomic_action": "R59 communication invariant persisted: Gmail START before substantive user-invoked project work, Gmail END full checkpoint before ChatGPT response, then ChatGPT pointer-only. The current tranche START email was sent successfully on 2026-09-21 at 02:23 Kinshasa.",
+  "next_action": "Finish this tranche, send the R59 END checkpoint by Gmail, then return only the Gmail/date-time/checkpoint pointer in ChatGPT. Subsequent BCPGO/Continue/user relaunches must repeat START -> WORK -> END -> CHAT POINTER.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1884,7 +1884,7 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R58",
-    "revision": "2026-09-21-R58",
+    "revision": "2026-09-21-R59",
     "target_minutes": 25,
     "work_slice_minutes": "24-25",
     "checkpoint_each_slice": true,
@@ -1897,7 +1897,9 @@
     "current_install_folder": "API_BCP/00_INSTALL_CURRENT",
     "replace_current_in_place": true,
     "cleanup_temporary_uploads": true,
-    "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH"
+    "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH",
+    "email_start_notice_before_substantive_work": true,
+    "email_end_checkpoint_before_chat_pointer": true
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2042,5 +2044,26 @@
     "merge_sha": "0db531771d631ebade0847494baf3ca82c713674",
     "exact_head_sha": "c37b770063d061194fb109ab6b3c4b9cc9ffc9c2",
     "exact_head_ci": "PASS"
+  },
+  "r59_gmail_handshake": {
+    "status": "IMPLEMENTED_CANDIDATE",
+    "revision": "2026-09-21-R59",
+    "tranche_target_minutes": 25,
+    "order": [
+      "EMAIL_START_NOTICE",
+      "SUBSTANTIVE_WORK",
+      "EMAIL_END_FULL_CHECKPOINT",
+      "CHATGPT_POINTER_ONLY"
+    ],
+    "start_mail_required": true,
+    "end_mail_required": true,
+    "chat_pointer_fields": [
+      "MAIL_SENT",
+      "KINSHASA_DAY_DATE_TIME",
+      "CHECKPOINT_ID"
+    ],
+    "current_start_mail_receipt": "1a0c1901b19bbc69",
+    "current_start_mail_local_time": "2026-09-21T02:23:00+01:00",
+    "current_end_mail_receipt": null
   }
 }
