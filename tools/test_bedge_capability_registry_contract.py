@@ -38,5 +38,6 @@ public_block = POLICY.split("isPublicApiPath", 1)[1].split("isAllowedApiPath", 1
 ck("api-private", '"/v1/node/capability-registry"' not in public_block)
 ck("api-allowed", '"/v1/node/capability-registry"' in POLICY)
 ck("self-refresh", "refreshBuiltinCapabilities" in SERVICE)
+ck("provider-proof-boundary", '"INTERNET_UPLINK"' in CLIENT and '"TELEGRAM_CONNECT_RELAY"' in CLIENT and '"provider_probe_required", true' in CLIENT and '"UNKNOWN"' in CLIENT)
 ck("no-arbitrary-shell", '"arbitrary_shell", false' in SERVICE and "ProcessBuilder" not in CLIENT)
 print("BCP_BEDGE_CAPABILITY_REGISTRY_CONTRACT=PASS")
