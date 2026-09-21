@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.2-rc1-edge-relay";
+    private static final String EDGE_VERSION = "2.1.3-rc1-full-node";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -75,6 +75,13 @@ public final class BcpClient {
             JSONObject body = new JSONObject();
             body.put("port", EdgeRelayPolicy.RELAY_PORT);
             body.put("capability", "HTTPS_CONNECT_TELEGRAM");
+            body.put("node_port", EdgeNodePolicy.NODE_PORT);
+            JSONArray capabilities = new JSONArray();
+            capabilities.put("HTTPS_CONNECT_TELEGRAM");
+            capabilities.put("EDGE_NODE_V1");
+            capabilities.put("DURABLE_STORE_FORWARD");
+            capabilities.put("LOCAL_TELEGRAM_OUTBOUND");
+            body.put("capabilities", capabilities);
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
             JSONObject r = requestJson(
@@ -93,6 +100,12 @@ public final class BcpClient {
             telemetry.add("EDGE_RELAY_REGISTRATION_DEFERRED", ex.getClass().getSimpleName());
             return out;
         }
+    }
+
+    public JSONObject telegramEdgeBootstrap() throws Exception {
+        ensureConnected();
+        return requestJson("GET", getServer() + "/v1/edge/telegram/bootstrap", null,
+                getToken(), null, 1800, 3500);
     }
 
     public JSONObject serverUpdateStatus() throws Exception {
@@ -603,6 +616,8 @@ public final class BcpClient {
             out.put("sentinel", sentinel);
             JSONObject ctx = contextPack();
             out.put("context_cached", ctx.length() > 0);
+            JSONObject local = EdgeLocalExecutor.drain(context, this);
+            out.put("local_executor", local);
             flushQueuedJobs();
             out.put("edge_relay", registerEdgeRelay());
             out.put("queued_jobs_remaining", orchestrator.pendingCount());
@@ -663,6 +678,10 @@ public final class BcpClient {
         out.put("sentinel", sentinelStatus());
         out.put("context_cached", orch.optBoolean("context_cached", false));
         out.put("queued_jobs_remaining", orch.optInt("queued_jobs_remaining", 0));
+        out.put("phone_node_role", "B_EDGE_FULL_NODE");
+        out.put("phone_node_port", EdgeNodePolicy.NODE_PORT);
+        out.put("phone_network", EdgeConnectivity.snapshot(context));
+        out.put("telegram_outbound_configured", new TelegramCredentialStore(context).configured());
         out.put("paired", !getToken().isEmpty());
         out.put("ok", true);
         telemetry.add("EDGE_ACCEPTANCE_PASS",
