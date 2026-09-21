@@ -29,6 +29,8 @@ jobs:
   emulator-ui-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      ANDROID_AVD_HOME: ${{ runner.temp }}/bcp-avd
     steps:
       - uses: actions/checkout@v4
 
@@ -50,9 +52,12 @@ jobs:
           AVDMANAGER="$SDK/cmdline-tools/latest/bin/avdmanager"
           test -x "$SDKMANAGER"
           test -x "$AVDMANAGER"
+          mkdir -p "$ANDROID_AVD_HOME"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;google_apis;x86_64"
           echo "no" | "$AVDMANAGER" create avd -n bcp_api35 -k "system-images;android-35;google_apis;x86_64" --force
+          "$SDK/emulator/emulator" -list-avds | tee avd-list-created.txt
+          grep -Fx "bcp_api35" avd-list-created.txt >/dev/null
 
       - name: Build exact debug APK
         shell: bash
@@ -73,6 +78,8 @@ jobs:
           sudo chmod 666 /dev/kvm || true
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
+          "$SDK/emulator/emulator" -list-avds | tee avd-list-boot.txt
+          grep -Fx "bcp_api35" avd-list-boot.txt >/dev/null
           nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
           EMU_PID=$!
           DEVICE=""
@@ -176,4 +183,6 @@ jobs:
             bcp-window.xml
             bcp-window-relaunch.xml
             emulator.log
+            avd-list-created.txt
+            avd-list-boot.txt
           if-no-files-found: ignore
