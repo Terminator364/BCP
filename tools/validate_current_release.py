@@ -20,6 +20,7 @@ SPEC = ROOT / "docs" / "CANONICAL_PRODUCT_REQUIREMENTS.md"
 CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.json"
 DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
 PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+HUMAN_ACTION_MATRIX = ROOT / ".project-memory" / "HUMAN_ACTION_QUALIFICATION_MATRIX.json"
 
 
 def fail(message: str) -> None:
@@ -63,6 +64,7 @@ def main() -> int:
     cadence = load(CADENCE_POLICY)
     delivery = load(DELIVERY_POLICY)
     pre_human = load(PRE_HUMAN_POLICY)
+    human_actions = load(HUMAN_ACTION_MATRIX)
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
@@ -102,6 +104,34 @@ def main() -> int:
         fail("pre_human_action_simulation_contract")
     if "RUNTIME_PATH" not in (pre_human.get("required_layers") or []):
         fail("pre_human_runtime_layer_missing")
+    if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
+        fail("human_action_matrix_schema")
+    actions = human_actions.get("actions") or []
+    by_id = {str(a.get("action_id") or ""): a for a in actions}
+    required_action_ids = {
+        "WINDOWS_INSTALL_OR_UPDATE",
+        "WINDOWS_FINAL_ACCEPTANCE",
+        "NEXUS_FRESH_DEVICE_AUTH",
+        "ANDROID_BEDGE_INSTALL_OR_OPEN",
+    }
+    if set(by_id) != required_action_ids:
+        fail("human_action_matrix_coverage")
+    for action_id, action in by_id.items():
+        if not (action.get("entrypoints") or []):
+            fail("human_action_entrypoint_missing:" + action_id)
+        if not (action.get("required_workflows") or []):
+            fail("human_action_workflow_missing:" + action_id)
+        if not (action.get("required_evidence") or []):
+            fail("human_action_evidence_missing:" + action_id)
+        if not (action.get("remaining_field_boundary") or []):
+            fail("human_action_field_boundary_missing:" + action_id)
+    android_action = by_id["ANDROID_BEDGE_INSTALL_OR_OPEN"]
+    if "android_emulator_api_35" not in (android_action.get("representative_environment") or []):
+        fail("android_emulator_qualification_missing")
+    nexus_action = by_id["NEXUS_FRESH_DEVICE_AUTH"]
+    evidence = set(nexus_action.get("required_evidence") or [])
+    if not {"202_LAUNCHED_positive_control", "500_HOLD_negative_control"}.issubset(evidence):
+        fail("nexus_positive_negative_controls_missing")
 
     m = re.search(r"^Revision:\s*(\S+)", spec, re.M)
     if not m or m.group(1) != cur.get("requirements_revision"):
