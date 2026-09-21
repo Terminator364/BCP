@@ -7,6 +7,7 @@ import android.net.NetworkCapabilities;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.PowerManager;
+import android.os.StatFs;
 import org.json.JSONObject;
 
 public final class EdgeResourceGovernor {
@@ -42,7 +43,21 @@ public final class EdgeResourceGovernor {
             out.put("power_save",powerSave);
             out.put("thermal_status",thermal);
             out.put("low_memory",lowMemory);
-            out.put("avail_mem_bytes",mi.availMem);
+            long totalMem=Math.max(1L,mi.totalMem);
+            long availMem=Math.max(0L,mi.availMem);
+            int memoryLoad=(int)Math.max(0L,Math.min(100L,100L-((availMem*100L)/totalMem)));
+            StatFs fs=new StatFs(context.getFilesDir().getAbsolutePath());
+            long storageTotal=Math.max(1L,fs.getTotalBytes());
+            long storageFree=Math.max(0L,fs.getAvailableBytes());
+            long storageReserve=Math.max(512L*1024L*1024L,storageTotal/20L);
+            boolean storagePressure=storageFree<storageReserve;
+            out.put("avail_mem_bytes",availMem);
+            out.put("total_mem_bytes",totalMem);
+            out.put("memory_load_percent",memoryLoad);
+            out.put("storage_free_bytes",storageFree);
+            out.put("storage_total_bytes",storageTotal);
+            out.put("storage_reserve_bytes",storageReserve);
+            out.put("storage_pressure",storagePressure);
             out.put("network_metered",metered);
             out.put("network_present",networkPresent);
             out.put("network_connected",networkPresent);
@@ -54,7 +69,9 @@ public final class EdgeResourceGovernor {
 
     public static boolean shouldDefer(String resourceClass, JSONObject s){
         if("EDGE_R0".equals(resourceClass)) return false;
-        boolean low=s.optBoolean("low_memory",false);
+        boolean low=s.optBoolean("low_memory",false)
+                || s.optInt("memory_load_percent",0)>=92;
+        boolean storage=s.optBoolean("storage_pressure",false);
         boolean power=s.optBoolean("power_save",false);
         int battery=s.optInt("battery_pct",-1);
         int thermal=s.optInt("thermal_status",-1);
@@ -64,10 +81,10 @@ public final class EdgeResourceGovernor {
             // because the phone itself is under RAM/thermal pressure.
             return false;
         if("EDGE_R2".equals(resourceClass))
-            return low || power || hot || (battery>=0 && battery<25 && !s.optBoolean("charging",false));
+            return low || storage || power || hot || (battery>=0 && battery<25 && !s.optBoolean("charging",false));
         if("REMOTE_AI".equals(resourceClass))
-            return !s.optBoolean("internet_validated",false) || power || hot
+            return storage || !s.optBoolean("internet_validated",false) || power || hot
                     || (battery>=0 && battery<15 && !s.optBoolean("charging",false));
-        return low || hot;
+        return low || storage || hot;
     }
 }
