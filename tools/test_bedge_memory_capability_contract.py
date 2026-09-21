@@ -26,10 +26,12 @@ ck("capability-table", 'tableName = "edge_capabilities"' in CAP and "capabilityI
 ck("claim-table", 'tableName = "edge_memory_claims"' in CLAIM and "supersedesClaimId" in CLAIM and "idempotencyKey" in CLAIM)
 ck("claim-idem-index", '"projectId", "idempotencyKey"' in CLAIM and "unique = true" in CLAIM)
 ck("dao-capabilities", all(x in DAO for x in ["putCapability", "capabilities(", "capability("]))
-ck("dao-claims", all(x in DAO for x in ["insertMemoryClaim", "memoryClaimByIdempotency", "memoryClaims", "setMemoryClaimState"]))
+ck("dao-claims", all(x in DAO for x in ["insertMemoryClaim", "memoryClaimByIdempotency", "memoryClaims", "memoryClaimById", "latestAdmittedMemoryClaim", "setMemoryClaimState"]))
 ck("admission-precedence", "EdgePolicy.canReplaceMemory" in ORCH and "PRECEDENCE_REJECTED" in ORCH)
 ck("supersession", "SUPERSEDED_BY:" in ORCH and "supersedesClaimId" in ORCH)
+ck("same-key-supersession", "invalid_supersedes_claim" in ORCH and "latestAdmittedMemoryClaim" in ORCH)
 ck("claim-idempotency", "memoryClaimByIdempotency" in ORCH and "ALREADY_RECORDED" in ORCH)
+ck("internal-memory-routes-through-ledger", "JSONObject receipt = admitMemoryClaim(" in ORCH and '"B_EDGE_INTERNAL"' in ORCH)
 ck("capability-registry", "putCapability" in ORCH and "capabilityRegistry" in ORCH)
 ck("builtin-capability-refresh", all(x in CLIENT for x in [
     "LOCAL_API_SERVER", "DURABLE_STATE_CORE", "LOCAL_EXECUTOR", "NETWORK_UPLINK",
