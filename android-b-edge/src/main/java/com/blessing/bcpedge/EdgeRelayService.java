@@ -242,6 +242,7 @@ public final class EdgeRelayService extends Service {
             caps.put("role", "DEDICATED_EDGE_API_SERVER");
             caps.put("local_api", true);
             caps.put("durable_queue", true);
+            caps.put("content_addressed_private_cache", true);
             caps.put("store_and_forward", true);
             caps.put("telegram_https_connect_relay", true);
             caps.put("nsd_presence", true);
