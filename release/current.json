@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-21-R62",
+  "requirements_revision": "2026-09-21-R63",
   "zero_usd": true,
   "overall_state": "CI_QUALIFIED_DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.14",
+      "version": "0.7.15",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "74746f61a3b24be481ba771c5237a77720c6b9eeb2a7f3b15aed39513a1c9b06"
+        "sha256": "514cd1642b1506ccf5154d21a59eadc6ede645f4cb22e2ff36b2e7c3e84486a0"
       },
-      "notes": "BCP 0.7.14 preserves the Nexus human gate across transient network/DNS staging failures and makes the one-shot retry truthfully autonomous under transport recovery."
+      "notes": "BCP 0.7.15 adds durable compact communication outbox + B-EDGE pull/ack relay with runtime delivery telemetry."
     },
     "android_b_edge": {
       "version": "2.1.0-rc1-sentinel-evergreen",
@@ -56,7 +56,7 @@
     }
   },
   "telegram_cockpit": {
-    "version": "2026.09.21-comms-autonomy-v20",
+    "version": "2026.09.21-adaptive-edge-relay-v21",
     "source_manifest": "release/telegram_observability.json",
     "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
     "field_verified": false,
@@ -155,7 +155,10 @@
       "one-shot Telegram online notice after PC/worker restart when not recently announced",
       "explicit Telegram transport recovery notice after network outage or Wi-Fi/hotspot change",
       "silent sparse 90-minute Telegram alive proof while the PC remains on",
-      "Nexus STAGE_FAILED network recovery preserves prior human-auth receipt and avoids misleading NO_RETRY success"
+      "Nexus STAGE_FAILED network recovery preserves prior human-auth receipt and avoids misleading NO_RETRY success",
+      "R63 durable failed-notification outbox for B-EDGE relay",
+      "R63 Wi-Fi-first / selective <=16 KiB cellular B-EDGE control-plane relay",
+      "R63 direct PC Telegram is opportunistic, not a single point of failure"
     ]
   }
 }
