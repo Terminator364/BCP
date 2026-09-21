@@ -8,7 +8,7 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.2-rc1-edge-relay-evergreen",
-  "requirements_revision": "2026-09-21-R64",
+  "requirements_revision": "2026-09-21-R69",
   "release_train": "BCP-0.7.15_EDGE-2.1.2-edge-relay_NEXUS-0.2.6",
   "notes": "BCP 0.7.15 coordinates with the signed B-EDGE 2.1.2 dedicated Edge relay release, adds short-lived authenticated B-EDGE relay registration and external relay liveness, and preserves R62 Nexus network-recovery semantics."
 }
