@@ -411,6 +411,7 @@ def main() -> int:
     cadence_policy = load(".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json")
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
+    communication_policy = load(".project-memory/COMMUNICATION_SURVIVAL_POLICY.json")
     assert cadence_policy["acceptable_window_minutes"] == [29, 30]
     assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [29, 30]
     assert delivery_policy["cadence"]["work_slice_minutes"] == "29-30"
@@ -437,6 +438,13 @@ def main() -> int:
     assert pre_human_policy["default_rule"] == "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE"
     assert "RUNTIME_PATH" in pre_human_policy["required_layers"]
     assert pre_human_policy["failure_behavior"].startswith("KEEP_WORKING_AUTOMATICALLY")
+    assert communication_policy["schema"] == "bcp.communication_survival_policy/1"
+    assert "NO_SINGLE_COMMUNICATION_CHANNEL_IS_CANONICAL_STATE" in communication_policy["principles"]
+    assert communication_policy["channels"]["gmail"]["end_retry_until_provider_ack"] is True
+    assert communication_policy["channels"]["phone_edge"]["store_and_forward"] is True
+    assert communication_policy["channels"]["telegram"]["fallback_path"] == "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM"
+    assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
+    assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
