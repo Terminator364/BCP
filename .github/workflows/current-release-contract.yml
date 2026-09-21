@@ -21,6 +21,7 @@ on:
       - ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+      - ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json"
       - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
       - ".github/workflows/current-release-contract.yml"
   push:
