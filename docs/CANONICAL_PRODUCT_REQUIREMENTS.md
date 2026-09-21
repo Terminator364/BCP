@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R72
+Revision: 2026-09-21-R73
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1981,3 +1981,25 @@ For the 30-minute interactive tranche:
 - ChatGPT is pointer-only after END acknowledgement;
 - user messages, UI refreshes and conversation activity MUST NOT act as closeout triggers;
 - `.project-memory/ACTIVE_TRANCHE.json` is the durable source for tranche lifecycle and is loaded by `BCPGO BCP`.
+
+
+## P0 — Provider-proof communication closeout — R73
+
+A scheduled/automation task reaching `COMPLETED` is not a communication success.
+
+For every BCP tranche:
+- the active foreground session MUST attempt the full Gmail END before returning whenever it is still alive;
+- the normal and hard close guards are backup paths, not the primary closeout path;
+- a backup guard MUST first search Gmail SENT for the exact tranche/checkpoint id;
+- if the END is missing, the backup guard MUST be able to send a minimal precomposed END without requiring a fresh deep GitHub/Drive analysis;
+- Gmail END is delivered only when a real provider message id exists and SENT search/readback confirms the exact checkpoint;
+- the BCP Gmail label MUST be present;
+- scheduler completion, automation-card completion, ChatGPT visibility, Drive persistence, Telegram queue acceptance and phone queue acceptance are insufficient as delivery proof;
+- a user relaunch message MUST NEVER be required to trigger END delivery;
+- after a provider-acknowledged END, ChatGPT is pointer-only.
+
+Timing target:
+- pre-close durable snapshot: T+26;
+- normal backup guard: T+27;
+- hard backup guard: T+29;
+- absolute tranche deadline: T+30.
