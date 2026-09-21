@@ -1,3 +1,62 @@
+# R68 Fresh Conversation Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+On a fresh conversation, this code MUST recover durable state first and preserve the current communication contract without asking the user to restate it.
+
+## Communication contract
+
+1. Apply Gmail label **BCP** to BCP START/END mail.
+2. Send Gmail START before substantive work.
+3. Work target: approximately 25 minutes.
+4. Send the full Gmail END checkpoint and require provider send acknowledgement.
+5. Before END acknowledgement, ChatGPT emits no end message.
+6. After END acknowledgement, ChatGPT is pointer-only: Gmail + Kinshasa day/date/time + checkpoint id.
+7. Use the tranche END watchdog as fail-safe; normal END disables it after successful send.
+8. Telegram is a secondary witness/remote-control channel, never the sole durable checkpoint.
+
+## Dedicated old phone role
+
+The old Android phone is a **primary BCP Edge/server node**, not a passive client. It is dedicated infrastructure and should absorb persistent/low-power communication work whenever feasible:
+- local API/relay and authenticated PC<->phone control path;
+- durable Room-backed state, local resume cache and pending checkpoint queue;
+- WorkManager reconciliation and foreground remote-messaging service;
+- Telegram-only HTTPS CONNECT relay with end-to-end TLS and strict `api.telegram.org:443` allowlist;
+- network-wait/store-and-forward semantics when no uplink exists;
+- no SIM is assumed in the old phone;
+- PC remains a Windows/compute node when Windows-specific work is needed, not the single communication center.
+
+## Current installable phone release
+
+Stable Drive CURRENT is now replaced in place with:
+- package: `com.blessing.bcpedge.evergreen`;
+- versionCode: **212**;
+- versionName: **2.1.2-rc1-edge-relay-evergreen**;
+- stable file: `API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk`;
+- SHA-256: `3eb1260dee31c3ff2b9668d22fd90460bdc331426f9f5361d46eb78b0a59e2cc`;
+- signing certificate SHA-256: `0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617`;
+- APK Signature Scheme v2/v3: PASS;
+- Drive byte/hash readback: PASS;
+- previous 2.1.0 copy preserved for rollback.
+
+The install action, when exposed, is **in-place only**: do not uninstall and do not re-pair unless a field failure proves it necessary.
+
+## Current integration gate
+
+R68 work branch: `work/bcp/r68-bedgerelease-continuity-20260921-1524`.
+Base main: `61736e160c65ee47be77f384a9c3369a33c122a3`.
+
+Before integration:
+1. finish exact-head CI for the R68 metadata/continuity candidate;
+2. reread `main` and writer fence;
+3. if main moved, reconcile and requalify;
+4. merge with exact expected head SHA;
+5. verify main readback.
+
+After integration, the next field gate is: install B-EDGE 2.1.2 over the existing app, then verify version readback, pairing continuity, foreground relay, relay registration, and one Telegram round-trip.
+
+---
+
 # R64 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.

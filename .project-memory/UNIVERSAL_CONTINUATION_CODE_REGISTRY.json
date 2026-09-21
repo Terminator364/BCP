@@ -33,7 +33,12 @@
     "email_end_checkpoint_before_chat_pointer": true,
     "email_end_retry_until_provider_ack": true,
     "chat_output_before_end_ack_forbidden": true,
-    "chat_pointer_only_after_end_ack": true
+    "chat_pointer_only_after_end_ack": true,
+    "project_mail_label_required": true,
+    "project_mail_label_source": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    "bcp_install_current_source": "API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk",
+    "bcp_phone_primary_edge_node": true,
+    "bcpgo_bcp_loads_current_install_manifest": true
   },
   "universal": [
     {
@@ -67,9 +72,10 @@
       "project": "API/BCP",
       "codes": [
         "APIAX07",
-        "APIAX07 RESYNC"
+        "APIAX07 RESYNC",
+        "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS",
+      "status": "VALID_SCOPED_ALIAS_WITH_R68_PHONE_EDGE_AND_MAIL_CONTRACT",
       "fallback": "BCPGO BCP"
     },
     {

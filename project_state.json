@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R64_BEDGE_ADAPTIVE_RELAY_CANDIDATE_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R64 candidate now implements the previously missing dedicated-phone transport role: B-EDGE 2.1.2 runs a bounded authenticated Telegram-only HTTPS CONNECT relay, BCP 0.7.15 registers its fresh private-LAN endpoint and exposes liveness, and Telegram V21 falls back to B-EDGE only after direct transport errors while preserving end-to-end TLS. No SIM is assumed; no-uplink remains durable NETWORK_WAIT/store-and-forward.",
-  "next_action": "Finish exact-head PR #133 qualification. Automatically fix any CI/simulation defect without user retry. If green, reread main/writer fence and merge. Then allow resident PC update to BCP 0.7.15 and build/sign/promote B-EDGE 2.1.2 only through the existing pinned signing identity and in-place CURRENT readback. Field-prove relay registration and one Telegram round-trip before representing B-EDGE relay as FIELD_ACTIVE.",
+  "status": "R68_SIGNED_BEDGE_2_1_2_DISTRIBUTED_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "Signed B-EDGE 2.1.2 exact main source artifact with the pinned Evergreen certificate, verified APK Signature Scheme v2/v3, replaced stable Drive BCP_EDGE_CURRENT.apk in place, read back exact bytes/hash, preserved the previous 2.1.0 APK as rollback, and synchronized release/current + continuity candidate metadata.",
+  "next_action": "Open/qualify the R68 PR on exact head. If required CI passes, reread main and writer fence, merge with expected head SHA, verify main readback, then expose one in-place B-EDGE 2.1.2 install action and field-verify version/pairing/foreground relay/registration/Telegram round-trip.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -153,7 +153,8 @@
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -212,7 +213,10 @@
     "P0_pre_human_action_simulation_gate": true,
     "P0_gmail_start_before_substantive_work": true,
     "P0_gmail_end_provider_ack_before_chat_output": true,
-    "P0_proof_carrying_human_action_qualification": true
+    "P0_proof_carrying_human_action_qualification": true,
+    "P0_phone_primary_edge_server_node": true,
+    "P0_gmail_project_label": true,
+    "P0_current_installable_artifact_readback": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2257,5 +2261,54 @@
     },
     "user_action_required_now": false,
     "field_verified": false
+  },
+  "current_installable_edge_release": {
+    "status": "SIGNED_DISTRIBUTED_FIELD_RUNTIME_UNVERIFIED",
+    "version_code": 212,
+    "version_name": "2.1.2-rc1-edge-relay-evergreen",
+    "package_id": "com.blessing.bcpedge.evergreen",
+    "stable_drive_path": "API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk",
+    "stable_drive_file_id": "1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR",
+    "apk_sha256": "3eb1260dee31c3ff2b9668d22fd90460bdc331426f9f5361d46eb78b0a59e2cc",
+    "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+    "signature_schemes_verified": [
+      "v2",
+      "v3"
+    ],
+    "drive_readback": "PASS",
+    "rollback_drive_file_id": "1_AO0vZSw-ERbhYDzKAjbN-9AfYoqFsrr",
+    "install_mode": "IN_PLACE_NO_UNINSTALL",
+    "field_verified": false
+  },
+  "r68_phone_primary_node": {
+    "status": "CANONICAL_CANDIDATE",
+    "dedicated_phone_role": "PRIMARY_EDGE_SERVER_NODE",
+    "pc_role": "WINDOWS_AND_HEAVY_COMPUTE_NODE_NOT_SOLE_COMMS_CENTER",
+    "sim_required": false,
+    "local_roles": [
+      "AUTHENTICATED_LOCAL_API_RELAY",
+      "ROOM_DURABLE_STATE",
+      "WORKMANAGER_RECONCILIATION",
+      "FOREGROUND_REMOTE_MESSAGING",
+      "LOCAL_RESUME_CACHE",
+      "PENDING_CHECKPOINT_QUEUE",
+      "TELEGRAM_HTTPS_CONNECT_RELAY",
+      "NETWORK_WAIT_STORE_AND_FORWARD"
+    ],
+    "relay_scope": "api.telegram.org:443",
+    "telegram_tls_end_to_end": true,
+    "bot_token_on_phone": false,
+    "field_verified": false
+  },
+  "r68_continuity": {
+    "continuation_code": "BCPGO BCP",
+    "gmail_label": "BCP",
+    "start_mail_before_work": true,
+    "tranche_target_minutes": 25,
+    "end_mail_provider_ack_required": true,
+    "chatgpt_pointer_only_after_end_ack": true,
+    "end_watchdog_fail_safe": true,
+    "current_branch": "work/bcp/r68-bedgerelease-continuity-20260921-1524",
+    "base_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3"
   }
 }

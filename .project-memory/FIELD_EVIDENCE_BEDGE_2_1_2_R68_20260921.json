@@ -1,0 +1,50 @@
+{
+  "schema": "bcp.field_distribution_evidence/1",
+  "checkpoint_id": "BCP-R68-BEDGE-2.1.2-DISTRIBUTION-20260921",
+  "created_at": "2026-09-21T15:32:00+01:00",
+  "source_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3",
+  "android_build_run_id": 35600434251,
+  "android_build_run_number": 375,
+  "source_version_code": 212,
+  "source_version_name": "2.1.2-rc1-edge-relay-evergreen",
+  "package_id": "com.blessing.bcpedge.evergreen",
+  "source_ci": "PASS",
+  "signing": {
+    "authority": "PRIVATE_EVERGREEN",
+    "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+    "verified_schemes": [
+      "v2",
+      "v3"
+    ],
+    "private_material_committed": false
+  },
+  "artifact": {
+    "stable_drive_file_id": "1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR",
+    "stable_drive_name": "BCP_EDGE_CURRENT.apk",
+    "sha256": "3eb1260dee31c3ff2b9668d22fd90460bdc331426f9f5361d46eb78b0a59e2cc",
+    "size_bytes": 2244221,
+    "drive_replacement": "PASS",
+    "drive_readback": "PASS"
+  },
+  "rollback": {
+    "previous_version_name": "2.1.0-rc1-sentinel-evergreen",
+    "previous_drive_copy_id": "1_AO0vZSw-ERbhYDzKAjbN-9AfYoqFsrr",
+    "preserved": true
+  },
+  "qualification": {
+    "exact_main_postmerge_android_build": "PASS",
+    "exact_main_android_human_action_simulation": "PASS",
+    "exact_main_current_release_contract": "PASS",
+    "exact_main_coordinated_product": "PASS",
+    "exact_main_field_ecosystem": "PASS"
+  },
+  "field_state": "INSTALLABLE_DISTRIBUTED_FIELD_RUNTIME_UNVERIFIED",
+  "next_field_gate": [
+    "INSTALL_IN_PLACE_NO_UNINSTALL",
+    "VERSION_2_1_2_READBACK",
+    "PAIRING_CONTINUITY",
+    "FOREGROUND_RELAY_NOTIFICATION",
+    "RELAY_REGISTRATION_READBACK",
+    "ONE_TELEGRAM_ROUND_TRIP"
+  ]
+}
