@@ -22,7 +22,7 @@
       "CHECKPOINT_ID"
     ],
     "cadence_window_minutes": [
-      20,
+      24,
       25
     ],
     "cadence_target_minutes": 25,
