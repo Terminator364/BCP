@@ -89,7 +89,7 @@ def main() -> int:
         "sentinelStaleMs",
         "sentinelAlertCooldownMs",
     )
-    require(edge_db, "EdgeSentinelEntity.class", "Migration(1, 2)", "Migration(2, 3)", "addMigrations(MIGRATION_1_2, MIGRATION_2_3)")
+    require(edge_db, "EdgeSentinelEntity.class", "EdgeEventEntity.class", "EdgeMissionStepEntity.class", "Migration(1, 2)", "Migration(2, 3)", "Migration(3, 4)", "addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)")
     require(edge_worker, "sentinel_state", "resume_pending", "return Result.success(out);", "EDGE_RECONCILE_START")
     require(
         edge_scheduler,
