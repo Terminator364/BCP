@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import http.client
 import html
 import json
 import os
@@ -14,6 +15,7 @@ import time
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
 
 APP_ROOT = Path(os.environ.get(
     "BCP_APP_ROOT",
@@ -23,6 +25,8 @@ STATE_DIR = APP_ROOT / "state"
 TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "telegram_bot_token.txt"
+BCP_PAIR_TOKEN_PATH = STATE_DIR / "bcp_token.txt"
+EDGE_RELAY_STATE_PATH = STATE_DIR / "edge_relay.json"
 CONFIG_PATH = STATE_DIR / "telegram_observability.json"
 OFFSET_PATH = STATE_DIR / "telegram_update_offset.json"
 PRESENCE_PATH = STATE_DIR / "telegram_presence_state.json"
@@ -413,6 +417,59 @@ def text_pdf_bytes(title: str, body: str) -> bytes:
 
 
 class Http:
+    @staticmethod
+    def _edge_relay() -> tuple[str, int, str] | None:
+        try:
+            state = read_json(EDGE_RELAY_STATE_PATH, {}) or {}
+            if not state.get("relay_host") or int(state.get("relay_port") or 0) != 8876:
+                return None
+            if str(state.get("capability") or "") != "HTTPS_CONNECT_TELEGRAM":
+                return None
+            if int(state.get("expires_epoch") or 0) <= int(time.time()):
+                return None
+            pair_token = BCP_PAIR_TOKEN_PATH.read_text(encoding="utf-8").strip()
+            if not pair_token:
+                return None
+            return str(state["relay_host"]), int(state["relay_port"]), pair_token
+        except Exception:
+            return None
+
+    def _json_via_edge(self, url: str, method: str, body: bytes | None,
+                       headers: dict, timeout: int) -> tuple[int, Any]:
+        parsed = urlsplit(url)
+        if parsed.scheme.lower() != "https" or parsed.hostname != "api.telegram.org":
+            raise RuntimeError("edge_relay_target_not_allowed")
+        relay = self._edge_relay()
+        if relay is None:
+            raise RuntimeError("edge_relay_not_available")
+        relay_host, relay_port, pair_token = relay
+        conn = http.client.HTTPSConnection(relay_host, relay_port, timeout=timeout)
+        conn.set_tunnel(
+            "api.telegram.org",
+            port=443,
+            headers={"Proxy-Authorization": "Bearer " + pair_token},
+        )
+        target = parsed.path or "/"
+        if parsed.query:
+            target += "?" + parsed.query
+        try:
+            conn.request(method, target, body=body, headers=headers)
+            res = conn.getresponse()
+            raw = res.read()
+            try:
+                obj = json.loads(raw.decode("utf-8")) if raw else {}
+            except Exception:
+                obj = {"description": clean(raw.decode("utf-8", errors="replace"))}
+            append_log(
+                "EDGE_RELAY_HTTP",
+                status=int(res.status),
+                relay_host=relay_host,
+                target_host="api.telegram.org",
+            )
+            return int(res.status), obj
+        finally:
+            conn.close()
+
     def json(self, url: str, method: str = "GET", payload: dict | None = None,
              headers: dict | None = None, timeout: int = 20) -> tuple[int, Any]:
         body = None
@@ -434,6 +491,17 @@ class Http:
             except Exception:
                 obj = {"description": clean(raw.decode("utf-8", errors="replace"))}
             return int(e.code), obj
+        except (URLError, TimeoutError, OSError) as direct_error:
+            try:
+                return self._json_via_edge(url, method, body, hdr, timeout)
+            except Exception as relay_error:
+                append_log(
+                    "EDGE_RELAY_FALLBACK_FAILED",
+                    direct_error_class=type(direct_error).__name__,
+                    relay_error_class=type(relay_error).__name__,
+                    detail=clean(relay_error, 140),
+                )
+                raise direct_error
 
 
 class GitHubReader:
