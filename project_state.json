@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R61_COMMS_RECOVERY_CANDIDATE_NEXUS_HUMAN_GATE_READY",
-  "last_completed_atomic_action": "R60 merged at 6b123e7640f3ad51b3e3a0124bf0a27ebc3ba73f and every post-merge workflow passed, including Windows Bootstrap #286, Final Acceptance #258, Coordinated PC #251, Telegram #541, Nexus Transport #506, CURRENT #788, Nexus One-Shot #136, PC Sanity #317, Managed Update #247, Field Ecosystem #718, Android Build #348, Coordinated Product #913 and Android Human-Action Simulation #41. Fresh runtime telemetry proves MBMPC BCP 0.7.13 UP_TO_DATE. R61 adds a 25-minute END-mail watchdog contract and Telegram companion v19 sustained-outage classification.",
-  "next_action": "Qualify and merge R61. The direct Telegram path is currently timing out from MBMPC (WinError 10060) while the companion process remains alive; after sustained failures V19 will mark DIRECT_TRANSPORT_OUTAGE instead of looking merely retriable. Because R60 post-merge CI and BCP 0.7.13 field readback are green, exactly one fresh Nexus Cloudflare authorization is now the legitimate next human recovery gate after R61 integration. After authorization, require provider-authenticated readback before switching Telegram ownership to Nexus/webhook and declaring cockpit restored.",
+  "status": "R61_MERGED_POSTMERGE_GREEN_NEXUS_HUMAN_GATE_READY",
+  "last_completed_atomic_action": "R61 merged to main at 66cbeeb2cd1315369fddbdc1d611fd7e38e5803e after exact-head CI PASS. All observed R61 post-merge workflows are PASS: CURRENT #796, PC Sanity #320, Nexus One-Shot #141, Nexus Transport #513, Telegram Observability #550, Field Ecosystem #727. Fresh MBMPC runtime remains BCP 0.7.13 exact SHA and UP_TO_DATE; direct Telegram remains unavailable due WinError 10060 transport timeouts, not a dead worker.",
+  "next_action": "Human gate is now legitimate: perform exactly one fresh Nexus/Cloudflare device authorization through API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip. Do not reuse an old device code, reinstall BCP, re-enter Telegram token, or use localhost:8976. After authorization, obtain provider-authenticated whoami/readback and verify Telegram receiver ownership moves from DIRECT_TELEGRAM to NEXUS/webhook before declaring communications restored.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2138,7 +2138,7 @@
     "public_repo_drive_ids_forbidden": true
   },
   "r61_communication_recovery": {
-    "status": "CANDIDATE",
+    "status": "MERGED_POSTMERGE_GREEN",
     "tranche_start_mail_receipt": "1a0c2fb87cf7fc36",
     "tranche_start_local_time": "2026-09-21T09:00:48+01:00",
     "end_watchdog_armed": true,
@@ -2159,7 +2159,26 @@
     ],
     "r60_postmerge_ci": "ALL_PASS",
     "bcp_0_7_13_field_readback": "PASS_EXACT_SHA",
-    "nexus_gate": "READY_AFTER_R61_INTEGRATION",
-    "human_action_required_now": false
+    "nexus_gate": "HUMAN_GATE_READY",
+    "human_action_required_now": true,
+    "merge_sha": "66cbeeb2cd1315369fddbdc1d611fd7e38e5803e",
+    "postmerge_ci": "ALL_OBSERVED_PASS",
+    "nexus_auth_package": "API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip"
+  },
+  "current_human_gate": {
+    "gate": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
+    "reason": "DIRECT_TELEGRAM_TRANSPORT_OUTAGE_WINERROR_10060_AND_NEXUS_PROVIDER_AUTH_PENDING",
+    "exactly_one_attempt": true,
+    "package": "API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip",
+    "do_not": [
+      "REUSE_STALE_DEVICE_CODE",
+      "REINSTALL_BCP",
+      "REENTER_TELEGRAM_TOKEN",
+      "USE_LOCALHOST_8976_FALLBACK"
+    ],
+    "completion_requires": [
+      "PROVIDER_AUTHENTICATED_WHOAMI_READBACK",
+      "TELEGRAM_NEXUS_WEBHOOK_OWNERSHIP_READBACK"
+    ]
   }
 }
