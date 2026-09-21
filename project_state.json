@@ -87,7 +87,8 @@
     "communication_survival_policy": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
     "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md",
     "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
-    "active_tranche_ledger": ".project-memory/ACTIVE_TRANCHE.json"
+    "active_tranche_ledger": ".project-memory/ACTIVE_TRANCHE.json",
+    "end_failsafe_template": ".project-memory/END_FAILSAFE_TEMPLATE.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -163,7 +164,8 @@
     ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
     "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md",
     "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
-    ".project-memory/ACTIVE_TRANCHE.json"
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/END_FAILSAFE_TEMPLATE.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
