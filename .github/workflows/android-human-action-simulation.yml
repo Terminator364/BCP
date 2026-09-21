@@ -165,6 +165,8 @@ jobs:
             echo "Immediate B-EDGE crash detected"
             exit 1
           fi
+          "$ADB" exec-out screencap -p > bcp-server-dashboard.png
+          test -s bcp-server-dashboard.png
           echo "BCP_ANDROID_PRIMARY_UI=PASS"
 
       - name: Verify real local phone API server surface
@@ -243,6 +245,7 @@ jobs:
             launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml
+            bcp-server-dashboard.png
             bcp-window-relaunch.xml
             edge-health.json
             edge-capabilities.json
