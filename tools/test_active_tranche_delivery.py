@@ -66,13 +66,16 @@ def main() -> int:
     assert comm["anti_false_success"]["user_relaunch_must_never_be_delivery_trigger"] is True
     assert comm["channels"]["gmail"]["end_delivery_proof"]["proof"] == "SENT_SEARCH_MATCH_PLUS_PROVIDER_MESSAGE_ID"
 
-    assert protocol["schema"] == "bcp.communication_protocol/2"
+    assert protocol["schema"] == "bcp.communication_protocol/3"
     assert protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert protocol["primary_work_budget_minutes"] == 23
     assert protocol["normal_close_reserve_minutes"] == 2
     assert protocol["scheduled_backup_required"] is False
+    assert protocol["backup_semantics"]["must_not_replace_primary_useful_work"] is True
+    assert active["scheduled_backup_role"] == "EMERGENCY_ONLY_AFTER_PRIMARY_CLOSE_FAILURE"
+    assert active["communication_guard"]["primary_assistant_must_execute_normal_end_in_foreground"] is True
 
-    assert state_machine["schema"] == "bcp.communication_state_machine/2"
+    assert state_machine["schema"] == "bcp.communication_state_machine/3"
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]
     assert takeover["trigger_code"] == "BCPGO BCP"
 
