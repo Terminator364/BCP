@@ -43,6 +43,9 @@ public interface EdgeDao {
     @Query("SELECT COUNT(*) FROM edge_receipts WHERE idempotencyKey = :key")
     int receiptCount(String key);
 
+    @Query("SELECT * FROM edge_jobs WHERE projectId = :projectId AND idempotencyKey = :key LIMIT 1")
+    EdgeJobEntity jobByIdempotency(String projectId, String key);
+
     @Query("SELECT COUNT(*) FROM edge_job_dependencies d WHERE d.jobId = :jobId AND NOT EXISTS (" +
             "SELECT 1 FROM edge_receipts r WHERE r.jobId = d.dependsOnJobId " +
             "AND r.result IN ('COMMITTED','ALREADY_COMMITTED','DONE','PASS','SUCCESS'))")
