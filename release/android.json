@@ -10,9 +10,9 @@
   "apk_sha256": "83133d2786e210e4b4b7594b39b45f216ca0122c3df7c92abf0bef92f65ddfb1",
   "distribution_status": "PRIVATE_STABLE_SIGNING_VERIFIED_READY_FOR_IN_PLACE_UPDATE",
   "note": "B-EDGE 2.1.0 secondary sentinel: CI-qualified source, Evergreen same-identity APK signed with verified v2/v3 schemes, certificate continuity proven, published by in-place replacement of the stable Drive CURRENT file, rollback revision preserved. Field install/runtime verification remains pending.",
-  "coordinated_server_version": "0.7.12",
-  "requirements_revision": "2026-09-20-R54",
-  "release_train": "BCP-0.7.12_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.5",
+  "coordinated_server_version": "0.7.13",
+  "requirements_revision": "2026-09-21-R58",
+  "release_train": "BCP-0.7.13_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
   "source_commit": "c2dc08c21bc9b038387c568c3e455ae65448182b",
   "signature_schemes_verified": [
     "v2",

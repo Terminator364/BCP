@@ -1,0 +1,64 @@
+{
+  "schema": "bcp.pre_human_action_simulation_policy/1",
+  "revision": "2026-09-21-R58",
+  "status": "ACTIVE_CANDIDATE",
+  "purpose": "Minimize user time loss by exercising user-facing action paths in representative CI/simulation before instructing the user to click, install, authorize, run, reboot, or retry.",
+  "default_rule": "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE",
+  "required_layers": [
+    "STATIC_CONTRACT",
+    "RUNTIME_PATH",
+    "PACKAGING_AND_VERSION_PROPAGATION",
+    "NEGATIVE_CONTROLS",
+    "REPRESENTATIVE_OS_OR_DEVICE_ENVIRONMENT",
+    "READBACK_OR_EXPECTED_RECEIPT"
+  ],
+  "platform_matrix": {
+    "windows": {
+      "preferred": [
+        "github_actions_windows_latest",
+        "powershell_parse_and_execution",
+        "python_runtime_integration",
+        "local_http_loopback_when_safe",
+        "version_and_hash_update_contract"
+      ]
+    },
+    "android": {
+      "preferred": [
+        "jvm_unit_tests",
+        "lint",
+        "assemble_debug_release",
+        "manifest_and_package_contract",
+        "emulator_or_instrumented_test_when_ui_or_platform_behavior_requires_it"
+      ]
+    },
+    "external_provider_boundary": {
+      "rule": "Simulate and verify everything up to the real provider/user-consent boundary. Never claim the external consent or provider session itself was simulated as equivalent to a real authenticated field run.",
+      "examples": [
+        "Cloudflare device authorization",
+        "Google account consent",
+        "Telegram provider delivery",
+        "real Wi-Fi/power interruption"
+      ]
+    }
+  },
+  "human_gate_release_criteria": [
+    "exact user-visible entrypoint tested",
+    "exact current package/version tested",
+    "no known runtime exception on the exercised path",
+    "rollback or HOLD behavior tested",
+    "stale package/version mismatch guarded",
+    "expected next screen/result explicitly known",
+    "remaining field-only uncertainty declared"
+  ],
+  "failure_behavior": "KEEP_WORKING_AUTOMATICALLY; DO_NOT_ASK_USER_TO_RETRY_THE_SAME_PATH_UNTIL_THE_CAUSE_IS_FIXED_AND_REQUALIFIED",
+  "evidence": {
+    "required": true,
+    "types": [
+      "workflow_run",
+      "runtime_test_output",
+      "artifact_hash",
+      "version_readback",
+      "negative_control"
+    ]
+  }
+}

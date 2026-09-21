@@ -1,7 +1,7 @@
 {
   "schema": "bcp.universal_continuation_code_registry/1",
   "status": "CANONICAL_POINTER_REGISTRY",
-  "updated_at": "2026-09-20",
+  "updated_at": "2026-09-21",
   "invariants": {
     "codes_are_pointers_not_summaries": true,
     "universal_cold_bootstrap": "BCPGO",
@@ -12,7 +12,22 @@
     "load_cadence_before_resume": true,
     "resume_exact_durable_checkpoint": true,
     "no_replay_of_committed_work": true,
-    "future_projects_default": "BCPGO <project>"
+    "future_projects_default": "BCPGO <project>",
+    "delivery_policy_ref": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    "load_delivery_policy_before_any_user_visible_checkpoint": true,
+    "email_full_checkpoint_before_chat_pointer": true,
+    "chat_pointer_only_fields": [
+      "MAIL_SENT",
+      "KINSHASA_DATE_TIME",
+      "CHECKPOINT_ID"
+    ],
+    "cadence_window_minutes": [
+      24,
+      25
+    ],
+    "cadence_target_minutes": 25,
+    "pre_human_action_simulation_policy_ref": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "load_pre_human_action_simulation_policy_before_user_action": true
   },
   "universal": [
     {

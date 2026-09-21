@@ -1,36 +1,36 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/4",
+  "schema": "bcp.interactive_work_cadence_policy/5",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
-  "target_minutes": 9,
+  "target_minutes": 25,
   "acceptable_window_minutes": [
-    8,
-    10
+    24,
+    25
   ],
   "principles": [
-    "Perform a substantial 8–10 minute useful-work tranche by default unless a real human gate, safety hold, tool failure, or completed atomic action makes an earlier return necessary.",
-    "Prefer about 9 minutes of useful work, with a hard practical target window of 8–10 minutes; checkpoint before optional work would push materially beyond that window.",
+    "Perform a substantial useful-work tranche targeting 25 minutes by default; do not checkpoint materially earlier unless a real human gate, safety hold, tool failure, or completed atomic action makes early return necessary.",
+    "Treat 25 minutes as the normal target, with roughly the final minute reserved for durable checkpoint/email delivery rather than optional expansion.",
     "Do not infer network/UI latency from an unsynchronized manual stopwatch or from ChatGPT's thinking-duration indicator.",
     "Separate producer time, BCP mirror delay, transport acceptance, and explicit seen acknowledgement whenever evidence exists.",
     "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
     "Resume from that durable checkpoint on the next Continue invocation.",
-    "Before the ChatGPT checkpoint is shown, prepare and send the exact same checkpoint body by the configured email mirror whenever the mail connector is available."
+    "Before the ChatGPT pointer is shown, send the full checkpoint by the configured email mirror whenever the mail connector is available."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-20T22:00:00+01:00",
-  "target_internal_work_minutes": 9,
+  "updated_at": "2026-09-21T01:45:00+01:00",
+  "target_internal_work_minutes": 25,
   "acceptable_internal_work_window_minutes": [
-    8,
-    10
+    24,
+    25
   ],
   "user_visible_target_window_minutes": [
-    8,
-    10
+    24,
+    25
   ],
-  "cutoff_strategy": "CHECKPOINT_BEFORE_OPTIONAL_WORK_ONCE_INTERNAL_WINDOW_IS_SATISFIED",
+  "cutoff_strategy": "CHECKPOINT_AT_OR_BEFORE_25_MINUTES_UNLESS_REAL_GATE_ENDS_EARLIER",
   "measurement_truth": {
     "chatgpt_thinking_indicator": "DIAGNOSTIC_ONLY_NOT_END_TO_END",
     "manual_stopwatch": "USEFUL_IF_START_AND_STOP_ARE_SYNCHRONIZED",
@@ -47,11 +47,11 @@
   },
   "response_timing": {
     "user_visible_target_minutes": [
-      8,
-      10
+      24,
+      25
     ],
-    "useful_work_minimum_minutes": 8,
-    "internal_soft_cutoff_minutes": 9.5,
+    "useful_work_minimum_minutes": 24,
+    "internal_soft_cutoff_minutes": 24.5,
     "checkpoint_before_optional_overrun": true,
     "true_gate_may_return_early": true,
     "transport_latency_is_separate_from_useful_work": true

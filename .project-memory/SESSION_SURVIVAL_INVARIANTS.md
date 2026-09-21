@@ -69,6 +69,6 @@ Every fresh recovery MUST load:
 
 `BCPGO` remains the universal cold bootstrap. Project-specific short codes are durable pointers/aliases, never summaries and never authentication credentials.
 
-For current and future technical projects, the default interactive cadence is a useful-work tranche of about 5–7 minutes with a durable visible checkpoint before optional overrun. A real human gate/tool failure may return earlier. Past conversations are not retroactively rewritten; their projects recover through durable state plus `BCPGO <project>`.
+For current and future technical projects, the default interactive cadence targets about 25 minutes of useful work, with a practical 24–25 minute window and a durable checkpoint before optional overrun. A real human gate/tool failure may return earlier. Past conversations are not retroactively rewritten; their projects recover through durable state plus `BCPGO <project>`.
 
 Plain `Continue` is valid only when the active project/mission is unambiguous. A fresh or ambiguous conversation should use `BCPGO` or `BCPGO <project>`.
