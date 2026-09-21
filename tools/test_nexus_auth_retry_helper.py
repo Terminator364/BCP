@@ -59,7 +59,7 @@ def main():
     ck("continuation-loads-delivery-policy", "DELIVERY_REDUNDANCY_POLICY.json" in registry and "DELIVERY_REDUNDANCY_POLICY.json" in continuity)
     ck("pre-human-simulation-policy", "PRE_HUMAN_ACTION_SIMULATION_POLICY.json" in registry and "Pre-human action simulation invariant" in continuity)
     ck("continuation-start-end-email", '"email_start_notice_before_substantive_work": true' in registry and '"email_end_checkpoint_before_chat_pointer": true' in registry and "START/END Gmail handshake" in continuity)
-    ck("continuation-25-minute-cadence", '"cadence_target_minutes": 25' in registry and '"useful_work_target_minutes": 23' in registry and "25-minute" in continuity)
+    ck("continuation-25-minute-cadence", '"cadence_target_minutes": 25' in registry and '"useful_work_target_minutes": 23' in registry and ("25-minute" in continuity or "25 minutes" in continuity))
     ck("communication-survival-policy", "COMMUNICATION_SURVIVAL_POLICY.json" in registry and "R77 A+B+C Integral Handoff" in continuity)
     ck("communication-no-reexplanation", '"user_reexplanation_required": false' in communication)
     ck("communication-phone-store-forward", '"store_and_forward": true' in communication)
