@@ -2,6 +2,14 @@
 
 Canonical continuation code: `BCPGO BCP`.
 
+## R72 merged checkpoint
+
+- Exact-head R72 qualification: **PASS across all 12 critical workflows** on `be2d79671ac3ea18becc9e9812ae258f3ba4bdc8`.
+- PR #140 merged to `main` at `7a82599ac3cfbeca1e153b02f035291d1b8f660e` after main-head recheck.
+- Main readback confirms delivery policy R72, cadence policy R72, communication-survival schema v2, ACTIVE_TRANCHE ledger, BCPGO dual-closeout recovery and canonical requirements R72.
+- The live R72 tranche remains open until the timer-driven Gmail END obtains provider acknowledgement. No user relaunch is part of that proof.
+- After END proof, persist the closed tranche receipt, then continue B-EDGE 2.2.0 full-node and the Telegram-companion local/Drive fallback lane.
+
 ## Why R72 exists
 
 R71 proved that a watchdog scheduled at minute 29 is too close to the 30-minute user-visible deadline. In the observed R71 tranche, the user relaunch arrived seconds before the scheduled watchdog execution, so the END mail appeared to depend on the user's "eh oh" message even though the watchdog was about to run. This is unacceptable for the communication contract.
