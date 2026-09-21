@@ -38,7 +38,14 @@
     "load_phone_full_node_requirements_for_bcp": true,
     "old_dedicated_phone_is_first_class_bcp_infrastructure": true,
     "no_sim_assumption_for_old_phone": true,
-    "communication_store_forward_before_remote_retry": true
+    "communication_store_forward_before_remote_retry": true,
+    "bcp_gmail_label_required": "BCP",
+    "bcp_gmail_subject_prefix_required": "[BCP]",
+    "apply_gmail_label_after_provider_ack": true,
+    "phone_primary_communications": true,
+    "phone_owned_liveness_without_pc": true,
+    "phone_local_project_api": true,
+    "phone_durable_resume_intent": true
   },
   "universal": [
     {
