@@ -13,6 +13,7 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.ServiceCompat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -30,13 +31,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Dedicated-node, low-data HTTPS CONNECT relay.
+ * First-class BCP phone node.
  *
- * Security boundary:
- * - LAN clients must authenticate with the already-paired BCP bearer credential.
- * - only api.telegram.org:443 is allowed;
- * - TLS stays end-to-end between the PC Telegram worker and Telegram, so B-EDGE
- *   never receives the bot token or message payload in plaintext.
+ * One bounded foreground service exposes:
+ * - authenticated local Edge API for health/status/jobs/reconciliation;
+ * - durable Room/WorkManager orchestration through EdgeNodeApi;
+ * - allowlisted HTTPS CONNECT relay for the tiny Telegram control plane.
+ *
+ * The phone is infrastructure, not a passive client. Bulk Internet access is
+ * intentionally not exposed: the PC can reach the phone node locally while
+ * Windows remains off the general Internet path.
  */
 public final class EdgeRelayService extends Service {
     private static final String CHANNEL_ID = "bcp_edge_relay";
@@ -48,11 +52,13 @@ public final class EdgeRelayService extends Service {
     private final Semaphore connectionSlots = new Semaphore(EdgeRelayPolicy.MAX_CONNECTIONS);
     private volatile boolean stopping = false;
     private volatile ServerSocket serverSocket;
+    private EdgeNodeApi edgeApi;
 
     @Override public void onCreate() {
         super.onCreate();
+        edgeApi = new EdgeNodeApi(this);
         createChannel();
-        Notification n = buildNotification("Relais local sécurisé actif");
+        Notification n = buildNotification("Serveur Edge local + relais sécurisé actifs");
         if (Build.VERSION.SDK_INT >= 34) {
             ServiceCompat.startForeground(
                     this,
@@ -91,12 +97,13 @@ public final class EdgeRelayService extends Service {
             server.setReuseAddress(true);
             server.bind(new InetSocketAddress("0.0.0.0", EdgeRelayPolicy.RELAY_PORT), 8);
             serverSocket = server;
-            mark("LISTENING", "port=" + EdgeRelayPolicy.RELAY_PORT);
+            mark("LISTENING", "port=" + EdgeRelayPolicy.RELAY_PORT + ",role=PHONE_PRIMARY_EDGE_SERVER");
             while (!stopping) {
                 Socket client = server.accept();
                 if (!connectionSlots.tryAcquire()) {
                     try {
-                        writeAscii(client.getOutputStream(), "HTTP/1.1 503 Busy\r\nConnection: close\r\n\r\n");
+                        writeAscii(client.getOutputStream(),
+                                "HTTP/1.1 503 Busy\r\nConnection: close\r\n\r\n");
                     } catch (Exception ignored) {}
                     try { client.close(); } catch (Exception ignored) {}
                     continue;
@@ -124,8 +131,8 @@ public final class EdgeRelayService extends Service {
             String requestLine = readLine(cin, 2048);
             if (requestLine == null) return;
             String[] parts = requestLine.trim().split("\\s+");
-            if (parts.length != 3 || !"CONNECT".equalsIgnoreCase(parts[0])) {
-                writeAscii(cout, "HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n");
+            if (parts.length != 3) {
+                writeAscii(cout, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
                 return;
             }
 
@@ -136,7 +143,8 @@ public final class EdgeRelayService extends Service {
                 if (line == null) return;
                 headerBytes += line.length();
                 if (headerBytes > 16_384) {
-                    writeAscii(cout, "HTTP/1.1 431 Request Header Fields Too Large\r\nConnection: close\r\n\r\n");
+                    writeAscii(cout,
+                            "HTTP/1.1 431 Request Header Fields Too Large\r\nConnection: close\r\n\r\n");
                     return;
                 }
                 if (line.isEmpty()) break;
@@ -148,7 +156,29 @@ public final class EdgeRelayService extends Service {
                 }
             }
 
+            String method = parts[0].toUpperCase(Locale.ROOT);
             String target = parts[1];
+
+            if (!"CONNECT".equals(method)) {
+                if (!"GET".equals(method) && !"POST".equals(method)) {
+                    writeAscii(cout,
+                            "HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n");
+                    return;
+                }
+                int contentLength = parseContentLength(headers.get("content-length"));
+                if (contentLength < 0 || contentLength > EdgeNodeApi.MAX_BODY_BYTES) {
+                    writeAscii(cout,
+                            "HTTP/1.1 413 Payload Too Large\r\nConnection: close\r\n\r\n");
+                    return;
+                }
+                String body = contentLength == 0 ? "" :
+                        new String(readExactly(cin, contentLength), StandardCharsets.UTF_8);
+                EdgeNodeApi.Response response = edgeApi.handle(method, target, headers, body);
+                writeJsonResponse(cout, response.status, response.body);
+                mark("EDGE_API", method + " " + target + " -> " + response.status);
+                return;
+            }
+
             int colon = target.lastIndexOf(':');
             if (colon <= 0) {
                 writeAscii(cout, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
@@ -160,9 +190,11 @@ public final class EdgeRelayService extends Service {
             catch (Exception e) { port = -1; }
 
             String expected = new CredentialStore(this).getToken();
-            if (!EdgeRelayPolicy.isValidProxyAuthorization(headers.get("proxy-authorization"), expected)) {
+            if (!EdgeRelayPolicy.isValidProxyAuthorization(
+                    headers.get("proxy-authorization"), expected)) {
                 mark("AUTH_REJECT", client.getInetAddress().getHostAddress());
-                writeAscii(cout, "HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n");
+                writeAscii(cout,
+                        "HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n");
                 return;
             }
             if (!EdgeRelayPolicy.isAllowedConnectTarget(host, port)) {
@@ -174,7 +206,8 @@ public final class EdgeRelayService extends Service {
             upstream = new Socket();
             upstream.connect(new InetSocketAddress(host, port), EdgeRelayPolicy.CONNECT_TIMEOUT_MS);
             upstream.setSoTimeout(EdgeRelayPolicy.TUNNEL_IDLE_TIMEOUT_MS);
-            writeAscii(cout, "HTTP/1.1 200 Connection Established\r\nProxy-Agent: BCP-EDGE\r\n\r\n");
+            writeAscii(cout,
+                    "HTTP/1.1 200 Connection Established\r\nProxy-Agent: BCP-EDGE\r\n\r\n");
             mark("TUNNEL_OPEN", host);
 
             final Socket upstreamFinal = upstream;
@@ -184,10 +217,47 @@ public final class EdgeRelayService extends Service {
             try { b.get(90, TimeUnit.SECONDS); } catch (Exception ignored) {}
             mark("TUNNEL_CLOSED", host);
         } catch (Exception e) {
-            mark("TUNNEL_ERROR", e.getClass().getSimpleName());
+            mark("CONNECTION_ERROR", e.getClass().getSimpleName());
         } finally {
             try { if (upstream != null) upstream.close(); } catch (Exception ignored) {}
         }
+    }
+
+    private static int parseContentLength(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return 0;
+        try { return Integer.parseInt(raw.trim()); }
+        catch (Exception e) { return -1; }
+    }
+
+    private static byte[] readExactly(InputStream in, int length) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(length);
+        byte[] buf = new byte[Math.min(8192, Math.max(1, length))];
+        int remaining = length;
+        while (remaining > 0) {
+            int n = in.read(buf, 0, Math.min(buf.length, remaining));
+            if (n < 0) throw new java.io.EOFException("request_body_truncated");
+            out.write(buf, 0, n);
+            remaining -= n;
+        }
+        return out.toByteArray();
+    }
+
+    private static void writeJsonResponse(OutputStream out, int status, String body) throws Exception {
+        String reason = status == 200 ? "OK" :
+                status == 202 ? "Accepted" :
+                status == 400 ? "Bad Request" :
+                status == 401 ? "Unauthorized" :
+                status == 404 ? "Not Found" :
+                status == 413 ? "Payload Too Large" : "Error";
+        byte[] payload = (body == null ? "{}" : body).getBytes(StandardCharsets.UTF_8);
+        String head = "HTTP/1.1 " + status + " " + reason + "\r\n" +
+                "Content-Type: application/json; charset=utf-8\r\n" +
+                "Content-Length: " + payload.length + "\r\n" +
+                "Cache-Control: no-store\r\n" +
+                "Connection: close\r\n\r\n";
+        out.write(head.getBytes(StandardCharsets.US_ASCII));
+        out.write(payload);
+        out.flush();
     }
 
     private static void pumpQuiet(InputStream in, Socket outSocket) {
@@ -222,7 +292,8 @@ public final class EdgeRelayService extends Service {
         int used = 0;
         while (used < max) {
             int b = in.read();
-            if (b < 0) return used == 0 ? null : new String(buf, 0, used, StandardCharsets.US_ASCII).trim();
+            if (b < 0) return used == 0 ? null :
+                    new String(buf, 0, used, StandardCharsets.US_ASCII).trim();
             if (b == '\n') break;
             if (b != '\r') buf[used++] = (byte)b;
         }
@@ -238,8 +309,8 @@ public final class EdgeRelayService extends Service {
     private void createChannel() {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationChannel ch = new NotificationChannel(
-                CHANNEL_ID, "BCP Edge relay", NotificationManager.IMPORTANCE_LOW);
-        ch.setDescription("Relais local BCP entre le PC et Internet pour le contrôle léger.");
+                CHANNEL_ID, "BCP Phone Server", NotificationManager.IMPORTANCE_LOW);
+        ch.setDescription("Serveur Edge local BCP, continuité et relais de contrôle léger.");
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.createNotificationChannel(ch);
     }
@@ -248,7 +319,7 @@ public final class EdgeRelayService extends Service {
         Notification.Builder b = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
-        return b.setContentTitle("BCP Edge")
+        return b.setContentTitle("BCP Phone Server")
                 .setContentText(text)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                 .setOngoing(true)
@@ -259,7 +330,8 @@ public final class EdgeRelayService extends Service {
         SharedPreferences.Editor e = getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString("state", state)
                 .putString("detail", detail == null ? "" : detail)
-                .putLong("updated_at", System.currentTimeMillis());
+                .putLong("updated_at", System.currentTimeMillis())
+                .putString("role", "PHONE_PRIMARY_EDGE_SERVER");
         if ("LISTENING".equals(state)) e.putInt("port", EdgeRelayPolicy.RELAY_PORT);
         e.apply();
     }
