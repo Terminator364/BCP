@@ -20,7 +20,9 @@ public final class EdgeLocalTaskEngine {
         return "LOCAL_CONTEXT_SNAPSHOT".equals(k)
                 || "LOCAL_HEALTH_SNAPSHOT".equals(k)
                 || "LOCAL_QUEUE_SUMMARY".equals(k)
-                || "LOCAL_MEMORY_COMPACT".equals(k);
+                || "LOCAL_MEMORY_COMPACT".equals(k)
+                || "LOCAL_ROUTE_SNAPSHOT".equals(k)
+                || "LOCAL_COMMUNICATION_SUMMARY".equals(k);
     }
 
     public static JSONObject execute(Context context, EdgeOrchestrator orchestrator,
@@ -60,6 +62,15 @@ public final class EdgeLocalTaskEngine {
             if ("LOCAL_MEMORY_COMPACT".equals(k)) {
                 int removed = orchestrator.compactExpiredMemory();
                 out.put("expired_entries_removed", removed);
+                return out;
+            }
+            if ("LOCAL_ROUTE_SNAPSHOT".equals(k)) {
+                out.put("route", EdgeRouteManager.snapshot(context));
+                return out;
+            }
+            if ("LOCAL_COMMUNICATION_SUMMARY".equals(k)) {
+                out.put("communications", new EdgeCommunicationJournal(context).summary());
+                out.put("route", EdgeRouteManager.snapshot(context));
                 return out;
             }
 
