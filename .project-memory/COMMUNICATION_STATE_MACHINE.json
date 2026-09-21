@@ -1,0 +1,70 @@
+{
+  "schema": "bcp.communication_state_machine/1",
+  "revision": "2026-09-21-R74",
+  "cadence_minutes": 30,
+  "useful_work_minutes": 26,
+  "normal_close_reserve_minutes": 4,
+  "work_states": [
+    "IDLE",
+    "WORKING",
+    "CHECKPOINTED",
+    "HUMAN_GATE",
+    "FAILED_SAFE"
+  ],
+  "delivery_states": [
+    "NONE",
+    "START_SEND_PENDING",
+    "START_ACKNOWLEDGED",
+    "WORKING",
+    "CLOSE_INTENT_PERSISTED",
+    "END_SEND_PENDING",
+    "END_ACKNOWLEDGED",
+    "CLOSED"
+  ],
+  "owners": [
+    "PRIMARY_ASSISTANT",
+    "SHADOW_BACKUP",
+    "HARD_GUARD"
+  ],
+  "normal_path": [
+    "NONE->START_SEND_PENDING",
+    "START_SEND_PENDING->START_ACKNOWLEDGED",
+    "START_ACKNOWLEDGED->WORKING",
+    "WORKING->CLOSE_INTENT_PERSISTED",
+    "CLOSE_INTENT_PERSISTED->END_SEND_PENDING",
+    "END_SEND_PENDING->END_ACKNOWLEDGED",
+    "END_ACKNOWLEDGED->CLOSED"
+  ],
+  "crash_windows": [
+    {
+      "window": "after START ack before close intent",
+      "recovery": "resume from durable work checkpoint; never final-reply without END"
+    },
+    {
+      "window": "after CLOSE_INTENT before Gmail send",
+      "recovery": "search delivery_key then send exactly one END if absent"
+    },
+    {
+      "window": "after Gmail END send before durable receipt",
+      "recovery": "search Gmail SENT by delivery_key/message_id; persist ACK; do not resend"
+    },
+    {
+      "window": "scheduler says completed but Gmail END absent",
+      "recovery": "treat tranche as OPEN_DELIVERY_FAILURE; send END; scheduler status has zero authority"
+    }
+  ],
+  "timing": {
+    "primary_close_reserve_begins_minute": 26,
+    "backup_earliest_offset_minutes": 28,
+    "hard_guard_offset_minutes": 29,
+    "absolute_end_deadline_minutes": 30
+  },
+  "invariants": [
+    "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
+    "new work cannot reuse a CLOSED tranche",
+    "a scheduler completion is never Gmail delivery proof",
+    "the user message is never a closeout trigger",
+    "delivery_key is unique per tranche",
+    "END send is search-before-send and idempotent"
+  ]
+}
