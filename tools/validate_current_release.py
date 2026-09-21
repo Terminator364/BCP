@@ -84,10 +84,10 @@ def main() -> int:
         if policy.get(key) is not expected:
             fail("policy." + key)
 
-    if int(cadence.get("target_minutes") or 0) != 25:
+    if int(cadence.get("target_minutes") or 0) != 30:
         fail("cadence_target_not_25")
     window = cadence.get("acceptable_window_minutes") or []
-    if window != [24, 25]:
+    if window != [29, 30]:
         fail("cadence_window_not_24_25")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
