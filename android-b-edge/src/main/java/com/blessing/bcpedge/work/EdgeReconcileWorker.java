@@ -29,6 +29,7 @@ public final class EdgeReconcileWorker extends Worker {
             BcpClient client = new BcpClient(context);
             client.recordEvent("EDGE_RECONCILE_START", triggerReason == null ? "UNSPECIFIED" : triggerReason);
             JSONObject sync = client.syncOrchestrationState();
+            JSONObject relay = client.relayCommunicationOutbox();
             int pending = EdgeDatabase.get(context).edgeDao().countPendingJobs();
             boolean offline = sync.optBoolean("offline", false);
             JSONObject sentinel = client.sentinelStatus();
@@ -42,6 +43,8 @@ public final class EdgeReconcileWorker extends Worker {
                     .putString("resume_request_id", sentinel.optString("resume_request_id", ""))
                     .putBoolean("durable_reconcile_executed", true)
                     .putString("trigger_reason", triggerReason == null ? "UNSPECIFIED" : triggerReason)
+                    .putString("communication_relay_state", relay.optString("state", "NOT_OBSERVED"))
+                    .putInt("communication_relay_delivered", relay.optInt("delivered", 0))
                     .build();
             return Result.success(out);
         } catch (Throwable t) {
