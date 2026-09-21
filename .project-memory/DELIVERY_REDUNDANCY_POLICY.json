@@ -1,6 +1,6 @@
 {
   "schema": "bcp.delivery_redundancy_policy/3",
-  "revision": "2026-09-20-R55",
+  "revision": "2026-09-21-R58",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -29,7 +29,8 @@
     }
   },
   "cadence": {
-    "work_slice_minutes": "8-10",
+    "work_slice_minutes": "20-25",
+    "target_minutes": 25,
     "checkpoint_each_slice": true,
     "mail_each_slice": true,
     "blind_retry_loops": false
