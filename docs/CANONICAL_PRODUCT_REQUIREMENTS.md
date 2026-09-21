@@ -1363,7 +1363,7 @@ Canonical detail:
 
 This requirement is additive and preserves R27.
 
-Interactive technical work MUST target at least about five minutes of useful work per normal tranche, with a practical internal window around 5–6.5 minutes unless a genuine human gate, safety/tool failure, or completed atomic action justifies earlier return.
+Interactive technical work MUST target approximately 25 minutes of useful work per normal tranche, with a practical 24–25 minute window unless a genuine human gate, safety/tool failure, or completed atomic action justifies earlier return.
 
 BCP MUST NOT equate ChatGPT's displayed “thinking” duration with end-to-end user-visible latency.
 
