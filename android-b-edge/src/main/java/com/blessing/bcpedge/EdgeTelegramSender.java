@@ -24,28 +24,6 @@ public final class EdgeTelegramSender {
         return credentials.configured();
     }
 
-    public JSONObject bootstrapFromPairedPc(BcpClient client) {
-        JSONObject out = new JSONObject();
-        try {
-            JSONObject r = client.telegramEdgeBootstrap();
-            String token = r.optString("token", "");
-            long chatId = r.optLong("allowed_chat_id", 0L);
-            credentials.put(token, chatId);
-            out.put("ok", true);
-            out.put("configured", true);
-            out.put("chat_id_present", true);
-            out.put("credential_storage", "ANDROID_KEYSTORE_AES_GCM");
-            return out;
-        } catch (Exception ex) {
-            try {
-                out.put("ok", false);
-                out.put("configured", credentials.configured());
-                out.put("error_class", ex.getClass().getSimpleName());
-            } catch (Exception ignored) {}
-            return out;
-        }
-    }
-
     public JSONObject sendText(String text) throws Exception {
         String token = credentials.getToken();
         long chatId = credentials.getChatId();
