@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R68_MERGED_INSTALLABLE_BEDGE_2_1_2_FIELD_INSTALL_READY",
-  "last_completed_atomic_action": "R68 exact-head CI passed on head 4196c0ac93cc6442d460a4b79bb2c8afa7fbc060; PR #136 merged to main at 546c5d4042660e80a60fa10eff0d760301e48bdc. Main readback confirms signed B-EDGE 2.1.2 CURRENT metadata, server 0.7.15 coordination, phone-primary Edge continuity, BCP Gmail label policy, exact stable Drive APK SHA and rollback evidence.",
-  "next_action": "Human field gate is now one in-place installation of API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk over the existing BCP Edge app. Do not uninstall. After install, field-verify version 2.1.2, pairing continuity, foreground relay notification/service, relay registration readback and one Telegram round-trip; auto-fix any failure before asking for repeated user actions.",
+  "status": "R69_BEDGE_2_1_2_FIELD_ACTIVE_FULL_NODE_2_2_0_CANDIDATE",
+  "last_completed_atomic_action": "R69 verified installed B-EDGE 2.1.2 is genuinely CONNECTED and machine-registered as active Edge relay on MBMPC/BCP 0.7.15. Audit confirmed it remains relay-centric. A 2.2.0 full-node candidate is now implemented on a fenced branch with dedicated phone API server, Room store-and-forward, boot restore, Android permission onboarding, NSD/Wi-Fi Direct/BLE presence and a redesigned server-first UI.",
+  "next_action": "Finish exact-head CI including Android API-35 emulator local HTTP server checks. Auto-fix any CI/simulation failure. Only after green exact-head qualification, pinned-cert signing, stable Drive CURRENT replacement and hash readback may one in-place 2.2.0 field update be exposed to the user.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -154,7 +154,8 @@
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
-    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json"
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json",
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -216,7 +217,12 @@
     "P0_proof_carrying_human_action_qualification": true,
     "P0_phone_primary_edge_server_node": true,
     "P0_gmail_project_label": true,
-    "P0_current_installable_artifact_readback": true
+    "P0_current_installable_artifact_readback": true,
+    "P0_phone_local_api_server": true,
+    "P0_phone_boot_restore": true,
+    "P0_phone_multitransport_presence": true,
+    "P0_phone_meaningful_permission_onboarding": true,
+    "P0_phone_server_first_ui": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2319,5 +2325,31 @@
     "exact_head_sha": "4196c0ac93cc6442d460a4b79bb2c8afa7fbc060",
     "exact_head_ci": "PASS_ALL_REQUIRED",
     "current_human_gate": "INSTALL_BEDGE_2_1_2_IN_PLACE"
+  },
+  "r69_phone_full_node": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/r69-phone-server-fullnode-20260921-1554",
+    "base_main_sha": "90e328cf5a87910ad1e0496523ccf73c86ca7512",
+    "current_field_version": "2.1.2-rc1-edge-relay",
+    "current_field_state": "ACTIVE_RELAY_VERIFIED",
+    "candidate_version_code": 220,
+    "candidate_version_name": "2.2.0-rc1-full-node-evergreen",
+    "in_place_update_required": true,
+    "uninstall_forbidden": true,
+    "local_api_port": 8876,
+    "phone_role": "PRIMARY_PERSISTENT_EDGE_API_SERVER_APPLIANCE",
+    "pc_role": "WINDOWS_HEAVY_COMPUTE_WORKER_NOT_SOLE_COMMS_CENTER",
+    "sim_assumed": false,
+    "no_sim_required": true,
+    "required_pre_human_gates": [
+      "EXACT_HEAD_CI_GREEN",
+      "ANDROID_EMULATOR_INSTALL_LAUNCH_UI_PASS",
+      "LOCAL_API_HEALTH_200",
+      "CAPABILITIES_READBACK_PASS",
+      "PRIVATE_ENDPOINT_401_NEGATIVE_CONTROL",
+      "COLD_RELAUNCH_API_PASS",
+      "PINNED_CERT_SIGNING",
+      "DRIVE_CURRENT_HASH_READBACK"
+    ]
   }
 }
