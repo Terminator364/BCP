@@ -22,6 +22,9 @@ DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
 PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
 HUMAN_ACTION_MATRIX = ROOT / ".project-memory" / "HUMAN_ACTION_QUALIFICATION_MATRIX.json"
 COMMUNICATION_POLICY = ROOT / ".project-memory" / "COMMUNICATION_SURVIVAL_POLICY.json"
+COMM_PROTOCOL = ROOT / ".project-memory" / "COMMUNICATION_PROTOCOL.json"
+COMM_STATE_MACHINE = ROOT / ".project-memory" / "COMMUNICATION_STATE_MACHINE.json"
+NEW_CONVERSATION_TAKEOVER = ROOT / ".project-memory" / "NEW_CONVERSATION_TAKEOVER.json"
 
 
 def fail(message: str) -> None:
@@ -68,6 +71,9 @@ def main() -> int:
     active_tranche = load(ROOT / ".project-memory" / "ACTIVE_TRANCHE.json")
     human_actions = load(HUMAN_ACTION_MATRIX)
     communication = load(COMMUNICATION_POLICY)
+    comm_protocol = load(COMM_PROTOCOL)
+    comm_state_machine = load(COMM_STATE_MACHINE)
+    takeover = load(NEW_CONVERSATION_TAKEOVER)
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
@@ -90,14 +96,20 @@ def main() -> int:
     if int(cadence.get("target_minutes") or 0) != 30:
         fail("cadence_target_not_30")
     window = cadence.get("acceptable_window_minutes") or []
-    if window != [27, 30]:
-        fail("cadence_window_not_27_30")
+    if window != [26, 30]:
+        fail("cadence_window_not_26_30")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
     if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
         fail("chat_pointer_only_contract")
-    if active_tranche.get("closeout", {}).get("user_message_required") is not False:
-        fail("active_tranche_closeout_contract")
+    if not str(active_tranche.get("delivery_key") or "").startswith("BCP30-"):
+        fail("active_tranche_delivery_key_contract")
+    if active_tranche.get("close_owner") != "PRIMARY_ASSISTANT":
+        fail("active_tranche_primary_close_owner")
+    if active_tranche.get("final_app_reply_gate") not in {"END_ACK_REQUIRED", "OPEN_AFTER_END_ACK"}:
+        fail("active_tranche_final_reply_gate")
+    if active_tranche.get("communication_guard", {}).get("user_message_is_not_closeout_trigger") is not True:
+        fail("active_tranche_user_message_trigger_contract")
     email = delivery.get("channels", {}).get("email", {})
     if email.get("start_notice_required_before_substantive_work") is not True:
         fail("start_email_before_work_contract")
@@ -112,8 +124,10 @@ def main() -> int:
     cadence_delivery = delivery.get("cadence") or {}
     if cadence_delivery.get("two_guard_closeout_required") is not True:
         fail("dual_closeout_guard_contract")
-    if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 27:
+    if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 26:
         fail("normal_closeout_offset_contract")
+    if int(cadence_delivery.get("backup_earliest_offset_minutes") or 0) != 28:
+        fail("backup_earliest_offset_contract")
     if int(cadence_delivery.get("hard_close_guard_offset_minutes") or 0) != 29:
         fail("hard_close_guard_offset_contract")
     if int(cadence_delivery.get("absolute_end_deadline_minutes") or 0) != 30:
@@ -128,7 +142,7 @@ def main() -> int:
         fail("pre_human_runtime_layer_missing")
     if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
         fail("human_action_matrix_ref_drift")
-    if communication.get("schema") != "bcp.communication_survival_policy/3":
+    if communication.get("schema") != "bcp.communication_survival_policy/4":
         fail("communication_survival_schema")
     if communication.get("cold_recovery", {}).get("code") != "BCPGO BCP":
         fail("communication_cold_recovery_code")
@@ -148,6 +162,28 @@ def main() -> int:
         fail("email_scheduler_completion_truth_boundary")
     if email.get("foreground_end_send_primary") is not True:
         fail("foreground_end_send_primary_contract")
+    if email.get("delivery_key_required") is not True:
+        fail("email_delivery_key_contract")
+    if comm_protocol.get("schema") != "bcp.communication_protocol/1":
+        fail("communication_protocol_schema")
+    if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
+        fail("communication_primary_owner")
+    if comm_protocol.get("cadence_minutes") != 30 or comm_protocol.get("primary_work_budget_minutes") != 26:
+        fail("communication_protocol_cadence")
+    if comm_protocol.get("normal_close_reserve_minutes") != 4:
+        fail("communication_close_reserve")
+    if comm_protocol.get("backup_earliest_offset_minutes") != 28 or comm_protocol.get("hard_guard_offset_minutes") != 29:
+        fail("communication_backup_offsets")
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/1":
+        fail("communication_state_machine_schema")
+    if comm_state_machine.get("useful_work_minutes") != 26 or comm_state_machine.get("normal_close_reserve_minutes") != 4:
+        fail("communication_state_machine_cadence")
+    if "END_SEND_PENDING->END_ACKNOWLEDGED" not in (comm_state_machine.get("normal_path") or []):
+        fail("communication_state_machine_end_ack")
+    if takeover.get("trigger_code") != "BCPGO BCP":
+        fail("new_conversation_takeover_code")
+    if takeover.get("communication_contract", {}).get("normal_close_owner") != "PRIMARY_ASSISTANT":
+        fail("new_conversation_takeover_close_owner")
     if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
         fail("human_action_matrix_schema")
     actions = human_actions.get("actions") or []
