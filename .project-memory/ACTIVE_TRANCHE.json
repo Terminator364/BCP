@@ -1,19 +1,19 @@
 {
-  "schema": "bcp.active_tranche/4",
+  "schema": "bcp.active_tranche/5",
   "project": "API/BCP",
-  "tranche_id": "BCP-R79-START-20260921-2327",
-  "delivery_key": "BCP25-20260921-2327-R79",
+  "tranche_id": "BCP-R81-START-20260922-0031",
+  "delivery_key": "BCP25-20260922-0031-R81",
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
   "work_state": "WORKING",
   "delivery_state": "START_ACKNOWLEDGED",
   "status": "WORKING",
-  "started_at_kinshasa": "2026-09-21T23:27:00+01:00",
-  "close_reserve_begins_kinshasa": "2026-09-21T23:50:00+01:00",
-  "normal_end_target_kinshasa": "2026-09-21T23:52:00+01:00",
-  "gmail_start_message_id": "1a0c61524165617e",
-  "gmail_start_thread_id": "1a0c61524165617e",
+  "started_at_kinshasa": "2026-09-22T00:31:00+01:00",
+  "close_reserve_begins_kinshasa": "2026-09-22T00:54:00+01:00",
+  "normal_end_target_kinshasa": "2026-09-22T00:56:00+01:00",
+  "gmail_start_message_id": "1a0c64f2e71c1de8",
+  "gmail_start_thread_id": "1a0c64f2e71c1de8",
   "gmail_end_message_id": null,
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
@@ -21,6 +21,7 @@
   "close_intent_persisted": false,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
+  "scheduled_backup_role": "EMERGENCY_ONLY_AFTER_PRIMARY_CLOSE_FAILURE",
   "final_app_reply_gate": "END_ACK_REQUIRED",
   "communication_guard": {
     "final_app_reply_requires_end_ack_persisted": true,
@@ -29,21 +30,30 @@
     "user_message_is_not_closeout_trigger": true,
     "search_before_send": true,
     "delivery_key_required": true,
-    "normal_closeout_depends_on_automation": false
+    "normal_closeout_depends_on_automation": false,
+    "primary_assistant_must_execute_normal_end_in_foreground": true,
+    "automation_must_not_replace_useful_work_window": true
   },
   "work_scope": [
-    "RECONCILE_CURRENT_UCMF001_V9_POSTULATES_1_TO_9_INTO_A_PLUS_B_PLUS_C",
-    "MAKE_BCPGO_BCP_AND_UCMF001_COLD_BOOTSTRAP_AUTOMATIC",
-    "IMPLEMENT_PHONE_DURABLE_MISSION_STEP_PROVIDER_STATE_FROM_POSTULATE_9",
-    "QUALIFY_EXACT_HEAD_AND_INTEGRATE_IF_GREEN",
-    "CONTINUE_PHONE_FULL_NODE_WITHOUT_MICRO_BETA"
+    "R81_FIX_FOREGROUND_OWNED_25_MIN_COMMUNICATION",
+    "RECONCILE_R79_R80_MISSING_ENDS",
+    "SYNC_BCPGO_COLD_BOOTSTRAP_WITH_R81_COMMUNICATION_RULE",
+    "CONTINUE_A_PLUS_B_PLUS_C_INTEGRAL_PRODUCT",
+    "ADVANCE_COHERENT_PHONE_FULL_NODE_WITHOUT_MICRO_BETA"
   ],
-  "branch": "work/bcp/r78-abc-reconcile-ci-20260921-2251",
-  "previous_verified_closure": {
-    "tranche_id": "BCP-R77-START-20260921-2251",
-    "delivery_key": "BCP25-20260921-2251-R77",
-    "gmail_end_message_id": "1a0c609b60dbc048",
-    "closed_at_kinshasa": "2026-09-21T23:15:20+01:00",
-    "status": "CLOSED"
-  }
+  "branch": "work/bcp/r81-primary-close-abc-20260922-0031",
+  "previous_reconciled_tranches": [
+    {
+      "tranche_id": "BCP-R79-START-20260921-2327",
+      "delivery_key": "BCP25-20260921-2327-R79",
+      "gmail_end_message_id": "1a0c65066c924852",
+      "status": "CLOSED_RECONCILED"
+    },
+    {
+      "tranche_id": "BCP-R80-START-20260922-0017",
+      "delivery_key": "BCP25-20260922-0017-R80",
+      "gmail_end_message_id": "1a0c64fe29b21b78",
+      "status": "CLOSED_RECONCILED"
+    }
+  ]
 }
