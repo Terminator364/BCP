@@ -22,7 +22,7 @@
       "CHECKPOINT_ID"
     ],
     "cadence_window_minutes": [
-      29,
+      27,
       30
     ],
     "cadence_target_minutes": 30,
@@ -56,7 +56,17 @@
       "project_state.json",
       "API_PROJECT_CONTINUITY.md",
       "release/current.json"
-    ]
+    ],
+    "preclose_snapshot_offset_minutes": 26,
+    "normal_closeout_offset_minutes": 27,
+    "hard_close_guard_offset_minutes": 28,
+    "absolute_end_deadline_minutes": 30,
+    "dual_end_guard_required": true,
+    "user_message_is_not_closeout_trigger": true,
+    "active_tranche_state_ref": ".project-memory/ACTIVE_TRANCHE.json",
+    "load_active_tranche_before_resume": true,
+    "end_mail_search_before_send": true,
+    "end_mail_idempotency_required": true
   },
   "universal": [
     {
@@ -93,7 +103,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R70_FULL_PHONE_SERVER_30MIN_AND_MAIL_CONTRACT",
+      "status": "VALID_SCOPED_ALIAS_WITH_R72_DUAL_CLOSEOUT_30MIN_PHONE_FULL_SERVER_AND_MAIL_CONTRACT",
       "fallback": "BCPGO BCP"
     },
     {
