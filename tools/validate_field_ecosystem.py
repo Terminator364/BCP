@@ -426,7 +426,7 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["end_mail_provider_ack_required"] is True
     assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
     assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 27
-    assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] == 28
+    assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] == 29
     assert delivery_policy["cadence"]["absolute_end_deadline_minutes"] == 30
     assert delivery_policy["cadence"]["user_relaunch_must_never_be_required"] is True
     assert delivery_policy["checkpoint_delivery_order"] == [
@@ -442,7 +442,7 @@ def main() -> int:
     assert pre_human_policy["default_rule"] == "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE"
     assert "RUNTIME_PATH" in pre_human_policy["required_layers"]
     assert pre_human_policy["failure_behavior"].startswith("KEEP_WORKING_AUTOMATICALLY")
-    assert communication_policy["schema"] == "bcp.communication_survival_policy/2"
+    assert communication_policy["schema"] == "bcp.communication_survival_policy/3"
     assert "NO_SINGLE_COMMUNICATION_CHANNEL_IS_CANONICAL_STATE" in communication_policy["principles"]
     assert communication_policy["channels"]["gmail"]["end_retry_until_provider_ack"] is True
     assert communication_policy["channels"]["phone_edge"]["store_and_forward"] is True
@@ -450,9 +450,12 @@ def main() -> int:
     assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
     assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
     assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 27
-    assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] == 28
+    assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] == 29
     assert communication_policy["checkpoint_protocol"]["absolute_end_deadline_minutes"] == 30
     assert communication_policy["anti_false_success"]["duplicate_end_prevention"] == "SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND"
+    assert delivery_policy["channels"]["email"]["scheduler_completion_is_not_delivery_proof"] is True
+    assert delivery_policy["channels"]["email"]["foreground_end_send_primary"] is True
+    assert communication_policy["anti_false_success"]["scheduler_completed_is_not_delivery"] is True
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
