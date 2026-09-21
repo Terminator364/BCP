@@ -52,6 +52,7 @@
       ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
       ".project-memory/BCP_ABC_COVERAGE.json",
       "docs/BCP_CANONICAL_SPEC_ABC.md",
+      ".project-memory/UCMF001_CONTINUITY.json",
       ".project-memory/COMMUNICATION_PROTOCOL.json",
       ".project-memory/COMMUNICATION_STATE_MACHINE.json",
       ".project-memory/ACTIVE_TRANCHE.json",
@@ -94,7 +95,9 @@
     "abc_coverage_ref": ".project-memory/BCP_ABC_COVERAGE.json",
     "abc_canonical_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC.md",
     "absolute_end_deadline_minutes": 25,
-    "load_abc_spec_before_product_mutation": true
+    "load_abc_spec_before_product_mutation": true,
+    "ucmf001_continuity_ref": ".project-memory/UCMF001_CONTINUITY.json",
+    "load_ucmf_v9_when_bcp_scope_touches_memory_continuity": true
   },
   "universal": [
     {
@@ -131,7 +134,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R78_ABC_SOURCE_RECONCILED_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
+      "status": "VALID_SCOPED_ALIAS_WITH_R79_ABC_UCMF_V9_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
       "fallback": "BCPGO BCP"
     },
     {
@@ -211,8 +214,10 @@
       "codes": [
         "UCMF001"
       ],
-      "status": "PROJECT_LOCATOR_REQUIRES_DURABLE_CONTEXT",
-      "fallback": "BCPGO UCMF001"
+      "status": "VALID_SCOPED_BCP_SUBPROJECT_ALIAS_UCMF_V9_WITH_AUTOMATIC_START_END",
+      "fallback": "BCPGO UCMF001",
+      "continuity_ref": ".project-memory/UCMF001_CONTINUITY.json",
+      "parent_project": "API/BCP"
     },
     {
       "project": "Bulletin 24",
