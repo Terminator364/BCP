@@ -63,7 +63,7 @@ def main():
     ck("pre-human-simulation-policy", "PRE_HUMAN_ACTION_SIMULATION_POLICY.json" in registry and "Pre-human action simulation invariant" in continuity)
     ck("continuation-start-end-email", '"email_start_notice_before_substantive_work": true' in registry and '"email_end_checkpoint_before_chat_pointer": true' in registry and "START/END Gmail handshake" in continuity)
     ck("continuation-30-minute-cadence", '"cadence_target_minutes": 30' in registry and '"useful_work_target_minutes": 26' in registry and "26 minutes" in continuity)
-    ck("communication-survival-policy", "COMMUNICATION_SURVIVAL_POLICY.json" in registry and "R74 KINLINK-Style Communication State-Machine Handoff" in continuity)
+    ck("communication-survival-policy", "COMMUNICATION_SURVIVAL_POLICY.json" in registry and "R75 KINLINK-Grade Communication + Full-Node Handoff" in continuity)
     ck("communication-no-reexplanation", '"user_reexplanation_required": false' in communication)
     ck("communication-phone-store-forward", '"store_and_forward": true' in communication)
     ck("communication-protocol-ref", '"schema": "bcp.communication_protocol/1"' in comm_protocol and '"normal_close_owner": "PRIMARY_ASSISTANT"' in comm_protocol)
@@ -72,7 +72,7 @@ def main():
     ck("new-conversation-takeover", '"trigger_code": "BCPGO BCP"' in takeover and "NEW_CONVERSATION_TAKEOVER.json" in registry)
     ck("checkpoint-subject-policy", 'subject_must_include_checkpoint_id' in policy)
     ck("nested-zip-forbidden", 'nested_zip_for_user_action_forbidden' in policy)
-    print("R74_DELIVERY_STATE_MACHINE_AND_NEXUS_HELPER=PASS")
+    print("R75_DELIVERY_STATE_MACHINE_AND_NEXUS_HELPER=PASS")
     return 0
 
 if __name__=="__main__":
