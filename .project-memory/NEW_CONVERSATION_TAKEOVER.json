@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/4",
+  "schema": "bcp.new_conversation_takeover/5",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -31,14 +31,16 @@
     "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
     "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
     "LOAD_AND_APPLY_FULL_A_PLUS_B_PLUS_C_SPEC",
+    "PRIMARY_ASSISTANT_PERFORMS_SUBSTANTIVE_WORK_IN_FOREGROUND",
     "RESUME_ONLY_FROM_PROJECT_STATE_NEXT_UNCOMMITTED_ACTION",
     "ENTER_CLOSE_RESERVE_AT_MINUTE_23",
     "PERSIST_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
-    "SEND_COMPLETE_GMAIL_END_IF_MISSING",
+    "PRIMARY_ASSISTANT_SEND_COMPLETE_GMAIL_END_IF_MISSING",
     "REQUIRE_PROVIDER_ACK_AND_SENT_READBACK",
     "PERSIST_CLOSED_STATE",
-    "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
+    "ONLY_THEN_REPLY_BRIEFLY_IN_APP",
+    "EMERGENCY_BACKUP_ONLY_IF_PRIMARY_CLOSE_IS_INTERRUPTED_OR_MISSED"
   ],
   "communication_contract": {
     "cadence_minutes": 25,
@@ -47,8 +49,11 @@
     "gmail_label": "BCP",
     "normal_close_owner": "PRIMARY_ASSISTANT",
     "scheduled_backup_required": false,
+    "scheduled_backup_role": "EMERGENCY_ONLY",
+    "emergency_backup_earliest_minute": 26,
     "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
-    "ui_thinking_indicator_authoritative": false
+    "ui_thinking_indicator_authoritative": false,
+    "normal_closeout_must_not_wait_for_scheduler": true
   },
   "product_truth": {
     "phone_direction": "coherent dedicated Android full-node/server appliance",
@@ -59,5 +64,6 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9
-  }
+  },
+  "revision": "2026-09-22-R81"
 }
