@@ -8,6 +8,7 @@ on:
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - "tools/test_nexus_auth_retry_helper.py"
       - "tools/test_nexus_retry_runtime.py"
+      - "tools/mock_nexus_retry_server.py"
       - "windows/bcp_server.py"
       - ".github/workflows/r52-nexus-one-shot.yml"
   push:
@@ -38,6 +39,36 @@ jobs:
       - name: Runtime simulation of explicit retry path
         shell: pwsh
         run: python tools/test_nexus_retry_runtime.py
+      - name: Exact one-shot helper simulation
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP "bcp-localappdata"
+          $state = Join-Path $env:LOCALAPPDATA "ChatGPT_ManagedApps\bcp\state"
+          New-Item -ItemType Directory -Force -Path $state | Out-Null
+          Set-Content -LiteralPath (Join-Path $state "bcp_token.txt") -Value "ci-test-token" -Encoding ascii
+
+          function Invoke-SimulatedRetry([int]$status, [int]$expectedRc, [string]$expectedText) {
+            $stdout = Join-Path $env:RUNNER_TEMP ("mock-" + $status + ".out")
+            $stderr = Join-Path $env:RUNNER_TEMP ("mock-" + $status + ".err")
+            $proc = Start-Process python -ArgumentList @("tools/mock_nexus_retry_server.py","--status",[string]$status) -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            try {
+              Start-Sleep -Milliseconds 800
+              $output = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\windows\NEXUS_AUTH_RETRY_CURRENT.ps1" 2>&1 | Out-String
+              $rc = $LASTEXITCODE
+              Write-Host $output
+              if ($rc -ne $expectedRc) { throw "unexpected helper rc=$rc expected=$expectedRc status=$status" }
+              if ($output -notmatch [regex]::Escape($expectedText)) { throw "missing expected output: $expectedText" }
+            }
+            finally {
+              if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+              Start-Sleep -Milliseconds 300
+            }
+          }
+
+          Invoke-SimulatedRetry 202 0 "NEXUS_FRESH_DEVICE_FLOW_STARTED"
+          Invoke-SimulatedRetry 500 20 "NEXUS_RETRY_REQUEST_FAILED"
+          Write-Host "R58_EXACT_NEXUS_HELPER_SIMULATION=PASS"
+
       - name: PowerShell parse
         shell: pwsh
         run: |
