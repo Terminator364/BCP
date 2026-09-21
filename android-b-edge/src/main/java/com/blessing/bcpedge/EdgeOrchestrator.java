@@ -254,6 +254,39 @@ public final class EdgeOrchestrator {
         } catch (Exception ignored) {}
     }
 
+    public JSONObject acknowledgeLocalJob(JSONObject job, JSONObject output) {
+        JSONObject receipt = new JSONObject();
+        try {
+            String localId = job.optString("local_id", "");
+            String projectId = job.optString("project_id", "");
+            String idem = job.optString("idempotency_key", "");
+            String raw = output == null ? "{}" : output.toString();
+            String outputHash = sha256(raw);
+            String actionId = "local-receipt-" + sha256(idem + "\n" + raw);
+            long now = System.currentTimeMillis();
+
+            long inserted = dao.insertReceipt(new EdgeReceiptEntity(
+                    actionId, localId, projectId, idem, "COMMITTED",
+                    outputHash, 0L, now
+            ));
+            if (!localId.isEmpty()) {
+                dao.setJobState(localId, "COMMITTED", now);
+                dao.deleteJob(localId);
+            }
+            receipt.put("result", inserted == -1L ? "ALREADY_COMMITTED" : "COMMITTED");
+            receipt.put("action_id", actionId);
+            receipt.put("output_hash", outputHash);
+            receipt.put("executor", "B_EDGE_LOCAL_TASK_ENGINE");
+            receipt.put("output", output == null ? new JSONObject() : output);
+        } catch (Exception e) {
+            try {
+                receipt.put("result", "HOLD");
+                receipt.put("error", e.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+        }
+        return receipt;
+    }
+
     public int pendingCount() {
         return dao.countPendingJobs();
     }

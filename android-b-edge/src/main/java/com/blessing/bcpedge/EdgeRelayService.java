@@ -242,6 +242,12 @@ public final class EdgeRelayService extends Service {
             caps.put("role", "DEDICATED_EDGE_API_SERVER");
             caps.put("local_api", true);
             caps.put("durable_queue", true);
+            caps.put("local_allowlisted_executor", true);
+            caps.put("local_executor_kinds", new org.json.JSONArray()
+                    .put("LOCAL_CONTEXT_SNAPSHOT")
+                    .put("LOCAL_HEALTH_SNAPSHOT")
+                    .put("LOCAL_QUEUE_SUMMARY")
+                    .put("LOCAL_MEMORY_COMPACT"));
             caps.put("content_addressed_private_cache", true);
             caps.put("store_and_forward", true);
             caps.put("telegram_https_connect_relay", true);
@@ -301,6 +307,7 @@ public final class EdgeRelayService extends Service {
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());
+            out.put("local_executor", "ALLOWLISTED_ACTIVE");
             out.put("presence", presenceState);
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             out.put("listener_state", p.getString("state", ""));

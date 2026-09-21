@@ -17,6 +17,7 @@ on:
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
       - "tools/test_active_tranche_delivery.py"
+      - "tools/test_bedge_local_executor_contract.py"
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -24,6 +25,10 @@ on:
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
       - ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json"
+      - ".project-memory/NEW_CONVERSATION_TAKEOVER.json"
+      - ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl"
+      - ".project-memory/COMMUNICATION_STATE_MACHINE.json"
+      - ".project-memory/COMMUNICATION_PROTOCOL.json"
       - ".project-memory/END_FAILSAFE_TEMPLATE.json"
       - "project_state.json"
       - "API_PROJECT_CONTINUITY.md"
@@ -77,6 +82,18 @@ jobs:
           python -m json.tool .project-memory/DELIVERY_REDUNDANCY_POLICY.json > /dev/null
           python -m json.tool .project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json > /dev/null
           python -m json.tool .project-memory/COMMUNICATION_SURVIVAL_POLICY.json > /dev/null
+          python -m json.tool .project-memory/COMMUNICATION_PROTOCOL.json > /dev/null
+          python -m json.tool .project-memory/COMMUNICATION_STATE_MACHINE.json > /dev/null
+          python -m json.tool .project-memory/NEW_CONVERSATION_TAKEOVER.json > /dev/null
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path(".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl")
+          rows = [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()]
+          assert rows, "empty communication ledger"
+          assert any(r.get("event") == "START_ACKNOWLEDGED" for r in rows)
+          assert any(r.get("event") == "END_ACKNOWLEDGED" for r in rows)
+          print("BCP_COMMUNICATION_LEDGER_PARSE=PASS")
+          PY
           python -m json.tool .project-memory/END_FAILSAFE_TEMPLATE.json > /dev/null
           python -m json.tool .project-memory/ACTIVE_TRANCHE.json > /dev/null
           python -m json.tool .project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json > /dev/null
@@ -87,6 +104,9 @@ jobs:
 
       - name: Validate active-tranche delivery proof
         run: python tools/test_active_tranche_delivery.py
+
+      - name: Validate B-EDGE local executor contract
+        run: python tools/test_bedge_local_executor_contract.py
 
       - name: Server update self-test
         run: python windows/bcp_server.py --selftest

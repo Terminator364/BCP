@@ -1,0 +1,28 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r74-kinlink-comms-port-20260921-1901",
+  "project_or_mission": "API/BCP R74 communication state-machine port + full-node continuation",
+  "base_main_sha": "72bd2ee5f564c4dd355e96989944d3e3d92fedb9",
+  "created_at": "2026-09-21T19:01:00+01:00",
+  "work_branch": "work/bcp/r74-kinlink-comms-port-20260921-1901",
+  "intended_file_scope": [
+    ".project-memory/COMMUNICATION_PROTOCOL.json",
+    ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    "API_PROJECT_CONTINUITY.md",
+    "tools/**",
+    "docs/**"
+  ],
+  "expected_ci_gates": [
+    "CURRENT release contract",
+    "Field ecosystem preflight",
+    "Nexus human-action qualification",
+    "Coordinated product qualification"
+  ]
+}
