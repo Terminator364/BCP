@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R64_BEDGE_ADAPTIVE_RELAY_CANDIDATE_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R64 candidate now implements the previously missing dedicated-phone transport role: B-EDGE 2.1.2 runs a bounded authenticated Telegram-only HTTPS CONNECT relay, BCP 0.7.15 registers its fresh private-LAN endpoint and exposes liveness, and Telegram V21 falls back to B-EDGE only after direct transport errors while preserving end-to-end TLS. No SIM is assumed; no-uplink remains durable NETWORK_WAIT/store-and-forward.",
-  "next_action": "Finish exact-head PR #133 qualification. Automatically fix any CI/simulation defect without user retry. If green, reread main/writer fence and merge. Then allow resident PC update to BCP 0.7.15 and build/sign/promote B-EDGE 2.1.2 only through the existing pinned signing identity and in-place CURRENT readback. Field-prove relay registration and one Telegram round-trip before representing B-EDGE relay as FIELD_ACTIVE.",
+  "status": "R65_PHONE_FULL_NODE_CANDIDATE_EXACT_HEAD_CI",
+  "last_completed_atomic_action": "R65 promotes the dedicated old Android phone from a selective relay into first-class BCP infrastructure: authenticated private-LAN node API on TCP/8877, Room-backed idempotent store-and-forward queue, phone-owned communication jobs, adaptive network classification, boot/package recovery, PC failed-Telegram persistence to the phone node, existing TLS relay on TCP/8876, and a dedicated server cockpit. BCP server target is 0.7.16, B-EDGE candidate is 2.1.3, Telegram companion candidate is V22. No user install is requested before exact-head simulation/CI.",
+  "next_action": "Finish exact-head PR #134 qualification. Fix every CI/emulator/static defect automatically. If all required gates pass, reread main and the writer fence before serialized merge. After merge, verify BCP 0.7.16 field update/readback, build/sign/promote B-EDGE 2.1.3 through the pinned Android signing identity, then field-prove old-phone reboot recovery, LAN/hotspot switching, node API idempotency, relay/store-forward and low-data behavior. Independent phone Telegram outbound requires explicit on-device secret provisioning; never auto-copy BotFather token over cleartext LAN.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -153,7 +153,8 @@
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    "docs/BEDGE_FULL_NODE_AND_ADAPTIVE_TRANSPORT_R65.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -2257,5 +2258,36 @@
     },
     "user_action_required_now": false,
     "field_verified": false
+  },
+  "r65_phone_full_node": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI",
+    "branch": "work/bcp/r65-phone-server-full-node-20260921-1345",
+    "pull_request": 134,
+    "head_sha": "7ea705848b4d1bb05e502311664993294cfbbb41",
+    "base_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3",
+    "server_target_version": "0.7.16",
+    "edge_candidate_version": "2.1.3-rc1-full-node-evergreen",
+    "telegram_candidate_version": "2026.09.21-phone-node-v22",
+    "node_api_port": 8877,
+    "relay_port": 8876,
+    "no_sim_assumed": true,
+    "local_api_private_lan_only": true,
+    "durable_store_forward": true,
+    "local_phone_job_ownership": true,
+    "telegram_secret_auto_copy_over_cleartext_lan_forbidden": true,
+    "telegram_phone_outbound_requires_explicit_local_provisioning": true,
+    "wifi_direct": "DESIGN_NEXT_TRANSPORT_NOT_FIELD_VERIFIED",
+    "bluetooth_ble": "DESIGN_CONTROL_FALLBACK_NOT_FIELD_VERIFIED",
+    "usb": "DESIGN_RECOVERY_FALLBACK_NOT_FIELD_VERIFIED",
+    "device_owner_mode": "OPTIONAL_DISRUPTIVE_HARDENING_NOT_ENABLED",
+    "field_verified": false
+  },
+  "communication_tranche_r65": {
+    "checkpoint_start": "BCP-R65-PHONE-SERVER-FULL-START-20260921-1345",
+    "start_mail_receipt": "1a0c4002df5d140d",
+    "target_minutes": 25,
+    "end_mail_provider_ack_required": true,
+    "chat_pointer_only_after_end_ack": true,
+    "end_watchdog_armed": true
   }
 }
