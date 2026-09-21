@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R62_MERGED_POSTMERGE_CI_RUNNING_FIELD_CONVERGENCE_PENDING",
-  "last_completed_atomic_action": "R62 merged to main at 3a20c14fea1644c48e5bfaf3970d6010159e93bc after exact-head CI PASS on PR #130. R62 publishes BCP 0.7.14 and Telegram 2026.09.21-comms-autonomy-v20. Fresh post-merge field telemetry still shows resident BCP 0.7.13 and direct Telegram transport flapping back to DEGRADED_RETRY/WinError10060, while Nexus remains STAGE_FAILED/DNS_RESOLUTION_FAILED. No user reinstall/retry is justified during resident convergence.",
-  "next_action": "Finish post-merge CI/readback. Observe automatic convergence to BCP 0.7.14 and Telegram V20. If raw GitHub/DNS continues to block convergence, implement a Drive-local fallback transport for server/Telegram/Nexus update delivery rather than asking the user to download/reinstall. Only expose a Cloudflare human authorization gate after the new runtime is active and Nexus state is truthfully recovered.",
+  "status": "R64_BEDGE_ADAPTIVE_RELAY_CANDIDATE_EXACT_HEAD_CI",
+  "last_completed_atomic_action": "R64 candidate now implements the previously missing dedicated-phone transport role: B-EDGE 2.1.2 runs a bounded authenticated Telegram-only HTTPS CONNECT relay, BCP 0.7.15 registers its fresh private-LAN endpoint and exposes liveness, and Telegram V21 falls back to B-EDGE only after direct transport errors while preserving end-to-end TLS. No SIM is assumed; no-uplink remains durable NETWORK_WAIT/store-and-forward.",
+  "next_action": "Finish exact-head PR #133 qualification. Automatically fix any CI/simulation defect without user retry. If green, reread main/writer fence and merge. Then allow resident PC update to BCP 0.7.15 and build/sign/promote B-EDGE 2.1.2 only through the existing pinned signing identity and in-place CURRENT readback. Field-prove relay registration and one Telegram round-trip before representing B-EDGE relay as FIELD_ACTIVE.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2223,5 +2223,39 @@
       "nexus_error_class": "DNS_RESOLUTION_FAILED",
       "conclusion": "R62 source is merged but resident convergence is not yet proven. Direct Telegram transport is flapping and raw-GitHub/DNS staging remains unreliable."
     }
+  },
+  "r64_bedge_adaptive_comms": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI",
+    "revision": "2026-09-21-R64",
+    "branch": "work/bcp/r64-phone-edge-adaptive-comms-20260921-1312",
+    "pr": 133,
+    "target_server_version": "0.7.15",
+    "target_edge_candidate": "2.1.2-rc1-edge-relay-evergreen",
+    "target_telegram_companion": "2026.09.21-edge-relay-v21",
+    "phone_sim_assumed": false,
+    "old_phone_cellular_sim_required": false,
+    "uplink_model": "WIFI_OR_TEMPORARY_HOTSPOT_WHEN_AVAILABLE",
+    "no_uplink_behavior": "DURABLE_NETWORK_WAIT_STORE_AND_FORWARD",
+    "local_transport_primary": "AUTHENTICATED_LAN",
+    "future_local_fallbacks": [
+      "BLUETOOTH_COMPANION",
+      "WIFI_DIRECT_FIELD_GATED"
+    ],
+    "relay": {
+      "target": "api.telegram.org:443",
+      "control_only": true,
+      "max_connections": 4,
+      "tls_end_to_end": true,
+      "bot_token_copied_to_phone": false,
+      "private_lan_registration": true,
+      "registration_ttl_seconds": 300
+    },
+    "data_saver": {
+      "bulk_over_relay": false,
+      "unchanged_download_zero": true,
+      "control_plane_priority": true
+    },
+    "user_action_required_now": false,
+    "field_verified": false
   }
 }
