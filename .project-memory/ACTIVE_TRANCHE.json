@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSING",
   "started_at_kinshasa": "2026-09-21T21:17:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T21:40:00+01:00",
   "absolute_end_deadline_kinshasa": "2026-09-21T21:42:00+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "final_app_reply_gate": "END_ACK_REQUIRED",
   "communication_guard": {
@@ -43,5 +43,7 @@
     "delivery_key": "BCP30-20260921-1901-R74",
     "end_email_message_id": "1a0c539e52ecf523",
     "closure_reason": "PROVIDER_PROOF_END_CONFIRMED_BY_GMAIL_SENT"
-  }
+  },
+  "no_more_product_mutations": true,
+  "close_intent_at_kinshasa": "2026-09-21T21:39:00+01:00"
 }
