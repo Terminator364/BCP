@@ -1,3 +1,21 @@
+# R63 adaptive communication fabric — active candidate
+
+On every `BCPGO BCP` recovery, load `.project-memory/ADAPTIVE_COMMUNICATION_POLICY.json` and `docs/ADAPTIVE_COMMUNICATION_FABRIC_R63.md`.
+
+Current R63 candidate:
+- BCP server target: **0.7.15**;
+- Telegram companion target: **2026.09.21-adaptive-edge-relay-v21**;
+- B-EDGE source candidate: **2.1.2-rc1-adaptive-relay-evergreen**;
+- old phone role: real B-EDGE relay/witness;
+- PC->B-EDGE: authenticated local LAN/hotspot LAN;
+- remote routing: Wi-Fi first, optional discovered cellular only for <=16 KiB allowlisted control traffic;
+- direct PC Telegram is opportunistic, never required;
+- undelivered notifications persist in a PC SQLite outbox until B-EDGE/provider acknowledgement;
+- current daily phone remains human-only infrastructure;
+- no user reinstall/retry is justified until exact-head CI and field readback say so.
+
+R63 is **CI_PENDING / FIELD_UNVERIFIED**. Do not present the relay as field-proven yet.
+
 # R62 Post-Merge Communication Handoff — 2026-09-21
 
 Canonical main integration:
