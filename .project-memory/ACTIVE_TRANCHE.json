@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.active_tranche/5",
+  "schema": "bcp.active_tranche/4",
   "project": "API/BCP",
   "tranche_id": "BCP-R77-START-20260921-2251",
   "delivery_key": "BCP25-20260921-2251-R77",
