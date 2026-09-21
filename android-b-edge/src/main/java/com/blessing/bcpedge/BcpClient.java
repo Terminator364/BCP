@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.3-rc1-full-node";
+    private static final String EDGE_VERSION = "2.1.4-rc1-phone-primary-comms";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -81,6 +81,9 @@ public final class BcpClient {
             capabilities.put("EDGE_NODE_V1");
             capabilities.put("DURABLE_STORE_FORWARD");
             capabilities.put("LOCAL_TELEGRAM_OUTBOUND");
+            capabilities.put("PHONE_OWNED_COMM_LIVENESS");
+            capabilities.put("LOCAL_PROJECT_CONTEXT_API");
+            capabilities.put("DURABLE_RESUME_INTENT");
             body.put("capabilities", capabilities);
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
