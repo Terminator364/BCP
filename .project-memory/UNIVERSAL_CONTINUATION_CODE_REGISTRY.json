@@ -18,7 +18,7 @@
     "email_full_checkpoint_before_chat_pointer": true,
     "chat_pointer_only_fields": [
       "MAIL_SENT",
-      "KINSHASA_DATE_TIME",
+      "KINSHASA_DAY_DATE_TIME",
       "CHECKPOINT_ID"
     ],
     "cadence_window_minutes": [
@@ -27,7 +27,13 @@
     ],
     "cadence_target_minutes": 25,
     "pre_human_action_simulation_policy_ref": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    "load_pre_human_action_simulation_policy_before_user_action": true
+    "load_pre_human_action_simulation_policy_before_user_action": true,
+    "load_delivery_policy_before_substantive_work": true,
+    "email_start_notice_before_substantive_work": true,
+    "email_end_checkpoint_before_chat_pointer": true,
+    "email_end_retry_until_provider_ack": true,
+    "chat_output_before_end_ack_forbidden": true,
+    "chat_pointer_only_after_end_ack": true
   },
   "universal": [
     {

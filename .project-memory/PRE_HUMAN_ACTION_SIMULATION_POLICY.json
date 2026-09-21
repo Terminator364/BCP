@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.pre_human_action_simulation_policy/1",
-  "revision": "2026-09-21-R58",
+  "schema": "bcp.pre_human_action_simulation_policy/2",
+  "revision": "2026-09-21-R59",
   "status": "ACTIVE_CANDIDATE",
   "purpose": "Minimize user time loss by exercising user-facing action paths in representative CI/simulation before instructing the user to click, install, authorize, run, reboot, or retry.",
   "default_rule": "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE",
@@ -28,7 +28,9 @@
         "lint",
         "assemble_debug_release",
         "manifest_and_package_contract",
-        "emulator_or_instrumented_test_when_ui_or_platform_behavior_requires_it"
+        "android_emulator_api_35_install_launch_ui_smoke",
+        "cold_relaunch_smoke",
+        "instrumented_test_when_business_logic_requires_deeper_platform_interaction"
       ]
     },
     "external_provider_boundary": {
@@ -42,6 +44,7 @@
     }
   },
   "human_gate_release_criteria": [
+    "human action exists in HUMAN_ACTION_QUALIFICATION_MATRIX",
     "exact user-visible entrypoint tested",
     "exact current package/version tested",
     "no known runtime exception on the exercised path",
@@ -60,5 +63,8 @@
       "version_readback",
       "negative_control"
     ]
-  }
+  },
+  "qualification_matrix_ref": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+  "exact_candidate_head_required": true,
+  "user_instruction_gate": "MATRIX_ACTION_MUST_HAVE_GREEN_REPRESENTATIVE_PREFLIGHT_AND_CURRENT_PACKAGE_VERSION_OR_DECLARED_IRREDUCIBLE_FIELD_BOUNDARY"
 }

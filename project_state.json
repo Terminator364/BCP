@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R58_CANDIDATE_CI_QUALIFICATION_IN_PROGRESS_NEXUS_HUMAN_GATE_PAUSED",
-  "last_completed_atomic_action": "R58 candidate prepared: BCP 0.7.13 fixes the Nexus explicit-retry HTTP 500 caused by missing uuid import; 25-minute target cadence, email-first/ChatGPT-pointer-only recovery, and pre-human action simulation gate are persisted. Exact Windows runtime retry simulation and exact PowerShell helper success/HTTP500 negative-control simulations are passing on the candidate branch.",
-  "next_action": "Finish exact-head R58 qualification. If all required workflows pass, re-read main and merge PR #126 through the single-writer fence. Then require managed PC update/readback to BCP 0.7.13 before asking the user to retry Nexus. Only after 0.7.13 field readback may one fresh Cloudflare device authorization be requested; provider-authenticated whoami/readback remains required for Nexus completion.",
+  "status": "R60_CANDIDATE_FIELD_BCP_0_7_13_PROVEN_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "Fresh Google Drive machine readback from API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json proves MBMPC is running BCP 0.7.13 with exact server SHA-256 cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe, update_state=UP_TO_DATE, update_target_version=0.7.13, paired=true. Nexus remains HUMAN_AUTH_REQUIRED with bundle 0.2.6 and the expired-device-auth classification. R60 exact-head CI is still required before exposing the fresh human auth action.",
+  "next_action": "Complete exact-head PR #127 qualification. If all required workflows pass, reread main and merge through the single-writer fence; verify main/post-merge. Because BCP 0.7.13 field readback is now proven, the next user action after merge may be exactly one fresh Nexus Cloudflare device authorization attempt. Require provider-authenticated whoami/readback before Nexus completion.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -82,7 +82,8 @@
     "chatgpt_pc_flow_bridge": "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
     "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     "delivery_redundancy_policy": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
-    "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+    "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -151,7 +152,8 @@
     "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
-    ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+    ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -207,7 +209,10 @@
     "P0_email_only_detailed_checkpoint": true,
     "P0_interactive_work_tranche_8_to_10_minutes": false,
     "P0_interactive_work_tranche_25_minutes": true,
-    "P0_pre_human_action_simulation_gate": true
+    "P0_pre_human_action_simulation_gate": true,
+    "P0_gmail_start_before_substantive_work": true,
+    "P0_gmail_end_provider_ack_before_chat_output": true,
+    "P0_proof_carrying_human_action_qualification": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -1884,12 +1889,12 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R58",
-    "revision": "2026-09-21-R58",
+    "revision": "2026-09-21-R60",
     "target_minutes": 25,
     "work_slice_minutes": "24-25",
     "checkpoint_each_slice": true,
     "email_full_checkpoint_first": true,
-    "chatgpt_after_mail": "POINTER_ONLY",
+    "chatgpt_after_mail": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK",
     "email_body_must_equal_chat_response": false,
     "manual_first_one_shot_field_rule": false,
     "pre_human_action_simulation_required": true,
@@ -1897,7 +1902,11 @@
     "current_install_folder": "API_BCP/00_INSTALL_CURRENT",
     "replace_current_in_place": true,
     "cleanup_temporary_uploads": true,
-    "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH"
+    "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH",
+    "email_start_notice_before_substantive_work": true,
+    "email_end_checkpoint_before_chat_pointer": true,
+    "email_end_retry_until_provider_ack": true,
+    "chat_output_before_end_ack_forbidden": true
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -1999,42 +2008,32 @@
     "superseded_by": "R58_25_MINUTE_EMAIL_FIRST_SIMULATION_GATE"
   },
   "continuity_handoff": {
-    "checkpoint_id": "BCP-R56-CONTINUITY-HANDOFF-20260920",
+    "checkpoint_id": "BCP-R58-POSTMERGE-CONTINUITY-20260921",
     "continuation_code": "BCPGO BCP",
-    "purpose": "Fresh-conversation cold bootstrap for the active API/BCP project",
-    "canonical_main_sha": "f07df7ecd2963f998a3defa9f55a3803008c590f",
-    "delivery_policy": "R55_EMAIL_ONLY_DETAILED_CHECKPOINT_8_TO_10_MIN",
-    "runtime_observed_at_utc": "2026-09-20T22:53:23+00:00",
-    "runtime": {
-      "pc": "MBMPC",
-      "bcp_version": "0.7.12",
-      "bcp_update_state": "UP_TO_DATE",
-      "chatgpt_pc_version": "6.0.34",
-      "chatgpt_pc_sequence": 6034,
-      "chatgpt_pc_command_plane": "ALIVE",
+    "purpose": "Fresh-conversation cold bootstrap after R58 merge",
+    "canonical_main_sha": "0db531771d631ebade0847494baf3ca82c713674",
+    "delivery_policy": "R58_EMAIL_FIRST_CHAT_POINTER_25_MIN_TARGET",
+    "pre_human_action_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "current_field_truth": {
+      "bcp_observed_version": "0.7.13",
+      "bcp_target_version": "0.7.13",
+      "bcp_update_readback": "PASS_EXACT_SHA",
       "telegram_state": "ACTIVE",
       "telegram_mode": "DIRECT_TELEGRAM",
-      "telegram_consecutive_failures": 0,
       "nexus_bundle_version": "0.2.6",
       "nexus_state": "HUMAN_AUTH_REQUIRED",
-      "nexus_error_class": "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED",
-      "ram_percent": 83,
-      "available_memory_mb": 600,
-      "power_source": "AC",
-      "battery_percent": 95
+      "nexus_retry_before_0_7_13_readback_forbidden": true
     },
     "current_human_gate": {
-      "gate": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
-      "drive_helper_file": "BCP_NEXUS_AUTH_CURRENT.zip",
-      "drive_helper_file_id": "1G4Vgu4iraKsWzFSdpwHehFb2QYUoqJmJ",
-      "action_model": "ONE_ZIP_ONE_EXTRACTION_ONE_CMD_ONE_FRESH_DEVICE_FLOW",
+      "gate": "WAIT_R60_EXACT_HEAD_CI_AND_MERGE_THEN_FRESH_NEXUS_DEVICE_AUTHORIZATION",
+      "next_irreducible_gate_after_readback": "FRESH_NEXUS_DEVICE_AUTHORIZATION",
       "stale_code_reuse_forbidden": true,
       "localhost_8976_fallback_forbidden": true,
       "nexus_success_requires_provider_readback": true
     }
   },
   "r58_delivery_and_simulation_policy": {
-    "status": "IMPLEMENTED_CANDIDATE_CI_QUALIFICATION_IN_PROGRESS",
+    "status": "MERGED_MAIN_POSTMERGE_CI_RUNNING",
     "revision": "2026-09-21-R58",
     "target_tranche_minutes": 25,
     "practical_window_minutes": [
@@ -2048,6 +2047,94 @@
     "exact_nexus_server_retry_runtime_simulation": true,
     "exact_nexus_powershell_helper_simulation": true,
     "http_500_negative_control": true,
-    "field_verified": false
+    "field_verified": false,
+    "merge_sha": "0db531771d631ebade0847494baf3ca82c713674",
+    "exact_head_sha": "c37b770063d061194fb109ab6b3c4b9cc9ffc9c2",
+    "exact_head_ci": "PASS"
+  },
+  "r59_gmail_handshake": {
+    "status": "SUPERSEDED_BY_R60_END_ACK_GATE",
+    "revision": "2026-09-21-R59",
+    "tranche_target_minutes": 25,
+    "order": [
+      "EMAIL_START_NOTICE",
+      "SUBSTANTIVE_WORK",
+      "EMAIL_END_FULL_CHECKPOINT",
+      "CHATGPT_POINTER_ONLY"
+    ],
+    "start_mail_required": true,
+    "end_mail_required": true,
+    "chat_pointer_fields": [
+      "MAIL_SENT",
+      "KINSHASA_DAY_DATE_TIME",
+      "CHECKPOINT_ID"
+    ],
+    "current_start_mail_receipt": "1a0c1901b19bbc69",
+    "current_start_mail_local_time": "2026-09-21T02:23:00+01:00",
+    "current_end_mail_receipt": "1a0c192170100621",
+    "current_end_mail_local_time": "2026-09-21T02:25:00+01:00",
+    "superseded_by": "R60_GMAIL_END_PROVIDER_ACK_GATE"
+  },
+  "r60_gmail_end_ack_policy": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI",
+    "revision": "2026-09-21-R60",
+    "order": [
+      "EMAIL_START_NOTICE",
+      "SUBSTANTIVE_WORK",
+      "EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK",
+      "CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK"
+    ],
+    "start_mail_required": true,
+    "end_mail_retry_required": true,
+    "provider_send_ack_required": true,
+    "chat_output_before_end_ack_forbidden": true,
+    "current_tranche_start_receipt": "1a0c2d8c97df6174",
+    "current_tranche_start_local_time": "2026-09-21T08:22:54+01:00",
+    "current_tranche_end_receipt": null
+  },
+  "latest_runtime_readback_r60": {
+    "source": "Google Drive API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "drive_file_id": "1dhTestayG287gmMEE-acaLMf6w2zTYz4",
+    "drive_modified_at_utc": "2026-09-21T07:30:24.534Z",
+    "runtime_updated_at_utc": "2026-09-21T07:28:47+00:00",
+    "evidence_status": "MACHINE_READBACK",
+    "pc_name": "MBMPC",
+    "server_version": "0.7.13",
+    "server_pid": 11688,
+    "server_sha256": "cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe",
+    "paired": true,
+    "server_update_state": "UP_TO_DATE",
+    "server_update_target_version": "0.7.13",
+    "nexus_bootstrap_state": "HUMAN_AUTH_REQUIRED",
+    "nexus_bootstrap_bundle_version": "0.2.6",
+    "nexus_bootstrap_error_class": "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED",
+    "telegram_companion_state": "DEGRADED_RETRY",
+    "telegram_companion_mode": "DIRECT_TELEGRAM",
+    "chatgpt_pc_active_version": "6.0.34",
+    "chatgpt_pc_command_plane": "ALIVE",
+    "pc_memory_load_percent": 85,
+    "pc_available_memory_mb": 545,
+    "pc_power_source": "AC",
+    "field_gate_bcp_0_7_13": "PASS",
+    "nexus_field_auth": "PENDING_HUMAN_PROVIDER_GATE"
+  },
+  "field_readback_lookup_strategy": {
+    "status": "CANONICAL_R60",
+    "provider": "GOOGLE_DRIVE",
+    "method": "DETERMINISTIC_FOLDER_TRAVERSAL_NOT_BROAD_SEARCH",
+    "path": [
+      "API_BCP",
+      "02_TELEMETRY",
+      "BCP",
+      "BCP_RUNTIME_LATEST.json"
+    ],
+    "required_fields": [
+      "server_version",
+      "server_sha256",
+      "updated_at",
+      "update_state",
+      "nexus_bootstrap_state"
+    ],
+    "public_repo_drive_ids_forbidden": true
   }
 }

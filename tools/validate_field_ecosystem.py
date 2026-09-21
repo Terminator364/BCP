@@ -373,10 +373,18 @@ def main() -> int:
     assert delivery_policy["cadence"]["target_minutes"] == 25
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
-    assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT"
+    assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK"
     assert delivery_policy["channels"]["chatgpt"]["detailed_checkpoint_body_forbidden_after_successful_email"] is True
+    assert delivery_policy["channels"]["email"]["start_notice_required_before_substantive_work"] is True
+    assert delivery_policy["channels"]["email"]["end_checkpoint_required"] is True
+    assert delivery_policy["channels"]["email"]["end_mail_retry_required"] is True
+    assert delivery_policy["channels"]["email"]["end_mail_provider_ack_required"] is True
+    assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
     assert delivery_policy["checkpoint_delivery_order"] == [
-        "EMAIL_FULL_CHECKPOINT", "CHATGPT_POINTER_ONLY", "TELEGRAM_WITNESS_OPTIONAL"
+        "EMAIL_START_NOTICE", "SUBSTANTIVE_WORK",
+        "EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK",
+        "CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK",
+        "TELEGRAM_WITNESS_OPTIONAL"
     ]
     assert delivery_policy["ui_policy"]["progressive_disclosure_required"] is True
     guide = read("docs/BCP_COCKPIT_MODE_D_EMPLOI_R54.md")

@@ -1,26 +1,59 @@
-# R56 Fresh Conversation Handoff — 2026-09-20
+# R60 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code for a new conversation:
 
 `BCPGO BCP`
 
 On a fresh conversation, this code means:
-- load the current durable `project_state.json`, this file, the canonical requirements, R55 delivery policy, writer-fence policy and CURRENT manifests;
+- load `project_state.json`, this handoff, the canonical requirements, delivery policy, 25-minute cadence policy, pre-human action simulation policy, writer-fence policy and CURRENT manifests;
 - do not reconstruct the project from chat history;
 - resume from the next uncommitted action only;
-- preserve the 25-minute target tranche (practical 24–25 minute window) and email-first / ChatGPT-pointer-only checkpoint rule;
+- immediately send a short Gmail **START** notice before substantive project work; at tranche end send the full Gmail **END** checkpoint; only after the END receipt is confirmed may ChatGPT answer, and then it is pointer-only;
+- normal useful-work tranche target is approximately 25 minutes (practical 24–25 minute window unless a real gate ends it earlier);
+- never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
-Current field truth at the R56 checkpoint:
-- BCP 0.7.12 is UP_TO_DATE on MBMPC;
-- ChatGPT-PC 6.0.34 / 6034 is alive and its command plane is fresh;
-- Telegram is ACTIVE in DIRECT_TELEGRAM mode;
-- Nexus 0.2.6 is not complete: it is in HUMAN_AUTH_REQUIRED because the Cloudflare device authorization is required or expired;
-- the current one-shot helper is `API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip`;
-- do not reuse a stale device code and do not fall back to `localhost:8976`;
-- Nexus may be called complete only after provider-authenticated readback.
+### START/END Gmail handshake — R60
+For every user-invoked continuation/relaunch/message that starts project work:
+1. perform only the minimum routing/context lookup needed to know the project;
+2. send Gmail START with Kinshasa day/date/time, project and tranche scope;
+3. perform the substantive work;
+4. persist evidence/checkpoint;
+5. send Gmail END with the complete checkpoint and retry automatically until the provider returns a successful send acknowledgement;
+6. only after that END acknowledgement, in ChatGPT show: “Va sur Gmail” + Kinshasa day/date/time + checkpoint id.
 
-Current human gate: one fresh Nexus device authorization. No reboot, reinstall, or old Cloudflare retry should be performed before that gate.
+If the START mail fails, do not begin the substantive tranche. If the END mail fails, emit no ChatGPT end message at all; retry the END mail until acknowledged.
+
+### Fast field-readback lookup
+
+To avoid slow broad Drive search on every continuation, recover the resident BCP runtime through deterministic folder traversal:
+1. locate the exact folder named `API_BCP`;
+2. list its exact child `02_TELEMETRY`;
+3. list child `BCP`;
+4. list/fetch `BCP_RUNTIME_LATEST.json`;
+5. use its machine fields (`server_version`, `server_sha256`, `updated_at`, `update_state`, `nexus_bootstrap_state`) as field evidence.
+
+Do not start with a broad full-Drive content search for runtime telemetry. Keep Drive IDs out of the public repository; resolve IDs from the connected private Drive at runtime.
+
+Current durable integration truth:
+- R58 server fix is already merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`; R60 continuity/simulation hardening remains on PR #127 until exact-head CI is green;
+- BCP target is **0.7.13**;
+- 0.7.13 fixes the Nexus explicit-retry HTTP 500 caused by the missing `uuid` import;
+- the Nexus server-side retry path passed runtime simulation;
+- the exact Windows PowerShell one-shot helper passed both a simulated `202 / LAUNCHED` path and an expected `500 / HOLD` negative control;
+- exact-head R58 qualification passed before merge; R60 exact-head qualification is the current integration gate;
+- fresh Google Drive machine readback from `API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json` now proves **BCP 0.7.13** on MBMPC with exact server SHA-256 `cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe`, `update_state=UP_TO_DATE`, `paired=true`;
+- Nexus remains `HUMAN_AUTH_REQUIRED` with bundle `0.2.6` and error class `CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED`;
+- therefore the BCP-version convergence gate is cleared, but **do not ask the user to retry Nexus until PR #127 passes exact-head CI and is merged/read back**.
+
+Current action:
+1. finish exact-head R60 qualification on PR #127;
+2. reread `main` and merge only through the single-writer fence if all required checks are green;
+3. verify the merge/readback and post-merge workflows;
+4. then expose exactly one fresh Nexus Cloudflare device-authorization action;
+5. after consent, require provider-authenticated `whoami`/equivalent readback before Nexus is complete.
+
+No reinstall, reboot, stale Cloudflare code, or repeated Nexus ZIP attempt is justified before the R60 integration gate is cleared.
 
 ---
 

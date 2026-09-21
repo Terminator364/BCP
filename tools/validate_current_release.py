@@ -13,11 +13,14 @@ ANDROID = ROOT / "release" / "android.json"
 NEXUS = ROOT / "release" / "nexus_bootstrap.json"
 TELEGRAM = ROOT / "release" / "telegram_observability.json"
 SERVER_SOURCE = ROOT / "windows" / "bcp_server.py"
+INSTALLER_SOURCE = ROOT / "windows" / "INSTALL_BCP_FINAL.ps1"
+ACCEPTANCE_SOURCE = ROOT / "windows" / "BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
 TELEGRAM_SOURCE = ROOT / "windows" / "bcp_telegram_observability.py"
 SPEC = ROOT / "docs" / "CANONICAL_PRODUCT_REQUIREMENTS.md"
 CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.json"
 DELIVERY_POLICY = ROOT / ".project-memory" / "DELIVERY_REDUNDANCY_POLICY.json"
 PRE_HUMAN_POLICY = ROOT / ".project-memory" / "PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+HUMAN_ACTION_MATRIX = ROOT / ".project-memory" / "HUMAN_ACTION_QUALIFICATION_MATRIX.json"
 
 
 def fail(message: str) -> None:
@@ -55,10 +58,13 @@ def main() -> int:
     telegram_manifest = load(TELEGRAM)
     source = SERVER_SOURCE.read_bytes()
     telegram_source = TELEGRAM_SOURCE.read_bytes()
+    installer_source = INSTALLER_SOURCE.read_text(encoding="utf-8")
+    acceptance_source = ACCEPTANCE_SOURCE.read_text(encoding="utf-8")
     spec = SPEC.read_text(encoding="utf-8")
     cadence = load(CADENCE_POLICY)
     delivery = load(DELIVERY_POLICY)
     pre_human = load(PRE_HUMAN_POLICY)
+    human_actions = load(HUMAN_ACTION_MATRIX)
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
@@ -85,12 +91,66 @@ def main() -> int:
         fail("cadence_window_not_24_25")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
-    if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_CHECKPOINT":
+    if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
         fail("chat_pointer_only_contract")
+    email = delivery.get("channels", {}).get("email", {})
+    if email.get("start_notice_required_before_substantive_work") is not True:
+        fail("start_email_before_work_contract")
+    if email.get("end_checkpoint_required") is not True:
+        fail("end_email_checkpoint_contract")
+    if email.get("end_mail_retry_required") is not True:
+        fail("end_email_retry_contract")
+    if email.get("end_mail_provider_ack_required") is not True:
+        fail("end_email_provider_ack_contract")
+    if email.get("chat_output_before_end_ack_forbidden") is not True:
+        fail("chat_before_end_email_ack_forbidden_contract")
+    if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
+        fail("start_work_end_chat_order_contract")
     if pre_human.get("default_rule") != "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE":
         fail("pre_human_action_simulation_contract")
     if "RUNTIME_PATH" not in (pre_human.get("required_layers") or []):
         fail("pre_human_runtime_layer_missing")
+    if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
+        fail("human_action_matrix_ref_drift")
+    if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
+        fail("human_action_matrix_schema")
+    actions = human_actions.get("actions") or []
+    by_id = {str(a.get("action_id") or ""): a for a in actions}
+    required_action_ids = {
+        "WINDOWS_INSTALL_OR_UPDATE",
+        "WINDOWS_FINAL_ACCEPTANCE",
+        "NEXUS_FRESH_DEVICE_AUTH",
+        "ANDROID_BEDGE_INSTALL_OR_OPEN",
+    }
+    if set(by_id) != required_action_ids:
+        fail("human_action_matrix_coverage")
+    for action_id, action in by_id.items():
+        if not (action.get("entrypoints") or []):
+            fail("human_action_entrypoint_missing:" + action_id)
+        if not (action.get("required_workflows") or []):
+            fail("human_action_workflow_missing:" + action_id)
+        if not (action.get("required_evidence") or []):
+            fail("human_action_evidence_missing:" + action_id)
+        if not (action.get("remaining_field_boundary") or []):
+            fail("human_action_field_boundary_missing:" + action_id)
+    workflow_names = set()
+    for workflow_path in (ROOT / ".github" / "workflows").glob("*.yml"):
+        head = workflow_path.read_text(encoding="utf-8", errors="replace")
+        wm = re.search(r"^name:\s*(.+?)\s*$", head, re.M)
+        if wm:
+            workflow_names.add(wm.group(1).strip())
+    for action_id, action in by_id.items():
+        for workflow_name in action.get("required_workflows") or []:
+            if workflow_name not in workflow_names:
+                fail("human_action_workflow_not_found:" + action_id + ":" + workflow_name)
+
+    android_action = by_id["ANDROID_BEDGE_INSTALL_OR_OPEN"]
+    if "android_emulator_api_35" not in (android_action.get("representative_environment") or []):
+        fail("android_emulator_qualification_missing")
+    nexus_action = by_id["NEXUS_FRESH_DEVICE_AUTH"]
+    evidence = set(nexus_action.get("required_evidence") or [])
+    if not {"202_LAUNCHED_positive_control", "500_HOLD_negative_control"}.issubset(evidence):
+        fail("nexus_positive_negative_controls_missing")
 
     m = re.search(r"^Revision:\s*(\S+)", spec, re.M)
     if not m or m.group(1) != cur.get("requirements_revision"):
@@ -123,6 +183,14 @@ def main() -> int:
         fail("server_source_sha_drift")
     if pc.get("distribution_ready") is not True or pc.get("auto_update_eligible") is not True:
         fail("server_distribution_contract")
+
+    release_version = str(srv.get("version") or "")
+    installer_match = re.search(r'\$InstallerVersion\s*=\s*"([^"]+)"', installer_source)
+    acceptance_match = re.search(r'\$TargetVersion\s*=\s*"([^"]+)"', acceptance_source)
+    if not installer_match or installer_match.group(1) != release_version:
+        fail("installer_version_pin_drift")
+    if not acceptance_match or acceptance_match.group(1) != release_version:
+        fail("acceptance_version_pin_drift")
 
     if android.get("version") != str(edge.get("version_name")):
         fail("android_version_drift")

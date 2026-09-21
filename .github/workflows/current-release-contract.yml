@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "release/current.json"
       - "release/server.json"
       - "release/android.json"
@@ -19,9 +21,12 @@ on:
       - ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+      - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
       - ".github/workflows/current-release-contract.yml"
   push:
     paths:
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "release/current.json"
       - "release/server.json"
       - "release/android.json"
@@ -58,6 +63,10 @@ jobs:
           python -m json.tool release/telegram_observability.json > /dev/null
           python -m json.tool release/nexus_bootstrap.json > /dev/null
           python -m json.tool schemas/bcp_current_release.schema.json > /dev/null
+          python -m json.tool .project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json > /dev/null
+          python -m json.tool .project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json > /dev/null
+          python -m json.tool .project-memory/DELIVERY_REDUNDANCY_POLICY.json > /dev/null
+          python -m json.tool .project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json > /dev/null
 
       - name: Validate CURRENT truth contract
         run: python tools/validate_current_release.py

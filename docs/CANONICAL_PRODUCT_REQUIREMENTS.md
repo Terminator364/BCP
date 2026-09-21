@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R58
+Revision: 2026-09-21-R60
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1633,16 +1633,18 @@ The human-facing explanation must say that BCP has a durable copy but has not re
 The canonical guide is:
 - docs/BCP_COCKPIT_MODE_D_EMPLOI_R53.md
 
-### Interactive tranche and exact mail mirror
+### Interactive tranche and Gmail START/END acknowledgement gate
 The active API/BCP work cadence now targets 25 minutes, with a practical 24–25 minute window unless a real gate requires earlier return.
 When email is available, the complete checkpoint body MUST be sent by email first. After positive Gmail send receipt, the ChatGPT application MUST show only the short pointer containing mail confirmation, Kinshasa date/time, and checkpoint identifier; it MUST NOT duplicate the detailed checkpoint body.
 
 Checkpoint delivery order is normative:
-1. EMAIL_FULL_CHECKPOINT;
-2. CHATGPT_POINTER_ONLY;
-3. TELEGRAM_WITNESS_OPTIONAL.
+1. EMAIL_START_NOTICE;
+2. SUBSTANTIVE_WORK;
+3. EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK;
+4. CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK;
+5. TELEGRAM_WITNESS_OPTIONAL.
 
-A failed email send MUST remain an explicit EMAIL_DELIVERY_HOLD; the system MUST NOT claim that the mail was sent.
+A failed START email blocks substantive work. A failed END email MUST be retried until the mail provider returns a successful send acknowledgement. No ChatGPT end message, hold message, success message, or pointer may be emitted before that END acknowledgement; after the acknowledgement, ChatGPT is pointer-only.
 
 ### Progressive disclosure
 The normal mobile cockpit MUST NOT expose reports and deep technical diagnostics at the same visual level as orientation and human-action controls.
@@ -1791,3 +1793,21 @@ For the current Nexus authorization path, qualification includes both the server
 Normal interactive technical work uses a ~25-minute useful-work tranche: target 25 minutes, with approximately the final minute reserved for durable checkpoint/email delivery. Earlier return is allowed only for a real human gate, safety hold, tool failure, or a completed atomic action that should be checkpointed immediately. The full checkpoint is sent by email first; ChatGPT then shows only the short Gmail/date-time/checkpoint pointer after confirmed mail delivery.
 
 The durable `project_state.json` must expose the currently active cadence and simulation-gate policy so a fresh `BCPGO BCP` recovery cannot regress to a superseded 5–7 or 8–10 minute rule or ask the user to repeat an unqualified action path.
+
+
+## P0 — Gmail START/END tranche handshake — R60
+
+For every user-invoked active technical tranche where Gmail is available:
+
+- a **START** email MUST be sent before substantive project work begins; only minimal routing/context lookup needed to identify the active project is allowed before this message;
+- the START email MUST include project, Kinshasa-local day/date/time, tranche target, and work scope;
+- the normal tranche target remains approximately 25 minutes;
+- at the end, a **full END checkpoint** MUST be sent by Gmail before any user-visible ChatGPT completion response;
+- after successful END mail delivery, ChatGPT MUST be pointer-only: “Va sur Gmail” + Kinshasa-local day/date/time + checkpoint identifier;
+- detailed work results MUST NOT be duplicated into the ChatGPT app after the mail succeeds;
+- START-mail failure blocks substantive work; END-mail failure MUST trigger automatic resend attempts and forbids any ChatGPT end output until a provider send acknowledgement is obtained.
+
+Canonical machine policies:
+- `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`
+- `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`
+- `.project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json`

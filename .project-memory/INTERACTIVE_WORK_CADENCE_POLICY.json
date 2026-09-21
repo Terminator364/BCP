@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/5",
+  "schema": "bcp.interactive_work_cadence_policy/7",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 25,
@@ -8,19 +8,21 @@
     25
   ],
   "principles": [
+    "At the beginning of each user-invoked tranche, send a short Gmail START notice before substantive project work whenever the mail connector is available.",
     "Perform a substantial useful-work tranche targeting 25 minutes by default; do not checkpoint materially earlier unless a real human gate, safety hold, tool failure, or completed atomic action makes early return necessary.",
     "Treat 25 minutes as the normal target, with roughly the final minute reserved for durable checkpoint/email delivery rather than optional expansion.",
     "Do not infer network/UI latency from an unsynchronized manual stopwatch or from ChatGPT's thinking-duration indicator.",
     "Separate producer time, BCP mirror delay, transport acceptance, and explicit seen acknowledgement whenever evidence exists.",
     "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
     "Resume from that durable checkpoint on the next Continue invocation.",
-    "Before the ChatGPT pointer is shown, send the full checkpoint by the configured email mirror whenever the mail connector is available."
+    "Before the ChatGPT pointer is shown, send the full checkpoint by the configured email mirror whenever the mail connector is available.",
+    "At the end of each tranche, send the full Gmail END checkpoint and retry automatically until the mail provider returns a successful send acknowledgement; before that acknowledgement ChatGPT emits no end message; after it, ChatGPT remains pointer-only."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T01:45:00+01:00",
+  "updated_at": "2026-09-21T08:22:00+01:00",
   "target_internal_work_minutes": 25,
   "acceptable_internal_work_window_minutes": [
     24,
@@ -54,6 +56,10 @@
     "internal_soft_cutoff_minutes": 24.5,
     "checkpoint_before_optional_overrun": true,
     "true_gate_may_return_early": true,
-    "transport_latency_is_separate_from_useful_work": true
+    "transport_latency_is_separate_from_useful_work": true,
+    "start_email_before_substantive_work": true,
+    "end_email_before_chat_pointer": true,
+    "end_email_retry_until_provider_ack": true,
+    "chat_output_before_end_ack_forbidden": true
   }
 }
