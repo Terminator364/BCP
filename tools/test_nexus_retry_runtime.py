@@ -84,6 +84,73 @@ def main() -> int:
         latest = json.loads((archive_dir / "LATEST.json").read_text(encoding="utf-8"))
         assert latest["reason"] == "EXPLICIT_FRESH_DEVICE_FLOW_RETRY", latest
 
+    with tempfile.TemporaryDirectory() as td:
+        root = pathlib.Path(td)
+        state = root / "state"
+        state.mkdir(parents=True, exist_ok=True)
+        bcp.STATE_DIR = state
+        bcp.NEXUS_BOOTSTRAP_STATE_PATH = state / "nexus_bootstrap_delivery.json"
+        bcp.NEXUS_BOOTSTRAP_RECEIPT_PATH = state / "nexus_bootstrap_receipt.json"
+
+        # Transient DNS staging failure: retry once immediately, then remain
+        # autonomous if the network is still unavailable.
+        bcp.atomic_json(
+            bcp.NEXUS_BOOTSTRAP_STATE_PATH,
+            {
+                "schema": "bcp.nexus_bootstrap_delivery/1",
+                "state": "STAGE_FAILED",
+                "bundle_version": "",
+                "error_class": "DNS_RESOLUTION_FAILED",
+            },
+        )
+
+        def fake_dns_fail(auto_launch=True):
+            raise OSError("getaddrinfo failed")
+
+        bcp._apply_nexus_bootstrap_delivery_locked = fake_dns_fail
+        pending = bcp.apply_nexus_bootstrap_delivery(
+            auto_launch=True,
+            explicit_human_retry=True,
+        )
+        assert pending["result"] == "NETWORK_RECOVERY_PENDING", pending
+        assert pending["automatic_retry"] is True, pending
+        assert pending["error_class"] == "DNS_RESOLUTION_FAILED", pending
+
+        # If a HUMAN_AUTH_REQUIRED receipt survived a transient staging failure,
+        # it restores the human gate instead of returning a misleading NO_RETRY.
+        bcp.atomic_json(
+            bcp.NEXUS_BOOTSTRAP_STATE_PATH,
+            {
+                "schema": "bcp.nexus_bootstrap_delivery/1",
+                "state": "STAGE_FAILED",
+                "bundle_version": "",
+                "error_class": "DNS_RESOLUTION_FAILED",
+            },
+        )
+        bcp.atomic_json(
+            bcp.NEXUS_BOOTSTRAP_RECEIPT_PATH,
+            {
+                "schema": "bcp.nexus_bootstrap_receipt/1",
+                "status": "HUMAN_AUTH_REQUIRED",
+                "bundle_version": "0.2.6",
+            },
+        )
+        recovery_calls = []
+
+        def fake_recovered(auto_launch=True):
+            recovery_calls.append(bool(auto_launch))
+            return {"ok": True, "result": "LAUNCHED", "bundle_version": "0.2.6"}
+
+        bcp._apply_nexus_bootstrap_delivery_locked = fake_recovered
+        recovered = bcp.apply_nexus_bootstrap_delivery(
+            auto_launch=True,
+            explicit_human_retry=True,
+        )
+        assert recovered["result"] == "LAUNCHED", recovered
+        assert recovered["explicit_human_retry"] is True, recovered
+        assert recovered["previous_receipt_archived"] is True, recovered
+        assert recovery_calls == [True], recovery_calls
+
     print("BCP_NEXUS_EXPLICIT_RETRY_RUNTIME_SIMULATION=PASS")
     return 0
 
