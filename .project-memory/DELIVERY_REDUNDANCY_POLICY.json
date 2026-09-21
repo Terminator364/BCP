@@ -29,7 +29,7 @@
     }
   },
   "cadence": {
-    "work_slice_minutes": "20-25",
+    "work_slice_minutes": "24-25",
     "target_minutes": 25,
     "checkpoint_each_slice": true,
     "mail_each_slice": true,
