@@ -103,23 +103,16 @@ public final class EdgeOrchestrator {
 
     public void putMemory(String projectId, String layer, String key, Object value,
                           String evidenceClass, boolean pinned, Long expiresAt) {
-        long now = System.currentTimeMillis();
-        String evidence = evidenceClass == null ? "UNVERIFIED" : evidenceClass.trim().toUpperCase();
-        EdgeMemoryEntity old = dao.memoryItem(projectId, layer, key);
-        if (old != null && old.expiresAt != null && old.expiresAt <= now) old = null;
-        if (!EdgePolicy.canReplaceMemory(
-                layer,
-                old == null ? null : old.evidenceClass,
-                old != null && old.pinned,
-                evidence)) {
-            throw new IllegalArgumentException("memory_admission_rejected_precedence");
+        JSONObject receipt = admitMemoryClaim(
+                projectId, layer, key, value, evidenceClass,
+                "B_EDGE_INTERNAL", "LOCAL_NODE_POLICY", "",
+                "", pinned, expiresAt);
+        String result = receipt.optString("result", "");
+        if (!receipt.optBoolean("ok", false)
+                || "REJECTED".equals(result) || "HOLD".equals(result)) {
+            throw new IllegalArgumentException(
+                    receipt.optString("error", "memory_admission_rejected_precedence"));
         }
-        boolean effectivePinned = pinned || (old != null && old.pinned);
-        long createdAt = old == null ? now : old.createdAt;
-        dao.putMemory(new EdgeMemoryEntity(
-                projectId, layer, key, jsonValueString(value),
-                evidence, "B_EDGE", effectivePinned, createdAt, now, expiresAt
-        ));
     }
 
     public JSONObject admitMemoryClaim(String projectId, String scope, String key, Object value,
