@@ -1,0 +1,54 @@
+{
+  "schema": "bcp.new_conversation_takeover/1",
+  "trigger_code": "BCPGO BCP",
+  "purpose": "resume API/BCP from durable project and communication state",
+  "repository": "Terminator364/BCP",
+  "control_branch": "main",
+  "mandatory_first_reads": [
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    ".project-memory/COMMUNICATION_PROTOCOL.json",
+    ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    "release/current.json"
+  ],
+  "takeover_algorithm": [
+    "READ_DURABLE_STATE_FIRST",
+    "RECONCILE_UNCLOSED_TRANCHE_BEFORE_NEW_WORK",
+    "LOAD_COMMUNICATION_STATE_MACHINE_AND_DELIVERY_LEDGER",
+    "LOAD_GIT_WRITER_FENCE",
+    "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
+    "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
+    "WORK_FROM_PROJECT_STATE_NEXT_ACTION",
+    "ENTER_CLOSE_RESERVE_AT_MINUTE_26",
+    "PERSIST_CLOSE_INTENT",
+    "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
+    "SEND_COMPLETE_GMAIL_END_IF_MISSING",
+    "REQUIRE_PROVIDER_ACK_AND_SENT_READBACK",
+    "PERSIST_CLOSED_STATE",
+    "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
+  ],
+  "communication_contract": {
+    "cadence_minutes": 30,
+    "useful_work_minutes": 26,
+    "normal_close_reserve_minutes": 4,
+    "gmail_label": "BCP",
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "backup_owner": "SHADOW_BACKUP",
+    "hard_guard_owner": "HARD_GUARD",
+    "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
+    "ui_thinking_indicator_authoritative": false
+  },
+  "product_truth": {
+    "phone_direction": "coherent dedicated Android full-node/server appliance",
+    "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
+    "continuation_code": "BCPGO BCP"
+  }
+}
