@@ -28,6 +28,7 @@ NEW_CONVERSATION_TAKEOVER = ROOT / ".project-memory" / "NEW_CONVERSATION_TAKEOVE
 ABC_SOURCE_REGISTRY = ROOT / ".project-memory" / "BCP_ABC_SOURCE_REGISTRY.json"
 ABC_COVERAGE = ROOT / ".project-memory" / "BCP_ABC_COVERAGE.json"
 ABC_SPEC = ROOT / "docs" / "BCP_CANONICAL_SPEC_ABC.md"
+UCMF_CONTINUITY = ROOT / ".project-memory" / "UCMF001_CONTINUITY.json"
 
 
 def fail(message: str) -> None:
@@ -80,6 +81,7 @@ def main() -> int:
     abc_sources = load(ABC_SOURCE_REGISTRY)
     abc_coverage = load(ABC_COVERAGE)
     abc_spec = ABC_SPEC.read_text(encoding="utf-8")
+    ucmf = load(UCMF_CONTINUITY)
 
     if abc_sources.get("schema") != "bcp.abc_source_registry/1":
         fail("abc_source_registry_schema")
@@ -94,6 +96,16 @@ def main() -> int:
         fail("abc_evidence_coverage_truth")
     if "A+B+C" not in abc_spec or "micro-bêtas" not in abc_spec or "Universal Chronicle" not in abc_spec:
         fail("abc_spec_markers")
+    if ucmf.get("schema") != "bcp.ucmf001_continuity/1":
+        fail("ucmf_continuity_schema")
+    if ucmf.get("canonical_drive", {}).get("current_verified_postulate") != 9:
+        fail("ucmf_postulate_not_9")
+    if ucmf.get("cold_bootstrap", {}).get("cadence_minutes") != 25:
+        fail("ucmf_cadence_not_25")
+    if ucmf.get("cold_bootstrap", {}).get("normal_close_automation_required") is not False:
+        fail("ucmf_normal_close_must_not_depend_on_automation")
+    if "MISSION_PROVIDER_DEGRADED_RESILIENCE" not in {r.get("id") for r in (abc_coverage.get("rows") or [])}:
+        fail("abc_missing_ucmf9_provider_resilience")
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
