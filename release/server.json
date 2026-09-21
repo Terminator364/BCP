@@ -8,7 +8,7 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-21-R57",
+  "requirements_revision": "2026-09-20-R54",
   "release_train": "BCP-0.7.13_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
   "notes": "BCP 0.7.13 fixes explicit Nexus device-flow retry HTTP 500 by importing the uuid dependency used for retry nonce/archive generation. Fresh auth semantics, zero-USD policy, and no localhost:8976 fallback remain unchanged."
 }
