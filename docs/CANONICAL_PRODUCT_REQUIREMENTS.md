@@ -1780,3 +1780,5 @@ Mandatory principles:
 
 Canonical policy:
 `.project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json`.
+
+Representative simulation is a release gate, not a substitute for field truth. A Windows runner can qualify Windows/PowerShell/local-runtime behavior; Android CI and an emulator/instrumented runner can qualify Android behavior where relevant; real account consent, provider availability, physical radio/network conditions and device-specific field effects remain separately evidenced gates.
