@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "df9d35befe0ce4763a63353e40da484895574c2360c03aae0c8482a2c93b4a9b"
+        "sha256": "a06f675966a8f73ea42ed55d0b2e614b03b8a83851a1f2dd5f6ac681925f9238"
       },
       "notes": "Nexus 0.2.6 R54 remains device-flow-only, reconciles Worker health version, and mirrors the compact human cockpit plus WinAnsi/Bold/paginated PDF fallback with Kinshasa-time captions."
     }
