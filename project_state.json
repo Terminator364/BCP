@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R70_FULL_NODE_2_2_0_CANDIDATE_30MIN_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R70 coherent full-node implementation now includes dedicated foreground Edge/API server, Room durable queue/memory/receipts, reboot recovery, NSD/Wi-Fi Direct/BLE presence, real Android permission onboarding, server-first dashboard, adaptive network/data-saver truth, and an app-private adaptive content cache capped at 8 GiB for context/resume snapshots. Cadence is 30 minutes with Gmail START/END ACK gating.",
-  "next_action": "Continue R70 as a coherent full-node release, not a micro-beta: fix the current Android lint finding, qualify the local API/storage/network/UI stack, then close the canonical production gaps (encrypted authenticated LAN transport and an EDGE_ONLY remote-control path that does not depend on the PC being online) before signing/publishing a phone APK for the user.",
+  "status": "R71_COMMUNICATION_SURVIVAL_AND_FULL_PHONE_NODE_CANDIDATE_CI",
+  "last_completed_atomic_action": "R71 hardened cross-conversation communication recovery: 30-minute Gmail START/END with provider ACK, one-shot END watchdog, BCP-labeled mail, BCPGO BCP cold recovery, phone-primary local store-and-forward node, Telegram direct->B-EDGE relay fallback, deterministic Drive runtime recovery, and anti-false-success evidence rules. R70 Android full-node candidate remains on PR #138; the exact-head lint blocker was identified as missing ACCESS_COARSE_LOCATION alongside legacy ACCESS_FINE_LOCATION and has been fixed on the active branch.",
+  "next_action": "Finish exact-head PR #138 qualification after the Android manifest lint fix and R71 communication-policy changes. Fix any remaining CI defects automatically. Do not ask the user to install another phone build until the coherent full-node release is exact-head green, Evergreen-signed v2/v3, Drive CURRENT replaced/read back, and the remaining production transport/security gaps are either closed or explicitly nonblocking.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -83,7 +83,9 @@
     "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     "delivery_redundancy_policy": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+    "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    "communication_survival_policy": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -155,7 +157,9 @@
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
     ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json",
-    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json"
+    ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json",
+    ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -225,7 +229,11 @@
     "P0_phone_server_first_ui": true,
     "P0_interactive_work_tranche_30_minutes": true,
     "P0_phone_no_micro_beta_field_installs": true,
-    "P0_phone_full_node_vertical_slice": true
+    "P0_phone_full_node_vertical_slice": true,
+    "P0_communication_survival_fabric": true,
+    "P0_cross_conversation_recovery_without_user_reexplanation": true,
+    "P0_no_user_relaunch_required_for_end_checkpoint": true,
+    "P0_30_minute_interactive_work_tranche": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2404,5 +2412,21 @@
       "PINNED_EVERGREEN_SIGNING_V2_V3_AND_DRIVE_CURRENT_HASH_READBACK"
     ],
     "release_gate": "NO_USER_INSTALL_UNTIL_REMAINING_FULL_NODE_GAPS_ARE_CLOSED_OR_EXPLICITLY_CLASSIFIED_AS_POST_FIELD_NONBLOCKING"
+  },
+  "r71_communication_survival": {
+    "status": "IMPLEMENTED_CANDIDATE_CI",
+    "revision": "2026-09-21-R71",
+    "continuation_code": "BCPGO BCP",
+    "tranche_target_minutes": 30,
+    "gmail_start_required": true,
+    "gmail_end_provider_ack_required": true,
+    "end_watchdog_offset_minutes": 29,
+    "chatgpt_pointer_only_after_end_ack": true,
+    "telegram_direct_then_phone_relay": true,
+    "phone_edge_store_and_forward": true,
+    "deterministic_drive_runtime_path": "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "user_reexplanation_on_new_conversation": false,
+    "runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "anti_false_success": true
   }
 }
