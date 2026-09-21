@@ -1947,3 +1947,21 @@ Research basis for R70 implementation:
 Permission principle: owning the phone does not mean requesting every permission. Request all permissions that map to concrete BCP capabilities, explain them in context, and degrade gracefully if one is denied. Do not request unrelated sensitive permissions merely to make the app appear more powerful.
 
 Field-install rule: if exact-head CI or emulator evidence fails, continue fixing automatically. Do not ask the user to reinstall the next phone APK until the vertical slice is coherent and qualified.
+
+
+## P0 — Communication survival fabric — R71
+
+BCP MUST survive loss or instability of any single communication surface. The canonical communication topology is multi-plane:
+
+- Gmail is the primary detailed human checkpoint surface. START precedes substantive work. END is retried until provider acknowledgement. ChatGPT emits no end output before END ACK and is pointer-only afterward.
+- Telegram is a secondary witness/alert/navigation surface. Direct PC egress is preferred when healthy; a qualified B-EDGE CONNECT relay is the fallback for Telegram when direct PC transport fails.
+- The dedicated Android phone is a persistent low-power communications appliance, API node and store-and-forward node; it MUST remain useful without assuming a SIM and MUST preserve local queue/state when no uplink exists.
+- Drive is replicated durable telemetry/recovery evidence, not proof of user delivery and not the sole runtime authority.
+- ChatGPT is an interactive reasoning/pointer surface, never canonical state.
+- `BCPGO BCP` is the cold-recovery command. A fresh conversation MUST recover policies, writer fence, project state, current release and next action without user re-explanation.
+- A user relaunch message such as “eh oh” MUST NOT be required merely to trigger the END checkpoint; the one-shot END watchdog is armed at START.
+
+Machine policy: `.project-memory/COMMUNICATION_SURVIVAL_POLICY.json`.  
+Technical runbook: `docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
+
+Acceptance requires representative coverage of channel failure, duplicate delivery, reboot/crash during queued messages, network topology change, Telegram direct-to-phone-relay fallback, phone no-uplink durable queuing and idempotent replay after recovery.
