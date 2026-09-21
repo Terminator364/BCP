@@ -89,7 +89,13 @@
     "delivery_key_required": true,
     "primary_close_owner": "PRIMARY_ASSISTANT",
     "scheduled_close_guards_are_backup_only": true,
-    "chatgpt_thinking_indicator_is_work_proof": false
+    "chatgpt_thinking_indicator_is_work_proof": false,
+    "reconcile_open_delivery_failure_before_new_work": true,
+    "gmail_end_delivery_authority": "SENT_SEARCH_PLUS_PROVIDER_MESSAGE_ID_PLUS_DURABLE_LEDGER",
+    "reply_rejection_fallback": "SEARCH_SENT_THEN_STANDALONE_IF_ABSENT",
+    "visible_thinking_duration_guaranteed": false,
+    "work_proof": "DURABLE_COMMITS_CI_RECEIPTS_READBACKS_TELEMETRY",
+    "bcp_phone_durable_communication_journal": true
   },
   "universal": [
     {
@@ -126,7 +132,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R74_PROVIDER_PROOF_STATE_MACHINE_30MIN_PHONE_FULL_SERVER_AND_MAIL_CONTRACT",
+      "status": "VALID_SCOPED_ALIAS_WITH_R75_KINLINK_GRADE_PROVIDER_PROOF_CLOSEOUT_AND_PHONE_FULL_NODE_JOURNAL",
       "fallback": "BCPGO BCP"
     },
     {
