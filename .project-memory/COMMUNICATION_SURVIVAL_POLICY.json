@@ -1,0 +1,117 @@
+{
+  "schema": "bcp.communication_survival_policy/1",
+  "revision": "2026-09-21-R71",
+  "status": "CANONICAL_CANDIDATE",
+  "objective": "Preserve user-visible communication and durable mission continuity across ChatGPT UI instability, PC Internet loss, home Wi-Fi failure, PC reboot/offline periods, Telegram direct transport outage, and conversation handoff.",
+  "principles": [
+    "NO_SINGLE_COMMUNICATION_CHANNEL_IS_CANONICAL_STATE",
+    "EMAIL_IS_PRIMARY_DETAILED_HUMAN_CHECKPOINT",
+    "CHATGPT_IS_POINTER_ONLY_AFTER_END_EMAIL_ACK",
+    "TELEGRAM_IS_SECONDARY_WITNESS_AND_ALERT_SURFACE",
+    "PHONE_EDGE_IS_PRIMARY_LOW_POWER_LOCAL_RELAY_AND_STORE_AND_FORWARD_NODE",
+    "DRIVE_IS_DURABLE_REPLICATED_EVIDENCE_NOT_SOLE_RUNTIME_AUTHORITY",
+    "GITHUB_MAIN_PLUS_WRITER_FENCE_IS_CANONICAL_SOURCE_STATE",
+    "EVERY_DELIVERY_CARRIES_IDEMPOTENCY_AND_RECEIPT_STATE",
+    "NO_USER_EH_OH_RELAUNCH_REQUIRED_FOR_END_CHECKPOINT"
+  ],
+  "channels": {
+    "gmail": {
+      "priority": 1,
+      "role": "PRIMARY_DETAILED_CHECKPOINT",
+      "start_before_work": true,
+      "end_retry_until_provider_ack": true,
+      "project_label": "BCP",
+      "body_contains": [
+        "checkpoint_id",
+        "kinshasa_time",
+        "work_done",
+        "evidence",
+        "next_action_or_gate",
+        "continuation_code"
+      ]
+    },
+    "telegram": {
+      "priority": 2,
+      "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",
+      "direct_path": "PC_TO_TELEGRAM",
+      "fallback_path": "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM",
+      "phone_tls_passthrough": true,
+      "delivery_claim_requires_provider_ack": true,
+      "outage_state_is_durable": true
+    },
+    "phone_edge": {
+      "priority": 3,
+      "role": "PRIMARY_LOW_POWER_LOCAL_COMMUNICATION_AND_STORE_FORWARD_NODE",
+      "local_api": true,
+      "durable_queue": true,
+      "durable_memory": true,
+      "store_and_forward": true,
+      "boot_restore": true,
+      "sim_required": false,
+      "transports": [
+        "LAN",
+        "HOTSPOT",
+        "WIFI_DIRECT_WHEN_AUTHORIZED",
+        "BLE_PRESENCE_CONTROL",
+        "USB_FUTURE_FIELD_GATED"
+      ],
+      "no_uplink_behavior": "QUEUE_DURABLY_AND_REPLAY_IDEMPOTENTLY"
+    },
+    "drive": {
+      "priority": 4,
+      "role": "DURABLE_REPLICATED_TELEMETRY_AND_RECOVERY_EVIDENCE",
+      "canonical_runtime_path": [
+        "API_BCP",
+        "02_TELEMETRY",
+        "BCP",
+        "BCP_RUNTIME_LATEST.json"
+      ],
+      "broad_search_default_forbidden": true
+    },
+    "chatgpt": {
+      "priority": 5,
+      "role": "INTERACTIVE_POINTER_AND_REASONING_SURFACE_NOT_CANONICAL_STATE",
+      "detailed_end_body_after_mail_forbidden": true,
+      "cold_bootstrap_code": "BCPGO BCP"
+    }
+  },
+  "checkpoint_protocol": {
+    "target_minutes": 30,
+    "watchdog_offset_minutes": 29,
+    "order": [
+      "GMAIL_START_ACK",
+      "WORK",
+      "DURABLE_CHECKPOINT",
+      "GMAIL_END_ACK",
+      "CHATGPT_POINTER"
+    ],
+    "if_chatgpt_ui_disappears": "WATCHDOG_OR_NEXT_BCPGO_RECOVERS_FROM_DURABLE_STATE",
+    "if_end_email_fails": "RETRY_UNTIL_PROVIDER_ACK_NO_CHATGPT_END_OUTPUT",
+    "if_pc_offline": "PHONE_EDGE_QUEUES_LOCAL_EVENTS_AND_PC_RECONCILES_ON_RETURN",
+    "if_telegram_direct_fails": "TRY_PHONE_EDGE_RELAY_IF_FRESH_REGISTERED_ELSE_PERSIST_OUTAGE",
+    "if_drive_unavailable": "KEEP_LOCAL_DURABLE_STATE_AND_RETRY_WITH_BACKOFF"
+  },
+  "cold_recovery": {
+    "code": "BCPGO BCP",
+    "load_order": [
+      ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+      ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+      ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
+      ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+      "project_state.json",
+      "API_PROJECT_CONTINUITY.md",
+      "release/current.json"
+    ],
+    "user_reexplanation_required": false,
+    "next_action_source": "project_state.next_action",
+    "writer_fence_required_before_mutation": true
+  },
+  "anti_false_success": {
+    "telegram_sent_requires_provider_message_id_or_success_receipt": true,
+    "gmail_sent_requires_provider_send_ack": true,
+    "drive_mirror_is_not_user_seen": true,
+    "chatgpt_visible_is_not_assumed": true,
+    "phone_queue_accepted_is_not_remote_delivery": true
+  }
+}
