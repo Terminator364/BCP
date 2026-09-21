@@ -15,9 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
                 EdgeMemoryEntity.class,
                 EdgeReceiptEntity.class,
                 EdgeDependencyEntity.class,
-                EdgeSentinelEntity.class
+                EdgeSentinelEntity.class,
+                EdgeEventEntity.class
         },
-        version = 2,
+        version = 3,
         exportSchema = false
 )
 public abstract class EdgeDatabase extends RoomDatabase {
@@ -39,6 +40,27 @@ public abstract class EdgeDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override
+        public void migrate(SupportSQLiteDatabase db) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS edge_events (" +
+                    "eventId TEXT NOT NULL PRIMARY KEY, " +
+                    "projectId TEXT NOT NULL, " +
+                    "eventType TEXT NOT NULL, " +
+                    "actorType TEXT NOT NULL, " +
+                    "source TEXT NOT NULL, " +
+                    "truthStatus TEXT NOT NULL, " +
+                    "payloadJson TEXT NOT NULL, " +
+                    "payloadSha256 TEXT NOT NULL, " +
+                    "idempotencyKey TEXT NOT NULL, " +
+                    "occurredAt INTEGER NOT NULL, " +
+                    "ingestedAt INTEGER NOT NULL)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_edge_events_projectId_occurredAt ON edge_events(projectId, occurredAt)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_edge_events_eventType_occurredAt ON edge_events(eventType, occurredAt)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_edge_events_idempotencyKey ON edge_events(idempotencyKey)");
+        }
+    };
+
     public abstract EdgeDao edgeDao();
 
     public static EdgeDatabase get(Context context) {
@@ -52,7 +74,7 @@ public abstract class EdgeDatabase extends RoomDatabase {
                                 EdgeDatabase.class,
                                 "bcp-edge-v2-shadow.db")
                         .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
-                        .addMigrations(MIGRATION_1_2)
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                         .build();
                 INSTANCE = local;
             }
