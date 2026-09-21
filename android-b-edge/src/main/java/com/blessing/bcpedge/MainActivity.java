@@ -176,11 +176,14 @@ public class MainActivity extends Activity {
                             + "\nDémarrage après reboot: ACTIVÉ");
 
             JSONObject storage = client.contentStoreStatus();
+            JSONObject net = EdgeNetworkState.snapshot(this);
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
             autonomyInfo.setText(
                     "File durable Room: active"
                             + "\nCache privé téléphone: " + usedMiB + " MiB / " + quotaGiB + " GiB"
+                            + "\nRéseau: " + net.optString("transport", "AUCUN")
+                            + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
                             + "\nLAN/API + NSD: actif"
                             + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
                             + "\nStore-and-forward: actif");
