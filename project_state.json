@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R74_COMMUNICATION_AND_PHONE_LOCAL_EXECUTOR_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R74 ports the stronger KINLINK communication delivery model into BCP and adds a safe allowlisted Android local task executor so deterministic EDGE jobs can complete on the dedicated phone without waiting for the PC. CURRENT contract run #1190 is PASS on PR #144 exact head. Fresh Drive field telemetry proves BCP 0.7.16 is UP_TO_DATE on MBMPC; Telegram direct transport is still in DIRECT_TRANSPORT_OUTAGE and edge relay is currently inactive/unregistered in the installed 2.1.2 field app, confirming the need for the coherent 2.2.0 full-node release.",
-  "next_action": "Finish PR #144 exact-head qualification. If green, merge through the writer fence and verify post-merge. Continue 2.2.0 full-node as one coherent candidate: prove local executor behavior in Android CI/emulator, relay registration and Telegram route readback, then sign/publish Drive CURRENT only after all release gates. Do not ask for another phone install before that coherent gate.",
+  "status": "R76_ABC_FULL_SPEC_PHONE_PRIMARY_EDGE_CANDIDATE",
+  "last_completed_atomic_action": "R76 reconstructs the full product contract as A+B+C from the sealed preconception, research expansion and accumulated field feedback. The baseline weighted maturity is 45.9%, not a micro-feature completion claim. B-EDGE 2.2 candidate now increases dedicated-phone storage policy toward 32GiB with device reserve and adds a phone-local recovery checkpoint task. Communication cadence is corrected to 25 minutes: target 23 useful + 2 close, PRIMARY_ASSISTANT owns normal Gmail END without scheduled automation dependency.",
+  "next_action": "Qualify the R76 exact head. Close remaining A+B+C P0 gaps as one coherent 2.2 full-node line: local encrypted pairing/TLS, broader EDGE_ONLY operations, memory/index durability, phone communication relay field path and server-grade UI. Do not publish/install another phone build until the integrated A+B+C gate is green.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -92,7 +92,10 @@
     "communication_protocol": ".project-memory/COMMUNICATION_PROTOCOL.json",
     "communication_state_machine": ".project-memory/COMMUNICATION_STATE_MACHINE.json",
     "communication_delivery_ledger": ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
-    "new_conversation_takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json"
+    "new_conversation_takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "abc_full_spec": "docs/BCP_CANONICAL_SPEC_ABC_R76.md",
+    "abc_traceability": ".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json",
+    "r76_research": "docs/R76_ABC_RESEARCH_AND_ARCHITECTURE.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -123,6 +126,9 @@
   },
   "must_load_on_every_recovery": [
     "docs/CANONICAL_PRODUCT_REQUIREMENTS.md",
+    "docs/R76_ABC_RESEARCH_AND_ARCHITECTURE.md",
+    ".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json",
+    "docs/BCP_CANONICAL_SPEC_ABC_R76.md",
     "API_PROJECT_CONTINUITY.md",
     ".project-memory/SESSION_SURVIVAL_INVARIANTS.md",
     ".project-memory/PLATFORM_FRICTION_P0.md",
@@ -228,7 +234,7 @@
     "P0_global_5_to_7_minute_tranche_cadence": false,
     "P0_email_only_detailed_checkpoint": true,
     "P0_interactive_work_tranche_8_to_10_minutes": false,
-    "P0_interactive_work_tranche_25_minutes": false,
+    "P0_interactive_work_tranche_25_minutes": true,
     "P0_pre_human_action_simulation_gate": true,
     "P0_gmail_start_before_substantive_work": true,
     "P0_gmail_end_provider_ack_before_chat_output": true,
@@ -241,20 +247,22 @@
     "P0_phone_multitransport_presence": true,
     "P0_phone_meaningful_permission_onboarding": true,
     "P0_phone_server_first_ui": true,
-    "P0_interactive_work_tranche_30_minutes": true,
+    "P0_interactive_work_tranche_30_minutes": false,
     "P0_phone_no_micro_beta_field_installs": true,
     "P0_phone_full_node_vertical_slice": true,
     "P0_communication_survival_fabric": true,
     "P0_cross_conversation_recovery_without_user_reexplanation": true,
     "P0_no_user_relaunch_required_for_end_checkpoint": true,
-    "P0_30_minute_interactive_work_tranche": true,
+    "P0_30_minute_interactive_work_tranche": false,
     "P0_dual_predeadline_end_guards": true,
     "P0_user_message_never_closeout_trigger": true,
     "P0_end_mail_search_before_send": true,
     "P0_end_mail_provider_readback": true,
     "P0_scheduler_completion_is_not_delivery_proof": true,
     "P0_foreground_end_send_primary": true,
-    "P0_backup_minimal_end_payload": true
+    "P0_backup_minimal_end_payload": true,
+    "P0_full_cahier_des_charges_A_plus_B_plus_C": true,
+    "P0_scheduled_automation_not_required_for_normal_mail_close": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2562,5 +2570,14 @@
     "edge_only_capable": true,
     "current_release_published": false,
     "candidate_version": "2.2.0-full-node-evergreen"
+  },
+  "abc_r76": {
+    "rule": "A_PLUS_B_PLUS_C_IS_THE_ONLY_FULL_PRODUCT_SPEC",
+    "spec_ref": "docs/BCP_CANONICAL_SPEC_ABC_R76.md",
+    "traceability_ref": ".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json",
+    "weighted_maturity_percent": 45.9,
+    "phone_role": "PRIMARY_LOW_POWER_EDGE_API_APPLIANCE",
+    "pc_role": "SPECIALIST_WINDOWS_HEAVY_WORKER_NOT_SOLE_COMMUNICATION_CENTER",
+    "field_install_policy": "NO_NEW_INSTALL_UNTIL_COHERENT_2_2_ABC_GATE"
   }
 }
