@@ -32,6 +32,7 @@ on:
       - ".project-memory/COMMUNICATION_STATE_MACHINE.json"
       - ".project-memory/COMMUNICATION_PROTOCOL.json"
       - ".project-memory/BCP_ABC_SOURCE_REGISTRY.json"
+      - ".project-memory/UCMF001_CONTINUITY.json"
       - ".project-memory/BCP_ABC_COVERAGE.json"
       - "docs/BCP_CANONICAL_SPEC_ABC.md"
       - ".project-memory/END_FAILSAFE_TEMPLATE.json"
@@ -91,6 +92,7 @@ jobs:
           python -m json.tool .project-memory/COMMUNICATION_STATE_MACHINE.json > /dev/null
           python -m json.tool .project-memory/BCP_ABC_SOURCE_REGISTRY.json > /dev/null
           python -m json.tool .project-memory/BCP_ABC_COVERAGE.json > /dev/null
+          python -m json.tool .project-memory/UCMF001_CONTINUITY.json > /dev/null
           python -m json.tool .project-memory/NEW_CONVERSATION_TAKEOVER.json > /dev/null
           python - <<'PY'
           import json, pathlib
