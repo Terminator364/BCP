@@ -16,9 +16,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
                 EdgeReceiptEntity.class,
                 EdgeDependencyEntity.class,
                 EdgeSentinelEntity.class,
-                EdgeEventEntity.class
+                EdgeEventEntity.class,
+                EdgeMissionStepEntity.class
         },
-        version = 3,
+        version = 4,
         exportSchema = false
 )
 public abstract class EdgeDatabase extends RoomDatabase {
@@ -61,6 +62,36 @@ public abstract class EdgeDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(SupportSQLiteDatabase db) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS edge_mission_steps (" +
+                    "stepId TEXT NOT NULL PRIMARY KEY, " +
+                    "missionId TEXT NOT NULL, " +
+                    "projectId TEXT NOT NULL, " +
+                    "stepRevision INTEGER NOT NULL, " +
+                    "requestedOperation TEXT NOT NULL, " +
+                    "inputHash TEXT NOT NULL, " +
+                    "contextCapsuleHash TEXT NOT NULL, " +
+                    "policyRevision TEXT NOT NULL, " +
+                    "expectedStateRevision INTEGER NOT NULL, " +
+                    "lastConfirmedCheckpoint TEXT NOT NULL, " +
+                    "dependenciesJson TEXT NOT NULL, " +
+                    "sideEffectClass TEXT NOT NULL, " +
+                    "idempotencyKey TEXT NOT NULL, " +
+                    "fencingToken TEXT NOT NULL, " +
+                    "nextSafeAction TEXT NOT NULL, " +
+                    "continuationFrontier TEXT NOT NULL, " +
+                    "providerState TEXT NOT NULL, " +
+                    "createdAtWallMs INTEGER NOT NULL, " +
+                    "createdAtElapsedMs INTEGER NOT NULL, " +
+                    "updatedAtWallMs INTEGER NOT NULL)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_edge_mission_steps_projectId_providerState_updatedAtWallMs ON edge_mission_steps(projectId, providerState, updatedAtWallMs)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_edge_mission_steps_missionId_updatedAtWallMs ON edge_mission_steps(missionId, updatedAtWallMs)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_edge_mission_steps_projectId_idempotencyKey ON edge_mission_steps(projectId, idempotencyKey)");
+        }
+    };
+
     public abstract EdgeDao edgeDao();
 
     public static EdgeDatabase get(Context context) {
@@ -74,7 +105,7 @@ public abstract class EdgeDatabase extends RoomDatabase {
                                 EdgeDatabase.class,
                                 "bcp-edge-v2-shadow.db")
                         .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                         .build();
                 INSTANCE = local;
             }
