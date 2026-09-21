@@ -18,6 +18,15 @@ If ChatGPT UI stalls or the conversation is replaced, `BCPGO BCP` resumes from d
 Detailed technical recovery runbook:
 `docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
 
+Private human recovery copy: `API_BCP/03_DOCUMENTATION/BCP — PLAN DE SECOURS COMMUNICATION & REPRISE R71` in the user's Drive. Do not put its Drive ID or private link into the public repository.
+
+## R71 current communication targets
+
+- BCP Windows candidate: **0.7.16** — exports the proven Telegram route (`DIRECT_TELEGRAM`, `B_EDGE_RELAY`, or no working route) into machine-readable runtime telemetry.
+- Telegram companion candidate: **2026.09.21-comms-survival-v22** — persists route receipts without exposing the Telegram token to the phone.
+- Android full-node candidate: **2.2.0-full-node-evergreen** — exact-head CI/signing/publication still gate the next user installation.
+- Installed phone field release remains 2.1.2 until that coherent full-node gate is closed.
+
 Canonical continuation code: `BCPGO BCP`.
 
 A fresh conversation MUST load durable state first, send the **BCP-labeled Gmail START**, preserve the ~30-minute tranche contract, and never ask the user to restate the dedicated-phone architecture.
