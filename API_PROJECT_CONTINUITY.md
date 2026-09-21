@@ -373,22 +373,28 @@ The 2026-09-19 V4 implementation lives on its fenced candidate branch until exac
 Mandatory recovery inputs:
 - `.project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json`;
 - `.project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json`;
-- `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`.
+- `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`;
+- `.project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json`.
 
 Resolution order:
 `BCPGO / scoped alias -> durable project pointer -> writer-fence state -> exact checkpoint -> delivery policy -> cadence policy -> next uncommitted atomic action`.
 
 Aliases do not fork project history. If an alias and `BCPGO <project>` resolve to different durable authorities, enter conflict hold rather than guessing.
 
-Current/future projects inherit the 8–10 minute useful-work checkpoint cadence by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
+Current/future projects inherit the 20–25 minute useful-work checkpoint cadence, targeting 25 minutes, by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
 
 
 ### Email-first recovery invariant
 
 On every `BCPGO` recovery, before any detailed ChatGPT checkpoint is shown:
 - load `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`;
-- perform the useful-work tranche using the active 8–10 minute cadence unless a real gate ends it earlier;
+- perform the useful-work tranche using the active 20–25 minute cadence, targeting 25 minutes, unless a real gate ends it earlier;
 - send the complete human checkpoint by Gmail first when Gmail is available;
 - after successful email delivery, the ChatGPT app response MUST be pointer-only and contain only: `MAIL_SENT`, Kinshasa date/time, and checkpoint ID;
 - do not duplicate the detailed checkpoint body in ChatGPT after the email has succeeded;
 - if email delivery fails, state the delivery hold truthfully and include only the minimum recovery instruction in ChatGPT.
+
+
+### Pre-human action simulation invariant
+
+Before asking the user to click, install, authorize, reboot, retry, or replace a CURRENT artifact, load `.project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json` and exercise the exact path in representative CI/simulation when technically feasible. Windows actions should run on a Windows runner; Android behavior should use unit/lint/build and emulator/instrumented tests when the platform behavior matters. Simulation may qualify everything up to a real provider/user-consent boundary, but cannot be promoted to FIELD_VERIFIED without real field evidence. If simulation fails, keep fixing automatically and do not ask the user to repeat the same action.
