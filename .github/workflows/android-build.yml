@@ -112,8 +112,12 @@ jobs:
           grep -F '/v1/node/capabilities' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F '/v1/node/jobs' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F '/v1/node/mission-steps' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F '/v1/node/capability-registry' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F '/v1/node/memory-claims' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F 'mission_step_envelope_v1' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
-          grep -F 'Migration(3, 4)' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java >/dev/null
+          grep -F 'memory_admission_ledger' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
+          grep -F 'capability_registry' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
+          grep -F 'Migration(4, 5)' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java >/dev/null
           grep -F 'EdgePresenceAdvertiser' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
           grep -F 'EdgeContentStore' "$CLIENT" >/dev/null
           grep -F 'MAX_QUOTA = 8L * 1024L * 1024L * 1024L' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java >/dev/null
