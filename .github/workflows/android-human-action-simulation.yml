@@ -29,8 +29,6 @@ jobs:
   emulator-ui-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    env:
-      ANDROID_AVD_HOME: ${{ runner.temp }}/bcp-avd
     steps:
       - uses: actions/checkout@v4
 
@@ -48,6 +46,8 @@ jobs:
         run: |
           set -euo pipefail
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/bcp-avd"
+          echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
           AVDMANAGER="$SDK/cmdline-tools/latest/bin/avdmanager"
           test -x "$SDKMANAGER"
