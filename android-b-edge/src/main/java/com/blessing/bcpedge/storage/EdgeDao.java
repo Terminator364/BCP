@@ -44,6 +44,9 @@ public interface EdgeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void putCapability(EdgeCapabilityEntity capability);
 
+    @Query("SELECT * FROM edge_capabilities WHERE capabilityId = :capabilityId LIMIT 1")
+    EdgeCapabilityEntity capabilityById(String capabilityId);
+
     @Query("SELECT * FROM edge_capabilities WHERE projectId = :projectId AND (expiresAt = 0 OR expiresAt > :now) ORDER BY updatedAt DESC LIMIT :limit")
     List<EdgeCapabilityEntity> activeCapabilities(String projectId, long now, int limit);
 
