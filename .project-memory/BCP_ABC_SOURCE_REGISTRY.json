@@ -1,7 +1,7 @@
 {
   "schema": "bcp.abc_source_registry/1",
-  "revision": "2026-09-21-R77",
-  "status": "CANONICAL_CANDIDATE",
+  "revision": "2026-09-21-R78",
+  "status": "CANONICAL_CANDIDATE_SOURCE_RECONCILED",
   "rule": "BCP product scope is the cumulative union A+B+C. No release or completion percentage may be computed from only one layer.",
   "A": {
     "meaning": "ORIGINAL_PRECONCEPTION_AND_PROMISED_PRODUCT",
@@ -63,8 +63,51 @@
       "IDEMPOTENT_ACTIONS_RECEIPTS_READBACK",
       "ZERO_USD_DEFAULT",
       "UNSTABLE_POWER_NETWORK_RESILIENCE",
-      "USER_NOT_TELEMETRY_BUS"
-    ]
+      "USER_NOT_TELEMETRY_BUS",
+      "BCP_FASTPATH_P0_NO_GLOBAL_SEARCH_OR_NETWORK_WAIT",
+      "CONTROL_EXECUTION_DATA_REASONING_PLANE_SEPARATION",
+      "CAPABILITY_REGISTRY_AND_STANDARD_MACHINE_RECEIPTS"
+    ],
+    "source_read_receipts": [
+      {
+        "source": "APIAX07_HANDOFF.md",
+        "evidence": "Library read",
+        "verified_content": [
+          "BCP V0.7 AX15GO SEALED is frozen preconception authority",
+          "API/BCP is a personal digital control/continuity plane, not merely an HTTP API",
+          "local-first, bounded named operations, idempotence/fencing, proof tiers and zero-dollar doctrine"
+        ]
+      },
+      {
+        "source": "BCP_API_Personnelle_Dossier_Complet_2026-09-18.pdf",
+        "evidence": "Library parsed pages",
+        "verified_content": [
+          "canonical project HEAD + event/receipt history + deterministic resume",
+          "control/execution/data/reasoning plane separation",
+          "event sourcing, claims/evidence, capability registry, standard receipts and approval lanes",
+          "offline/outage tolerance and low-RAM Windows constraints"
+        ]
+      },
+      {
+        "source": "UCMF001_BCP_Universal_Chronicle_Memory_Postulates_Master_v4.docx",
+        "evidence": "Library parsed 54-page source, targeted postulate reads",
+        "verified_content": [
+          "Postulate 1 original source requires autonomous total observable activity history across conversations/agents while preserving speed",
+          "Postulate 2 requires exact Universal Chronicle plus derived canonical memory, SQLite WAL, selective retrieval and transactional outbox",
+          "Postulate 3 makes the dedicated SM-A217F a local-first continuity appliance and future logical memory/session/journal/mission coordinator after fencing/replication proof",
+          "Postulate 4 requires BCP_FASTPATH_P0, no global search/network wait on the interactive path, precomputed context, one durable turn transaction and async noncritical work"
+        ]
+      }
+    ],
+    "source_completeness": {
+      "sealed_v0_7_raw_zip_rematerialized_this_tranche": false,
+      "handoff_read": true,
+      "understanding_dossier_read": true,
+      "ucmf_v4_read": true,
+      "postulates_1_to_4_targeted_read": true,
+      "status": "SUBSTANTIALLY_RECONSTRUCTED_WITH_SEALED_ZIP_BYTE_AUDIT_POINTER_STILL_NOT_REOPENED",
+      "rule": "Do not claim the sealed ZIP was reread byte-for-byte; preserve its SHA/manifest authority and use source documents plus current canonical requirements."
+    }
   },
   "B": {
     "meaning": "RESEARCH_BACKED_REALISTIC_EXPANSION_BEYOND_ORIGINAL_IDEA",
