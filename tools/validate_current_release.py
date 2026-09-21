@@ -130,8 +130,8 @@ def main() -> int:
         fail("dual_closeout_guard_contract")
     if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 23:
         fail("normal_closeout_offset_contract")
-    if int(cadence_delivery.get("backup_earliest_offset_minutes") or 0) != 28:
-        fail("backup_earliest_offset_contract")
+    if cadence_delivery.get("backup_earliest_offset_minutes") is not None:
+        fail("backup_earliest_offset_must_be_disabled")
     if cadence_delivery.get("hard_close_guard_offset_minutes") is not None:
         fail("hard_close_guard_must_be_disabled")
     if int(cadence_delivery.get("absolute_end_deadline_minutes") or 0) != 25:
@@ -178,7 +178,7 @@ def main() -> int:
         fail("communication_close_reserve")
     if comm_protocol.get("backup_earliest_offset_minutes") != 28 or comm_protocol.get("hard_guard_offset_minutes") != 29:
         fail("communication_backup_offsets")
-    if comm_state_machine.get("schema") != "bcp.communication_state_machine/1":
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/2":
         fail("communication_state_machine_schema")
     if comm_state_machine.get("useful_work_minutes") != 23 or comm_state_machine.get("normal_close_reserve_minutes") != 2:
         fail("communication_state_machine_cadence")
