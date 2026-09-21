@@ -65,6 +65,14 @@ public final class EdgeTelegramRelay {
     public JSONObject deliver(JSONObject item) {
         JSONObject out = new JSONObject();
         try {
+            String deliveryId = item.optString("delivery_id", "");
+            JSONObject prior = localReceipt(deliveryId);
+            if (prior != null) {
+                prior.put("delivered", true);
+                prior.put("recovered_local_receipt", true);
+                return prior;
+            }
+
             String token = credentials.getSecret(TELEGRAM_SECRET);
             long chatId = prefs.getLong("allowed_chat_id", 0L);
             if (token.isEmpty() || chatId == 0L) {
@@ -95,7 +103,9 @@ public final class EdgeTelegramRelay {
                 if (!validated(caps) || !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) continue;
                 try {
                     long messageId = sendOnNetwork(network, token, chatId, text, silent);
-                    return success(AdaptiveNetworkRouter.WIFI_TELEGRAM, messageId);
+                    JSONObject sent = success(AdaptiveNetworkRouter.WIFI_TELEGRAM, messageId);
+                    persistLocalReceipt(deliveryId, sent);
+                    return sent;
                 } catch (Exception ex) {
                     last = ex;
                 }
@@ -108,7 +118,9 @@ public final class EdgeTelegramRelay {
                     if (!validated(caps) || !caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) continue;
                     try {
                         long messageId = sendOnNetwork(network, token, chatId, text, silent);
-                        return success(AdaptiveNetworkRouter.CELLULAR_TELEGRAM, messageId);
+                        JSONObject sent = success(AdaptiveNetworkRouter.CELLULAR_TELEGRAM, messageId);
+                        persistLocalReceipt(deliveryId, sent);
+                        return sent;
                     } catch (Exception ex) {
                         last = ex;
                     }
@@ -127,6 +139,28 @@ public final class EdgeTelegramRelay {
             } catch (Exception ignored) {}
         }
         return out;
+    }
+
+    private String receiptKey(String deliveryId) {
+        return "delivery_receipt." + (deliveryId == null ? "" : deliveryId);
+    }
+
+    private JSONObject localReceipt(String deliveryId) {
+        if (deliveryId == null || deliveryId.isEmpty()) return null;
+        String raw = prefs.getString(receiptKey(deliveryId), "");
+        if (raw == null || raw.isEmpty()) return null;
+        try { return new JSONObject(raw); }
+        catch (Exception ignored) { return null; }
+    }
+
+    private void persistLocalReceipt(String deliveryId, JSONObject sent) {
+        if (deliveryId == null || deliveryId.isEmpty() || sent == null) return;
+        prefs.edit().putString(receiptKey(deliveryId), sent.toString()).commit();
+    }
+
+    public void confirmPcAck(String deliveryId) {
+        if (deliveryId == null || deliveryId.isEmpty()) return;
+        prefs.edit().remove(receiptKey(deliveryId)).commit();
     }
 
     private static boolean validated(NetworkCapabilities caps) {
