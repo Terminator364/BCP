@@ -1,6 +1,6 @@
 {
   "schema": "bcp.human_action_qualification_matrix/1",
-  "revision": "2026-09-21-R59",
+  "revision": "2026-09-21-R63",
   "status": "CANONICAL_CANDIDATE",
   "rule": "A user-facing action may be requested only when its representative_preflight is PASS on the exact candidate head/package, unless the remaining uncertainty is explicitly an irreducible external/provider/physical field boundary.",
   "actions": [
@@ -111,12 +111,18 @@
         "ui_hierarchy_contains_connect_button",
         "no_immediate_process_crash",
         "no_pc_available_startup_remains_alive",
-        "cold_relaunch"
+        "cold_relaunch",
+        "adaptive_route_unit_test",
+        "communication_outbox_pull_ack_contract",
+        "cellular_control_budget_guard",
+        "phone_provider_receipt_before_pc_ack"
       ],
       "remaining_field_boundary": [
         "actual old phone OEM/Android image",
-        "actual home Wi-Fi/mDNS behavior",
-        "battery/power interruptions"
+        "actual home Wi-Fi/hotspot LAN reachability",
+        "actual optional cellular capability on B-EDGE",
+        "actual Telegram provider reachability on B-EDGE network",
+        "battery/power/process-death interruptions"
       ],
       "field_readback_required_before_completion": true
     }

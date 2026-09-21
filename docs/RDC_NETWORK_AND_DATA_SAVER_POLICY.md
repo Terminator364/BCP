@@ -27,7 +27,7 @@ Field evidence on 2026-09-19 showed:
 
 3. SELECTIVE_TRANSPORT_FAILOVER
    - Telegram/API control traffic may fail over independently from bulk project traffic.
-   - B-EDGE is a dedicated old phone on the same home Wi-Fi as the PC; no cellular capability is assumed for B-EDGE.
+   - B-EDGE is a dedicated old phone reachable locally by the PC. Cellular capability is discovered dynamically, never assumed; when present and explicitly allowed, only tiny control-plane traffic may use it.
    - The user's current phone may use Wi-Fi or mobile data, but is a human client only and MUST NOT be required as an infrastructure relay.
    - Preferred target: PC and B-EDGE exchange control state over the local LAN, while a small zero-cost HTTPS BCP Nexus/webhook relay handles Telegram when direct home-WiFi Telegram egress is degraded.
    - Alternative zero-cost relays may be evaluated only after field validation and must not introduce paid spend or false geography.
@@ -75,7 +75,7 @@ The transport is FIELD_VERIFIED only when:
 
 ## Home-WiFi B-EDGE + Nexus refinement
 
-The dedicated old Android phone is the preferred local coordinator/witness, not a cellular relay.
+The dedicated old Android phone is the preferred local coordinator/witness and an **optional selective cellular relay** when the device actually exposes a validated cellular network. Home Wi-Fi/LAN remains preferred and no SIM/cellular capability is assumed.
 
 The steady-state routing target is:
 `PC-WORKER <-> authenticated home-LAN <-> B-EDGE`
@@ -87,3 +87,14 @@ Full-PC mobile hotspot and the user's current phone as a relay are diagnostic/em
 
 Detailed topology, progress and update architecture:
 `docs/HOME_WIFI_EDGE_NEXUS_AND_AUTOMATIC_UPDATE_ARCHITECTURE.md`.
+
+
+### R63 adaptive field refinement
+
+The network policy no longer hard-codes one physical topology. B-EDGE may be:
+- on the same home Wi-Fi as the PC;
+- the hotspot owner while the PC is a hotspot client;
+- on a local LAN with Wi-Fi Internet;
+- on local connectivity plus validated cellular.
+
+BCP detects capability at runtime and chooses the cheapest healthy route. Selective cellular egress is limited to <=16 KiB allowlisted control messages. The current daily phone remains outside infrastructure. Large transfers stay deferred/off cellular.

@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.1-rc1-reentry";
+    private static final String EDGE_VERSION = "2.1.2-rc1-adaptive-relay";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -644,6 +644,77 @@ public final class BcpClient {
             EdgeWorkScheduler.requestImmediate(context);
         }
         flushTelemetry();
+    }
+
+    public JSONObject relayCommunicationOutbox() {
+        JSONObject out = new JSONObject();
+        int delivered = 0;
+        try {
+            ensureConnected();
+            EdgeTelegramRelay relay = new EdgeTelegramRelay(context);
+
+            JSONObject cfg = requestJson(
+                    "GET", getServer() + "/v1/edge/relay/config", null,
+                    getToken(), null, 1800, 3500);
+            boolean configured = relay.applyConfig(cfg);
+            out.put("configured", configured);
+            if (!configured) {
+                out.put("state", "RELAY_NOT_CONFIGURED");
+                return out;
+            }
+
+            JSONObject batch = requestJson(
+                    "GET", getServer() + "/v1/edge/relay/outbox?limit=12", null,
+                    getToken(), null, 1800, 3500);
+            JSONArray items = batch.optJSONArray("items");
+            int pending = items == null ? 0 : items.length();
+            out.put("pulled", pending);
+
+            for (int i = 0; items != null && i < items.length(); i++) {
+                JSONObject item = items.optJSONObject(i);
+                if (item == null) continue;
+                JSONObject result = relay.deliver(item);
+                if (!result.optBoolean("delivered", false)) {
+                    telemetry.add("EDGE_RELAY_DEFERRED",
+                            item.optString("payload_class", "") + ":" +
+                                    result.optString("error_class", result.optString("state", "")));
+                    // Preserve order for human-facing control messages: stop on the
+                    // first undelivered item and let WorkManager retry later.
+                    break;
+                }
+
+                JSONObject ack = new JSONObject();
+                ack.put("delivery_id", item.optString("delivery_id", ""));
+                ack.put("route", result.optString("route", "B_EDGE"));
+                ack.put("receiver_node", "B_EDGE");
+                ack.put("provider_message_id", result.optString("provider_message_id", ""));
+                JSONObject receipt = requestJson(
+                        "POST", getServer() + "/v1/edge/relay/ack", ack.toString(),
+                        getToken(), "relay-ack-" + item.optString("delivery_id", ""),
+                        1800, 3500);
+                if ("ACKED".equals(receipt.optString("result", ""))
+                        || "ALREADY_ACKED".equals(receipt.optString("result", ""))) {
+                    relay.confirmPcAck(item.optString("delivery_id", ""));
+                    delivered++;
+                    telemetry.add("EDGE_RELAY_DELIVERED",
+                            result.optString("route", "") + ":" +
+                                    item.optString("payload_class", ""));
+                }
+            }
+
+            out.put("delivered", delivered);
+            out.put("state", delivered > 0 ? "DELIVERED" : "IDLE_OR_DEFERRED");
+            flushTelemetry();
+            return out;
+        } catch (Exception ex) {
+            try {
+                out.put("delivered", delivered);
+                out.put("state", "LOCAL_OUTBOX");
+                out.put("error_class", ex.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+            telemetry.add("EDGE_RELAY_SYNC_DEFERRED", ex.getClass().getSimpleName());
+            return out;
+        }
     }
 
     private JSONObject publicPairStatus(JSONObject pair) throws Exception {

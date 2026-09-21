@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R62_MERGED_POSTMERGE_CI_RUNNING_FIELD_CONVERGENCE_PENDING",
-  "last_completed_atomic_action": "R62 merged to main at 3a20c14fea1644c48e5bfaf3970d6010159e93bc after exact-head CI PASS on PR #130. R62 publishes BCP 0.7.14 and Telegram 2026.09.21-comms-autonomy-v20. Fresh post-merge field telemetry still shows resident BCP 0.7.13 and direct Telegram transport flapping back to DEGRADED_RETRY/WinError10060, while Nexus remains STAGE_FAILED/DNS_RESOLUTION_FAILED. No user reinstall/retry is justified during resident convergence.",
-  "next_action": "Finish post-merge CI/readback. Observe automatic convergence to BCP 0.7.14 and Telegram V20. If raw GitHub/DNS continues to block convergence, implement a Drive-local fallback transport for server/Telegram/Nexus update delivery rather than asking the user to download/reinstall. Only expose a Cloudflare human authorization gate after the new runtime is active and Nexus state is truthfully recovered.",
+  "status": "R63_ADAPTIVE_COMMUNICATION_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R63 candidate implements a capability-adaptive communication fabric: durable PC communication outbox, authenticated B-EDGE pull/ack relay, Android Wi-Fi/cellular route classification, selective <=16 KiB cellular Telegram egress for allowlisted control messages, Android Keystore relay credentials, and Telegram direct-failure persistence without fake delivery success.",
+  "next_action": "Run exact-head CI on R63. Fix all simulation/build defects automatically. Then reconcile/merge through writer fence only if main is unchanged or explicitly reconciled. After merge, require machine readback of BCP 0.7.15, Telegram V21 and B-EDGE 2.1.2 before declaring adaptive relay field-qualified.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -153,7 +153,8 @@
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    ".project-memory/ADAPTIVE_COMMUNICATION_POLICY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -2223,5 +2224,26 @@
       "nexus_error_class": "DNS_RESOLUTION_FAILED",
       "conclusion": "R62 source is merged but resident convergence is not yet proven. Direct Telegram transport is flapping and raw-GitHub/DNS staging remains unreliable."
     }
+  },
+  "r63_adaptive_communication": {
+    "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
+    "revision": "2026-09-21-R63",
+    "branch": "work/bcp/r63-adaptive-edge-relay-20260921",
+    "base_main_sha": "e76fd72d24c72bdc48ef1847175329a9bb1bb8c5",
+    "target_server_version": "0.7.15",
+    "target_telegram_version": "2026.09.21-adaptive-edge-relay-v21",
+    "target_edge_candidate_version": "2.1.2-rc1-adaptive-relay-evergreen",
+    "architecture_policy": ".project-memory/ADAPTIVE_COMMUNICATION_POLICY.json",
+    "architecture_doc": "docs/ADAPTIVE_COMMUNICATION_FABRIC_R63.md",
+    "pc_outbox": true,
+    "bedge_pull_ack": true,
+    "wifi_first": true,
+    "cellular_control_plane_max_bytes": 16384,
+    "direct_pc_telegram_required": false,
+    "bulk_cellular_forbidden": true,
+    "current_phone_required_as_relay": false,
+    "old_phone_role": "B_EDGE_RELAY_WITNESS",
+    "field_verified": false,
+    "current_tranche_start_mail_receipt": "1a0c3b387a6f57a7"
   }
 }

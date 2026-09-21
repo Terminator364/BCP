@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R62
+Revision: 2026-09-21-R63
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1837,3 +1837,32 @@ The communication plane MUST therefore:
 Target coordinated release:
 - BCP server **0.7.14**;
 - Telegram companion **2026.09.21-comms-autonomy-v20**.
+
+
+## P0 — Adaptive communication fabric — R63
+
+Communication MUST be multi-path, persistent-before-dispatch and adaptive to actual field capability.
+
+The old Android phone is a real **B-EDGE relay/witness**, not a decorative secondary client. Its cellular capability is discovered dynamically and MUST NOT be assumed. When B-EDGE has a validated cellular path, cellular MAY carry only compact allowlisted control-plane traffic (alerts, checkpoint pointers, mission state, acknowledgements and command receipts) with a hard 16 KiB payload ceiling. APK/ZIP/PDF/build artifacts/Drive bulk sync/model payloads MUST NOT silently use cellular.
+
+Required topology:
+- PC -> B-EDGE uses the authenticated local LAN or hotspot LAN whenever reachable;
+- B-EDGE prefers validated Wi-Fi remote egress;
+- if Wi-Fi remote egress fails and validated cellular exists, only compact control traffic may selectively bind to cellular;
+- qualified Nexus is an alternate remote route;
+- direct PC -> Telegram remains opportunistic, never a single point of failure;
+- if no remote route works, communication remains in a durable local outbox and resumes idempotently.
+
+The current daily phone remains a human client and MUST NOT be required as infrastructure.
+
+Android reliability SHALL prefer phone-initiated pull/reconcile from PC plus WorkManager recovery rather than correctness depending on an always-listening background Android server.
+
+Every user-visible notification path MUST:
+- persist before dispatch;
+- carry a stable delivery identity/deduplication key;
+- require positive provider/relay acknowledgement before deletion;
+- retain undelivered state across PC restart, Android process death and network change;
+- avoid duplicate user messages after route failover.
+
+Canonical policy: `.project-memory/ADAPTIVE_COMMUNICATION_POLICY.json`.
+Architecture: `docs/ADAPTIVE_COMMUNICATION_FABRIC_R63.md`.

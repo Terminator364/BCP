@@ -1,14 +1,14 @@
 {
   "schema": "bcp.server_release/1",
   "channel": "stable",
-  "version": "0.7.14",
+  "version": "0.7.15",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-  "sha256": "74746f61a3b24be481ba771c5237a77720c6b9eeb2a7f3b15aed39513a1c9b06",
+  "sha256": "514cd1642b1506ccf5154d21a59eadc6ede645f4cb22e2ff36b2e7c3e84486a0",
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.0-rc1-sentinel-evergreen",
-  "requirements_revision": "2026-09-21-R62",
-  "release_train": "BCP-0.7.14_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
-  "notes": "BCP 0.7.14 preserves Nexus human-auth state across transient DNS/transport staging failures, recovers a durable HUMAN_AUTH_REQUIRED receipt when present, and turns network-stage retries into truthful automatic recovery instead of misleading NO_RETRY success."
+  "requirements_revision": "2026-09-21-R63",
+  "release_train": "BCP-0.7.15_EDGE-2.1.0-rc1-sentinel_NEXUS-0.2.6",
+  "notes": "BCP 0.7.15 adds a durable compact communication outbox with authenticated B-EDGE pull/ack relay, delivery receipts, runtime relay telemetry, and selective edge relay configuration for poor-network recovery."
 }

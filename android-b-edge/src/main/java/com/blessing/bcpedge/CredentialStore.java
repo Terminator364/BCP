@@ -25,21 +25,33 @@ public final class CredentialStore {
     }
 
     public synchronized void putToken(String token) throws Exception {
-        if (token == null || token.isEmpty()) throw new IllegalArgumentException("EMPTY_TOKEN");
+        putSecret(TOKEN_BLOB, token);
+    }
+
+    public synchronized String getToken() {
+        return getSecret(TOKEN_BLOB);
+    }
+
+    public synchronized void putSecret(String name, String value) throws Exception {
+        if (name == null || !name.matches("[A-Za-z0-9_.-]{1,80}")) {
+            throw new IllegalArgumentException("INVALID_SECRET_NAME");
+        }
+        if (value == null || value.isEmpty()) throw new IllegalArgumentException("EMPTY_SECRET");
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key());
         byte[] iv = cipher.getIV();
-        byte[] ct = cipher.doFinal(token.getBytes(StandardCharsets.UTF_8));
+        byte[] ct = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
         byte[] blob = new byte[1 + iv.length + ct.length];
         blob[0] = (byte)iv.length;
         System.arraycopy(iv,0,blob,1,iv.length);
         System.arraycopy(ct,0,blob,1+iv.length,ct.length);
-        prefs.edit().putString(TOKEN_BLOB, Base64.encodeToString(blob, Base64.NO_WRAP)).commit();
+        prefs.edit().putString(name, Base64.encodeToString(blob, Base64.NO_WRAP)).commit();
     }
 
-    public synchronized String getToken() {
+    public synchronized String getSecret(String name) {
         try {
-            String encoded = prefs.getString(TOKEN_BLOB, "");
+            if (name == null || !name.matches("[A-Za-z0-9_.-]{1,80}")) return "";
+            String encoded = prefs.getString(name, "");
             if (encoded == null || encoded.isEmpty()) return "";
             byte[] blob = Base64.decode(encoded, Base64.NO_WRAP);
             if (blob.length < 14) return "";
@@ -55,6 +67,11 @@ public final class CredentialStore {
         } catch (Exception ignored) {
             return "";
         }
+    }
+
+    public synchronized void removeSecret(String name) {
+        if (name == null) return;
+        prefs.edit().remove(name).commit();
     }
 
     public synchronized void clear() {

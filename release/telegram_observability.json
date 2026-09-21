@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.21-comms-autonomy-v20",
+  "version": "2026.09.21-adaptive-edge-relay-v21",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "f0b58573cb083c48fac30f09cdf96feaec0a6f3a7c4bd4329c8af919b461fa94",
-  "minimum_server_version": "0.6.3",
+  "sha256": "89868a2a6088925469721214cb5d034b8f2c48fb4c673ac5f35045e24acb0591",
+  "minimum_server_version": "0.7.15",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V20 R62 adds one-shot PC/worker online notice, explicit recovery notice after direct transport outage, and a sparse silent 90-minute alive proof so the cockpit does not appear to disappear across reboot or Wi-Fi/hotspot changes.",
-  "requirements_revision": "2026-09-21-R62"
+  "notes": "Telegram V21 R63 persists failed compact PC notifications into the shared BCP communication outbox while preserving failure truth; B-EDGE can later relay and acknowledge them over Wi-Fi or selective tiny cellular egress.",
+  "requirements_revision": "2026-09-21-R63"
 }

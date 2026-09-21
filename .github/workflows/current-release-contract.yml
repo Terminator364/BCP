@@ -22,6 +22,7 @@ on:
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
       - ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+      - ".project-memory/ADAPTIVE_COMMUNICATION_POLICY.json"
       - ".github/workflows/current-release-contract.yml"
   push:
     paths:
@@ -65,6 +66,7 @@ jobs:
           python -m json.tool schemas/bcp_current_release.schema.json > /dev/null
           python -m json.tool .project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json > /dev/null
           python -m json.tool .project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json > /dev/null
+          python -m json.tool .project-memory/ADAPTIVE_COMMUNICATION_POLICY.json > /dev/null
           python -m json.tool .project-memory/DELIVERY_REDUNDANCY_POLICY.json > /dev/null
           python -m json.tool .project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json > /dev/null
 
@@ -154,7 +156,8 @@ jobs:
           worker_bytes = pathlib.Path("windows/bcp_telegram_observability.py").read_bytes()
           import hashlib
           assert companion["schema"] == "bcp.telegram_companion_release/1"
-          assert companion["minimum_server_version"] == "0.6.3"
+          server_release = __import__("json").loads(pathlib.Path("release/server.json").read_text(encoding="utf-8"))
+          assert companion["minimum_server_version"] == server_release["version"] == "0.7.15"
           assert companion["sha256"] == hashlib.sha256(worker_bytes).hexdigest()
           assert companion["url"].startswith("https://raw.githubusercontent.com/Terminator364/BCP/")
           nexus = __import__("json").loads(pathlib.Path("release/nexus_bootstrap.json").read_text(encoding="utf-8"))

@@ -1,0 +1,95 @@
+{
+  "schema": "bcp.adaptive_communication_policy/1",
+  "revision": "2026-09-21-R63",
+  "status": "IMPLEMENTATION_CANDIDATE",
+  "objective": "Keep control/observability reachable under poor Kinshasa connectivity while minimizing mobile-data use and eliminating the user as a relay.",
+  "invariants": [
+    "PERSIST_BEFORE_DISPATCH",
+    "IDEMPOTENCY_AND_ACK_REQUIRED",
+    "LAN_FIRST_FOR_PC_TO_BEDGE",
+    "MOBILE_DATA_CONTROL_PLANE_ONLY",
+    "NO_LARGE_ARTIFACTS_ON_CELLULAR",
+    "CURRENT_PHONE_NOT_REQUIRED_INFRASTRUCTURE",
+    "BEDGE_CELLULAR_CAPABILITY_DISCOVERED_NOT_ASSUMED",
+    "DIRECT_PC_TELEGRAM_OPPORTUNISTIC_NOT_REQUIRED",
+    "OFFLINE_STORE_AND_FORWARD",
+    "NO_CHATGPT_END_OUTPUT_BEFORE_GMAIL_END_ACK"
+  ],
+  "routes": [
+    {
+      "id": "LOCAL_LAN_BEDGE",
+      "cost": 0,
+      "priority": 1,
+      "use": "PC<->B-EDGE control/event replication"
+    },
+    {
+      "id": "BEDGE_DIRECT_TELEGRAM_WIFI",
+      "cost": 0,
+      "priority": 2,
+      "use": "tiny Telegram control messages when B-EDGE Wi-Fi path is healthy"
+    },
+    {
+      "id": "BEDGE_DIRECT_TELEGRAM_CELLULAR",
+      "cost": "METERED",
+      "priority": 3,
+      "use": "tiny Telegram control messages only when B-EDGE has validated cellular and policy permits"
+    },
+    {
+      "id": "NEXUS_WIFI",
+      "cost": 0,
+      "priority": 4,
+      "use": "remote Telegram relay when qualified/reachable"
+    },
+    {
+      "id": "NEXUS_CELLULAR",
+      "cost": "METERED",
+      "priority": 5,
+      "use": "tiny control messages only"
+    },
+    {
+      "id": "DIRECT_PC_TELEGRAM",
+      "cost": "VARIABLE",
+      "priority": 6,
+      "use": "opportunistic only"
+    },
+    {
+      "id": "LOCAL_DURABLE_OUTBOX",
+      "cost": 0,
+      "priority": 99,
+      "use": "offline fallback until a remote route recovers"
+    }
+  ],
+  "cellular": {
+    "allowed_payload_classes": [
+      "ALERT",
+      "CHECKPOINT_POINTER",
+      "MISSION_STATE",
+      "ACK",
+      "COMMAND_RECEIPT"
+    ],
+    "max_payload_bytes": 16384,
+    "bulk_forbidden": [
+      "APK",
+      "ZIP",
+      "PDF",
+      "GIT_CLONE",
+      "CI_ARTIFACT",
+      "DRIVE_BULK_SYNC",
+      "MODEL_PAYLOAD"
+    ],
+    "user_current_phone_required": false
+  },
+  "old_phone": {
+    "role": "B_EDGE_RELAY_WITNESS",
+    "mode": "ADAPTIVE_WIFI_CELLULAR_CAPABILITY",
+    "cellular_optional": true,
+    "pc_link": "AUTHENTICATED_LAN_OR_HOTSPOT_LAN",
+    "preferred_delivery_model": "PHONE_INITIATED_PULL_OR_LONG_POLL_PLUS_WORKMANAGER_SAFETY_NET",
+    "rationale": "Android background execution is more reliable when the phone initiates the local connection than when the PC depends on an always-listening app server."
+  },
+  "mail_handshake": {
+    "start_before_substantive_work": true,
+    "end_retry_until_provider_ack": true,
+    "chat_pointer_only_after_end_ack": true
+  }
+}
