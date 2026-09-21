@@ -5,6 +5,10 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
+class ReuseHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
+
 class Handler(BaseHTTPRequestHandler):
     expected_token = "ci-test-token"
     status_code = 202
@@ -47,7 +51,7 @@ def main():
     ap.add_argument("--status", type=int, default=202)
     ns = ap.parse_args()
     Handler.status_code = ns.status
-    server = HTTPServer(("127.0.0.1", 8765), Handler)
+    server = ReuseHTTPServer(("127.0.0.1", 8765), Handler)
     print("MOCK_NEXUS_RETRY_SERVER_READY", flush=True)
     server.serve_forever()
 
