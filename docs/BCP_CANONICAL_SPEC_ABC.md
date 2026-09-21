@@ -58,11 +58,11 @@ Il doit progressivement héberger :
 
 Le PC reste un **worker Windows lourd et réplique vérifiée**, pas le centre obligatoire de toute communication.
 
-### Fast-path P0 issu d’UCMF001
-
-La source UCMF001 impose que la richesse de la mémoire n'introduise pas une latence structurelle. Le chemin interactif P0 doit privilégier : contexte précompilé, lecture locale ciblée, une transaction durable de tour, circuit-breakers réseau, puis synchronisation/compaction asynchrones. Une recherche globale, un embedding, Drive ou un provider distant ne doit pas bloquer la réponse normale quand l'état local suffisant existe.
-
 ## 3. B — approfondissement obligatoire
+
+### Fast-path P0 issu des Postulats de recherche UCMF001 2–4
+
+Les Postulats 2–4 sont classés dans **B** : ils approfondissent l'idée source A au lieu de la réécrire. Ils imposent que la richesse de la mémoire n'introduise pas une latence structurelle. Le chemin interactif P0 doit privilégier : contexte précompilé, lecture locale ciblée, HotSnapshot immuable, writer-arbiter P0–P3, une transaction durable de tour, circuit-breakers par dépendance, puis synchronisation/compaction asynchrones. Une recherche globale, un embedding, Drive ou un provider distant ne doit pas bloquer la réponse normale quand l'état local suffisant existe. Le canal reverse-RPC doit être initié en sortie par B-EDGE; long-poll et WebSocket restent des challengers à mesurer sur le vrai téléphone.
 
 Les améliorations réalistes retenues incluent :
 
