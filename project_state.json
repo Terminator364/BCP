@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R79_UCMF_V9_ABC_MISSION_STEP_EXACT_HEAD_CI_RUNNING",
-  "last_completed_atomic_action": "R79 directly resolved the current UCMF001 Drive master through Postulate 9/V9, expanded the A+B+C denominator to Postulates 1-9, recalibrated macro maturity to 53.9% functional / 42.2% evidence, made UCMF001 a first-class 25-minute cold-continuation pointer, and added B-EDGE Room v4 durable mission-step/provider-state envelopes so mission progress can survive ChatGPT/provider interruption independently of chat scrollback.",
-  "next_action": "Finish exact-head PR #149 qualification on the R79 head. If all required gates are green, reread main under the Git writer fence and merge the superseding R79 line. Then verify post-merge and continue the coherent B-EDGE 2.2 full-node against the largest A+B+C gaps: encrypted/authenticated LAN, memory admission/supersession, source-capability registry, server-first UI, black-start/direct-boot and bulk-media plane. Do not publish another phone micro-beta before the coherent release gate.",
+  "status": "R81_ABC_PHONE_GOVERNANCE_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "R81 restored the 25-minute foreground-owned communication contract (23 min useful work + 2 min primary close, no normal automation dependency) and advanced the A+B+C phone full-node with Room v5 capability registry plus append-only memory admission/provenance/supersession ledger. New authenticated phone APIs and server-cockpit readbacks are implemented; exact-head CI/device migration proof is pending.",
+  "next_action": "Finish exact-head R81 qualification. Fix any compile/Room/API/emulator regression on the candidate branch without asking the user to install. If all required checks pass, reread main under the writer fence, reconcile if moved, merge serialized, verify post-merge. Do not publish/install B-EDGE 2.2 until coherent full-node release gates remain satisfied.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2625,20 +2625,20 @@
     "continuity_code": "BCPGO BCP"
   },
   "abc_product_scope": {
-    "revision": "2026-09-21-R78",
+    "revision": "2026-09-22-R81",
     "formula": "A_PLUS_B_PLUS_C",
     "source_status": "HANDOFF_DOSSIER_UCMF_V4_READ_SEALED_ZIP_SHA_POINTER_PRESERVED",
-    "functional_macro_percent": 57,
-    "evidence_maturity_percent": 45.35,
+    "functional_macro_percent": 56.1,
+    "evidence_maturity_percent": 42.2,
     "percentage_is_absolute_completion": false,
     "universal_chronicle": "IMPLEMENTED_CANDIDATE_ROOM_V3_FIELD_2_2_PENDING",
     "top_next_gaps": [
       "ENCRYPTED_AUTHENTICATED_LAN",
-      "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
-      "SOURCE_CAPABILITY_REGISTRY",
+      "R81_EXACT_HEAD_AND_DEVICE_MIGRATION_PROOF",
       "TELEGRAM_PHONE_RELAY_FIELD_PROOF",
-      "FULL_SERVER_FIRST_UI",
-      "BEDGE_2_2_DEVICE_FIELD_PROMOTION"
+      "DIRECT_BOOT_BLACKSTART",
+      "BULK_MEDIA_DATA_PLANE",
+      "BEDGE_2_2_COHERENT_FIELD_PROMOTION"
     ]
   },
   "communication_cadence_r78": {
@@ -2692,5 +2692,35 @@
     "scheduled_normal_close_required": false,
     "current_tranche": "BCP-R79-START-20260921-2327",
     "current_tranche_start_message_id": "1a0c61524165617e"
+  },
+  "r81_phone_governance": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_PENDING",
+    "branch": "work/bcp/r81-abc-fullnode-20260922-0033",
+    "base_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "room_database_version": 5,
+    "capabilities": [
+      "DURABLE_CAPABILITY_REGISTRY",
+      "APPEND_ONLY_MEMORY_CLAIM_LEDGER",
+      "PROVENANCE_AUTHORITY_EVIDENCE",
+      "IDEMPOTENT_MEMORY_ADMISSION",
+      "EXPLICIT_SUPERSESSION",
+      "LOCAL_CONTEXT_INCLUDES_CAPABILITIES_AND_MEMORY_CLAIMS",
+      "AUTHENTICATED_CAPABILITY_AND_MEMORY_APIS",
+      "SERVER_COCKPIT_GOVERNANCE_READBACK"
+    ],
+    "user_install_ready": false,
+    "reason": "EXACT_HEAD_CI_AND_COHERENT_FULL_NODE_RELEASE_GATES_PENDING"
+  },
+  "communication_r81": {
+    "tranche_id": "BCP-R81-START-20260922-0033",
+    "delivery_key": "BCP25-20260922-0033-R81",
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "normal_close_automation_dependency": false,
+    "start_message_id": "1a0c650734064dba",
+    "end_message_id": null,
+    "end_verified": false
   }
 }
