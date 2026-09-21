@@ -1783,6 +1783,8 @@ Canonical policy:
 
 Representative simulation is a release gate, not a substitute for field truth. A Windows runner can qualify Windows/PowerShell/local-runtime behavior; Android CI and an emulator/instrumented runner can qualify Android behavior where relevant; real account consent, provider availability, physical radio/network conditions and device-specific field effects remain separately evidenced gates.
 
+For the current Nexus authorization path, qualification includes both the server-side explicit-retry runtime path and the exact Windows PowerShell one-shot helper against a local HTTP simulation, including a positive LAUNCHED response and an expected HTTP 500/HOLD negative control.
+
 
 ## P0 — Interactive work cadence
 
