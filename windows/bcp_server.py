@@ -32,7 +32,7 @@ DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
 EDGE_RELAY_STATE_PATH = STATE_DIR / "edge_relay.json"
-SERVER_VERSION = "0.7.15"
+SERVER_VERSION = "0.7.16"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -113,11 +113,70 @@ def edge_relay_status(now_epoch: int | None = None) -> dict:
         "relay_host": str(raw.get("relay_host") or "") if active else "",
         "relay_port": int(raw.get("relay_port") or 0) if active else 0,
         "capability": str(raw.get("capability") or ""),
+        "node_role": str(raw.get("node_role") or ""),
+        "api_version": int(raw.get("api_version") or 0),
+        "api_base": str(raw.get("api_base") or ""),
+        "capabilities": list(raw.get("capabilities") or [])[:16],
+        "connectivity": dict(raw.get("connectivity") or {}),
+        "pending_jobs": max(0, int(raw.get("pending_jobs") or 0)),
         "edge_version": str(raw.get("edge_version") or ""),
         "registered_at": str(raw.get("registered_at") or ""),
         "expires_epoch": expires,
         "expires_in_seconds": max(0, expires - now),
     }
+
+
+def edge_node_api_status() -> dict:
+    relay = edge_relay_status()
+    base = {
+        "schema": "bcp.edge_node_status/1",
+        "reachable": False,
+        "role": str(relay.get("node_role") or ""),
+        "edge_version": str(relay.get("edge_version") or ""),
+        "relay_active": bool(relay.get("active")),
+        "registered_capabilities": list(relay.get("capabilities") or [])[:16],
+        "registered_connectivity": dict(relay.get("connectivity") or {}),
+        "registered_pending_jobs": int(relay.get("pending_jobs") or 0),
+    }
+    if not relay.get("active"):
+        base["state"] = "NOT_REGISTERED"
+        return base
+    token = ""
+    try:
+        token = TOKEN_PATH.read_text(encoding="utf-8").strip()
+    except Exception:
+        pass
+    if not token:
+        base["state"] = "PAIR_TOKEN_MISSING"
+        return base
+    host = str(relay.get("relay_host") or "")
+    port = int(relay.get("relay_port") or 0)
+    if not host or port <= 0:
+        base["state"] = "ENDPOINT_MISSING"
+        return base
+    try:
+        req = Request(
+            f"http://{host}:{port}/v1/edge/status",
+            method="GET",
+            headers={"Authorization": "Bearer " + token, "Accept": "application/json"},
+        )
+        with urlopen(req, timeout=1.5) as resp:
+            raw = json.loads(resp.read(64 * 1024).decode("utf-8"))
+        base.update({
+            "reachable": bool(raw.get("ok")),
+            "state": "READY" if raw.get("ok") else "API_NOT_READY",
+            "mode": str(raw.get("mode") or "")[:80],
+            "pending_jobs": max(0, int(raw.get("pending_jobs") or 0)),
+            "connectivity": dict(raw.get("connectivity") or {}),
+            "queue_limit": max(0, int(raw.get("queue_limit") or 0)),
+            "storage": str(raw.get("storage") or "")[:80],
+            "scheduler": str(raw.get("scheduler") or "")[:120],
+        })
+    except Exception as exc:
+        base["state"] = "UNREACHABLE"
+        base["error_class"] = type(exc).__name__[:120]
+        base["error_detail"] = str(exc)[:200]
+    return base
 
 
 def register_edge_relay(remote_ip: str, body: dict) -> dict:
@@ -130,12 +189,38 @@ def register_edge_relay(remote_ip: str, body: dict) -> dict:
         raise ValueError("edge_relay_port_not_allowed")
     if capability != "HTTPS_CONNECT_TELEGRAM":
         raise ValueError("edge_relay_capability_not_allowed")
+    node_role = str(body.get("node_role") or "")[:80]
+    if node_role not in ("", "PHONE_PRIMARY_EDGE_SERVER"):
+        raise ValueError("edge_node_role_not_allowed")
+    raw_caps = body.get("capabilities") or []
+    if not isinstance(raw_caps, list):
+        raw_caps = []
+    capabilities = [str(x)[:80] for x in raw_caps[:16] if str(x).strip()]
+    raw_connectivity = body.get("connectivity") or {}
+    if not isinstance(raw_connectivity, dict):
+        raw_connectivity = {}
+    connectivity = {
+        "transports": list(raw_connectivity.get("transports") or [])[:8],
+        "internet": bool(raw_connectivity.get("internet")),
+        "validated": bool(raw_connectivity.get("validated")),
+        "metered": bool(raw_connectivity.get("metered")),
+        "wifi_direct_supported": bool(raw_connectivity.get("wifi_direct_supported")),
+        "bluetooth_le_supported": bool(raw_connectivity.get("bluetooth_le_supported")),
+        "usb_host_supported": bool(raw_connectivity.get("usb_host_supported")),
+        "device_owner": bool(raw_connectivity.get("device_owner")),
+    }
     now = int(time.time())
     rec = {
         "schema": "bcp.edge_relay_registration/1",
         "relay_host": remote_ip,
         "relay_port": port,
         "capability": capability,
+        "node_role": node_role,
+        "api_version": max(0, min(int(body.get("api_version") or 0), 9)),
+        "api_base": str(body.get("api_base") or "")[:80],
+        "capabilities": capabilities,
+        "connectivity": connectivity,
+        "pending_jobs": max(0, min(int(body.get("pending_jobs") or 0), 100000)),
         "edge_version": str(body.get("edge_version") or "")[:80],
         "registered_at": utc_now(),
         "registered_epoch": now,
@@ -552,6 +637,7 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
     chat = chatgpt_pc_status()
     telegram = telegram_companion_runtime_status()
     edge_relay = edge_relay_status()
+    edge_node = edge_node_api_status()
     resources = windows_resource_status()
     mission_watchdog = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
     resume_request = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
@@ -596,6 +682,13 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "edge_relay_capability": edge_relay["capability"],
         "edge_relay_edge_version": edge_relay["edge_version"],
         "edge_relay_expires_in_seconds": edge_relay["expires_in_seconds"],
+        "edge_node_reachable": bool(edge_node.get("reachable")),
+        "edge_node_state": str(edge_node.get("state") or "")[:80],
+        "edge_node_role": str(edge_node.get("role") or "")[:80],
+        "edge_node_mode": str(edge_node.get("mode") or "")[:80],
+        "edge_node_pending_jobs": max(0, int(edge_node.get("pending_jobs") or 0)),
+        "edge_node_connectivity": dict(edge_node.get("connectivity") or {}),
+        "edge_node_registered_capabilities": list(edge_node.get("registered_capabilities") or [])[:16],
         "chatgpt_pc_active_version": str(chat.get("active_version") or "")[:40],
         "chatgpt_pc_active_sequence": int(chat.get("active_sequence") or 0),
         "chatgpt_pc_heartbeat_version": str(chat.get("heartbeat_version") or "")[:40],

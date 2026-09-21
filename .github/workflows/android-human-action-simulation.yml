@@ -140,6 +140,36 @@ jobs:
           test -n "$PID"
           echo "BCP_ANDROID_APP_PROCESS=PASS pid=$PID"
 
+      - name: Verify phone server over USB/ADB local transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" forward tcp:18876 tcp:8876
+          for i in $(seq 1 20); do
+            if curl --fail --silent --show-error --max-time 2 http://127.0.0.1:18876/health > edge-health.json; then
+              break
+            fi
+            sleep 1
+          done
+          python - <<'PY'
+          import json
+          h=json.load(open("edge-health.json",encoding="utf-8"))
+          assert h["ok"] is True
+          assert h["service"] == "BCP-EDGE-NODE"
+          assert h["role"] == "PHONE_PRIMARY_EDGE_SERVER"
+          assert int(h["relay_port"]) == 8876
+          PY
+          code=$(curl --silent --output edge-unauth.json --write-out "%{http_code}" --max-time 2 http://127.0.0.1:18876/v1/edge/status)
+          test "$code" = "401"
+          python - <<'PY'
+          import json
+          h=json.load(open("edge-unauth.json",encoding="utf-8"))
+          assert h["error"] == "UNAUTHORIZED"
+          PY
+          echo "BCP_PHONE_SERVER_USB_FORWARD=PASS"
+
       - name: Verify visible primary UI and no immediate crash
         shell: bash
         run: |
@@ -148,7 +178,7 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
-          grep -F "BCP Edge Evergreen" bcp-window.xml >/dev/null
+          grep -F "BCP Phone Server · B-EDGE" bcp-window.xml >/dev/null
           grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window.xml >/dev/null
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
@@ -172,7 +202,7 @@ jobs:
           test -n "$PID"
           "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
-          grep -F "BCP Edge Evergreen" bcp-window-relaunch.xml >/dev/null
+          grep -F "BCP Phone Server · B-EDGE" bcp-window-relaunch.xml >/dev/null
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
 
       - name: Upload representative simulation evidence
@@ -184,6 +214,8 @@ jobs:
             android-emulator-apk.sha256
             android-emulator-apk.badging.txt
             activity-start.txt
+            edge-health.json
+            edge-unauth.json
             launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml

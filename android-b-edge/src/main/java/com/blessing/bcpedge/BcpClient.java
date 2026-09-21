@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.2-rc1-edge-relay";
+    private static final String EDGE_VERSION = "2.2.0-rc1-phone-server";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -75,6 +75,19 @@ public final class BcpClient {
             JSONObject body = new JSONObject();
             body.put("port", EdgeRelayPolicy.RELAY_PORT);
             body.put("capability", "HTTPS_CONNECT_TELEGRAM");
+            body.put("node_role", "PHONE_PRIMARY_EDGE_SERVER");
+            body.put("api_version", 1);
+            body.put("api_base", "/v1/edge");
+            org.json.JSONArray caps = new org.json.JSONArray();
+            caps.put("LOCAL_AUTHENTICATED_API");
+            caps.put("DURABLE_ROOM_QUEUE");
+            caps.put("STORE_AND_FORWARD");
+            caps.put("WORKMANAGER_RECOVERY");
+            caps.put("TELEGRAM_TLS_CONNECT_RELAY");
+            caps.put("ADAPTIVE_NETWORK_SNAPSHOT");
+            body.put("capabilities", caps);
+            body.put("connectivity", EdgeConnectivity.snapshot(context));
+            body.put("pending_jobs", new EdgeOrchestrator(context).pendingCount());
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
             JSONObject r = requestJson(

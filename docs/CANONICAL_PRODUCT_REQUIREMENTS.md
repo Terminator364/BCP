@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R64
+Revision: 2026-09-21-R67
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1883,3 +1883,36 @@ No R64 user-facing install/update may be requested until:
 4. server registration accepts only authenticated private-LAN B-EDGE state;
 5. CURRENT/server/Android/Telegram versions and hashes are coordinated;
 6. field installation/readback proves the signed B-EDGE runtime before the relay is represented as FIELD_ACTIVE.
+
+
+## P0 — Dedicated phone as primary Edge/API server — R67
+
+The dedicated old Android phone is a first-class BCP infrastructure node. It MUST NOT be reduced to a passive client, a UI-only endpoint, or a narrow Telegram proxy.
+
+Target division of responsibility:
+- **phone**: authenticated local API, durable Room/SQLite WAL state, durable job/outbox queue, store-and-forward control messages, local sentinel, compact context/checkpoint cache, WorkManager recovery, adaptive network capability detection, and low-data egress gateway;
+- **PC**: Windows/PowerShell specialist, desktop integration and burst/heavy compute when those capabilities are actually required.
+
+The phone path MUST remain useful while the PC has no general Internet access. Preferred topology is `PC -> local phone path -> allowlisted phone uplink` for control traffic. The phone does not require its own SIM; any validated Wi-Fi/hotspot uplink is acceptable.
+
+Transport ladder:
+1. private LAN/shared hotspot;
+2. USB/ADB-style local port-forward where available;
+3. Wi-Fi Direct after real-device qualification;
+4. Bluetooth/BLE for tiny emergency control/heartbeat traffic after qualification;
+5. OEM/USB accessory/tether paths only when capability-probed and field-qualified.
+
+BCP MUST NOT silently convert the phone into an unrestricted Internet proxy. Bulk/general-purpose PC traffic is excluded by default; the current remote relay remains allowlisted to the Telegram control-plane target.
+
+A dedicated-device Android Device Owner/DPC mode MAY be used as a later explicit provisioning mode for stronger kiosk/policy/background guarantees. Root is not a baseline requirement and MUST NOT be assumed. Any provisioning step that can reset/wipe the device requires explicit user approval.
+
+Concrete R67 source contract:
+- phone local API role: `PHONE_PRIMARY_EDGE_SERVER`;
+- bounded local API shares TCP 8876 with the strict CONNECT relay;
+- protected endpoints use the existing paired BCP bearer identity;
+- WorkManager/Room remain the durable recovery authority;
+- normal boot/package replacement re-arms server/reconciliation where Android permits;
+- PC registration and telemetry MUST expose phone role, API reachability, capabilities, connectivity, queue depth and Edge version;
+- representative Android CI MUST prove APK install, foreground server startup, USB/ADB local port-forward health, auth boundary, UI and cold relaunch before user field action.
+
+Canonical policy: `.project-memory/PHONE_PRIMARY_EDGE_SERVER_POLICY.json`.

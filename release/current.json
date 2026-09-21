@@ -1,9 +1,9 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-21-R64",
+  "requirements_revision": "2026-09-21-R67",
   "zero_usd": true,
-  "overall_state": "CI_CANDIDATE_FIELD_RELAY_UNVERIFIED",
+  "overall_state": "R67_PHONE_PRIMARY_EDGE_SERVER_CANDIDATE_CI_PENDING",
   "update_policy": {
     "unchanged_version_zero_download": true,
     "metered_large_download_default": false,
@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.15",
+      "version": "0.7.16",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "99a91cef43c771c7cdd9807787517685ec3a1749050e5a5ce52022bb08e269cd"
+        "sha256": "d94be35abbed059d98908afdd6ac155e891c6b1f7eb91e0eb33f3fc420cd10fe"
       },
-      "notes": "BCP 0.7.15 adds authenticated short-lived B-EDGE relay registration and external relay liveness; field promotion follows exact-head qualification."
+      "notes": "BCP 0.7.16 registers/probes the old phone as PHONE_PRIMARY_EDGE_SERVER and externalizes phone-node connectivity/capability/queue truth."
     },
     "android_b_edge": {
       "version": "2.1.0-rc1-sentinel-evergreen",
@@ -38,7 +38,7 @@
         "url": "https://drive.google.com/file/d/1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR/view?usp=drivesdk",
         "sha256": "83133d2786e210e4b4b7594b39b45f216ca0122c3df7c92abf0bef92f65ddfb1"
       },
-      "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending."
+      "notes": "B-EDGE 2.1.0 same-identity Evergreen APK is v2/v3 signed, hash/readback verified, and published in place at the stable Drive CURRENT location. Field install and runtime telemetry are pending. R67 source candidate 2.2.0 adds the first-class phone-server API/boot recovery path but is not promoted into this stable signed slot until signing and field gates pass."
     },
     "nexus": {
       "version": "0.2.6",
@@ -50,7 +50,7 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "d664a3101b0863e7ee144af5a7151fee72f280267df022c6155fd10c0c312997"
+        "sha256": "182afb817bff8bef1f4e768aa424d6c69baa56f0f2d1b6bace59ad526322999e"
       },
       "notes": "Nexus 0.2.6 R54 remains device-flow-only, reconciles Worker health version, and mirrors the compact human cockpit plus WinAnsi/Bold/paginated PDF fallback with Kinshasa-time captions."
     }

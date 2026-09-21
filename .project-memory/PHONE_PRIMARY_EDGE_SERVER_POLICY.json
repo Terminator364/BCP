@@ -1,0 +1,88 @@
+{
+  "schema": "bcp.phone_primary_edge_server_policy/1",
+  "revision": "2026-09-21-R67",
+  "status": "CANDIDATE",
+  "role": "PHONE_PRIMARY_EDGE_SERVER",
+  "premise": "The dedicated old Android phone is a first-class always-recoverable BCP node, not a passive client or narrow Telegram proxy.",
+  "resource_intent": {
+    "ram_class_gb": 4,
+    "storage_class_gb": 64,
+    "pc_role": "WINDOWS_SPECIALIST_AND_BURST_COMPUTE_NODE",
+    "phone_role": "CONTINUITY_AUTHORITY_CACHE_QUEUE_RELAY_LOCAL_API_AND_LOW_DATA_GATEWAY",
+    "no_sim_required": true
+  },
+  "node_services": [
+    "AUTHENTICATED_LOCAL_API",
+    "ROOM_SQLITE_WAL_DURABLE_STATE",
+    "DURABLE_JOB_QUEUE_AND_RECEIPTS",
+    "STORE_AND_FORWARD_CONTROL_MESSAGES",
+    "WORKMANAGER_RECONCILIATION",
+    "BOOT_AND_PACKAGE_REPLACE_RECOVERY",
+    "TELEGRAM_TLS_CONNECT_RELAY",
+    "ADAPTIVE_NETWORK_CAPABILITY_SNAPSHOT",
+    "LOCAL_SENTINEL_WHEN_PC_ABSENT",
+    "CONTEXT_AND_CHECKPOINT_CACHE"
+  ],
+  "transport_ladder": [
+    {
+      "rank": 1,
+      "id": "PRIVATE_LAN_OR_HOTSPOT",
+      "state": "IMPLEMENTED",
+      "purpose": "normal local API and relay"
+    },
+    {
+      "rank": 2,
+      "id": "USB_ADB_PORT_FORWARD",
+      "state": "CI_SIMULATED_TARGET",
+      "purpose": "PC-to-phone control path without shared LAN; phone may keep independent uplink"
+    },
+    {
+      "rank": 3,
+      "id": "WIFI_DIRECT",
+      "state": "IMPLEMENTATION_TARGET_FIELD_GATED",
+      "purpose": "high-bandwidth direct PC-phone path while phone keeps another uplink where platform allows"
+    },
+    {
+      "rank": 4,
+      "id": "BLUETOOTH_BLE_CONTROL",
+      "state": "IMPLEMENTATION_TARGET_FIELD_GATED",
+      "purpose": "tiny heartbeat/command emergency lane"
+    },
+    {
+      "rank": 5,
+      "id": "USB_ACCESSORY_OR_TETHER_OEM_PATH",
+      "state": "CAPABILITY_PROBE_ONLY",
+      "purpose": "optional wired fallback when hardware/OEM supports it"
+    }
+  ],
+  "data_saving_model": {
+    "goal": "PC does not need general Internet access for BCP control-plane traffic when a phone gateway path is available.",
+    "phone_egress_allowlist_first": [
+      "api.telegram.org:443"
+    ],
+    "bulk_proxy_forbidden_by_default": true,
+    "windows_background_internet_not_required_for_local_control": true,
+    "queue_when_no_uplink": true
+  },
+  "reliability": {
+    "local_api_port": 8876,
+    "max_concurrent_connections": 4,
+    "request_body_max_bytes": 65536,
+    "queue_is_durable": true,
+    "idempotency_required": true,
+    "boot_recovery": true,
+    "package_replace_recovery": true,
+    "pc_absence_is_not_failure_of_phone_node": true
+  },
+  "dedicated_device_option": {
+    "device_owner": "OPTIONAL_ADVANCED_MODE",
+    "rationale": "A fully dedicated device can optionally be provisioned as Android Device Owner/DPC for stronger kiosk/restart/policy control, but this is a separate explicit provisioning gate because normal Device Owner enrollment can require factory-reset/unprovisioned-device state.",
+    "root_required": false,
+    "root_default": false
+  },
+  "field_truth_rules": [
+    "CI/emulator proves software paths, not real radio/OEM behavior.",
+    "Wi-Fi Direct/BLE/USB capabilities must be probed on the real old phone before promotion.",
+    "No user retry is requested until the exact path is representative-simulated when technically feasible."
+  ]
+}

@@ -1,3 +1,40 @@
+# R67 Fresh Conversation Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+R67 architectural correction: the dedicated old Android phone is a **first-class BCP server/Edge node**, not a passive client and not merely a Telegram relay.
+
+Current work branch:
+- `work/bcp/r67-phone-real-server-20260921-1452`
+- base main: `61736e160c65ee47be77f384a9c3369a33c122a3`
+- BCP server candidate: **0.7.16**
+- B-EDGE source candidate: **2.2.0-rc1-phone-server-evergreen**
+- phone role: `PHONE_PRIMARY_EDGE_SERVER`
+
+Implemented in R67:
+- authenticated local phone API on TCP 8876;
+- Room/SQLite durable jobs + store-and-forward;
+- WorkManager reconciliation and boot/package-replace recovery;
+- adaptive Wi-Fi/BLE/USB/Device-Owner capability snapshot;
+- PC registers/probes phone API and mirrors phone-node health into runtime telemetry;
+- Android CI USB/ADB port-forward test for `/health` plus protected-endpoint 401 boundary;
+- strict Telegram CONNECT allowlist remains; no general-purpose PC Internet proxy;
+- transport ladder preserves LAN first, then USB/Wi-Fi Direct/BLE as evidence-gated fallbacks;
+- Gmail START/END messages use label `BCP` when Gmail label support is available.
+
+Recovery order:
+1. Gmail START + label BCP.
+2. Load delivery/cadence/simulation/writer-fence + PHONE_PRIMARY_EDGE_SERVER policy.
+3. Resume only the next uncommitted R67 action.
+4. Run exact-head CI and auto-fix simulation failures without asking the user to test first.
+5. Merge only through writer fence after main reread.
+6. Field-promote signed Android/server artifacts only after version/hash/signature/readback gates.
+7. Gmail END must receive provider acknowledgement, be labeled BCP, then ChatGPT is pointer-only.
+
+Do not regress the phone back to a PC-dependent client in a fresh conversation.
+
+---
+
 # R64 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
