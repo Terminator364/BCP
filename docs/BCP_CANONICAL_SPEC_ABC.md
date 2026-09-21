@@ -1,7 +1,7 @@
 # BCP — Cahier des charges intégral A+B+C
 
-Status: CANONICAL CANDIDATE R78 · SOURCE-RECONCILED  
-Revision: 2026-09-21-R78
+Status: CANONICAL CANDIDATE R79 · SOURCE-RECONCILED UCMF V9  
+Revision: 2026-09-21-R79
 
 ## 1. Autorité
 
@@ -60,9 +60,21 @@ Le PC reste un **worker Windows lourd et réplique vérifiée**, pas le centre o
 
 ## 3. B — approfondissement obligatoire
 
-### Fast-path P0 issu des Postulats de recherche UCMF001 2–4
+### UCMF001 V9 — Postulats de recherche 2–9 intégrés dans B
 
-Les Postulats 2–4 sont classés dans **B** : ils approfondissent l'idée source A au lieu de la réécrire. Ils imposent que la richesse de la mémoire n'introduise pas une latence structurelle. Le chemin interactif P0 doit privilégier : contexte précompilé, lecture locale ciblée, HotSnapshot immuable, writer-arbiter P0–P3, une transaction durable de tour, circuit-breakers par dépendance, puis synchronisation/compaction asynchrones. Une recherche globale, un embedding, Drive ou un provider distant ne doit pas bloquer la réponse normale quand l'état local suffisant existe. Le canal reverse-RPC doit être initié en sortie par B-EDGE; long-poll et WebSocket restent des challengers à mesurer sur le vrai téléphone.
+Les Postulats **2–9** sont classés dans **B** : ils approfondissent l'idée source A au lieu de la réécrire. Le registre Drive UCMF001 courant a été relu directement et contient bien la lignée jusqu'au **Postulat 9 — CHATGPT-DEGRADED OPERATING ENVIRONMENT**.
+
+Ils imposent notamment :
+- **P2** : Universal Chronicle exacte + mémoire canonique dérivée, provenance, SQLite WAL, outbox transactionnelle et récupération sélective ;
+- **P3** : téléphone SM-A217F dédié comme appliance local-first de continuité et futur coordinateur logique après preuve de fencing/réplication ;
+- **P4** : fast path P0 sans scan global ni attente réseau, HotSnapshot immuable, writer-arbiter P0–P3, transaction durable de tour et reverse-RPC sortant ;
+- **P5** : chaos/counter-research proof-carrying, negative controls et protection contre les faux compteurs ;
+- **P6** : FMECA/SFTA/STPA, black-start, absence humaine et états POWER/LAN/INTERNET/AUTHORITY séparés ;
+- **P7** : gray failures, fault injection temporelle, health vector, Direct-Boot mini-kernel, freshness envelope, horloges monotones et tests des protections elles-mêmes ;
+- **P8** : séparation FAST CONTROL PLANE / BULK DATA PLANE, média/original scellé, reprise par chunks et dérivés asynchrones ;
+- **P9** : **CHATGPT IS AN EXECUTOR, NOT THE MISSION AUTHORITY** ; une conversation peut mourir sans tuer la mission. Toute étape distante doit être précédée d'une enveloppe durable et les états provider sont explicites, y compris OUTCOME_UNKNOWN/RECONCILING.
+
+La richesse de la mémoire ne doit pas introduire une latence structurelle. Une recherche globale, embedding, Drive sync, provider distant ou bulk media ne bloque pas le chemin interactif normal lorsque l'état local suffisant existe.
 
 Les améliorations réalistes retenues incluent :
 
@@ -114,11 +126,19 @@ Les retours utilisateur deviennent des exigences P0 :
 
 ## 5. Mesure honnête de l'avancement
 
-Le macro-audit R78, après lecture directe du handoff APIAX07, du dossier de compréhension et des Postulats UCMF001 V1–V4, donne :
-- **couverture fonctionnelle pondérée : 57,0 %** ;
-- **maturité de preuve : 45,35 %**.
+Le macro-audit R79, après lecture directe du handoff APIAX07, du dossier de compréhension et du registre Drive UCMF001 **V1–V9**, donne un dénominateur plus large et donc un score volontairement plus conservateur :
+- **couverture fonctionnelle pondérée : 53,9 %** ;
+- **maturité de preuve : 42,2 %**.
 
 Ces valeurs restent un **score macro de maturité de preuve**, pas un pourcentage marketing du produit final. Le ZIP scellé V0.7 reste garanti par son pointeur SHA/manifest et n'a pas été prétendu relu octet par octet. Les sources A lisibles ont cependant été substantiellement reconstruites et recoupées.
+
+### Mission survival / provider-degraded P0
+
+Avant tout appel modèle/provider susceptible d'être interrompu, BCP doit pouvoir persister un **BCP_MISSION_STEP_ENVELOPE_V1** contenant au minimum : mission/step/revision/projet, opération demandée, hashes input/contexte, policy revision, expected state revision, dernier checkpoint, dépendances, classe d'effet, idempotency/fencing si applicable, next safe action, continuation frontier et temps monotone + mural.
+
+États provider autorisés : `NOT_DISPATCHED`, `DISPATCH_ATTEMPTED`, `PROVIDER_ACKED`, `STREAM_OBSERVED`, `RESULT_OBSERVED`, `RESULT_COMMITTED`, `PLATFORM_HOLD`, `INTERRUPTED`, `OUTCOME_UNKNOWN`, `RECONCILING`, `SUPERSEDED`.
+
+Le téléphone dédié est le lieu naturel de cette enveloppe locale durable afin que la reprise ne dépende ni du scrollback ChatGPT ni d'un PC vivant.
 
 ## 6. Écart critique actuel
 
