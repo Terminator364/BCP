@@ -1,0 +1,21 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r74-phone-resource-governor-20260921-1833",
+  "project_or_mission": "API/BCP dedicated-phone full-node resource governor",
+  "base_main_sha": "97011c2e608c81351d0e592e733d4af675cf2c8f",
+  "created_at": "2026-09-21T18:33:00+01:00",
+  "work_branch": "work/bcp/r74-phone-resource-governor-20260921-1833",
+  "intended_file_scope": [
+    "android-b-edge/**",
+    "release/android_candidate.json",
+    "project_state.json",
+    "tools/**",
+    ".github/workflows/**"
+  ],
+  "expected_ci_gates": [
+    "Android build",
+    "Android human-action simulation",
+    "Coordinated product qualification",
+    "Field ecosystem preflight"
+  ]
+}

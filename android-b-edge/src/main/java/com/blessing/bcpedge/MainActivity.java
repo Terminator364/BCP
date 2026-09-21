@@ -177,6 +177,7 @@ public class MainActivity extends Activity {
 
             JSONObject storage = client.contentStoreStatus();
             JSONObject net = EdgeNetworkState.snapshot(this);
+            JSONObject resources = EdgeResourceGovernor.snapshot(this);
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
             autonomyInfo.setText(
