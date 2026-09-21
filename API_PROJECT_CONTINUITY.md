@@ -24,6 +24,17 @@ For every user-invoked continuation/relaunch/message that starts project work:
 
 If the START mail fails, do not begin the substantive tranche. If the END mail fails, emit no ChatGPT end message at all; retry the END mail until acknowledged.
 
+### Fast field-readback lookup
+
+To avoid slow broad Drive search on every continuation, recover the resident BCP runtime through deterministic folder traversal:
+1. locate the exact folder named `API_BCP`;
+2. list its exact child `02_TELEMETRY`;
+3. list child `BCP`;
+4. list/fetch `BCP_RUNTIME_LATEST.json`;
+5. use its machine fields (`server_version`, `server_sha256`, `updated_at`, `update_state`, `nexus_bootstrap_state`) as field evidence.
+
+Do not start with a broad full-Drive content search for runtime telemetry. Keep Drive IDs out of the public repository; resolve IDs from the connected private Drive at runtime.
+
 Current durable integration truth:
 - R58 server fix is already merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`; R60 continuity/simulation hardening remains on PR #127 until exact-head CI is green;
 - BCP target is **0.7.13**;
