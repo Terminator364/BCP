@@ -242,6 +242,8 @@ public final class EdgeRelayService extends Service {
             caps.put("role", "DEDICATED_EDGE_API_SERVER");
             caps.put("local_api", true);
             caps.put("durable_queue", true);
+            caps.put("universal_event_ledger", true);
+            caps.put("universal_event_ledger_mode", "APPEND_ONLY_LOCAL_CHRONICLE");
             caps.put("local_allowlisted_executor", true);
             caps.put("local_executor_kinds", new org.json.JSONArray()
                     .put("LOCAL_CONTEXT_SNAPSHOT")
@@ -266,6 +268,22 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/context".equals(path)) {
             writeJson(out, 200, new BcpClient(this).localContextPack());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/events".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localEventTail(100));
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/events".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            String eventType = body.optString("event_type", "");
+            JSONObject payload = body.optJSONObject("payload");
+            if (payload == null) payload = new JSONObject();
+            String truth = body.optString("truth_status", "OBSERVED");
+            String idem = body.optString("idempotency_key", "");
+            JSONObject receipt = new BcpClient(this).appendLocalEvent(
+                    eventType, payload, truth, idem);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 200, receipt);
             return;
         }
         if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
