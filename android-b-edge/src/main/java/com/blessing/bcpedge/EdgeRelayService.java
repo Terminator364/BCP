@@ -48,24 +48,30 @@ public final class EdgeRelayService extends Service {
     private final Semaphore connectionSlots = new Semaphore(EdgeRelayPolicy.MAX_CONNECTIONS);
     private volatile boolean stopping = false;
     private volatile ServerSocket serverSocket;
+    private volatile EdgeNodeServer nodeServer;
 
     @Override public void onCreate() {
         super.onCreate();
         createChannel();
-        Notification n = buildNotification("Relais local sécurisé actif");
+        Notification n = buildNotification("Nœud serveur B-EDGE actif · relais + file durable");
         if (Build.VERSION.SDK_INT >= 34) {
             ServiceCompat.startForeground(
                     this,
                     NOTIFICATION_ID,
                     n,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING);
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING
+                            | ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
         } else {
             startForeground(NOTIFICATION_ID, n);
         }
+        nodeServer = new EdgeNodeServer(this);
+        nodeServer.start();
         io.submit(this::serveLoop);
         registration.scheduleWithFixedDelay(() -> {
             try {
-                new BcpClient(EdgeRelayService.this).registerEdgeRelay();
+                BcpClient client = new BcpClient(EdgeRelayService.this);
+                client.registerEdgeRelay();
+                EdgeLocalExecutor.drain(EdgeRelayService.this, client);
             } catch (Throwable ignored) {}
         }, 1, 120, TimeUnit.SECONDS);
         mark("STARTING", "");
@@ -78,6 +84,7 @@ public final class EdgeRelayService extends Service {
     @Override public void onDestroy() {
         stopping = true;
         try { if (serverSocket != null) serverSocket.close(); } catch (Exception ignored) {}
+        try { if (nodeServer != null) nodeServer.stop(); } catch (Exception ignored) {}
         registration.shutdownNow();
         io.shutdownNow();
         mark("STOPPED", "");
@@ -238,8 +245,8 @@ public final class EdgeRelayService extends Service {
     private void createChannel() {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationChannel ch = new NotificationChannel(
-                CHANNEL_ID, "BCP Edge relay", NotificationManager.IMPORTANCE_LOW);
-        ch.setDescription("Relais local BCP entre le PC et Internet pour le contrôle léger.");
+                CHANNEL_ID, "BCP Edge server", NotificationManager.IMPORTANCE_LOW);
+        ch.setDescription("Nœud serveur local BCP : file durable, relais Telegram et continuité PC/téléphone.");
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.createNotificationChannel(ch);
     }
