@@ -74,13 +74,39 @@ jobs:
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
           nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
-          "$ADB" wait-for-device
-          for i in $(seq 1 120); do
+          EMU_PID=$!
+          DEVICE=""
+          for i in $(seq 1 60); do
+            if ! kill -0 "$EMU_PID" 2>/dev/null; then
+              echo "ANDROID_EMULATOR_EXITED_BEFORE_ADB"
+              tail -200 emulator.log || true
+              exit 1
+            fi
+            DEVICE="$("$ADB" get-state 2>/dev/null || true)"
+            if [ "$DEVICE" = "device" ]; then break; fi
+            sleep 2
+          done
+          if [ "$DEVICE" != "device" ]; then
+            echo "ANDROID_ADB_DEVICE_TIMEOUT"
+            tail -200 emulator.log || true
+            exit 1
+          fi
+          BOOT=""
+          for i in $(seq 1 90); do
+            if ! kill -0 "$EMU_PID" 2>/dev/null; then
+              echo "ANDROID_EMULATOR_EXITED_DURING_BOOT"
+              tail -200 emulator.log || true
+              exit 1
+            fi
             BOOT="$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
             if [ "$BOOT" = "1" ]; then break; fi
             sleep 2
           done
-          test "$("$ADB" shell getprop sys.boot_completed | tr -d '\r')" = "1"
+          if [ "$BOOT" != "1" ]; then
+            echo "ANDROID_BOOT_COMPLETED_TIMEOUT"
+            tail -200 emulator.log || true
+            exit 1
+          fi
           "$ADB" shell input keyevent 82 || true
           "$ADB" shell settings put global window_animation_scale 0
           "$ADB" shell settings put global transition_animation_scale 0
