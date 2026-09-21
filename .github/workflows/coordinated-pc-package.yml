@@ -12,6 +12,16 @@ on:
       - "release/server.json"
       - ".github/workflows/coordinated-pc-package.yml"
       - ".github/workflows/coordinated-product.yml"
+  pull_request:
+    paths:
+      - "windows/INSTALL_BCP_FINAL.cmd"
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
+      - "windows/bcp_server.py"
+      - "release/server.json"
+      - ".github/workflows/coordinated-pc-package.yml"
+      - ".github/workflows/coordinated-product.yml"
 
 permissions:
   contents: read
