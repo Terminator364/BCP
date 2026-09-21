@@ -2,6 +2,7 @@ package com.blessing.bcpedge;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.graphics.Typeface;
 import android.view.View;
@@ -11,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -74,10 +76,22 @@ public class MainActivity extends Activity {
 
         setContentView(scroll);
         updates.reconcileAfterLaunch();
+        startEdgeRelay();
         autoConnect();
         heartbeat.scheduleAtFixedRate(() -> {
             try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
         }, 60, 60, TimeUnit.SECONDS);
+    }
+
+    private void startEdgeRelay() {
+        try {
+            Intent relay = new Intent(this, EdgeRelayService.class);
+            ContextCompat.startForegroundService(this, relay);
+            client.recordEvent("EDGE_RELAY_START_REQUESTED", "foreground_activity");
+        } catch (Exception ex) {
+            client.recordEvent("EDGE_RELAY_START_DEFERRED",
+                    ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage());
+        }
     }
 
     private void autoConnect() {
