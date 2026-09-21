@@ -91,14 +91,20 @@ def main() -> int:
         fail("cadence_window_not_24_25")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
-    if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_EMAIL_HANDSHAKE":
+    if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
         fail("chat_pointer_only_contract")
     email = delivery.get("channels", {}).get("email", {})
     if email.get("start_notice_required_before_substantive_work") is not True:
         fail("start_email_before_work_contract")
     if email.get("end_checkpoint_required") is not True:
         fail("end_email_checkpoint_contract")
-    if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT","CHATGPT_POINTER_ONLY","TELEGRAM_WITNESS_OPTIONAL"]:
+    if email.get("end_mail_retry_required") is not True:
+        fail("end_email_retry_contract")
+    if email.get("end_mail_provider_ack_required") is not True:
+        fail("end_email_provider_ack_contract")
+    if email.get("chat_output_before_end_ack_forbidden") is not True:
+        fail("chat_before_end_email_ack_forbidden_contract")
+    if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
         fail("start_work_end_chat_order_contract")
     if pre_human.get("default_rule") != "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE":
         fail("pre_human_action_simulation_contract")
