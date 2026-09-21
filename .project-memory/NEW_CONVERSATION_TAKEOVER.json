@@ -73,5 +73,8 @@
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
   "current_active_tranche": "BCP-R81-START-20260922-0033",
-  "current_delivery_key": "BCP25-20260922-0033-R81"
+  "current_delivery_key": "BCP25-20260922-0033-R81",
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R81-END-20260922-0057",
+  "current_end_message_id": "1a0c6670b9bf7fe5"
 }
