@@ -6,7 +6,7 @@
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
-  "coordinated_server_version": "0.7.15",
+  "coordinated_server_version": "0.7.16",
   "requirements_revision": "2026-09-21-R71",
   "base_distributed_version_code": 212,
   "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
@@ -42,5 +42,5 @@
     "adaptive Wi-Fi/cellular/metered network truth with DATA_SAVER and STORE_AND_FORWARD routing hints",
     "app-private adaptive content cache up to 8 GiB for context/resume snapshots without consuming the whole 64 GB device"
   ],
-  "release_train": "BCP-0.7.15_EDGE-2.2.0-full-node_NEXUS-0.2.6"
+  "release_train": "BCP-0.7.16_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }
