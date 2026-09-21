@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/8",
-  "revision": "2026-09-21-R70",
+  "schema": "bcp.delivery_redundancy_policy/9",
+  "revision": "2026-09-21-R72",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -12,7 +12,8 @@
         "KINSHASA_DAY_DATE_TIME",
         "CHECKPOINT_ID"
       ],
-      "allowed_pointer_example": "Va sur Gmail — lundi 21 septembre 2026, 02:23 Kinshasa — BCP-R59-..."
+      "allowed_pointer_example": "Va sur Gmail — lundi 21 septembre 2026, 02:23 Kinshasa — BCP-R59-...",
+      "no_user_relaunch_dependency": true
     },
     "email": {
       "role": "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY",
@@ -47,7 +48,10 @@
       "label_apply_to": [
         "EMAIL_START_NOTICE",
         "EMAIL_END_FULL_CHECKPOINT"
-      ]
+      ],
+      "end_mail_search_before_send": true,
+      "end_mail_idempotency_key_required": true,
+      "end_mail_readback_required": true
     },
     "telegram": {
       "role": "SECONDARY_WITNESS_ALERT_AND_RECOVERY_NAVIGATION",
@@ -56,16 +60,20 @@
     }
   },
   "cadence": {
-    "work_slice_minutes": "29-30",
+    "work_slice_minutes": "27-30",
     "target_minutes": 30,
     "checkpoint_each_slice": true,
     "mail_each_slice": true,
     "blind_retry_loops": false,
     "start_mail_each_slice": true,
     "end_mail_each_slice": true,
-    "end_watchdog_required_at_start": true,
-    "end_watchdog_offset_minutes": 29,
-    "end_watchdog_behavior": "AT_START_CREATE_ONE_SHOT_WATCHDOG_FOR_MINUTE_29; IF_END_MAIL_ALREADY_ACKED DO_NOTHING; OTHERWISE SEND ACCURATE END CHECKPOINT BY MINUTE 30; NORMAL END MUST DISABLE WATCHDOG AFTER ACK"
+    "preclose_snapshot_offset_minutes": 26,
+    "normal_closeout_offset_minutes": 27,
+    "hard_close_guard_offset_minutes": 28,
+    "absolute_end_deadline_minutes": 30,
+    "two_guard_closeout_required": true,
+    "user_relaunch_must_never_be_required": true,
+    "closeout_behavior": "AT_START_ARM_NORMAL_CLOSEOUT_T+27_AND_HARD_CLOSE_GUARD_T+28; BOTH SEARCH_GMAIL_FIRST; NORMAL_CLOSEOUT_SENDS_END_IF_MISSING; HARD_GUARD_SENDS_IF_STILL_MISSING; END_REQUIRES_PROVIDER_ACK_AND_BCP_LABEL; CHATGPT_POINTER_ONLY_AFTER_ACK"
   },
   "action_message_contract": {
     "one_human_gate_at_a_time": true,
@@ -97,6 +105,8 @@
     "progressive_disclosure_required": true,
     "chatgpt_surface": "NO_OUTPUT_BEFORE_END_MAIL_ACK_THEN_POINTER_ONLY",
     "start_mail_before_substantive_work": true,
-    "end_watchdog_prevents_user_relaunch_dependency": true
+    "end_watchdog_prevents_user_relaunch_dependency": true,
+    "normal_closeout_before_deadline": true,
+    "hard_guard_before_deadline": true
   }
 }
