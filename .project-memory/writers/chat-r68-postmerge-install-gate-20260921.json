@@ -1,0 +1,14 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r68-postmerge-install-gate-20260921",
+  "project_or_mission": "API/BCP R68 post-merge continuity and install gate",
+  "base_main_sha": "546c5d4042660e80a60fa10eff0d760301e48bdc",
+  "created_at": "2026-09-21",
+  "intended_file_scope": [
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    ".project-memory/writers/chat-r68-postmerge-install-gate-20260921.json"
+  ],
+  "expected_ci_gates": [],
+  "mutation_class": "DURABLE_STATE_AND_CONTINUITY_ONLY"
+}
