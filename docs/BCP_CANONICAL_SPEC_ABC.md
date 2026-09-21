@@ -1,7 +1,7 @@
 # BCP — Cahier des charges intégral A+B+C
 
-Status: CANONICAL CANDIDATE R77  
-Revision: 2026-09-21-R77
+Status: CANONICAL CANDIDATE R78 · SOURCE-RECONCILED  
+Revision: 2026-09-21-R78
 
 ## 1. Autorité
 
@@ -58,6 +58,10 @@ Il doit progressivement héberger :
 
 Le PC reste un **worker Windows lourd et réplique vérifiée**, pas le centre obligatoire de toute communication.
 
+### Fast-path P0 issu d’UCMF001
+
+La source UCMF001 impose que la richesse de la mémoire n'introduise pas une latence structurelle. Le chemin interactif P0 doit privilégier : contexte précompilé, lecture locale ciblée, une transaction durable de tour, circuit-breakers réseau, puis synchronisation/compaction asynchrones. Une recherche globale, un embedding, Drive ou un provider distant ne doit pas bloquer la réponse normale quand l'état local suffisant existe.
+
 ## 3. B — approfondissement obligatoire
 
 Les améliorations réalistes retenues incluent :
@@ -110,25 +114,23 @@ Les retours utilisateur deviennent des exigences P0 :
 
 ## 5. Mesure honnête de l'avancement
 
-Le premier macro-audit R77 donne, contre les sources A+B+C actuellement indexées :
-- **couverture fonctionnelle pondérée : 53,7 %** ;
-- **maturité de preuve : 41,45 %**.
+Le macro-audit R78, après lecture directe du handoff APIAX07, du dossier de compréhension et des Postulats UCMF001 V1–V4, donne :
+- **couverture fonctionnelle pondérée : 57,0 %** ;
+- **maturité de preuve : 45,35 %**.
 
-Ces valeurs ne sont **pas** une déclaration de complétude définitive : le ZIP scellé V0.7 n'a pas été rematérialisé pendant R77. Elles constituent un dénominateur plus honnête que la mesure d'un sous-projet ou d'une seule release.
-
-Le prochain audit doit augmenter la complétude de la source A avant de promouvoir un pourcentage en “global”.
+Ces valeurs restent un **score macro de maturité de preuve**, pas un pourcentage marketing du produit final. Le ZIP scellé V0.7 reste garanti par son pointeur SHA/manifest et n'a pas été prétendu relu octet par octet. Les sources A lisibles ont cependant été substantiellement reconstruites et recoupées.
 
 ## 6. Écart critique actuel
 
 Le candidat Android 2.2.0 possède déjà un vrai serveur local, Room, WAL, queue, scheduler, local executor, API, présence NSD/Wi-Fi Direct/BLE, resource governor et boot restore. Mais il reste insuffisant contre A+B+C parce que :
 
-1. la base Room ne contient pas encore la **Universal Chronicle** canonique ;
-2. le transport LAN local reste cleartext POC ;
-3. l'app terrain installée reste 2.1.2 ;
+1. la **Universal Chronicle** est maintenant implémentée dans Room v3 et exposée par l'API locale, mais reste à qualifier sur l'appareil 2.2 réel ;
+2. le transport LAN local reste cleartext POC et doit devenir authentifié + chiffré avant cible finale ;
+3. l'app terrain installée reste 2.1.2 alors que 2.2 full-node est encore candidate ;
 4. Telegram terrain reste dégradé ;
-5. l'admission/supersession mémoire et les source capabilities ne sont pas complètes ;
+5. l'admission/supersession mémoire et le registre de capacités/source ne sont pas complets ;
 6. l'UI serveur ne couvre pas encore tout le cockpit A+B+C ;
-7. Device Owner est seulement une option de recherche, pas une capacité active.
+7. Device Owner reste un tier optionnel à bénéfice/risque mesuré, jamais un prérequis caché.
 
 ## 7. Règle de release
 
