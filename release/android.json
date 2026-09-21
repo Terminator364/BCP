@@ -11,7 +11,7 @@
   "distribution_status": "PRIVATE_STABLE_SIGNING_VERIFIED_READY_FOR_IN_PLACE_UPDATE",
   "note": "B-EDGE 2.1.2 dedicated Edge relay: main exact-head CI green, signed with the pinned Evergreen identity, v2/v3 verified, stable Drive CURRENT replaced in place with byte/hash readback, previous 2.1.0 copy preserved for rollback. Field install/runtime relay verification remains pending.",
   "coordinated_server_version": "0.7.15",
-  "requirements_revision": "2026-09-21-R70",
+  "requirements_revision": "2026-09-21-R71",
   "release_train": "BCP-0.7.15_EDGE-2.1.2-edge-relay_NEXUS-0.2.6",
   "source_commit": "61736e160c65ee47be77f384a9c3369a33c122a3",
   "signature_schemes_verified": [
