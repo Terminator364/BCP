@@ -56,7 +56,7 @@ The durable communication fabric is:
 If ChatGPT UI stalls or the conversation is replaced, `BCPGO BCP` resumes from durable state. The user does not need to send an “eh oh” message to obtain a checkpoint. The dual closeout guards are armed at START: normal closeout before the deadline and a hard backup guard after it; Gmail END is retried until provider acknowledgement before any ChatGPT end output.
 
 Detailed technical recovery runbook:
-`docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md`.
+`docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md`.
 
 Private human recovery copy: `API_BCP/03_DOCUMENTATION/BCP — PLAN DE SECOURS COMMUNICATION & REPRISE R71` in the user's Drive. Do not put its Drive ID or private link into the public repository.
 
