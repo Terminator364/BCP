@@ -426,9 +426,9 @@ def main() -> int:
     comm_protocol = load(".project-memory/COMMUNICATION_PROTOCOL.json")
     comm_state_machine = load(".project-memory/COMMUNICATION_STATE_MACHINE.json")
     takeover = load(".project-memory/NEW_CONVERSATION_TAKEOVER.json")
-    assert cadence_policy["acceptable_window_minutes"] == [26, 30]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [26, 30]
-    assert delivery_policy["cadence"]["work_slice_minutes"] == "30_TOTAL_26_WORK_4_CLOSEOUT"
+    assert cadence_policy["acceptable_window_minutes"] == [23, 25]
+    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [23, 25]
+    assert delivery_policy["cadence"]["work_slice_minutes"] == "25_TOTAL_23_WORK_2_CLOSEOUT"
     assert delivery_policy["cadence"]["target_minutes"] == 25
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
@@ -439,7 +439,7 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["end_mail_retry_required"] is True
     assert delivery_policy["channels"]["email"]["end_mail_provider_ack_required"] is True
     assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
-    assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 26
+    assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 23
     assert delivery_policy["cadence"]["backup_earliest_offset_minutes"] == 28
     assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] is None
     assert delivery_policy["cadence"]["absolute_end_deadline_minutes"] == 25
@@ -464,7 +464,7 @@ def main() -> int:
     assert communication_policy["channels"]["telegram"]["fallback_path"] == "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM"
     assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
     assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
-    assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 26
+    assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 23
     assert communication_policy["checkpoint_protocol"]["backup_earliest_offset_minutes"] == 28
     assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] is None
     assert communication_policy["checkpoint_protocol"]["absolute_end_deadline_minutes"] == 25
@@ -478,14 +478,14 @@ def main() -> int:
     assert "PRIMARY LOW-POWER EDGE/API APPLIANCE" in abc_spec
     assert comm_protocol["schema"] == "bcp.communication_protocol/1"
     assert comm_protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
-    assert comm_protocol["cadence_minutes"] == 30
-    assert comm_protocol["primary_work_budget_minutes"] == 26
+    assert comm_protocol["cadence_minutes"] == 25
+    assert comm_protocol["primary_work_budget_minutes"] == 23
     assert comm_protocol["normal_close_reserve_minutes"] == 4
     assert comm_protocol["backup_earliest_offset_minutes"] == 28
-    assert comm_protocol["hard_guard_offset_minutes"] == 29
+    assert comm_protocol["hard_guard_offset_minutes"] is None
     assert comm_state_machine["schema"] == "bcp.communication_state_machine/1"
-    assert comm_state_machine["useful_work_minutes"] == 26
-    assert comm_state_machine["normal_close_reserve_minutes"] == 4
+    assert comm_state_machine["useful_work_minutes"] == 23
+    assert comm_state_machine["normal_close_reserve_minutes"] == 2
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in comm_state_machine["normal_path"]
     assert takeover["trigger_code"] == "BCPGO BCP"
     assert takeover["communication_contract"]["normal_close_owner"] == "PRIMARY_ASSISTANT"
