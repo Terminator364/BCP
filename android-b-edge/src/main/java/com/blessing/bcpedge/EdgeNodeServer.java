@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -88,7 +90,9 @@ public final class EdgeNodeServer {
                 return;
             }
             String method = p[0].toUpperCase(Locale.ROOT);
-            String path = p[1];
+            URI target = URI.create(p[1]);
+            String path = target.getPath();
+            Map<String,String> query = parseQuery(target.getRawQuery());
 
             Map<String,String> headers = new HashMap<>();
             int headerBytes = request.length();
@@ -142,6 +146,75 @@ public final class EdgeNodeServer {
                 return;
             }
 
+            if ("GET".equals(method) && "/v1/node/projects".equals(path)) {
+                writeJson(out, 200, new JSONObject()
+                        .put("ok", true)
+                        .put("projects", orchestrator.projectRegistry()));
+                return;
+            }
+
+            if ("GET".equals(method) && "/v1/node/context".equals(path)) {
+                String project = query.getOrDefault("project_id", clientApi.getProject());
+                if (!EdgeNodePolicy.isSafeProjectId(project)) {
+                    writeJson(out, 400, error("invalid_project_id"));
+                    return;
+                }
+                writeJson(out, 200, new JSONObject()
+                        .put("ok", true)
+                        .put("project_id", project)
+                        .put("context", orchestrator.cachedContext(project)));
+                return;
+            }
+
+            if ("GET".equals(method) && "/v1/node/memory".equals(path)) {
+                String project = query.getOrDefault("project_id", clientApi.getProject());
+                if (!EdgeNodePolicy.isSafeProjectId(project)) {
+                    writeJson(out, 400, error("invalid_project_id"));
+                    return;
+                }
+                writeJson(out, 200, new JSONObject()
+                        .put("ok", true)
+                        .put("project_id", project)
+                        .put("memory", orchestrator.memorySnapshot(project)));
+                return;
+            }
+
+            if ("GET".equals(method) && "/v1/node/jobs".equals(path)) {
+                String project = query.getOrDefault("project_id", clientApi.getProject());
+                if (!EdgeNodePolicy.isSafeProjectId(project)) {
+                    writeJson(out, 400, error("invalid_project_id"));
+                    return;
+                }
+                writeJson(out, 200, new JSONObject()
+                        .put("ok", true)
+                        .put("project_id", project)
+                        .put("jobs", orchestrator.pendingJobs(project)));
+                return;
+            }
+
+            if ("POST".equals(method) && "/v1/node/resume-intent".equals(path)) {
+                JSONObject body = rawBody.isEmpty() ? new JSONObject() : new JSONObject(rawBody);
+                String project = body.optString("project_id", clientApi.getProject());
+                if (!EdgeNodePolicy.isSafeProjectId(project)) {
+                    writeJson(out, 400, error("invalid_project_id"));
+                    return;
+                }
+                String idem = headers.getOrDefault("idempotency-key", body.optString("idempotency_key", ""));
+                if (!EdgeNodePolicy.isSafeIdempotencyKey(idem)) {
+                    writeJson(out, 400, error("invalid_idempotency_key"));
+                    return;
+                }
+                JSONObject payload = new JSONObject()
+                        .put("source", "PHONE_NODE")
+                        .put("reason", body.optString("reason", "USER_OR_WATCHDOG_RESUME"));
+                JSONObject queued = orchestrator.queueJobWithIdempotency(
+                        project, "MISSION_RESUME", payload, true, 95, "PC_REQUIRED",
+                        new JSONArray(), idem);
+                EdgeWorkScheduler.requestImmediate(context, "PHONE_RESUME_INTENT");
+                writeJson(out, 202, queued);
+                return;
+            }
+
             if ("POST".equals(method) && "/v1/node/enqueue".equals(path)) {
                 JSONObject body = rawBody.isEmpty() ? new JSONObject() : new JSONObject(rawBody);
                 String project = body.optString("project_id", clientApi.getProject());
@@ -179,6 +252,19 @@ public final class EdgeNodeServer {
         } catch (Exception ex) {
             try { writeJson(client.getOutputStream(), 500, error("internal_error")); } catch (Exception ignored) {}
         }
+    }
+
+    private static Map<String,String> parseQuery(String raw) throws Exception {
+        Map<String,String> out = new HashMap<>();
+        if (raw == null || raw.isEmpty()) return out;
+        for (String part : raw.split("&")) {
+            if (part.isEmpty()) continue;
+            int eq = part.indexOf('=');
+            String k = eq < 0 ? part : part.substring(0, eq);
+            String v = eq < 0 ? "" : part.substring(eq + 1);
+            out.put(URLDecoder.decode(k, "UTF-8"), URLDecoder.decode(v, "UTF-8"));
+        }
+        return out;
     }
 
     private static JSONObject error(String value) {
