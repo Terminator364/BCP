@@ -105,6 +105,7 @@
       ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
       ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
       ".project-memory/GIT_WRITER_LEASE_POLICY.json",
+      ".project-memory/ACTIVE_TRANCHE.json",
       ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
       "project_state.json",
       "API_PROJECT_CONTINUITY.md",
@@ -112,7 +113,8 @@
     ],
     "user_reexplanation_required": false,
     "next_action_source": "project_state.next_action",
-    "writer_fence_required_before_mutation": true
+    "writer_fence_required_before_mutation": true,
+    "active_tranche_state_ref": ".project-memory/ACTIVE_TRANCHE.json"
   },
   "anti_false_success": {
     "telegram_sent_requires_provider_message_id_or_success_receipt": true,
