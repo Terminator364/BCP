@@ -26,7 +26,7 @@ def main() -> int:
         if line.strip()
     ]
 
-    assert active["schema"] == "bcp.active_tranche/3"
+    assert active["schema"] == "bcp.active_tranche/4"
     assert active["project"] == "API/BCP"
     assert active["cadence_minutes"] == 30
     assert active["useful_work_minutes"] == 26
@@ -44,6 +44,8 @@ def main() -> int:
     assert guard["user_message_is_not_closeout_trigger"] is True
     assert guard["search_before_send"] is True
     assert guard["delivery_key_required"] is True
+    assert guard["provider_message_id_required"] is True
+    assert guard["gmail_sent_readback_required"] is True
 
     if active["delivery_state"] in {"END_ACKNOWLEDGED", "CLOSED"} or active["status"] == "CLOSED":
         assert active["end_mail_verified"] is True
@@ -68,14 +70,14 @@ def main() -> int:
     assert comm["anti_false_success"]["user_relaunch_must_never_be_delivery_trigger"] is True
     assert comm["channels"]["gmail"]["end_delivery_proof"]["proof"] == "SENT_SEARCH_MATCH_PLUS_PROVIDER_MESSAGE_ID"
 
-    assert protocol["schema"] == "bcp.communication_protocol/1"
+    assert protocol["schema"] == "bcp.communication_protocol/2"
     assert protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert protocol["primary_work_budget_minutes"] == 26
     assert protocol["normal_close_reserve_minutes"] == 4
     assert protocol["backup_earliest_offset_minutes"] == 28
     assert protocol["hard_guard_offset_minutes"] == 29
 
-    assert state_machine["schema"] == "bcp.communication_state_machine/1"
+    assert state_machine["schema"] == "bcp.communication_state_machine/2"
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]
     assert takeover["trigger_code"] == "BCPGO BCP"
 
@@ -94,6 +96,14 @@ def main() -> int:
     ]
     assert len(r73_ends) == 1
     assert r73_ends[0]["gmail_end_message_id"] == "1a0c520e8cc2673f"
+
+    r74_ends = [
+        row for row in ledger_rows
+        if row.get("delivery_key") == "BCP30-20260921-1901-R74"
+        and row.get("event") == "END_ACKNOWLEDGED"
+    ]
+    assert len(r74_ends) == 1
+    assert r74_ends[0]["gmail_end_message_id"] == "1a0c539e52ecf523"
 
     print("BCP_ACTIVE_TRANCHE_DELIVERY_CONTRACT=PASS")
     return 0
