@@ -277,6 +277,7 @@ public final class BcpClient {
                                     .put("LOCAL_CONTEXT_SNAPSHOT")
                                     .put("LOCAL_HEALTH_SNAPSHOT")
                                     .put("LOCAL_QUEUE_SUMMARY")
+                                    .put("LOCAL_CAPABILITY_SNAPSHOT")
                                     .put("LOCAL_MEMORY_COMPACT"))));
 
             receipts.put(observeBuiltinCapability(
