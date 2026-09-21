@@ -1,0 +1,41 @@
+{
+  "schema": "bcp.field_evidence/1",
+  "writer_or_session_id": "chat-r69-phone-server-fullnode-20260921-1554",
+  "project_or_mission": "API/BCP R69 installed 2.1.2 audit and full-node evolution",
+  "base_main_sha": "90e328cf5a87910ad1e0496523ccf73c86ca7512",
+  "created_at": "2026-09-21T15:55:19+01:00",
+  "evidence_class": "MACHINE_READBACK_PLUS_USER_VISIBLE_UI",
+  "installed_phone_release": {
+    "version": "2.1.2-rc1-edge-relay",
+    "visible_state": "CONNECTED",
+    "visible_pc": "MBMPC",
+    "visible_server": "0.7.15",
+    "visible_project": "buildhub",
+    "field_installed": true
+  },
+  "machine_readback": {
+    "source": "API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json",
+    "runtime_updated_at_utc": "2026-09-21T14:55:19+00:00",
+    "server_version": "0.7.15",
+    "paired": true,
+    "edge_relay_active": true,
+    "edge_relay_port": 8876,
+    "edge_relay_capability": "HTTPS_CONNECT_TELEGRAM",
+    "edge_relay_edge_version": "2.1.2-rc1-edge-relay",
+    "telegram_companion_state": "DIRECT_TRANSPORT_OUTAGE",
+    "telegram_companion_mode": "DIRECT_TELEGRAM",
+    "telegram_consecutive_failures": 84
+  },
+  "finding": "2.1.2 is genuinely active and registered, but it is still a relay-centric release and does not yet satisfy the full dedicated Android server-appliance requirement.",
+  "next_target": {
+    "version_code": 220,
+    "version_name": "2.2.0-rc1-full-node-evergreen",
+    "field_install_allowed": false,
+    "required_before_user_action": [
+      "EXACT_HEAD_CI_GREEN",
+      "ANDROID_EMULATOR_LOCAL_API_SERVER_PASS",
+      "SIGNED_WITH_PINNED_EVERGREEN_CERT",
+      "DRIVE_CURRENT_HASH_READBACK"
+    ]
+  }
+}
