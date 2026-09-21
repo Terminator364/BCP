@@ -30,7 +30,10 @@
     "load_pre_human_action_simulation_policy_before_user_action": true,
     "load_delivery_policy_before_substantive_work": true,
     "email_start_notice_before_substantive_work": true,
-    "email_end_checkpoint_before_chat_pointer": true
+    "email_end_checkpoint_before_chat_pointer": true,
+    "email_end_retry_until_provider_ack": true,
+    "chat_output_before_end_ack_forbidden": true,
+    "chat_pointer_only_after_end_ack": true
   },
   "universal": [
     {
