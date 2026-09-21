@@ -1,3 +1,28 @@
+# R77 Fresh Conversation Handoff — 2026-09-21
+
+Continuation code: `BCPGO BCP`.
+
+Mandatory truth for a fresh conversation:
+- canonical product requirements = **A + B + C**;
+- load `.project-memory/ABC_REQUIREMENTS_INDEX.json`, `docs/BCP_CANONICAL_SPEC_ABC_R77.md`, and `docs/BCP_ABC_COVERAGE_MATRIX_R77.md` before product planning;
+- A = sealed/original preconception; B = research-driven realistic expansion; C = accumulated field/user feedback;
+- cadence = **25 minutes total = 23 useful work + 2 closeout**;
+- Gmail START before substantive work; PRIMARY_ASSISTANT owns normal Gmail END; normal closeout does **not** depend on automations;
+- Gmail END requires provider message_id + SENT readback + BCP label before ChatGPT pointer;
+- phone direction = dedicated Android primary low-power Edge/API appliance; PC = Windows/heavy worker, not sole communications center;
+- no micro-beta install: next phone install only after coherent 2.2 full-node vertical slice qualification.
+
+R77 honest baseline from 45 A+B+C requirements:
+- weighted maturity: 57.8%;
+- implemented/candidate-or-better: 86.7%;
+- CI/process-qualified-or-better: 42.2%;
+- fully field-verified at whole-requirement level: 2.2%.
+
+R77 branch: `work/bcp/r77-abc-integral-20260921-2117`.
+The branch adds adaptive phone route management, an app-private communication journal with provider-proof truth boundary, local route/communication tasks, phone API route/communication endpoints, and a stronger server cockpit. No user install is requested yet.
+
+---
+
 # R74 KINLINK-Style Communication State-Machine Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.

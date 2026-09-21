@@ -254,6 +254,9 @@ public final class EdgeRelayService extends Service {
             caps.put("nsd_presence", true);
             caps.put("wifi_direct_presence", true);
             caps.put("ble_presence", true);
+            caps.put("adaptive_route_manager", true);
+            caps.put("communication_journal", true);
+            caps.put("abc_requirements_model", "A_PLUS_B_PLUS_C");
             caps.put("arbitrary_proxy", false);
             caps.put("arbitrary_shell", false);
             caps.put("version", new BcpClient(this).getEdgeVersion());
@@ -266,6 +269,14 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/context".equals(path)) {
             writeJson(out, 200, new BcpClient(this).localContextPack());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/routes".equals(path)) {
+            writeJson(out, 200, EdgeRouteManager.snapshot(this));
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/communications".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).communicationStatus());
             return;
         }
         if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
@@ -304,6 +315,8 @@ public final class EdgeRelayService extends Service {
             out.put("permissions", EdgePermissionManager.status(this));
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
+            out.put("route", EdgeRouteManager.snapshot(this));
+            out.put("communications", client.communicationStatus());
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());

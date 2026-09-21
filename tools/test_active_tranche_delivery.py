@@ -26,12 +26,12 @@ def main() -> int:
         if line.strip()
     ]
 
-    assert active["schema"] == "bcp.active_tranche/3"
+    assert active["schema"] == "bcp.active_tranche/4"
     assert active["project"] == "API/BCP"
-    assert active["cadence_minutes"] == 30
-    assert active["useful_work_minutes"] == 26
-    assert active["normal_close_reserve_minutes"] == 4
-    assert active["delivery_key"].startswith("BCP30-")
+    assert active["cadence_minutes"] == 25
+    assert active["useful_work_minutes"] == 23
+    assert active["normal_close_reserve_minutes"] == 2
+    assert active["delivery_key"].startswith("BCP25-")
     assert active["gmail_start_message_id"]
     assert active["delivery_state"] in {
         "START_ACKNOWLEDGED", "WORKING", "CLOSE_INTENT_PERSISTED",
@@ -44,6 +44,7 @@ def main() -> int:
     assert guard["user_message_is_not_closeout_trigger"] is True
     assert guard["search_before_send"] is True
     assert guard["delivery_key_required"] is True
+    assert guard["normal_closeout_depends_on_automation"] is False
 
     if active["delivery_state"] in {"END_ACKNOWLEDGED", "CLOSED"} or active["status"] == "CLOSED":
         assert active["end_mail_verified"] is True
@@ -57,10 +58,10 @@ def main() -> int:
     assert email["end_mail_provider_ack_required"] is True
     assert email["end_mail_readback_required"] is True
     assert email["delivery_key_required"] is True
-    assert delivery["cadence"]["normal_closeout_offset_minutes"] == 26
-    assert delivery["cadence"]["backup_earliest_offset_minutes"] == 28
-    assert delivery["cadence"]["hard_close_guard_offset_minutes"] == 29
-    assert delivery["cadence"]["absolute_end_deadline_minutes"] == 30
+    assert delivery["cadence"]["normal_closeout_offset_minutes"] == 23
+    assert delivery["cadence"]["backup_earliest_offset_minutes"] == 24
+    assert delivery["cadence"]["hard_close_guard_offset_minutes"] == 25
+    assert delivery["cadence"]["absolute_end_deadline_minutes"] == 25
     assert delivery["close_ownership"]["normal_owner"] == "PRIMARY_ASSISTANT"
 
     assert comm["schema"] == "bcp.communication_survival_policy/4"
@@ -70,10 +71,10 @@ def main() -> int:
 
     assert protocol["schema"] == "bcp.communication_protocol/1"
     assert protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
-    assert protocol["primary_work_budget_minutes"] == 26
-    assert protocol["normal_close_reserve_minutes"] == 4
-    assert protocol["backup_earliest_offset_minutes"] == 28
-    assert protocol["hard_guard_offset_minutes"] == 29
+    assert protocol["primary_work_budget_minutes"] == 23
+    assert protocol["normal_close_reserve_minutes"] == 2
+    assert protocol["backup_earliest_offset_minutes"] == 24
+    assert protocol["hard_guard_offset_minutes"] == 25
 
     assert state_machine["schema"] == "bcp.communication_state_machine/1"
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]

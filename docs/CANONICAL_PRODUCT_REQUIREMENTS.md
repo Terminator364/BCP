@@ -1,10 +1,27 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R74
+Revision: 2026-09-21-R77
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
+
+## P0 — Cahier intégral A+B+C
+
+The canonical product specification is the composition **A + B + C**, not the latest narrow implementation slice.
+
+- **A** = sealed/original preconception, original intent, promised functions and preserved architecture.
+- **B** = research-driven realistic expansion: architecture, best practices, technical possibilities, counter-audit and improvements beyond A.
+- **C** = accumulated field feedback, user work preferences, corrections, versions and later requirements.
+
+Canonical machine/index surfaces:
+- `.project-memory/ABC_REQUIREMENTS_INDEX.json`
+- `docs/BCP_CANONICAL_SPEC_ABC_R77.md`
+- `docs/BCP_ABC_COVERAGE_MATRIX_R77.md`
+
+Every product PR SHOULD reference the affected Axx/Bxx/Cxx requirement IDs. Every user-facing release MUST publish coverage against this combined model and MUST NOT present a narrow micro-patch as representative of the full specification.
+
+The R77 baseline is deliberately conservative: 45 catalogued requirements, 57.8% weighted maturity, 86.7% implemented/candidate-or-better, 42.2% CI/process-qualified-or-better, and 2.2% fully field-verified at whole-requirement level. Documentation alone cannot raise these values.
 
 API/BCP is the personal digital control and continuity plane for the user's own devices, accounts, repositories, local network, builds and controlled test environments.
 
@@ -2035,3 +2052,22 @@ Mandatory tranche model:
 The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be used as proof that a 30-minute tranche performed 30 minutes of model reasoning. Tranche proof consists of durable engineering evidence: commits, CI runs, provider acknowledgements, Drive readbacks, receipts, and field telemetry.
 
 Fresh-conversation code `BCPGO BCP` MUST load `.project-memory/NEW_CONVERSATION_TAKEOVER.json` and reconcile any open delivery state before starting new work.
+
+
+## P0 — 25-minute primary-owned communication cadence — R77
+
+Interactive project work uses a 25-minute wall-clock target:
+- 23 minutes targeted useful work;
+- final 2 minutes reserved for closeout;
+- Gmail START must be provider-acknowledged before substantive work;
+- PRIMARY_ASSISTANT owns normal closeout and normal closeout MUST NOT depend on scheduled automations;
+- at minute 23, stop optional product mutations, persist CLOSE_INTENT, search Gmail by delivery_key, send exactly one complete END if absent, verify provider message_id + SENT readback, label BCP, persist CLOSED;
+- only then may ChatGPT emit the short Gmail pointer;
+- scheduled backup guards are disabled by default and may be explicitly armed only as redundant backup;
+- the ChatGPT UI “thinking duration” indicator is not authoritative work evidence.
+
+Canonical communication files:
+- `.project-memory/COMMUNICATION_PROTOCOL.json`
+- `.project-memory/COMMUNICATION_STATE_MACHINE.json`
+- `.project-memory/ACTIVE_TRANCHE.json`
+- `.project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl`

@@ -8,7 +8,7 @@
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
   "coordinated_edge_version": "2.1.2-rc1-edge-relay-evergreen",
-  "requirements_revision": "2026-09-21-R74",
+  "requirements_revision": "2026-09-21-R77",
   "release_train": "BCP-0.7.16_EDGE-2.1.2-edge-relay_NEXUS-0.2.6",
   "notes": "BCP 0.7.16 preserves the 0.7.15 B-EDGE relay contract and adds durable external readback of the actual Telegram transport route (direct vs B-EDGE fallback) for communication-survival diagnostics."
 }

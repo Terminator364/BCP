@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R74_COMMUNICATION_AND_PHONE_LOCAL_EXECUTOR_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R74 ports the stronger KINLINK communication delivery model into BCP and adds a safe allowlisted Android local task executor so deterministic EDGE jobs can complete on the dedicated phone without waiting for the PC. CURRENT contract run #1190 is PASS on PR #144 exact head. Fresh Drive field telemetry proves BCP 0.7.16 is UP_TO_DATE on MBMPC; Telegram direct transport is still in DIRECT_TRANSPORT_OUTAGE and edge relay is currently inactive/unregistered in the installed 2.1.2 field app, confirming the need for the coherent 2.2.0 full-node release.",
-  "next_action": "Finish PR #144 exact-head qualification. If green, merge through the writer fence and verify post-merge. Continue 2.2.0 full-node as one coherent candidate: prove local executor behavior in Android CI/emulator, relay registration and Telegram route readback, then sign/publish Drive CURRENT only after all release gates. Do not ask for another phone install before that coherent gate.",
+  "status": "R77_ABC_INTEGRAL_PHONE_FULLNODE_CANDIDATE_CI_PENDING",
+  "last_completed_atomic_action": "R77 reconstructed the product contract as A+B+C, created a 45-requirement proof-scored index and coverage matrix, restored 25-minute 23+2 primary-owned Gmail closeout without normal automation dependency, and extended the 2.2 phone full-node candidate with adaptive route truth plus an app-private communication journal and local API/status surfaces.",
+  "next_action": "Run exact-head R77 qualification. Repair any failing validator/Android simulation automatically. If green, reread main and merge through the writer fence. Continue the coherent 2.2 full-node vertical slice against A+B+C; do not ask for another phone install until the release gate is complete.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1931,11 +1931,11 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R74",
-    "revision": "2026-09-21-R74",
+    "revision": "2026-09-21-R77",
     "cadence_minutes": 30,
-    "useful_work_target_minutes": 26,
+    "useful_work_target_minutes": 23,
     "useful_work_minimum_minutes": 20,
-    "normal_close_reserve_minutes": 4,
+    "normal_close_reserve_minutes": 2,
     "primary_close_owner": "PRIMARY_ASSISTANT",
     "backup_close_owner": "SHADOW_BACKUP",
     "hard_guard_owner": "HARD_GUARD",
@@ -1945,7 +1945,10 @@
     "end_provider_ack_and_sent_readback_required": true,
     "scheduler_completion_is_delivery_proof": false,
     "chatgpt_thinking_indicator_is_work_proof": false,
-    "chatgpt_after_mail": "POINTER_ONLY_AFTER_END_ACK"
+    "chatgpt_after_mail": "POINTER_ONLY_AFTER_END_ACK",
+    "target_minutes": 25,
+    "work_slice_minutes": "23-25",
+    "normal_closeout_depends_on_automation": false
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2562,5 +2565,19 @@
     "edge_only_capable": true,
     "current_release_published": false,
     "candidate_version": "2.2.0-full-node-evergreen"
+  },
+  "r77_abc": {
+    "status": "CANONICAL_CANDIDATE_CI_PENDING",
+    "requirements_model": "A_PLUS_B_PLUS_C",
+    "requirements_index": ".project-memory/ABC_REQUIREMENTS_INDEX.json",
+    "canonical_spec": "docs/BCP_CANONICAL_SPEC_ABC_R77.md",
+    "coverage_matrix": "docs/BCP_ABC_COVERAGE_MATRIX_R77.md",
+    "requirement_count": 45,
+    "weighted_maturity_percent": 57.8,
+    "implemented_candidate_or_better_percent": 86.7,
+    "qualified_ci_process_or_better_percent": 42.2,
+    "whole_requirement_field_verified_percent": 2.2,
+    "next_phone_release": "2.2.0-full-node-evergreen",
+    "no_micro_beta_install": true
   }
 }
