@@ -2,6 +2,15 @@
 
 Canonical continuation code: `BCPGO BCP`.
 
+## R71 merged checkpoint
+
+- PR #138 merged to `main` at `ed67963c97130078b1442c8b369fbe6fb41f19a2`.
+- All 12 critical qualification workflows passed on exact pre-merge head `d00deaff968bb10df7d87c0a959d03ed4d3faf43`.
+- Main readback confirms BCP Windows target **0.7.16**, Telegram companion **2026.09.21-comms-survival-v22**, requirements revision R71, communication survival policy, 30-minute tranche policy and global qualification trigger.
+- Field convergence is now the gate: verify MBMPC 0.7.16 + Telegram V22 runtime telemetry and actual transport route.
+- Installed phone remains B-EDGE 2.1.2 until the coherent 2.2.0 full-node APK is signed, published to Drive CURRENT and exact-hash read back. Do not ask for another phone install before that gate closes.
+
+
 A fresh conversation MUST load `.project-memory/COMMUNICATION_SURVIVAL_POLICY.json` before resuming work. The user MUST NOT be asked to reconstruct communication rules, the 30-minute cadence, phone-primary architecture, or current field state.
 
 ## R71 communication survival / cross-conversation recovery
