@@ -68,6 +68,7 @@ jobs:
           Invoke-SimulatedRetry 202 0 "NEXUS_FRESH_DEVICE_FLOW_STARTED"
           Invoke-SimulatedRetry 500 20 "NEXUS_RETRY_REQUEST_FAILED"
           Write-Host "R58_EXACT_NEXUS_HELPER_SIMULATION=PASS"
+          exit 0
 
       - name: PowerShell parse
         shell: pwsh
