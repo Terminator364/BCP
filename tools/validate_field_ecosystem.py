@@ -45,6 +45,7 @@ def main() -> int:
     edge_presence = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgePresenceAdvertiser.java")
     edge_boot = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeBootReceiver.java")
     edge_main = read("android-b-edge/src/main/java/com/blessing/bcpedge/MainActivity.java")
+    edge_local_executor = read("android-b-edge/src/main/java/com/blessing/bcpedge/EdgeLocalTaskEngine.java")
     android_candidate = load("release/android_candidate.json")
     rdc = read("docs/RDC_NETWORK_AND_DATA_SAVER_POLICY.md")
 
@@ -138,6 +139,14 @@ def main() -> int:
     require(edge_presence, "NsdManager", "WifiP2pManager", "BluetoothLeAdvertiser", "ADVERTISE_MODE_LOW_POWER")
     require(edge_boot, "BOOT_OR_PACKAGE_REPLACED", "startForegroundService")
     require(edge_main, "BCP Edge Server", "AUTORISATIONS SERVEUR", "ACTIVER / RENFORCER LE MODE SERVEUR 24/7")
+    require(
+        edge_local_executor,
+        "LOCAL_CONTEXT_SNAPSHOT", "LOCAL_HEALTH_SNAPSHOT",
+        "LOCAL_QUEUE_SUMMARY", "LOCAL_MEMORY_COMPACT",
+        "B_EDGE_LOCAL_TASK_ENGINE",
+    )
+    assert "ProcessBuilder" not in edge_local_executor
+    assert "Runtime.getRuntime" not in edge_local_executor
     assert android_candidate["version_code"] > 210
     assert android_candidate["publication_allowed"] is False
     assert android_candidate["distribution_status"] == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
