@@ -1,0 +1,156 @@
+{
+  "schema": "bcp.abc_coverage/1",
+  "revision": "2026-09-21-R77",
+  "status": "INITIAL_WEIGHTED_MACRO_AUDIT",
+  "warning": "This is an initial macro-level audit against currently indexed A+B+C sources. It is not a claim that every byte of the sealed V0.7 package was reread in R77. Percentages must be recomputed as the source registry is expanded.",
+  "scoring": {
+    "functional_score_definition": "weighted fraction of required capability materially implemented in current code/design",
+    "evidence_score_definition": "weighted maturity of deterministic CI/device/field proof; documentation alone scores low",
+    "statuses": [
+      "NOT_IMPLEMENTED",
+      "DESIGN_ONLY",
+      "PARTIAL",
+      "IMPLEMENTED_UNPROVEN",
+      "CI_PROVEN",
+      "DEVICE_PROVEN",
+      "FIELD_VERIFIED"
+    ]
+  },
+  "rows": [
+    {
+      "id": "DURABLE_CONTINUITY_BCPGO",
+      "weight": 5,
+      "functional": 0.8,
+      "evidence": 0.75
+    },
+    {
+      "id": "COMMUNICATION_PROVIDER_PROOF",
+      "weight": 6,
+      "functional": 0.65,
+      "evidence": 0.45
+    },
+    {
+      "id": "PHONE_LOCAL_API_SERVER",
+      "weight": 7,
+      "functional": 0.7,
+      "evidence": 0.65
+    },
+    {
+      "id": "PHONE_DURABLE_DATA_FABRIC",
+      "weight": 7,
+      "functional": 0.55,
+      "evidence": 0.45
+    },
+    {
+      "id": "PHONE_SCHEDULER_DAG",
+      "weight": 5,
+      "functional": 0.6,
+      "evidence": 0.5
+    },
+    {
+      "id": "PHONE_LOCAL_EXECUTOR",
+      "weight": 4,
+      "functional": 0.55,
+      "evidence": 0.55
+    },
+    {
+      "id": "MULTI_TRANSPORT_DISCOVERY",
+      "weight": 5,
+      "functional": 0.6,
+      "evidence": 0.45
+    },
+    {
+      "id": "ENCRYPTED_AUTHENTICATED_LAN",
+      "weight": 6,
+      "functional": 0.25,
+      "evidence": 0.15
+    },
+    {
+      "id": "TELEGRAM_COCKPIT_AND_RELAY",
+      "weight": 4,
+      "functional": 0.35,
+      "evidence": 0.2
+    },
+    {
+      "id": "DEDICATED_APPLIANCE_PERMISSIONS",
+      "weight": 4,
+      "functional": 0.5,
+      "evidence": 0.35
+    },
+    {
+      "id": "OFFLINE_STORE_FORWARD",
+      "weight": 5,
+      "functional": 0.55,
+      "evidence": 0.3
+    },
+    {
+      "id": "RESOURCE_GOVERNOR",
+      "weight": 4,
+      "functional": 0.65,
+      "evidence": 0.5
+    },
+    {
+      "id": "PC_HEAVY_WORKER_FENCING",
+      "weight": 5,
+      "functional": 0.75,
+      "evidence": 0.75
+    },
+    {
+      "id": "ZERO_COST_MODEL_BROKER",
+      "weight": 4,
+      "functional": 0.35,
+      "evidence": 0.15
+    },
+    {
+      "id": "UCMF_UNIVERSAL_EVENT_LEDGER",
+      "weight": 6,
+      "functional": 0.25,
+      "evidence": 0.1
+    },
+    {
+      "id": "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
+      "weight": 5,
+      "functional": 0.35,
+      "evidence": 0.15
+    },
+    {
+      "id": "SOURCE_CAPABILITY_ADAPTERS",
+      "weight": 4,
+      "functional": 0.25,
+      "evidence": 0.1
+    },
+    {
+      "id": "PHONE_SERVER_FIRST_UI",
+      "weight": 4,
+      "functional": 0.55,
+      "evidence": 0.35
+    },
+    {
+      "id": "COORDINATED_RELEASE_UPDATE_ROLLBACK",
+      "weight": 5,
+      "functional": 0.75,
+      "evidence": 0.7
+    },
+    {
+      "id": "CRASH_RECOVERY_FAILURE_MATRIX",
+      "weight": 5,
+      "functional": 0.65,
+      "evidence": 0.55
+    }
+  ],
+  "totals": {
+    "weight": 100,
+    "functional_percent": 53.7,
+    "evidence_maturity_percent": 41.45
+  },
+  "top_gaps": [
+    "UNIVERSAL_EVENT_LEDGER_AND_PROVENANCE_NOT_YET_PHONE_CANONICAL",
+    "LAN_TRANSPORT_STILL_CLEAR_TEXT_POC",
+    "INSTALLED_PHONE_2_1_2_NOT_FULL_NODE_2_2",
+    "TELEGRAM_DIRECT_FIELD_OUTAGE_AND_EDGE_RELAY_NOT_FIELD_REGISTERED",
+    "MEMORY_ADMISSION_SUPERSESSION_AND_SOURCE_CAPABILITY_MATRIX_INCOMPLETE",
+    "OPTIONAL_DEDICATED_DEVICE_OWNER_TIER_NOT_IMPLEMENTED_OR_FIELD_GATED",
+    "FULL_A_SOURCE_PACKAGE_BYTES_NOT_REMATERIALIZED_IN_R77"
+  ],
+  "release_rule": "No user-facing milestone may be represented as percentage-complete against A+B+C unless this matrix and source completeness are refreshed on the exact candidate head."
+}
