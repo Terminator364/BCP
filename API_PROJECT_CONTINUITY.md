@@ -1,8 +1,8 @@
-# R69 Fresh Conversation Handoff — 2026-09-21
+# R70 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
 
-A fresh conversation MUST load durable state first, send the **BCP-labeled Gmail START**, preserve the ~25-minute tranche contract, and never ask the user to restate the dedicated-phone architecture.
+A fresh conversation MUST load durable state first, send the **BCP-labeled Gmail START**, preserve the ~30-minute tranche contract, and never ask the user to restate the dedicated-phone architecture.
 
 ## Field truth recovered from the installed phone
 
@@ -35,7 +35,7 @@ Current R69 candidate branch:
 
 Candidate identity:
 - versionCode: **220**;
-- versionName: **2.2.0-rc1-full-node-evergreen**;
+- versionName: **2.2.0-full-node-evergreen**;
 - applicationId remains `com.blessing.bcpedge.evergreen`;
 - in-place update only; never uninstall merely to upgrade.
 
@@ -46,7 +46,7 @@ Do not expose 2.2.0 to the user until exact-head CI/build/emulator qualification
 ## Communication/continuity contract
 
 1. Every BCP tranche: Gmail START with label **BCP** before substantive work.
-2. Target ~25 minutes; watchdog is fail-safe, not a substitute for normal closeout.
+2. Target ~30 minutes; watchdog is fail-safe, not a substitute for normal closeout.
 3. Gmail END contains the complete checkpoint and must have provider send acknowledgement.
 4. ChatGPT emits no end message before END acknowledgement.
 5. After END acknowledgement, ChatGPT is pointer-only.
@@ -66,7 +66,7 @@ On a fresh conversation, this code MUST recover durable state first and preserve
 
 1. Apply Gmail label **BCP** to BCP START/END mail.
 2. Send Gmail START before substantive work.
-3. Work target: approximately 25 minutes.
+3. Work target: approximately 30 minutes.
 4. Send the full Gmail END checkpoint and require provider send acknowledgement.
 5. Before END acknowledgement, ChatGPT emits no end message.
 6. After END acknowledgement, ChatGPT is pointer-only: Gmail + Kinshasa day/date/time + checkpoint id.
@@ -132,7 +132,7 @@ Current candidate:
 
 Normal recovery:
 1. Gmail START before substantive work.
-2. Target ~25 minutes.
+2. Target ~30 minutes.
 3. Finish/read exact-head PR #133 CI; auto-fix simulation failures without user retry.
 4. Merge only through the single-writer fence.
 5. Field-promote server/phone/Telegram only after exact version/hash/signing/readback gates.
@@ -196,11 +196,11 @@ Canonical continuation code for a new conversation:
 `BCPGO BCP`
 
 On a fresh conversation, this code means:
-- load `project_state.json`, this handoff, the canonical requirements, delivery policy, 25-minute cadence policy, pre-human action simulation policy, writer-fence policy and CURRENT manifests;
+- load `project_state.json`, this handoff, the canonical requirements, delivery policy, 30-minute cadence policy, pre-human action simulation policy, writer-fence policy and CURRENT manifests;
 - do not reconstruct the project from chat history;
 - resume from the next uncommitted action only;
 - immediately send a short Gmail **START** notice before substantive project work; at tranche end send the full Gmail **END** checkpoint; only after the END receipt is confirmed may ChatGPT answer, and then it is pointer-only;
-- normal useful-work tranche target is approximately 25 minutes (practical 24–25 minute window unless a real gate ends it earlier);
+- normal useful-work tranche target is approximately 30 minutes (practical 29–30 minute window unless a real gate ends it earlier);
 - never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
@@ -216,9 +216,9 @@ Fresh field telemetry after the PC was powered on proves BCP 0.7.13 is alive and
 
 R60 post-merge qualification is fully green. The next real recovery boundary for remote Telegram is the already-qualified Nexus path. R61 companion V19 adds explicit `DIRECT_TRANSPORT_OUTAGE` state plus durable outage/recovery receipts. After R61 exact-head qualification and merge, exactly one fresh Nexus/Cloudflare device authorization is the next legitimate human gate; after authorization require provider-authenticated readback before Telegram webhook/Nexus ownership is declared restored.
 
-### 25-minute END watchdog — R61
+### 30-minute END watchdog — R61
 
-At each Gmail START, arm a one-shot assistant watchdog for +25 minutes. The watchdog must check whether this tranche's END Gmail already has a provider send acknowledgement. If yes, it does nothing. If no, it sends an accurate END checkpoint from the latest durable state and only then may a ChatGPT pointer appear. A normal successful END disables the watchdog. This removes dependence on the user sending “eh oh” or another relaunch just to close a tranche.
+At each Gmail START, arm a one-shot assistant watchdog for +30 minutes. The watchdog must check whether this tranche's END Gmail already has a provider send acknowledgement. If yes, it does nothing. If no, it sends an accurate END checkpoint from the latest durable state and only then may a ChatGPT pointer appear. A normal successful END disables the watchdog. This removes dependence on the user sending “eh oh” or another relaunch just to close a tranche.
 
 ### START/END Gmail handshake — R60
 For every user-invoked continuation/relaunch/message that starts project work:
@@ -621,19 +621,25 @@ Resolution order:
 
 Aliases do not fork project history. If an alias and `BCPGO <project>` resolve to different durable authorities, enter conflict hold rather than guessing.
 
-Current/future projects inherit the 24–25 minute useful-work checkpoint cadence, targeting 25 minutes, by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
+Current/future projects inherit the 29–30 minute useful-work checkpoint cadence, targeting 30 minutes, by default when this context is available. Past chat transcripts are not rewritten; recovery must use durable project state rather than asking the user to reconstruct them.
 
 
 ### Email-first recovery invariant
 
 On every `BCPGO` recovery, before any detailed ChatGPT checkpoint is shown:
 - load `.project-memory/DELIVERY_REDUNDANCY_POLICY.json`;
-- perform the useful-work tranche using the active 24–25 minute cadence, targeting 25 minutes, unless a real gate ends it earlier;
+- perform the useful-work tranche using the active 29–30 minute cadence, targeting 30 minutes, unless a real gate ends it earlier;
 - send the complete human checkpoint by Gmail first when Gmail is available;
 - after successful email delivery, the ChatGPT app response MUST be pointer-only and contain only: `MAIL_SENT`, Kinshasa date/time, and checkpoint ID;
 - do not duplicate the detailed checkpoint body in ChatGPT after the email has succeeded;
 - if email delivery fails, state the delivery hold truthfully and include only the minimum recovery instruction in ChatGPT.
 
+
+### No-micro-beta field rule — R70
+
+For the dedicated B-EDGE phone, do not ask the user to install another tiny delta merely because one component changed. The next field APK is admitted only as a coherent vertical slice that includes the full-node runtime, 24/7 lifecycle, local authenticated API, durable queue/memory, transport presence, permission onboarding, user-facing server dashboard, in-place update continuity and representative Android emulator checks. If any of those gates fail, fix and requalify in CI before another user install.
+
+The old phone is a first-class BCP node. The Windows PC remains an important Windows/heavy-compute executor, but it must not be the sole communications center or the only place where durable orchestration state survives.
 
 ### Pre-human action simulation invariant
 
