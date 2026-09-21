@@ -1,4 +1,4 @@
-name: BCP R52 Nexus One-Shot Qualification
+name: BCP Nexus One-Shot Human-Action Qualification
 
 on:
   pull_request:
