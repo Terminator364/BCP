@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R81_ABC_PHONE_GOVERNANCE_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R81 restored the 25-minute foreground-owned communication contract (23 min useful work + 2 min primary close, no normal automation dependency) and advanced the A+B+C phone full-node with Room v5 capability registry plus append-only memory admission/provenance/supersession ledger. New authenticated phone APIs and server-cockpit readbacks are implemented; exact-head CI/device migration proof is pending.",
-  "next_action": "Finish exact-head R81 qualification. Fix any compile/Room/API/emulator regression on the candidate branch without asking the user to install. If all required checks pass, reread main under the writer fence, reconcile if moved, merge serialized, verify post-merge. Do not publish/install B-EDGE 2.2 until coherent full-node release gates remain satisfied.",
+  "status": "R81_CLOSED_PR150_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "R81 completed a foreground-owned 25-minute tranche with Gmail START/END provider proof, advanced A+B+C phone governance (Room v5 capability registry + append-only memory admission/provenance/supersession), and opened PR #150. Exact-head CI is not yet fully closed; no B-EDGE 2.2 installation is authorized.",
+  "next_action": "On the next BCPGO BCP tranche, reconcile the CLOSED R81 delivery by exact key, read final PR #150 CI, auto-fix any remaining emulator/field regression, reread main under the writer fence, merge only if exact-head required gates are green, then continue A+B+C with authenticated encrypted LAN as the highest blocking phone full-node gap.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2720,7 +2720,8 @@
     "normal_close_owner": "PRIMARY_ASSISTANT",
     "normal_close_automation_dependency": false,
     "start_message_id": "1a0c650734064dba",
-    "end_message_id": null,
-    "end_verified": false
+    "end_message_id": "1a0c6670b9bf7fe5",
+    "end_verified": true,
+    "closed_at_kinshasa": "2026-09-22T00:57:17+01:00"
   }
 }
