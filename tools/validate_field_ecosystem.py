@@ -465,7 +465,7 @@ def main() -> int:
     assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
     assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
     assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 23
-    assert communication_policy["checkpoint_protocol"]["backup_earliest_offset_minutes"] == 28
+    assert communication_policy["checkpoint_protocol"]["backup_earliest_offset_minutes"] is None
     assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] is None
     assert communication_policy["checkpoint_protocol"]["absolute_end_deadline_minutes"] == 25
     assert communication_policy["anti_false_success"]["duplicate_end_prevention"] in {"SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND", "SEARCH_BY_DELIVERY_KEY_OR_CHECKPOINT_ID_BEFORE_SEND"}
@@ -476,7 +476,7 @@ def main() -> int:
     assert 0 < abc["scoring"]["overall_percent"] < 100
     assert "A+B+C" in abc_spec
     assert "PRIMARY LOW-POWER EDGE/API APPLIANCE" in abc_spec
-    assert comm_protocol["schema"] == "bcp.communication_protocol/1"
+    assert comm_protocol["schema"] == "bcp.communication_protocol/2"
     assert comm_protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert comm_protocol["cadence_minutes"] == 25
     assert comm_protocol["primary_work_budget_minutes"] == 23
