@@ -293,6 +293,18 @@ public final class EdgeRelayService extends Service {
             writeJson(out, receipt.optBoolean("ok", false) ? 202 : 200, receipt);
             return;
         }
+        if ("POST".equals(method) && "/v1/node/mission-steps".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).upsertMissionStep(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/mission-steps/state".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).updateMissionStepState(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 404, receipt);
+            return;
+        }
         if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
             JSONObject result = new BcpClient(this).syncOrchestrationState();
             result.put("ok", true);
