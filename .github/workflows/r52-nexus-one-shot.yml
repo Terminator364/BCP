@@ -7,6 +7,8 @@ on:
       - "windows/NEXUS_AUTH_RETRY_CURRENT.cmd"
       - ".project-memory/DELIVERY_REDUNDANCY_POLICY.json"
       - "tools/test_nexus_auth_retry_helper.py"
+      - "tools/test_nexus_retry_runtime.py"
+      - "windows/bcp_server.py"
       - ".github/workflows/r52-nexus-one-shot.yml"
   push:
     branches: [main]
@@ -33,6 +35,9 @@ jobs:
       - name: Static helper contract
         shell: pwsh
         run: python tools/test_nexus_auth_retry_helper.py
+      - name: Runtime simulation of explicit retry path
+        shell: pwsh
+        run: python tools/test_nexus_retry_runtime.py
       - name: PowerShell parse
         shell: pwsh
         run: |
