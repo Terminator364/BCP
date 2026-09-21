@@ -265,8 +265,9 @@ public final class BcpClient {
                     "LOCAL_API_SERVER", "B-EDGE", "PHONE_LOCAL",
                     "AVAILABLE", "LOCAL_PROBE", "127.0.0.1:" + EdgeRelayPolicy.RELAY_PORT,
                     new JSONObject().put("port", EdgeRelayPolicy.RELAY_PORT)
-                            .put("server_mode_enabled", true)
-                            .put("transport", net.optString("transport", "UNKNOWN"))));
+                            .put("server_mode_enabled", EdgePermissionManager.isServerModeEnabled(context))
+                            .put("transport", net.optString("transport", "UNKNOWN"))
+                            .put("network_state", net.optString("state", "UNKNOWN"))));
 
             receipts.put(observeBuiltinCapability(
                     "LOCAL_ALLOWLISTED_EXECUTOR", "B-EDGE", "PHONE_LOCAL",
@@ -294,7 +295,7 @@ public final class BcpClient {
 
             receipts.put(observeBuiltinCapability(
                     "TELEGRAM_CONNECT_RELAY", "api.telegram.org", "PHONE_EGRESS",
-                    net.optBoolean("connected", false) ? "AVAILABLE" : "DEGRADED",
+                    net.optBoolean("validated", false) ? "AVAILABLE" : "DEGRADED",
                     "LOCAL_PROBE", "api.telegram.org:443",
                     new JSONObject().put("tls_end_to_end", true)
                             .put("proxy_scope", "api.telegram.org:443")
