@@ -110,6 +110,10 @@ def main() -> int:
         fail("active_tranche_final_reply_gate")
     if active_tranche.get("communication_guard", {}).get("user_message_is_not_closeout_trigger") is not True:
         fail("active_tranche_user_message_trigger_contract")
+    if active_tranche.get("communication_guard", {}).get("provider_message_id_required") is not True:
+        fail("active_tranche_provider_message_id_contract")
+    if active_tranche.get("communication_guard", {}).get("gmail_sent_readback_required") is not True:
+        fail("active_tranche_gmail_readback_contract")
     email = delivery.get("channels", {}).get("email", {})
     if email.get("start_notice_required_before_substantive_work") is not True:
         fail("start_email_before_work_contract")
@@ -164,7 +168,7 @@ def main() -> int:
         fail("foreground_end_send_primary_contract")
     if email.get("delivery_key_required") is not True:
         fail("email_delivery_key_contract")
-    if comm_protocol.get("schema") != "bcp.communication_protocol/1":
+    if comm_protocol.get("schema") != "bcp.communication_protocol/2":
         fail("communication_protocol_schema")
     if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("communication_primary_owner")
@@ -174,12 +178,14 @@ def main() -> int:
         fail("communication_close_reserve")
     if comm_protocol.get("backup_earliest_offset_minutes") != 28 or comm_protocol.get("hard_guard_offset_minutes") != 29:
         fail("communication_backup_offsets")
-    if comm_state_machine.get("schema") != "bcp.communication_state_machine/1":
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/2":
         fail("communication_state_machine_schema")
     if comm_state_machine.get("useful_work_minutes") != 26 or comm_state_machine.get("normal_close_reserve_minutes") != 4:
         fail("communication_state_machine_cadence")
     if "END_SEND_PENDING->END_ACKNOWLEDGED" not in (comm_state_machine.get("normal_path") or []):
         fail("communication_state_machine_end_ack")
+    if "OPEN_DELIVERY_FAILURE" not in (comm_state_machine.get("delivery_states") or []):
+        fail("communication_state_machine_open_delivery_failure")
     if takeover.get("trigger_code") != "BCPGO BCP":
         fail("new_conversation_takeover_code")
     if takeover.get("communication_contract", {}).get("normal_close_owner") != "PRIMARY_ASSISTANT":
