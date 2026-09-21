@@ -1,3 +1,30 @@
+# R81 continuity head — 2026-09-22
+
+Canonical code: `BCPGO BCP`.
+
+Communication invariant:
+- total target 25 minutes: ~23 minutes substantive foreground work + ~2 minutes close reserve;
+- PRIMARY_ASSISTANT owns normal START -> WORK -> CLOSE_INTENT -> Gmail END -> provider ACK -> CLOSED;
+- scheduled automation is emergency-only after a proven interrupted/missed primary close and MUST NOT replace the useful-work window;
+- Gmail provider message ID + SENT readback, not scheduler status, is delivery proof;
+- after END ACK, ChatGPT is pointer-only.
+
+Product invariant:
+- use the full **A+B+C** specification;
+- do not ship micro-betas;
+- the dedicated Android phone is a first-class full-node/API server;
+- R81 candidate adds a Room-v5 phone-resident capability/source registry with authenticated local API, local context integration and server-first UI;
+- B-EDGE 2.2 remains unpublished/field-unverified until exact-head qualification and coherent release gates pass.
+
+Current next action:
+1. qualify exact R81 head;
+2. auto-fix failures;
+3. re-read main and reconcile if moved;
+4. merge only through writer fence;
+5. continue the next highest A+B+C gap without asking for a new phone install prematurely.
+
+---
+
 # R79 A+B+C / UCMF V9 / 25-minute automatic communication handoff — 2026-09-21
 
 Canonical continuation: `BCPGO BCP`. UCMF scoped continuation: `UCMF001` or `BCPGO UCMF001`.
