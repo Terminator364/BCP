@@ -199,6 +199,7 @@ jobs:
           assert obj["ok"] is True
           assert obj["local_api"] is True
           assert obj["durable_queue"] is True
+          assert obj["content_addressed_private_cache"] is True
           assert obj["store_and_forward"] is True
           assert obj["telegram_https_connect_relay"] is True
           assert obj["arbitrary_proxy"] is False
