@@ -9,5 +9,5 @@
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
   "notes": "Telegram V21 keeps R62 liveness notices and adds direct-network-error failover through a fresh authenticated B-EDGE api.telegram.org:443 TLS tunnel without copying the bot token to the phone.",
-  "requirements_revision": "2026-09-21-R64"
+  "requirements_revision": "2026-09-21-R67"
 }
