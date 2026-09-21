@@ -1,3 +1,46 @@
+# R77 A+B+C Integral Handoff — 2026-09-21
+
+Continuation code: `BCPGO BCP`
+
+Mandatory cold-resume order now includes:
+- `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`
+- `.project-memory/BCP_ABC_COVERAGE.json`
+- `docs/BCP_CANONICAL_SPEC_ABC.md`
+- communication protocol/state/active tranche/delivery ledger
+- writer fence, project_state and current release manifests.
+
+Product denominator is **A+B+C**:
+- A = sealed/original preconception + promised functions;
+- B = realistic research-backed expansion;
+- C = accumulated field feedback and work constraints.
+Do not score or release against a fragment of this denominator.
+
+R77 communication contract:
+- 25-minute tranche;
+- target 23 minutes useful work + 2 minutes PRIMARY_ASSISTANT closeout;
+- Gmail START provider ACK before substantive work;
+- normal Gmail END is sent directly by the active assistant, not by an automation dependency;
+- search-before-send by delivery_key, provider message_id/SENT readback required;
+- only then ChatGPT pointer;
+- next tranche label must be monotonic (R78+) because R77 was accidentally reused at 22:21 although its delivery key remained unique.
+
+R77 phone full-node advance:
+- candidate remains 2.2.0 full-node, not yet another field install;
+- Room local store advances to v3 with append-only `edge_events` Universal Chronicle;
+- observable B-EDGE events are persisted with truth status, payload SHA-256 and project-scoped idempotency;
+- authenticated local API adds `GET/POST /v1/node/events`;
+- this is the first concrete UCMF Chronicle slice hosted on the dedicated phone.
+
+Initial macro audit against currently indexed A+B+C sources:
+- functional coverage: 53.7%;
+- evidence maturity: 41.45%;
+- provisional until the sealed V0.7 source package itself is rematerialized/re-audited.
+
+Current R77 branch: `work/bcp/r77-abc-integral-25min-20260921-2221`.
+Current next action: exact-head qualification -> reconcile moved main if needed -> serialized merge -> continue encrypted LAN, memory admission/supersession, source capabilities, Telegram relay and full server cockpit before another user install.
+
+---
+
 # R74 KINLINK-Style Communication State-Machine Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
