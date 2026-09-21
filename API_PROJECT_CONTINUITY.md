@@ -1,26 +1,35 @@
-# R56 Fresh Conversation Handoff — 2026-09-20
+# R58 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code for a new conversation:
 
 `BCPGO BCP`
 
 On a fresh conversation, this code means:
-- load the current durable `project_state.json`, this file, the canonical requirements, R55 delivery policy, writer-fence policy and CURRENT manifests;
+- load `project_state.json`, this handoff, the canonical requirements, delivery policy, 25-minute cadence policy, pre-human action simulation policy, writer-fence policy and CURRENT manifests;
 - do not reconstruct the project from chat history;
 - resume from the next uncommitted action only;
-- preserve the 25-minute target tranche (practical 24–25 minute window) and email-first / ChatGPT-pointer-only checkpoint rule;
+- send the full checkpoint by Gmail first; after confirmed mail delivery, ChatGPT is pointer-only;
+- normal useful-work tranche target is approximately 25 minutes (practical 24–25 minute window unless a real gate ends it earlier);
+- never instruct the user to click/install/retry a technically simulatable path before representative CI/runtime simulation has passed;
 - preserve the single-writer fence and exact-head CI/merge discipline.
 
-Current field truth at the R56 checkpoint:
-- BCP 0.7.12 is UP_TO_DATE on MBMPC;
-- ChatGPT-PC 6.0.34 / 6034 is alive and its command plane is fresh;
-- Telegram is ACTIVE in DIRECT_TELEGRAM mode;
-- Nexus 0.2.6 is not complete: it is in HUMAN_AUTH_REQUIRED because the Cloudflare device authorization is required or expired;
-- the current one-shot helper is `API_BCP/00_INSTALL_CURRENT/BCP_NEXUS_AUTH_CURRENT.zip`;
-- do not reuse a stale device code and do not fall back to `localhost:8976`;
-- Nexus may be called complete only after provider-authenticated readback.
+Current durable integration truth:
+- R58 is merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`;
+- BCP target is **0.7.13**;
+- 0.7.13 fixes the Nexus explicit-retry HTTP 500 caused by the missing `uuid` import;
+- the Nexus server-side retry path passed runtime simulation;
+- the exact Windows PowerShell one-shot helper passed both a simulated `202 / LAUNCHED` path and an expected `500 / HOLD` negative control;
+- exact-head R58 qualification passed before merge;
+- the last proven PC field version remains **0.7.12** until a fresh machine-readable readback proves 0.7.13;
+- therefore **do not ask the user to retry Nexus yet**.
 
-Current human gate: one fresh Nexus device authorization. No reboot, reinstall, or old Cloudflare retry should be performed before that gate.
+Current action:
+1. finish/read post-merge CI;
+2. obtain fresh field readback proving BCP 0.7.13 on MBMPC;
+3. only then expose one fresh Nexus Cloudflare device-authorization action;
+4. after consent, require provider-authenticated `whoami`/equivalent readback before Nexus is complete.
+
+No reinstall, reboot, stale Cloudflare code, or repeated Nexus ZIP attempt is justified while 0.7.13 convergence is unproven.
 
 ---
 
