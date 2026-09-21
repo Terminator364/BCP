@@ -1,4 +1,4 @@
-# R58 Fresh Conversation Handoff — 2026-09-21
+# R60 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code for a new conversation:
 
@@ -25,22 +25,24 @@ For every user-invoked continuation/relaunch/message that starts project work:
 If the START mail fails, do not begin the substantive tranche. If the END mail fails, emit no ChatGPT end message at all; retry the END mail until acknowledged.
 
 Current durable integration truth:
-- R58 is merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`;
+- R58 server fix is already merged on `main` at `0db531771d631ebade0847494baf3ca82c713674`; R60 continuity/simulation hardening remains on PR #127 until exact-head CI is green;
 - BCP target is **0.7.13**;
 - 0.7.13 fixes the Nexus explicit-retry HTTP 500 caused by the missing `uuid` import;
 - the Nexus server-side retry path passed runtime simulation;
 - the exact Windows PowerShell one-shot helper passed both a simulated `202 / LAUNCHED` path and an expected `500 / HOLD` negative control;
-- exact-head R58 qualification passed before merge;
-- the last proven PC field version remains **0.7.12** until a fresh machine-readable readback proves 0.7.13;
-- therefore **do not ask the user to retry Nexus yet**.
+- exact-head R58 qualification passed before merge; R60 exact-head qualification is the current integration gate;
+- fresh Google Drive machine readback from `API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json` now proves **BCP 0.7.13** on MBMPC with exact server SHA-256 `cb4b05e5771b35a69bba3de804af3b5e6abed07ffb698015ad257467f61ba4fe`, `update_state=UP_TO_DATE`, `paired=true`;
+- Nexus remains `HUMAN_AUTH_REQUIRED` with bundle `0.2.6` and error class `CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED`;
+- therefore the BCP-version convergence gate is cleared, but **do not ask the user to retry Nexus until PR #127 passes exact-head CI and is merged/read back**.
 
 Current action:
-1. finish/read post-merge CI;
-2. obtain fresh field readback proving BCP 0.7.13 on MBMPC;
-3. only then expose one fresh Nexus Cloudflare device-authorization action;
-4. after consent, require provider-authenticated `whoami`/equivalent readback before Nexus is complete.
+1. finish exact-head R60 qualification on PR #127;
+2. reread `main` and merge only through the single-writer fence if all required checks are green;
+3. verify the merge/readback and post-merge workflows;
+4. then expose exactly one fresh Nexus Cloudflare device-authorization action;
+5. after consent, require provider-authenticated `whoami`/equivalent readback before Nexus is complete.
 
-No reinstall, reboot, stale Cloudflare code, or repeated Nexus ZIP attempt is justified while 0.7.13 convergence is unproven.
+No reinstall, reboot, stale Cloudflare code, or repeated Nexus ZIP attempt is justified before the R60 integration gate is cleared.
 
 ---
 
