@@ -35,13 +35,13 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("BCP Edge Evergreen · B-EDGE");
+        title.setText("BCP Phone Server · B-EDGE");
         title.setTextSize(25);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         root.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Mémoire durable · orchestration · reprise · télémétrie · mises à jour vérifiées");
+        subtitle.setText("Serveur Edge local · mémoire durable · file de tâches · relais · reprise autonome");
         subtitle.setPadding(0,dp(6),0,dp(16));
         root.addView(subtitle);
 
@@ -188,6 +188,7 @@ public class MainActivity extends Activity {
 
     private void showSettings() {
         final String[] choices = new String[] {
+                "État serveur téléphone",
                 "État des versions",
                 "État ChatGPT-PC",
                 "Réparer ChatGPT-PC maintenant",
@@ -200,6 +201,19 @@ public class MainActivity extends Activity {
                 .setTitle("Paramètres BCP")
                 .setItems(choices, (dialog, which) -> {
                     if (which == 0) {
+                        runAction("SERVEUR TÉLÉPHONE", () -> {
+                            JSONObject out = EdgeConnectivity.snapshot(MainActivity.this);
+                            EdgeOrchestrator orchestrator = new EdgeOrchestrator(MainActivity.this);
+                            out.put("role", "PHONE_PRIMARY_EDGE_SERVER");
+                            out.put("edge_version", client.getEdgeVersion());
+                            out.put("mode", orchestrator.getMode());
+                            out.put("pending_jobs", orchestrator.pendingCount());
+                            out.put("local_api_port", EdgeRelayPolicy.RELAY_PORT);
+                            out.put("storage", "ROOM_SQLITE_WAL");
+                            out.put("scheduler", "WORKMANAGER_PLUS_EVENT_CALLBACKS");
+                            return out;
+                        });
+                    } else if (which == 1) {
                         runAction("VERSIONS", () -> {
                             JSONObject s = client.serverUpdateStatus();
                             JSONObject out = new JSONObject();
@@ -210,9 +224,9 @@ public class MainActivity extends Activity {
                             out.put("server_auto_update", s.optBoolean("auto_update", true));
                             return out;
                         });
-                    } else if (which == 1) {
-                        runAction("CHATGPT-PC", () -> client.chatgptPcStatus());
                     } else if (which == 2) {
+                        runAction("CHATGPT-PC", () -> client.chatgptPcStatus());
+                    } else if (which == 3) {
                         new AlertDialog.Builder(this)
                                 .setTitle("Réparer ChatGPT-PC")
                                 .setMessage("Lancer le Recovery Plane borné avec la cible déjà vérifiée ?")
@@ -220,18 +234,18 @@ public class MainActivity extends Activity {
                                         runAction("RÉCUPÉRATION CHATGPT-PC", () -> client.recoverChatgptPc()))
                                 .setNegativeButton("ANNULER", null)
                                 .show();
-                    } else if (which == 3) {
-                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
                     } else if (which == 4) {
-                        updates.check(true);
+                        runAction("MISE À JOUR SERVEUR", () -> client.applyServerUpdate());
                     } else if (which == 5) {
+                        updates.check(true);
+                    } else if (which == 6) {
                         runAction("ORCHESTRATEUR", () -> {
                             JSONObject out = client.orchestratorStatus();
                             JSONObject ctx = client.contextPack();
                             out.put("context_pack_cached", ctx.length() > 0);
                             return out;
                         });
-                    } else if (which == 6) {
+                    } else if (which == 7) {
                         runAction("TEST RAPIDE B-EDGE", () -> client.runQuickAcceptance());
                     }
                 })
