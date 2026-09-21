@@ -9,5 +9,5 @@
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
   "notes": "Telegram V22 remains backward compatible with the existing direct/relay transport contract; when BCP 0.7.16+ advertises EDGE_NODE_V1 it can additionally persist compact failed sendMessage payloads on the dedicated phone. Queued is never claimed as delivered.",
-  "requirements_revision": "2026-09-21-R65"
+  "requirements_revision": "2026-09-21-R66"
 }
