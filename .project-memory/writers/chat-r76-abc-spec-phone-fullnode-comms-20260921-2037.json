@@ -1,0 +1,25 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r76-abc-spec-phone-fullnode-comms-20260921-2037",
+  "project_or_mission": "API/BCP R76 canonical A+B+C specification, phone full-node architecture and 25-minute communication alignment",
+  "base_main_sha": "3c82dc3d40dc59db50d2825e9914a809e63f815d",
+  "created_at": "2026-09-21T20:37:00+01:00",
+  "work_branch": "work/bcp/r76-abc-spec-phone-fullnode-comms-20260921-2037",
+  "intended_file_scope": [
+    ".project-memory/**",
+    "docs/**",
+    "android-b-edge/**",
+    "release/android_candidate.json",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    "tools/**",
+    ".github/workflows/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Coordinated Product Qualification",
+    "BCP Field Ecosystem Preflight"
+  ]
+}

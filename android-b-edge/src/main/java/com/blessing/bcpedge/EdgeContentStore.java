@@ -19,7 +19,8 @@ import java.security.MessageDigest;
  */
 public final class EdgeContentStore {
     private static final long MIN_QUOTA = 512L * 1024L * 1024L;
-    private static final long MAX_QUOTA = 8L * 1024L * 1024L * 1024L;
+    private static final long MAX_QUOTA = 32L * 1024L * 1024L * 1024L;
+    private static final long MIN_DEVICE_RESERVE = 8L * 1024L * 1024L * 1024L;
     private static final int MAX_JSON_BYTES = 8 * 1024 * 1024;
 
     private final File root;
@@ -89,10 +90,13 @@ public final class EdgeContentStore {
             out.put("used_bytes", used);
             out.put("quota_bytes", quota);
             out.put("quota_gib", roundGiB(quota));
+            long total = fs.getTotalBytes();
+            long reserve = Math.max(MIN_DEVICE_RESERVE, total / 5L);
             out.put("free_device_bytes", fs.getAvailableBytes());
+            out.put("device_reserve_bytes", reserve);
             out.put("file_count", countFiles(root));
             out.put("within_quota", used <= quota);
-            out.put("policy", "ADAPTIVE_MAX_8_GIB_LEAVES_DEVICE_HEADROOM");
+            out.put("policy", "DEDICATED_PHONE_ADAPTIVE_MAX_32_GIB_KEEP_8_GIB_OR_20_PERCENT_RESERVE");
         } catch (Exception ignored) {}
         return out;
     }
@@ -102,12 +106,21 @@ public final class EdgeContentStore {
             StatFs fs = new StatFs(root.getAbsolutePath());
             long total = fs.getTotalBytes();
             long available = fs.getAvailableBytes();
-            long byTotal = Math.max(MIN_QUOTA, total / 8L);
-            long byAvailable = Math.max(128L * 1024L * 1024L, available / 2L);
-            return Math.min(MAX_QUOTA, Math.min(byTotal, byAvailable));
+            return dedicatedQuotaBytes(total, available);
         } catch (Exception ex) {
             return MIN_QUOTA;
         }
+    }
+
+    static long dedicatedQuotaBytes(long total, long available) {
+        long safeTotal = Math.max(0L, total);
+        long safeAvailable = Math.max(0L, available);
+        long reserve = Math.max(MIN_DEVICE_RESERVE, safeTotal / 5L);
+        long byTotal = safeTotal / 2L;
+        long byAvailable = Math.max(0L, safeAvailable - reserve);
+        long desired = Math.min(MAX_QUOTA, Math.min(byTotal, byAvailable));
+        if (desired >= MIN_QUOTA) return desired;
+        return Math.max(0L, Math.min(MIN_QUOTA, safeAvailable / 4L));
     }
 
     private void trimToQuota() {

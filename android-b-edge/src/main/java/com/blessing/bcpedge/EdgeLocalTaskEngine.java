@@ -20,7 +20,9 @@ public final class EdgeLocalTaskEngine {
         return "LOCAL_CONTEXT_SNAPSHOT".equals(k)
                 || "LOCAL_HEALTH_SNAPSHOT".equals(k)
                 || "LOCAL_QUEUE_SUMMARY".equals(k)
-                || "LOCAL_MEMORY_COMPACT".equals(k);
+                || "LOCAL_MEMORY_COMPACT".equals(k)
+                || "LOCAL_CONTENT_STORE_STATUS".equals(k)
+                || "LOCAL_RECOVERY_CHECKPOINT".equals(k);
     }
 
     public static JSONObject execute(Context context, EdgeOrchestrator orchestrator,
@@ -60,6 +62,30 @@ public final class EdgeLocalTaskEngine {
             if ("LOCAL_MEMORY_COMPACT".equals(k)) {
                 int removed = orchestrator.compactExpiredMemory();
                 out.put("expired_entries_removed", removed);
+                return out;
+            }
+            if ("LOCAL_CONTENT_STORE_STATUS".equals(k)) {
+                out.put("content_store", new EdgeContentStore(context).status());
+                return out;
+            }
+            if ("LOCAL_RECOVERY_CHECKPOINT".equals(k)) {
+                JSONObject snapshot = new JSONObject();
+                snapshot.put("project_id", projectId);
+                snapshot.put("mode", orchestrator.getMode());
+                snapshot.put("sentinel", orchestrator.sentinelStatus(projectId));
+                snapshot.put("pending_jobs", orchestrator.pendingJobs(projectId));
+                snapshot.put("memory", orchestrator.memorySnapshot(projectId));
+                snapshot.put("network", EdgeNetworkState.snapshot(context));
+                snapshot.put("resources", EdgeResourceGovernor.snapshot(context));
+                snapshot.put("created_at_ms", System.currentTimeMillis());
+                JSONObject stored = new EdgeContentStore(context).putJson(
+                        "recovery", projectId + "-latest", snapshot);
+                out.put("snapshot", snapshot);
+                out.put("stored", stored);
+                if (!stored.optBoolean("stored", false)) {
+                    out.put("result", "HOLD");
+                    out.put("error", "RECOVERY_CHECKPOINT_PERSIST_FAILED");
+                }
                 return out;
             }
 

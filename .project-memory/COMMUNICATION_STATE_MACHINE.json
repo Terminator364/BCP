@@ -1,9 +1,9 @@
 {
-  "schema": "bcp.communication_state_machine/1",
-  "revision": "2026-09-21-R74",
-  "cadence_minutes": 30,
-  "useful_work_minutes": 26,
-  "normal_close_reserve_minutes": 4,
+  "schema": "bcp.communication_state_machine/2",
+  "revision": "2026-09-21-R76",
+  "cadence_minutes": 25,
+  "useful_work_minutes": 23,
+  "normal_close_reserve_minutes": 2,
   "work_states": [
     "IDLE",
     "WORKING",
@@ -23,8 +23,7 @@
   ],
   "owners": [
     "PRIMARY_ASSISTANT",
-    "SHADOW_BACKUP",
-    "HARD_GUARD"
+    "RECOVERY_RECONCILER"
   ],
   "normal_path": [
     "NONE->START_SEND_PENDING",
@@ -54,17 +53,18 @@
     }
   ],
   "timing": {
-    "primary_close_reserve_begins_minute": 26,
-    "backup_earliest_offset_minutes": 28,
-    "hard_guard_offset_minutes": 29,
-    "absolute_end_deadline_minutes": 30
+    "primary_close_reserve_begins_minute": 23,
+    "absolute_end_deadline_minutes": 25,
+    "scheduled_backup_required": false
   },
   "invariants": [
     "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
     "new work cannot reuse a CLOSED tranche",
     "a scheduler completion is never Gmail delivery proof",
-    "the user message is never a closeout trigger",
+    "the user message is never the normal closeout trigger",
     "delivery_key is unique per tranche",
-    "END send is search-before-send and idempotent"
+    "END send is search-before-send and idempotent",
+    "normal close is owned by PRIMARY_ASSISTANT without scheduled automation dependency",
+    "if runtime is interrupted before END, the next supported invocation reconciles the open tranche before starting new work"
   ]
 }

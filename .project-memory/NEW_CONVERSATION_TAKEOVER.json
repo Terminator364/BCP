@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/1",
+  "schema": "bcp.new_conversation_takeover/2",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -7,6 +7,9 @@
   "mandatory_first_reads": [
     "project_state.json",
     "API_PROJECT_CONTINUITY.md",
+    "docs/R76_ABC_RESEARCH_AND_ARCHITECTURE.md",
+    ".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json",
+    "docs/BCP_CANONICAL_SPEC_ABC_R76.md",
     ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     ".project-memory/COMMUNICATION_PROTOCOL.json",
     ".project-memory/COMMUNICATION_STATE_MACHINE.json",
@@ -27,7 +30,7 @@
     "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
     "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
     "WORK_FROM_PROJECT_STATE_NEXT_ACTION",
-    "ENTER_CLOSE_RESERVE_AT_MINUTE_26",
+    "ENTER_CLOSE_RESERVE_AT_MINUTE_23",
     "PERSIST_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
     "SEND_COMPLETE_GMAIL_END_IF_MISSING",
@@ -36,19 +39,21 @@
     "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
   ],
   "communication_contract": {
-    "cadence_minutes": 30,
-    "useful_work_minutes": 26,
-    "normal_close_reserve_minutes": 4,
+    "cadence_minutes": 25,
+    "useful_work_minutes": 23,
+    "normal_close_reserve_minutes": 2,
     "gmail_label": "BCP",
     "normal_close_owner": "PRIMARY_ASSISTANT",
-    "backup_owner": "SHADOW_BACKUP",
-    "hard_guard_owner": "HARD_GUARD",
+    "scheduled_close_automation_required": false,
     "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
     "ui_thinking_indicator_authoritative": false
   },
   "product_truth": {
-    "phone_direction": "coherent dedicated Android full-node/server appliance",
+    "phone_direction": "dedicated Android primary Edge/API appliance measured against full A+B+C specification",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
-    "continuation_code": "BCPGO BCP"
+    "continuation_code": "BCPGO BCP",
+    "full_spec_rule": "A_PLUS_B_PLUS_C",
+    "full_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC_R76.md",
+    "traceability_ref": ".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json"
   }
 }
