@@ -15,10 +15,15 @@ public final class EdgeRelayPolicy {
     }
 
     public static boolean isValidProxyAuthorization(String header, String expectedToken) {
+        return isValidBearerAuthorization(header, expectedToken);
+    }
+
+    public static boolean isValidBearerAuthorization(String header, String expectedToken) {
         if (header == null || expectedToken == null || expectedToken.isEmpty()) return false;
         String prefix = "Bearer ";
         if (!header.startsWith(prefix)) return false;
-        byte[] a = header.substring(prefix.length()).trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] a = header.substring(prefix.length()).trim()
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
         byte[] b = expectedToken.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         return java.security.MessageDigest.isEqual(a, b);
     }
