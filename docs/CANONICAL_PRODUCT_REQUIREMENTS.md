@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R74
+Revision: 2026-09-21-R75
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -2035,3 +2035,33 @@ Mandatory tranche model:
 The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be used as proof that a 30-minute tranche performed 30 minutes of model reasoning. Tranche proof consists of durable engineering evidence: commits, CI runs, provider acknowledgements, Drive readbacks, receipts, and field telemetry.
 
 Fresh-conversation code `BCPGO BCP` MUST load `.project-memory/NEW_CONVERSATION_TAKEOVER.json` and reconcile any open delivery state before starting new work.
+
+
+## P0 — Provider-proof communication closeout + phone communication journal — R75
+
+BCP MUST use the same closeout discipline proven by KINLINK, adapted to the 30-minute BCP tranche:
+
+- normal END owner is `PRIMARY_ASSISTANT`;
+- `SHADOW_BACKUP` and `HARD_GUARD` are backup-only and MUST NOT be treated as primary work owners;
+- every tranche has a unique delivery key;
+- START and END Gmail provider message IDs are persisted;
+- CLOSE_INTENT is durable before END;
+- END is search-before-send and idempotent;
+- Gmail SENT + provider message_id + durable ledger receipt is the authoritative END proof;
+- scheduler/automation-card completion alone is never delivery proof;
+- a user message is never a closeout trigger;
+- a reply-to-thread failure MUST fall back to: SENT search by delivery key -> standalone END only if absent;
+- fresh-conversation recovery MUST reconcile open or OPEN_DELIVERY_FAILURE tranches before new work;
+- ChatGPT final output remains blocked until END_ACKNOWLEDGED/CLOSED.
+
+The visible ChatGPT “Réfléchi pendant…” UI duration is not under assistant control and MUST NOT be treated as tranche-duration evidence. BCP targets 30 wall-clock minutes with 26 minutes of useful work and 4 minutes reserved for deterministic closeout. Work proof comes from durable commits, CI, provider receipts, readbacks and field telemetry.
+
+The dedicated Android phone MUST also carry an authenticated, durable local communication journal so it is useful when the PC is unavailable or expensive to keep online:
+
+- authenticated `GET/POST /v1/node/communications`;
+- idempotency-keyed bounded records stored in app-private durable memory;
+- local execution in EDGE_ONLY mode with no arbitrary shell;
+- 14-day bounded retention by default;
+- server dashboard exposes communication-record count;
+- emulator qualification MUST prove the journal capability is advertised and private endpoints reject unauthenticated access;
+- this journal is a local store-and-forward substrate, not proof that an external provider (Telegram/Gmail) received a message.
