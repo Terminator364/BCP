@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R73
+Revision: 2026-09-21-R74
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -2003,3 +2003,35 @@ Timing target:
 - normal backup guard: T+27;
 - hard backup guard: T+29;
 - absolute tranche deadline: T+30.
+
+
+## P0 — Communication delivery state machine — R74
+
+The communication protocol MUST behave as a durable state machine, not as a timer convention.
+
+Canonical files:
+- `.project-memory/COMMUNICATION_PROTOCOL.json`
+- `.project-memory/COMMUNICATION_STATE_MACHINE.json`
+- `.project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl`
+- `.project-memory/ACTIVE_TRANCHE.json`
+- `.project-memory/NEW_CONVERSATION_TAKEOVER.json`
+
+Mandatory tranche model:
+- wall-clock target = 30 minutes;
+- target useful-work budget = 26 minutes;
+- minimum useful-work target = 20 minutes when no real human/tool/safety gate ends the tranche earlier;
+- final 4 minutes are reserved for closeout and MUST NOT be consumed by optional new product mutations;
+- `PRIMARY_ASSISTANT` owns normal closeout;
+- scheduled guards are `SHADOW_BACKUP` / `HARD_GUARD` only;
+- every tranche has a unique delivery key;
+- START and END provider message IDs are persisted;
+- CLOSE_INTENT is persisted before END delivery;
+- END delivery is search-before-send and idempotent;
+- scheduler completion, automation-card completion, Drive mirror and ChatGPT UI output are never Gmail delivery proof;
+- END is successful only after Gmail SENT + provider message ID + readback + BCP label + durable ledger receipt;
+- ChatGPT final output is blocked until delivery state is END_ACKNOWLEDGED/CLOSED;
+- a user “eh oh” message is never a delivery trigger.
+
+The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be used as proof that a 30-minute tranche performed 30 minutes of model reasoning. Tranche proof consists of durable engineering evidence: commits, CI runs, provider acknowledgements, Drive readbacks, receipts, and field telemetry.
+
+Fresh-conversation code `BCPGO BCP` MUST load `.project-memory/NEW_CONVERSATION_TAKEOVER.json` and reconcile any open delivery state before starting new work.
