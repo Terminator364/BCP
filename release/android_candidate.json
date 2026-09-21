@@ -7,7 +7,7 @@
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.16",
-  "requirements_revision": "2026-09-21-R74",
+  "requirements_revision": "2026-09-21-R76-ABC",
   "base_distributed_version_code": 212,
   "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -40,10 +40,12 @@
     "30-minute Gmail START/END continuity contract carried by BCPGO",
     "no-micro-beta field gate: next install only after coherent full-node exact-head qualification",
     "adaptive Wi-Fi/cellular/metered network truth with DATA_SAVER and STORE_AND_FORWARD routing hints",
-    "app-private adaptive content cache up to 8 GiB for context/resume snapshots without consuming the whole 64 GB device",
     "allowlisted deterministic local task executor runs safe EDGE jobs on the dedicated phone without waiting for the PC",
     "local task receipts are persisted before jobs are removed from the durable queue",
-    "local context/health/queue/memory-maintenance jobs remain available in EDGE_ONLY mode with no arbitrary shell"
+    "local context/health/queue/memory-maintenance jobs remain available in EDGE_ONLY mode with no arbitrary shell",
+    "dedicated-phone adaptive app-private content store up to 32 GiB while preserving at least 8 GiB or 20% device reserve",
+    "phone-local recovery checkpoint persists current project memory queue sentinel network and resource state without PC availability",
+    "candidate is measured against the full A+B+C R76 traceability matrix, not a micro-feature subset"
   ],
-  "release_train": "BCP-0.7.16_EDGE-2.2.0-full-node_NEXUS-0.2.6"
+  "release_train": "BCP-0.7.16_EDGE-2.2.0-full-node-ABC-R76_NEXUS-0.2.6"
 }
