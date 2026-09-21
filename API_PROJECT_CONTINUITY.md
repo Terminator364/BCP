@@ -27,6 +27,17 @@ The communication contract is now KINLINK-grade:
 
 The assistant cannot force or set the duration displayed by the ChatGPT UI. That indicator is not accepted as work proof. R75 still targets a 30-minute wall-clock tranche with 26 minutes of useful work and 4 minutes of closeout. Work is proven by durable outputs: commits, CI, Gmail receipts, Drive readbacks and field telemetry.
 
+## R75 fresh field communication truth
+
+Fresh machine readback from `API_BCP/02_TELEMETRY/BCP/BCP_RUNTIME_LATEST.json` at 2026-09-21T19:09:37Z shows:
+- BCP 0.7.16 is UP_TO_DATE on MBMPC;
+- Telegram companion is `DIRECT_TRANSPORT_OUTAGE` with `URLError` and 256 consecutive failures;
+- Telegram route is still `UNKNOWN / NOT_OBSERVED`;
+- installed B-EDGE 2.1.2 relay is currently inactive/unregistered;
+- Nexus remains HUMAN_AUTH_REQUIRED.
+
+Therefore communication recovery is not claimed. The 2.2.0 full-node candidate remains the correct path: persistent phone server, durable communication journal, relay registration/readback and store-and-forward must be qualified before another install.
+
 ## Phone full-node progress
 
 The 2.2.0 full-node candidate now goes beyond relay-only behavior:
