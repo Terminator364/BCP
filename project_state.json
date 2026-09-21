@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R78_ABC_SOURCE_RECONCILED_PR149_CI_REQUALIFICATION_PENDING_FINAL_ANDROID_SIM",
-  "last_completed_atomic_action": "25-minute R77/R78 tranche closed normally by PRIMARY_ASSISTANT: A+B+C sources reconciled from APIAX07 handoff, BCP dossier and UCMF001 v4; Chronicle/coverage refreshed; PR149 created; stale Field validator and punctuation-fragile Nexus continuity tests fixed; core exact-head gates passed on product head 5ce449f..., Android Human-Action Simulation was cancelled by later head advancement and must be rerun on final head. Gmail END provider readback confirmed message 1a0c609b60dbc048.",
-  "next_action": "Next tranche label R78+. Send Gmail START, reload integral A+B+C and PR149 final head, obtain exact-head Android Human-Action Simulation plus all mandatory gates, reread main/writer fence, reconcile or merge PR149, close superseded PR146/147/148 only after preserved-superset verification, then continue encrypted/authenticated LAN + memory supersession + capability registry + Telegram field relay + full server cockpit before any phone reinstall.",
+  "status": "R79_UCMF_V9_ABC_MISSION_STEP_EXACT_HEAD_CI_RUNNING",
+  "last_completed_atomic_action": "R79 directly resolved the current UCMF001 Drive master through Postulate 9/V9, expanded the A+B+C denominator to Postulates 1-9, recalibrated macro maturity to 53.9% functional / 42.2% evidence, made UCMF001 a first-class 25-minute cold-continuation pointer, and added B-EDGE Room v4 durable mission-step/provider-state envelopes so mission progress can survive ChatGPT/provider interruption independently of chat scrollback.",
+  "next_action": "Finish exact-head PR #149 qualification on the R79 head. If all required gates are green, reread main under the Git writer fence and merge the superseding R79 line. Then verify post-merge and continue the coherent B-EDGE 2.2 full-node against the largest A+B+C gaps: encrypted/authenticated LAN, memory admission/supersession, source-capability registry, server-first UI, black-start/direct-boot and bulk-media plane. Do not publish another phone micro-beta before the coherent release gate.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -95,7 +95,8 @@
     "new_conversation_takeover": ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
     "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
-    "abc_integral_spec": "docs/BCP_CANONICAL_SPEC_ABC.md"
+    "abc_integral_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -179,7 +180,8 @@
     ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
     ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     ".project-memory/BCP_ABC_COVERAGE.json",
-    "docs/BCP_CANONICAL_SPEC_ABC.md"
+    "docs/BCP_CANONICAL_SPEC_ABC.md",
+    ".project-memory/UCMF001_CONTINUITY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -263,7 +265,11 @@
     "P0_backup_minimal_end_payload": true,
     "P0_25_minute_23_work_2_closeout": true,
     "P0_primary_assistant_normal_close_without_automation": true,
-    "P0_integral_abc_release_gate": true
+    "P0_integral_abc_release_gate": true,
+    "P0_23_minute_useful_work_plus_2_minute_closeout": true,
+    "P0_ucmf_v9_mission_survives_conversation": true,
+    "P0_phone_durable_mission_step_envelope": true,
+    "P0_integral_abc_spec_denominator": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2650,5 +2656,41 @@
     "current_end_message_id": "1a0c609b60dbc048",
     "current_end_verified": true,
     "last_closed_at_kinshasa": "2026-09-21T23:15:20+01:00"
+  },
+  "r79_abc_ucmf_v9": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_RUNNING",
+    "branch": "work/bcp/r78-abc-reconcile-ci-20260921-2251",
+    "pr": 149,
+    "current_ucmf_drive_file_id": "1NPKxO7_JezpVSh9_KRE625sDfXpM7a8m",
+    "current_ucmf_version": "UCMF001 / V9 FINAL RESILIENCE CLOSURE",
+    "current_ucmf_postulate": 9,
+    "abc_functional_macro_percent": 53.9,
+    "abc_evidence_maturity_percent": 42.2,
+    "phone_room_version": 4,
+    "phone_mission_step_envelope": "BCP_MISSION_STEP_ENVELOPE_V1",
+    "provider_states": [
+      "NOT_DISPATCHED",
+      "DISPATCH_ATTEMPTED",
+      "PROVIDER_ACKED",
+      "STREAM_OBSERVED",
+      "RESULT_OBSERVED",
+      "RESULT_COMMITTED",
+      "PLATFORM_HOLD",
+      "INTERRUPTED",
+      "OUTCOME_UNKNOWN",
+      "RECONCILING",
+      "SUPERSEDED"
+    ],
+    "continuation_codes": [
+      "BCPGO BCP",
+      "UCMF001",
+      "BCPGO UCMF001"
+    ],
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "scheduled_normal_close_required": false,
+    "current_tranche": "BCP-R79-START-20260921-2327",
+    "current_tranche_start_message_id": "1a0c61524165617e"
   }
 }
