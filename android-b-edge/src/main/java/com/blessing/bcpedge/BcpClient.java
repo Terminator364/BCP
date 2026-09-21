@@ -102,12 +102,6 @@ public final class BcpClient {
         }
     }
 
-    public JSONObject telegramEdgeBootstrap() throws Exception {
-        ensureConnected();
-        return requestJson("GET", getServer() + "/v1/edge/telegram/bootstrap", null,
-                getToken(), null, 1800, 3500);
-    }
-
     public JSONObject serverUpdateStatus() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/v1/system/update", null,
