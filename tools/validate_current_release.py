@@ -25,6 +25,9 @@ COMMUNICATION_POLICY = ROOT / ".project-memory" / "COMMUNICATION_SURVIVAL_POLICY
 COMM_PROTOCOL = ROOT / ".project-memory" / "COMMUNICATION_PROTOCOL.json"
 COMM_STATE_MACHINE = ROOT / ".project-memory" / "COMMUNICATION_STATE_MACHINE.json"
 NEW_CONVERSATION_TAKEOVER = ROOT / ".project-memory" / "NEW_CONVERSATION_TAKEOVER.json"
+ABC_SOURCE_REGISTRY = ROOT / ".project-memory" / "BCP_ABC_SOURCE_REGISTRY.json"
+ABC_COVERAGE = ROOT / ".project-memory" / "BCP_ABC_COVERAGE.json"
+ABC_SPEC = ROOT / "docs" / "BCP_CANONICAL_SPEC_ABC.md"
 
 
 def fail(message: str) -> None:
@@ -74,6 +77,23 @@ def main() -> int:
     comm_protocol = load(COMM_PROTOCOL)
     comm_state_machine = load(COMM_STATE_MACHINE)
     takeover = load(NEW_CONVERSATION_TAKEOVER)
+    abc_sources = load(ABC_SOURCE_REGISTRY)
+    abc_coverage = load(ABC_COVERAGE)
+    abc_spec = ABC_SPEC.read_text(encoding="utf-8")
+
+    if abc_sources.get("schema") != "bcp.abc_source_registry/1":
+        fail("abc_source_registry_schema")
+    if abc_sources.get("rule") != "BCP product scope is the cumulative union A+B+C. No release or completion percentage may be computed from only one layer.":
+        fail("abc_integral_scope_rule")
+    if abc_coverage.get("schema") != "bcp.abc_coverage/1":
+        fail("abc_coverage_schema")
+    totals = abc_coverage.get("totals") or {}
+    if float(totals.get("functional_percent") or 0) <= 0 or float(totals.get("functional_percent") or 0) >= 100:
+        fail("abc_functional_coverage_truth")
+    if float(totals.get("evidence_maturity_percent") or 0) <= 0 or float(totals.get("evidence_maturity_percent") or 0) >= 100:
+        fail("abc_evidence_coverage_truth")
+    if "A+B+C" not in abc_spec or "micro-bêtas" not in abc_spec or "Universal Chronicle" not in abc_spec:
+        fail("abc_spec_markers")
 
     if cur.get("schema") != "bcp.current_release/1":
         fail("schema")
