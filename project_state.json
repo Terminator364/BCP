@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R59_GMAIL_START_END_HANDSHAKE_CANDIDATE",
-  "last_completed_atomic_action": "R59 START/END Gmail handshake persisted and exercised in the live tranche: START receipt 1a0c1901b19bbc69, END receipt 1a0c192170100621. ChatGPT response for this tranche is pointer-only.",
-  "next_action": "On the next user invocation, send Gmail START before substantive work, continue from PR #127 / head 011debc0ab4306447bd34e41e4542806f5a4721d, then send Gmail END and only then show the ChatGPT pointer.",
+  "status": "R60_CANDIDATE_EXACT_HEAD_QUALIFICATION_IN_PROGRESS",
+  "last_completed_atomic_action": "R60 communication hardening is active on PR #127: Gmail START is required before substantive work; Gmail END must retry until provider send acknowledgement; ChatGPT end output is forbidden before END acknowledgement and becomes pointer-only after success. R59 human-action simulation gates remain active, including Windows/Nexus exact-path qualification and Android emulator install/launch/UI/cold-relaunch simulation.",
+  "next_action": "Complete exact-head PR #127 qualification after R60 validator/policy updates. If every required gate passes, reread main and merge through the single-writer fence. Verify post-merge CI and raw main manifests, then obtain machine-readable BCP_RUNTIME_LATEST readback proving MBMPC has converged to BCP 0.7.13 before exposing one fresh Nexus Cloudflare authorization action.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -82,7 +82,8 @@
     "chatgpt_pc_flow_bridge": "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
     "universal_continuation_registry": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     "delivery_redundancy_policy": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
-    "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+    "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -151,7 +152,8 @@
     "docs/CHATGPT_PC_LOCAL_FLOW_LEDGER_BRIDGE_R27.md",
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
-    ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json"
+    ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -207,7 +209,10 @@
     "P0_email_only_detailed_checkpoint": true,
     "P0_interactive_work_tranche_8_to_10_minutes": false,
     "P0_interactive_work_tranche_25_minutes": true,
-    "P0_pre_human_action_simulation_gate": true
+    "P0_pre_human_action_simulation_gate": true,
+    "P0_gmail_start_before_substantive_work": true,
+    "P0_gmail_end_provider_ack_before_chat_output": true,
+    "P0_proof_carrying_human_action_qualification": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -1884,12 +1889,12 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R58",
-    "revision": "2026-09-21-R59",
+    "revision": "2026-09-21-R60",
     "target_minutes": 25,
     "work_slice_minutes": "24-25",
     "checkpoint_each_slice": true,
     "email_full_checkpoint_first": true,
-    "chatgpt_after_mail": "POINTER_ONLY",
+    "chatgpt_after_mail": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK",
     "email_body_must_equal_chat_response": false,
     "manual_first_one_shot_field_rule": false,
     "pre_human_action_simulation_required": true,
@@ -1899,7 +1904,9 @@
     "cleanup_temporary_uploads": true,
     "propagation_to_other_projects": "PORT_ON_NEXT_TOUCH",
     "email_start_notice_before_substantive_work": true,
-    "email_end_checkpoint_before_chat_pointer": true
+    "email_end_checkpoint_before_chat_pointer": true,
+    "email_end_retry_until_provider_ack": true,
+    "chat_output_before_end_ack_forbidden": true
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2046,7 +2053,7 @@
     "exact_head_ci": "PASS"
   },
   "r59_gmail_handshake": {
-    "status": "END_MAIL_SENT_CHAT_POINTER_PENDING",
+    "status": "SUPERSEDED_BY_R60_END_ACK_GATE",
     "revision": "2026-09-21-R59",
     "tranche_target_minutes": 25,
     "order": [
@@ -2065,6 +2072,24 @@
     "current_start_mail_receipt": "1a0c1901b19bbc69",
     "current_start_mail_local_time": "2026-09-21T02:23:00+01:00",
     "current_end_mail_receipt": "1a0c192170100621",
-    "current_end_mail_local_time": "2026-09-21T02:25:00+01:00"
+    "current_end_mail_local_time": "2026-09-21T02:25:00+01:00",
+    "superseded_by": "R60_GMAIL_END_PROVIDER_ACK_GATE"
+  },
+  "r60_gmail_end_ack_policy": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI",
+    "revision": "2026-09-21-R60",
+    "order": [
+      "EMAIL_START_NOTICE",
+      "SUBSTANTIVE_WORK",
+      "EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK",
+      "CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK"
+    ],
+    "start_mail_required": true,
+    "end_mail_retry_required": true,
+    "provider_send_ack_required": true,
+    "chat_output_before_end_ack_forbidden": true,
+    "current_tranche_start_receipt": "1a0c2d8c97df6174",
+    "current_tranche_start_local_time": "2026-09-21T08:22:54+01:00",
+    "current_tranche_end_receipt": null
   }
 }
