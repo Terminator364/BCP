@@ -1,39 +1,40 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/9",
+  "schema": "bcp.interactive_work_cadence_policy/10",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 30,
   "acceptable_window_minutes": [
-    29,
+    27,
     30
   ],
   "principles": [
     "At the beginning of each user-invoked tranche, send a short Gmail START notice before substantive project work whenever the mail connector is available.",
     "Perform a substantial useful-work tranche targeting 30 minutes by default; do not checkpoint materially earlier unless a real human gate, safety hold, tool failure, or completed atomic action makes early return necessary.",
-    "Treat 30 minutes as the normal target, with roughly the final minute reserved for durable checkpoint/email delivery rather than optional expansion.",
     "Do not infer network/UI latency from an unsynchronized manual stopwatch or from ChatGPT's thinking-duration indicator.",
     "Separate producer time, BCP mirror delay, transport acceptance, and explicit seen acknowledgement whenever evidence exists.",
     "Each tranche ends with a durable checkpoint: changes, evidence/tests, next atomic action, and real human gate.",
     "Resume from that durable checkpoint on the next Continue invocation.",
     "Before the ChatGPT pointer is shown, send the full checkpoint by the configured email mirror whenever the mail connector is available.",
     "At the end of each tranche, send the full Gmail END checkpoint and retry automatically until the mail provider returns a successful send acknowledgement; before that acknowledgement ChatGPT emits no end message; after it, ChatGPT remains pointer-only.",
-    "A one-shot END watchdog is armed at START for the 30-minute target so the user never needs to send a relaunch message merely to obtain the END mail."
+    "A 30-minute tranche reserves the final minutes for reliable delivery: pre-close durable snapshot by T+26, normal END closeout at T+27, hard guard at T+28, absolute END deadline T+30.",
+    "The communication system must close autonomously without a user 'eh oh' relaunch; the user's message is never part of the closeout trigger.",
+    "Normal and hard close guards must search Gmail first and remain idempotent to prevent duplicate END mail."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T16:27:00+01:00",
+  "updated_at": "2026-09-21T17:39:00+01:00",
   "target_internal_work_minutes": 30,
   "acceptable_internal_work_window_minutes": [
-    29,
+    27,
     30
   ],
   "user_visible_target_window_minutes": [
-    29,
+    27,
     30
   ],
-  "cutoff_strategy": "CHECKPOINT_AT_OR_BEFORE_30_MINUTES_UNLESS_REAL_GATE_ENDS_EARLIER",
+  "cutoff_strategy": "PRECHECKPOINT_AT_26_NORMAL_CLOSEOUT_AT_27_HARD_GUARD_AT_28_ABSOLUTE_DEADLINE_30",
   "measurement_truth": {
     "chatgpt_thinking_indicator": "DIAGNOSTIC_ONLY_NOT_END_TO_END",
     "manual_stopwatch": "USEFUL_IF_START_AND_STOP_ARE_SYNCHRONIZED",
@@ -50,11 +51,11 @@
   },
   "response_timing": {
     "user_visible_target_minutes": [
-      29,
+      27,
       30
     ],
-    "useful_work_minimum_minutes": 29,
-    "internal_soft_cutoff_minutes": 29,
+    "useful_work_minimum_minutes": 27,
+    "internal_soft_cutoff_minutes": 26,
     "checkpoint_before_optional_overrun": true,
     "true_gate_may_return_early": true,
     "transport_latency_is_separate_from_useful_work": true,
@@ -63,8 +64,11 @@
     "end_email_retry_until_provider_ack": true,
     "chat_output_before_end_ack_forbidden": true,
     "end_watchdog_required": true,
-    "end_watchdog_offset_minutes": 29,
     "watchdog_noop_if_end_already_acked": true,
-    "disable_watchdog_after_normal_end_ack": true
+    "disable_watchdog_after_normal_end_ack": true,
+    "preclose_snapshot_offset_minutes": 26,
+    "normal_closeout_offset_minutes": 27,
+    "hard_close_guard_offset_minutes": 28,
+    "absolute_end_deadline_minutes": 30
   }
 }
