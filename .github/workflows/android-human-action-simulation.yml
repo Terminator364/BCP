@@ -163,6 +163,8 @@ jobs:
           grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null
           grep -F "AUTORISATIONS SERVEUR" bcp-window.xml >/dev/null
           grep -F "ACTIVER / RENFORCER LE MODE SERVEUR 24/7" bcp-window.xml >/dev/null
+          grep -F "Registre capacités:" bcp-window.xml >/dev/null
+          grep -F "Journal mémoire/provenance:" bcp-window.xml >/dev/null
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
@@ -204,6 +206,9 @@ jobs:
           assert obj["content_addressed_private_cache"] is True
           assert obj["store_and_forward"] is True
           assert obj["telegram_https_connect_relay"] is True
+          assert obj["capability_registry"] is True
+          assert obj["memory_admission_ledger"] is True
+          assert obj["room_schema_version"] == 5
           assert obj["arbitrary_proxy"] is False
           assert obj["arbitrary_shell"] is False
           PY
@@ -211,6 +216,11 @@ jobs:
           PRIVATE_CODE="$(curl -sS -o edge-private-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/status)"
           test "$PRIVATE_CODE" = "401"
           grep -F '"unauthorized"' edge-private-unauthorized.json >/dev/null
+          for PATHNAME in v1/node/capability-registry v1/node/memory-claims; do
+            CODE="$(curl -sS -o "edge-private-${PATHNAME##*/}.json" -w '%{http_code}' "http://127.0.0.1:18876/$PATHNAME")"
+            test "$CODE" = "401"
+            grep -F '"unauthorized"' "edge-private-${PATHNAME##*/}.json" >/dev/null
+          done
           echo "BCP_ANDROID_LOCAL_API_SERVER=PASS"
 
       - name: Cold relaunch idempotence smoke
@@ -253,6 +263,8 @@ jobs:
             edge-health.json
             edge-capabilities.json
             edge-private-unauthorized.json
+            edge-private-capability-registry.json
+            edge-private-memory-claims.json
             edge-health-relaunch.json
             emulator.log
             avd-list-created.txt
