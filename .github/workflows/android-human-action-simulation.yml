@@ -178,7 +178,7 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
-          grep -F "BCP Edge Evergreen" bcp-window.xml >/dev/null
+          grep -F "BCP Phone Server · B-EDGE" bcp-window.xml >/dev/null
           grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window.xml >/dev/null
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
@@ -202,7 +202,7 @@ jobs:
           test -n "$PID"
           "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
-          grep -F "BCP Edge Evergreen" bcp-window-relaunch.xml >/dev/null
+          grep -F "BCP Phone Server · B-EDGE" bcp-window-relaunch.xml >/dev/null
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
 
       - name: Upload representative simulation evidence
