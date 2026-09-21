@@ -291,6 +291,7 @@ public final class EdgeRelayService extends Service {
             out.put("paired", !client.getToken().isEmpty());
             out.put("sentinel", client.sentinelStatus());
             out.put("permissions", EdgePermissionManager.status(this));
+            out.put("content_store", client.contentStoreStatus());
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());
             out.put("presence", presenceState);
