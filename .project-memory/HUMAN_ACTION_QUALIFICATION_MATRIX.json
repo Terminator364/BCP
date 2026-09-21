@@ -1,0 +1,122 @@
+{
+  "schema": "bcp.human_action_qualification_matrix/1",
+  "revision": "2026-09-21-R59",
+  "status": "CANONICAL_CANDIDATE",
+  "rule": "A user-facing action may be requested only when its representative_preflight is PASS on the exact candidate head/package, unless the remaining uncertainty is explicitly an irreducible external/provider/physical field boundary.",
+  "actions": [
+    {
+      "action_id": "WINDOWS_INSTALL_OR_UPDATE",
+      "user_action": "Run/install/update the BCP Windows package",
+      "entrypoints": [
+        "windows/INSTALL_BCP_FINAL.ps1",
+        "windows/INSTALL_BCP_FINAL.cmd"
+      ],
+      "representative_environment": [
+        "windows-latest",
+        "windows-2022"
+      ],
+      "required_workflows": [
+        "BCP Windows Bootstrap Validation",
+        "BCP Coordinated PC Package"
+      ],
+      "required_evidence": [
+        "powershell_parse",
+        "installer_selftest",
+        "full_integration_sandbox",
+        "idempotent_reinstall",
+        "server_health_readback",
+        "package_contract",
+        "version_pin_match"
+      ],
+      "remaining_field_boundary": [
+        "actual MBMPC local runtime",
+        "actual Windows firewall/profile state",
+        "actual unstable power/network"
+      ],
+      "field_readback_required_before_next_human_gate": true
+    },
+    {
+      "action_id": "WINDOWS_FINAL_ACCEPTANCE",
+      "user_action": "Run the BCP final acceptance/reboot path",
+      "entrypoints": [
+        "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1",
+        "windows/BCP_FINAL_ACCEPTANCE_CURRENT.cmd"
+      ],
+      "representative_environment": [
+        "windows-latest"
+      ],
+      "required_workflows": [
+        "BCP Final Acceptance Package"
+      ],
+      "required_evidence": [
+        "powershell_parse",
+        "acceptance_selftest",
+        "target_version_crosscheck",
+        "server_selftest",
+        "artifact_package"
+      ],
+      "remaining_field_boundary": [
+        "real reboot/logon continuation on MBMPC"
+      ],
+      "field_readback_required_before_completion": true
+    },
+    {
+      "action_id": "NEXUS_FRESH_DEVICE_AUTH",
+      "user_action": "Run the Nexus one-shot and complete fresh Cloudflare device authorization",
+      "entrypoints": [
+        "windows/NEXUS_AUTH_RETRY_CURRENT.ps1"
+      ],
+      "representative_environment": [
+        "windows-latest",
+        "local_http_simulation"
+      ],
+      "required_workflows": [
+        "BCP Nexus One-Shot Human-Action Qualification",
+        "BCP Nexus Transport Qualification"
+      ],
+      "required_evidence": [
+        "server_retry_runtime_execution",
+        "exact_powershell_helper_execution",
+        "202_LAUNCHED_positive_control",
+        "500_HOLD_negative_control",
+        "stale_receipt_archive",
+        "fresh_nonce_generation"
+      ],
+      "remaining_field_boundary": [
+        "real Cloudflare provider availability",
+        "real browser/device authorization consent",
+        "provider-authenticated whoami/readback"
+      ],
+      "field_readback_required_before_completion": true
+    },
+    {
+      "action_id": "ANDROID_BEDGE_INSTALL_OR_OPEN",
+      "user_action": "Install/open BCP Edge and use the primary UI",
+      "entrypoints": [
+        "android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk",
+        "com.blessing.bcpedge.evergreen/.MainActivity"
+      ],
+      "representative_environment": [
+        "android_emulator_api_35"
+      ],
+      "required_workflows": [
+        "BCP Android Human-Action Simulation",
+        "BCP Android Build",
+        "BCP Coordinated Product Qualification"
+      ],
+      "required_evidence": [
+        "apk_build",
+        "apk_install",
+        "launcher_activity_start",
+        "ui_hierarchy_contains_BCP_Edge",
+        "no_immediate_process_crash"
+      ],
+      "remaining_field_boundary": [
+        "actual old phone OEM/Android image",
+        "actual home Wi-Fi/mDNS behavior",
+        "battery/power interruptions"
+      ],
+      "field_readback_required_before_completion": true
+    }
+  ]
+}
