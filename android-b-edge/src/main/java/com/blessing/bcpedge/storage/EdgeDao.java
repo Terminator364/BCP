@@ -37,6 +37,20 @@ public interface EdgeDao {
     @Query("SELECT COUNT(*) FROM edge_events WHERE projectId = :projectId")
     int eventCount(String projectId);
 
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void putMissionStep(EdgeMissionStepEntity step);
+
+    @Query("SELECT * FROM edge_mission_steps WHERE projectId = :projectId ORDER BY updatedAtWallMs DESC LIMIT :limit")
+    List<EdgeMissionStepEntity> recentMissionSteps(String projectId, int limit);
+
+    @Query("SELECT * FROM edge_mission_steps WHERE projectId = :projectId AND providerState NOT IN ('RESULT_COMMITTED','SUPERSEDED') ORDER BY updatedAtWallMs DESC LIMIT :limit")
+    List<EdgeMissionStepEntity> resumableMissionSteps(String projectId, int limit);
+
+    @Query("UPDATE edge_mission_steps SET providerState = :providerState, nextSafeAction = :nextSafeAction, continuationFrontier = :continuationFrontier, updatedAtWallMs = :updatedAtWallMs WHERE stepId = :stepId")
+    int updateMissionStepState(String stepId, String providerState, String nextSafeAction,
+                               String continuationFrontier, long updatedAtWallMs);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void putSentinel(EdgeSentinelEntity sentinel);
 
