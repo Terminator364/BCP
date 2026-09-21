@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "release/current.json"
       - "release/server.json"
       - "release/android.json"
@@ -22,6 +24,8 @@ on:
       - ".github/workflows/current-release-contract.yml"
   push:
     paths:
+      - "windows/INSTALL_BCP_FINAL.ps1"
+      - "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
       - "release/current.json"
       - "release/server.json"
       - "release/android.json"
