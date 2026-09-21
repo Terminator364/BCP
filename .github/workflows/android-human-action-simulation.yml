@@ -72,26 +72,18 @@ jobs:
           set -euo pipefail
           sudo chmod 666 /dev/kvm || true
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          export PATH="$SDK/platform-tools:$SDK/emulator:$PATH"
+          ADB="$SDK/platform-tools/adb"
           nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
-          "$SDK/platform-tools/adb" wait-for-device
+          "$ADB" wait-for-device
           for i in $(seq 1 120); do
-            BOOT="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
+            BOOT="$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
             if [ "$BOOT" = "1" ]; then break; fi
             sleep 2
           done
-          test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
+          test "$("$ADB" shell getprop sys.boot_completed | tr -d '\r')" = "1"
           "$ADB" shell input keyevent 82 || true
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell settings put global window_animation_scale 0
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell settings put global transition_animation_scale 0
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell settings put global animator_duration_scale 0
           echo "BCP_ANDROID_EMULATOR_BOOT=PASS"
 
@@ -104,15 +96,11 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" install -r "$APK" | tee adb-install.txt
           grep -F "Success" adb-install.txt >/dev/null
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell am force-stop com.blessing.bcpedge.evergreen || true
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-start.txt
           grep -E "Status: ok|Status:.*ok" activity-start.txt >/dev/null
           sleep 5
-          PID="$(adb shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
+          PID="$("$ADB" shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
           test -n "$PID"
           echo "BCP_ANDROID_APP_PROCESS=PASS pid=$PID"
 
@@ -123,12 +111,10 @@ jobs:
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
           "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
           grep -F "BCP Edge Evergreen" bcp-window.xml >/dev/null
           grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window.xml >/dev/null
-          if adb logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
+          if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
           fi
