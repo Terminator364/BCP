@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R64_BEDGE_ADAPTIVE_RELAY_CANDIDATE_EXACT_HEAD_CI",
-  "last_completed_atomic_action": "R64 candidate now implements the previously missing dedicated-phone transport role: B-EDGE 2.1.2 runs a bounded authenticated Telegram-only HTTPS CONNECT relay, BCP 0.7.15 registers its fresh private-LAN endpoint and exposes liveness, and Telegram V21 falls back to B-EDGE only after direct transport errors while preserving end-to-end TLS. No SIM is assumed; no-uplink remains durable NETWORK_WAIT/store-and-forward.",
-  "next_action": "Finish exact-head PR #133 qualification. Automatically fix any CI/simulation defect without user retry. If green, reread main/writer fence and merge. Then allow resident PC update to BCP 0.7.15 and build/sign/promote B-EDGE 2.1.2 only through the existing pinned signing identity and in-place CURRENT readback. Field-prove relay registration and one Telegram round-trip before representing B-EDGE relay as FIELD_ACTIVE.",
+  "status": "R67_PHONE_PRIMARY_EDGE_SERVER_IMPLEMENTED_CI_PENDING",
+  "last_completed_atomic_action": "R67 source now promotes the dedicated Android phone to PHONE_PRIMARY_EDGE_SERVER: authenticated local API, Room durable queue/store-forward, WorkManager/boot recovery, adaptive connectivity/capability snapshot, PC-side API probing/telemetry, and Android USB/ADB server-path simulation have been implemented on the fenced R67 branch.",
+  "next_action": "Run exact-head R67 CI; fix Android/Windows simulation failures automatically; open/qualify PR; reread main and merge only if writer fence permits; then sign/publish/install B-EDGE 2.2.0 in place and field-read back real phone capabilities before promoting Wi-Fi Direct/BLE/USB lanes.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -153,7 +153,8 @@
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
     ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
-    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json"
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    ".project-memory/PHONE_PRIMARY_EDGE_SERVER_POLICY.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -2256,6 +2257,27 @@
       "control_plane_priority": true
     },
     "user_action_required_now": false,
+    "field_verified": false
+  },
+  "r67_phone_primary_edge_server": {
+    "status": "IMPLEMENTED_SOURCE_CANDIDATE_CI_PENDING",
+    "branch": "work/bcp/r67-phone-real-server-20260921-1452",
+    "base_main_sha": "61736e160c65ee47be77f384a9c3369a33c122a3",
+    "target_server_version": "0.7.16",
+    "target_edge_candidate": "2.2.0-rc1-phone-server-evergreen",
+    "role": "PHONE_PRIMARY_EDGE_SERVER",
+    "local_api_port": 8876,
+    "durable_store": "ROOM_SQLITE_WAL",
+    "scheduler": "WORKMANAGER_PLUS_EVENT_CALLBACKS",
+    "store_and_forward": true,
+    "usb_adb_ci_path": true,
+    "wifi_direct": "FIELD_GATED_NEXT",
+    "bluetooth_ble_control": "FIELD_GATED_NEXT",
+    "device_owner_mode": "OPTIONAL_EXPLICIT_PROVISIONING",
+    "root_required": false,
+    "no_sim_required": true,
+    "pc_role": "WINDOWS_SPECIALIST_AND_BURST_COMPUTE_NODE",
+    "general_pc_proxy": false,
     "field_verified": false
   }
 }
