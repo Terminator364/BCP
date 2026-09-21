@@ -2035,3 +2035,25 @@ Mandatory tranche model:
 The visible ChatGPT “thinking duration” is diagnostic only. It MUST NOT be used as proof that a 30-minute tranche performed 30 minutes of model reasoning. Tranche proof consists of durable engineering evidence: commits, CI runs, provider acknowledgements, Drive readbacks, receipts, and field telemetry.
 
 Fresh-conversation code `BCPGO BCP` MUST load `.project-memory/NEW_CONVERSATION_TAKEOVER.json` and reconcile any open delivery state before starting new work.
+
+
+## P0 — Integral A+B+C product denominator — R77
+
+BCP scope MUST be evaluated against the cumulative **A+B+C** denominator:
+
+- **A** = original/sealed preconception, source intent and promised functions;
+- **B** = realistic research-backed architecture and technical expansion beyond the source idea;
+- **C** = all accumulated field feedback, corrections, work preferences, versions and constraints.
+
+Machine-readable authority:
+- `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`
+- `.project-memory/BCP_ABC_COVERAGE.json`
+- `docs/BCP_CANONICAL_SPEC_ABC.md`
+
+A partial subsystem, one Android screen, one Telegram route or one incident fix MUST NOT be presented as overall product completion. Any completion percentage MUST name its denominator and source-completeness caveat.
+
+The coherent-release rule is strengthened: no micro-beta install loop. A user-facing phone update should advance a meaningful vertical slice across the active A+B+C gaps and carry exact-head CI/device evidence before installation is requested.
+
+The dedicated Android phone is a first-rank B-EDGE node. Current P0 direction is a local-first API/server appliance with durable Chronicle, memory, scheduler, queues, store-and-forward, context building, multi-transport discovery, resource governance and a server-first cockpit. The PC remains a heavy Windows worker/replica, not the sole communications center.
+
+The current cleartext LAN API is POC-only. Production target remains authenticated **and encrypted** local transport.
