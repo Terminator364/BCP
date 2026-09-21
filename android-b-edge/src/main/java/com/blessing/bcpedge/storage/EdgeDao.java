@@ -41,6 +41,18 @@ public interface EdgeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void putMissionStep(EdgeMissionStepEntity step);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void putCapability(EdgeCapabilityEntity capability);
+
+    @Query("SELECT * FROM edge_capabilities WHERE projectId = :projectId AND (expiresAt = 0 OR expiresAt > :now) ORDER BY updatedAt DESC LIMIT :limit")
+    List<EdgeCapabilityEntity> activeCapabilities(String projectId, long now, int limit);
+
+    @Query("SELECT * FROM edge_capabilities WHERE projectId = :projectId AND capabilityType = :capabilityType AND (expiresAt = 0 OR expiresAt > :now) ORDER BY updatedAt DESC LIMIT :limit")
+    List<EdgeCapabilityEntity> activeCapabilitiesByType(String projectId, String capabilityType, long now, int limit);
+
+    @Query("DELETE FROM edge_capabilities WHERE expiresAt > 0 AND expiresAt <= :now")
+    int deleteExpiredCapabilities(long now);
+
     @Query("SELECT * FROM edge_mission_steps WHERE projectId = :projectId ORDER BY updatedAtWallMs DESC LIMIT :limit")
     List<EdgeMissionStepEntity> recentMissionSteps(String projectId, int limit);
 
