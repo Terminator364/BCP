@@ -12,6 +12,7 @@ android {
         targetSdk 35
         versionCode 220
         versionName "2.2.0-full-node-evergreen"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -32,4 +33,7 @@ dependencies {
     implementation 'androidx.work:work-runtime:2.11.2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.room:room-testing:2.8.5'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }
