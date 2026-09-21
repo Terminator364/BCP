@@ -1,8 +1,8 @@
 {
   "schema": "bcp.abc_coverage/1",
-  "revision": "2026-09-21-R78",
-  "status": "SOURCE_RECONCILED_MACRO_AUDIT",
-  "warning": "Macro evidence audit against source-reconciled A+B+C. APIAX07 handoff, understanding dossier and UCMF v4 Postulates 1-4 were read in R78; the sealed V0.7 ZIP itself remains represented by its durable SHA/manifest audit pointer and was not falsely claimed as byte-reread.",
+  "revision": "2026-09-21-R79",
+  "status": "SOURCE_RECONCILED_MACRO_AUDIT_UCMF_V9",
+  "warning": "Macro evidence audit against A+B+C after direct current Drive read of UCMF001 V9/Postulates 1-9. Sealed V0.7 ZIP remains represented by durable SHA/manifest pointer and is not falsely claimed as byte-reread.",
   "scoring": {
     "functional_score_definition": "weighted fraction of required capability materially implemented in current code/design",
     "evidence_score_definition": "weighted maturity of deterministic CI/device/field proof; documentation alone scores low",
@@ -32,37 +32,37 @@
     },
     {
       "id": "PHONE_LOCAL_API_SERVER",
-      "weight": 7,
+      "weight": 6,
       "functional": 0.7,
       "evidence": 0.65
     },
     {
       "id": "PHONE_DURABLE_DATA_FABRIC",
-      "weight": 7,
+      "weight": 6,
       "functional": 0.55,
       "evidence": 0.45
     },
     {
       "id": "PHONE_SCHEDULER_DAG",
-      "weight": 5,
+      "weight": 4,
       "functional": 0.6,
       "evidence": 0.5
     },
     {
       "id": "PHONE_LOCAL_EXECUTOR",
-      "weight": 4,
+      "weight": 3,
       "functional": 0.55,
       "evidence": 0.55
     },
     {
       "id": "MULTI_TRANSPORT_DISCOVERY",
-      "weight": 5,
+      "weight": 4,
       "functional": 0.6,
       "evidence": 0.45
     },
     {
       "id": "ENCRYPTED_AUTHENTICATED_LAN",
-      "weight": 6,
+      "weight": 5,
       "functional": 0.25,
       "evidence": 0.15
     },
@@ -74,13 +74,13 @@
     },
     {
       "id": "DEDICATED_APPLIANCE_PERMISSIONS",
-      "weight": 4,
+      "weight": 3,
       "functional": 0.5,
       "evidence": 0.35
     },
     {
       "id": "OFFLINE_STORE_FORWARD",
-      "weight": 5,
+      "weight": 4,
       "functional": 0.55,
       "evidence": 0.3
     },
@@ -92,44 +92,44 @@
     },
     {
       "id": "PC_HEAVY_WORKER_FENCING",
-      "weight": 5,
+      "weight": 4,
       "functional": 0.75,
       "evidence": 0.75
     },
     {
       "id": "ZERO_COST_MODEL_BROKER",
-      "weight": 4,
+      "weight": 3,
       "functional": 0.35,
       "evidence": 0.15
     },
     {
       "id": "UCMF_UNIVERSAL_EVENT_LEDGER",
-      "weight": 6,
+      "weight": 5,
       "functional": 0.65,
       "evidence": 0.55,
       "note": "Room v3 edge_events + append-only admission/tail API implemented; Android/contract qualification still being reconciled on exact head; field 2.2 install pending."
     },
     {
       "id": "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
-      "weight": 5,
+      "weight": 4,
       "functional": 0.35,
       "evidence": 0.15
     },
     {
       "id": "SOURCE_CAPABILITY_ADAPTERS",
-      "weight": 4,
+      "weight": 3,
       "functional": 0.25,
       "evidence": 0.1
     },
     {
       "id": "PHONE_SERVER_FIRST_UI",
-      "weight": 4,
+      "weight": 3,
       "functional": 0.55,
       "evidence": 0.35
     },
     {
       "id": "COORDINATED_RELEASE_UPDATE_ROLLBACK",
-      "weight": 5,
+      "weight": 4,
       "functional": 0.75,
       "evidence": 0.7
     },
@@ -138,28 +138,58 @@
       "weight": 5,
       "functional": 0.65,
       "evidence": 0.55
+    },
+    {
+      "id": "DIRECT_BOOT_BLACKSTART_RESILIENCE",
+      "weight": 4,
+      "functional": 0.25,
+      "evidence": 0.1,
+      "note": "UCMF P6/P7 requirement; design exists, device black-start proof remains weak."
+    },
+    {
+      "id": "BULK_MEDIA_DATA_PLANE",
+      "weight": 4,
+      "functional": 0.15,
+      "evidence": 0.05,
+      "note": "UCMF P8 requires resumable/sealed originals and async derived artifacts outside fast path."
+    },
+    {
+      "id": "MISSION_PROVIDER_DEGRADED_RESILIENCE",
+      "weight": 4,
+      "functional": 0.55,
+      "evidence": 0.45,
+      "note": "UCMF P9; durable continuity/communication exists, but mission-step envelope/provider-state persistence is only now being implemented on B-EDGE."
+    },
+    {
+      "id": "SECURITY_MEMORY_POISONING_INTEGRITY",
+      "weight": 3,
+      "functional": 0.35,
+      "evidence": 0.2,
+      "note": "UCMF P5-P9 require hostile-memory boundaries, integrity checks and recovery contracts."
     }
   ],
   "totals": {
     "weight": 100,
-    "functional_percent": 57,
-    "evidence_maturity_percent": 45.35
+    "functional_percent": 53.9,
+    "evidence_maturity_percent": 42.2
   },
   "top_gaps": [
+    "MISSION_STEP_ENVELOPE_AND_PROVIDER_STATE_NOT_YET_FIELD_PROVEN_ON_PHONE",
     "UNIVERSAL_CHRONICLE_IMPLEMENTED_BUT_NOT_YET_FIELD_PROVEN_ON_2_2_PHONE",
     "LAN_TRANSPORT_STILL_CLEAR_TEXT_POC",
     "INSTALLED_PHONE_2_1_2_NOT_FULL_NODE_2_2",
     "TELEGRAM_DIRECT_FIELD_OUTAGE_AND_EDGE_RELAY_NOT_FIELD_REGISTERED",
     "MEMORY_ADMISSION_SUPERSESSION_AND_SOURCE_CAPABILITY_MATRIX_INCOMPLETE",
+    "DIRECT_BOOT_BLACKSTART_AND_BULK_MEDIA_PIPELINE_INCOMPLETE",
     "OPTIONAL_DEDICATED_DEVICE_OWNER_TIER_NOT_IMPLEMENTED_OR_FIELD_GATED",
-    "SEALED_V0_7_ZIP_NOT_BYTE_REREAD_BUT_HANDOFF_DOSSIER_UCMF_V4_RECONCILED"
+    "SEALED_V0_7_ZIP_NOT_BYTE_REREAD_BUT_HANDOFF_DOSSIER_CURRENT_UCMF_V9_RECONCILED"
   ],
   "release_rule": "No user-facing milestone may be represented as percentage-complete against A+B+C unless this matrix and source completeness are refreshed on the exact candidate head.",
   "source_completeness": {
-    "A": "HANDOFF_DOSSIER_UCMF_V4_READ_SEALED_ZIP_HASH_POINTER_ONLY",
+    "A": "HANDOFF_DOSSIER_CURRENT_UCMF_V9_POSTULATES_1_TO_9_READ_SEALED_ZIP_HASH_POINTER_ONLY",
     "B": "CURRENT_RESEARCH_INDEXED",
     "C": "CURRENT_FIELD_FEEDBACK_INDEXED",
     "global_percentage_claim_allowed": false,
-    "reason": "sealed V0.7 ZIP bytes not rematerialized; scores remain macro evidence estimates rather than absolute completion"
+    "reason": "Current UCMF V9 expands the active denominator; scores are conservative macro evidence estimates and sealed V0.7 ZIP bytes were not rematerialized."
   }
 }
