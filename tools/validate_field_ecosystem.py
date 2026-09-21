@@ -442,13 +442,17 @@ def main() -> int:
     assert pre_human_policy["default_rule"] == "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE"
     assert "RUNTIME_PATH" in pre_human_policy["required_layers"]
     assert pre_human_policy["failure_behavior"].startswith("KEEP_WORKING_AUTOMATICALLY")
-    assert communication_policy["schema"] == "bcp.communication_survival_policy/1"
+    assert communication_policy["schema"] == "bcp.communication_survival_policy/2"
     assert "NO_SINGLE_COMMUNICATION_CHANNEL_IS_CANONICAL_STATE" in communication_policy["principles"]
     assert communication_policy["channels"]["gmail"]["end_retry_until_provider_ack"] is True
     assert communication_policy["channels"]["phone_edge"]["store_and_forward"] is True
     assert communication_policy["channels"]["telegram"]["fallback_path"] == "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM"
     assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
     assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
+    assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 27
+    assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] == 28
+    assert communication_policy["checkpoint_protocol"]["absolute_end_deadline_minutes"] == 30
+    assert communication_policy["anti_false_success"]["duplicate_end_prevention"] == "SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND"
 
     # Release coordination remains explicit.
     assert current["components"]["windows_bcp"]["version"] == server_release["version"]
