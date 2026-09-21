@@ -142,6 +142,19 @@ public final class EdgeOrchestrator {
 
             EdgeMemoryEntity old = dao.memoryItem(p, s, k);
             if (old != null && old.expiresAt != null && old.expiresAt <= now) old = null;
+            EdgeMemoryClaimEntity previousClaim = dao.latestAdmittedMemoryClaim(p, s, k);
+            if (!supersedes.isEmpty()) {
+                EdgeMemoryClaimEntity explicitPrior = dao.memoryClaimById(supersedes);
+                if (explicitPrior == null
+                        || !p.equals(explicitPrior.projectId)
+                        || !s.equals(explicitPrior.scope)
+                        || !k.equals(explicitPrior.memoryKey)) {
+                    throw new IllegalArgumentException("invalid_supersedes_claim");
+                }
+                previousClaim = explicitPrior;
+            } else if (previousClaim != null) {
+                supersedes = previousClaim.claimId;
+            }
             boolean admitted = EdgePolicy.canReplaceMemory(
                     s, old == null ? null : old.evidenceClass,
                     old != null && old.pinned, evidence);
@@ -160,8 +173,8 @@ public final class EdgeOrchestrator {
             }
 
             if (admitted) {
-                if (!supersedes.isEmpty()) {
-                    dao.setMemoryClaimState(supersedes, "SUPERSEDED", "SUPERSEDED_BY:" + claimId, now);
+                if (previousClaim != null && !previousClaim.claimId.equals(claimId)) {
+                    dao.setMemoryClaimState(previousClaim.claimId, "SUPERSEDED", "SUPERSEDED_BY:" + claimId, now);
                 }
                 boolean effectivePinned = pinned || (old != null && old.pinned);
                 long createdAt = old == null ? now : old.createdAt;
