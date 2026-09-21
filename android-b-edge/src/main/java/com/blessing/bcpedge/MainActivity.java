@@ -190,6 +190,7 @@ public class MainActivity extends Activity {
                             + "\nRéseau: " + net.optString("transport", "AUCUN")
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
                             + "\nLAN/API + NSD: actif"
+                            + "\nSécurité LAN: POC authentifié · chiffrement final requis"
                             + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
                             + "\nStore-and-forward: actif");
         } catch (Exception ignored) {}
