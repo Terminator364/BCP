@@ -104,6 +104,8 @@ def main() -> int:
         fail("pre_human_action_simulation_contract")
     if "RUNTIME_PATH" not in (pre_human.get("required_layers") or []):
         fail("pre_human_runtime_layer_missing")
+    if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
+        fail("human_action_matrix_ref_drift")
     if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
         fail("human_action_matrix_schema")
     actions = human_actions.get("actions") or []
@@ -125,6 +127,17 @@ def main() -> int:
             fail("human_action_evidence_missing:" + action_id)
         if not (action.get("remaining_field_boundary") or []):
             fail("human_action_field_boundary_missing:" + action_id)
+    workflow_names = set()
+    for workflow_path in (ROOT / ".github" / "workflows").glob("*.yml"):
+        head = workflow_path.read_text(encoding="utf-8", errors="replace")
+        wm = re.search(r"^name:\s*(.+?)\s*$", head, re.M)
+        if wm:
+            workflow_names.add(wm.group(1).strip())
+    for action_id, action in by_id.items():
+        for workflow_name in action.get("required_workflows") or []:
+            if workflow_name not in workflow_names:
+                fail("human_action_workflow_not_found:" + action_id + ":" + workflow_name)
+
     android_action = by_id["ANDROID_BEDGE_INSTALL_OR_OPEN"]
     if "android_emulator_api_35" not in (android_action.get("representative_environment") or []):
         fail("android_emulator_qualification_missing")
