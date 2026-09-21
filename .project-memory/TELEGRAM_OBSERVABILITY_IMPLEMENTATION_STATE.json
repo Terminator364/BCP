@@ -5,20 +5,20 @@
   "mode": "READ_ONLY",
   "budget_usd": 0,
   "base_main_sha": "2d73aefbcc669b9dbbb8a98f7f3ff827e979bf8d",
-  "work_branch": "work/bcp/r61-comms-recovery-20260921",
-  "status": "R61_DIRECT_TELEGRAM_OUTAGE_NEXUS_RECOVERY_READY",
-  "field_status": "HISTORICAL_KINSHASA_SMOKE_PASS_CURRENT_DIRECT_EGRESS_OUTAGE",
+  "work_branch": "work/bcp/r62-comms-autonomy-20260921",
+  "status": "R62_COMMS_AUTONOMY_CANDIDATE",
+  "field_status": "DIRECT_TELEGRAM_RECOVERED_ON_MOBILE_HOTSPOT_NEXUS_DNS_STAGE_FAILED",
   "implementation": {
     "worker": "windows/bcp_telegram_observability.py",
     "configurator": "windows/CONFIGURE_BCP_TELEGRAM.ps1",
     "field_guide": "docs/TELEGRAM_BOT_SETUP_AND_FIELD_GATE.md",
     "dependencies": "PYTHON_STANDARD_LIBRARY_ONLY",
-    "transport": "DIRECT_TELEGRAM_WITH_QUALIFIED_NEXUS_FAILOVER",
+    "transport": "DIRECT_TELEGRAM_WITH_BOOT_RECOVERY_ALIVE_NOTICES_AND_QUALIFIED_NEXUS_FAILOVER",
     "aggressive_polling": false,
     "private_chat_allowlist": true,
     "token_storage": "LOCAL_ONLY",
     "read_only": true,
-    "current_companion_version": "2026.09.21-comms-resilience-v19",
+    "current_companion_version": "2026.09.21-comms-autonomy-v20",
     "direct_transport_outage_state": "DIRECT_TRANSPORT_OUTAGE"
   },
   "commands": [
@@ -49,7 +49,7 @@
     "STATUS_RESPONSE_PASS",
     "NORMAL_KINSHASA_NETWORK_NO_VPN"
   ],
-  "next_safe_action": "After R61 exact-head CI and merge, perform exactly one fresh Nexus/Cloudflare device authorization using the already-qualified one-shot path. Then require provider-authenticated readback before switching Telegram receiver ownership to Nexus/webhook. Do not reinstall Telegram or re-enter the bot token.",
+  "next_safe_action": "Qualify R62 exact head. If green, merge through the writer fence, let BCP 0.7.14 and Telegram V20 converge automatically, then verify Drive runtime/Telegram notice evidence before any further user action.",
   "integration": {
     "pr_number": 14,
     "qualified_head_sha": "2a4dde3511a48b0fdae481a24e9f34e94c0f60e4",
@@ -81,16 +81,17 @@
     "bot_username": "BlessingBCPCocpitbot",
     "evidence_summary": "User received live /status replies in Telegram over normal Kinshasa mobile connectivity. Replies reported API/BCP state, GitHub CI, B-EDGE pairing, Drive receipt, BCP heartbeat and zero spend.",
     "current_runtime": {
-      "observed_at_utc": "2026-09-21T08:00:38+00:00",
+      "observed_at_utc": "2026-09-21T10:51:32+00:00",
       "pc_name": "MBMPC",
       "bcp_version": "0.7.13",
       "telegram_process_alive": true,
-      "direct_telegram_state": "DEGRADED_RETRY",
-      "error_class": "URLError",
-      "error_detail_classification": "WINERROR_10060_REMOTE_TIMEOUT",
-      "consecutive_failures": 34,
-      "nexus_state": "HUMAN_AUTH_REQUIRED",
-      "direct_transport_restored": false
+      "direct_telegram_state": "ACTIVE",
+      "direct_telegram_mode": "DIRECT_TELEGRAM",
+      "last_poll_at_utc": "2026-09-21T10:51:09+00:00",
+      "consecutive_failures": 0,
+      "nexus_state": "STAGE_FAILED",
+      "nexus_error_class": "DNS_RESOLUTION_FAILED",
+      "network_context": "USER_REPORTED_MOBILE_HOTSPOT_AFTER_HOME_WIFI_FAILURE"
     }
   },
   "runtime_snapshot_observed": {
@@ -134,5 +135,19 @@
     "user_reinstall_required": false,
     "bot_token_reentry_required": false,
     "r60_postmerge_ci": "ALL_PASS"
+  },
+  "r62": {
+    "companion_version": "2026.09.21-comms-autonomy-v20",
+    "startup_notice": true,
+    "recovery_notice": true,
+    "sparse_alive_notice_seconds": 5400,
+    "startup_notice_min_interval_seconds": 900,
+    "transport_notice_receipt": "state/telegram_transport_notice.json",
+    "nexus_network_stage_state_preservation": true,
+    "nexus_human_gate_receipt_recovery": true,
+    "nexus_network_recovery_pending_result": true,
+    "user_reinstall_required": false,
+    "bot_token_reentry_required": false,
+    "field_verified": false
   }
 }
