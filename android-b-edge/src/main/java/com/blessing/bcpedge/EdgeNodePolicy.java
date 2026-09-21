@@ -20,6 +20,12 @@ public final class EdgeNodePolicy {
         return MessageDigest.isEqual(a, b);
     }
 
+    public static boolean isSafeProjectId(String projectId) {
+        if (projectId == null) return false;
+        String p = projectId.trim();
+        return !p.isEmpty() && p.length() <= 128 && p.matches("[A-Za-z0-9_.:@/+-]+");
+    }
+
     public static boolean isSafeJobKind(String kind) {
         if (kind == null) return false;
         String k = kind.trim();
