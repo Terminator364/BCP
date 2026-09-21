@@ -1,7 +1,7 @@
 # BCP — Cahier des charges intégral A+B+C
 
-Status: CANONICAL CANDIDATE R79 · SOURCE-RECONCILED UCMF V9  
-Revision: 2026-09-21-R79
+Status: CANONICAL CANDIDATE R81 · SOURCE-RECONCILED UCMF V9 + PHONE CAPABILITY REGISTRY  
+Revision: 2026-09-22-R81
 
 ## 1. Autorité
 
@@ -166,3 +166,31 @@ Chaque candidate doit publier :
 - readback terrain.
 
 Le prochain incrément téléphone doit au minimum intégrer la Chronicle locale et renforcer son cockpit avant d'être envisagé comme nouvelle installation.
+
+
+## R81 — téléphone comme registre de capacités
+
+Le téléphone dédié ne doit pas seulement exécuter des fonctions codées ; il doit pouvoir **décrire durablement ce qu'il sait réellement faire maintenant**.
+
+Le registre de capacités local est donc une exigence A+B+C :
+
+- identité déterministe de capacité par projet/type/provider/source ;
+- état `AVAILABLE | DEGRADED | UNAVAILABLE | WAITING_AUTH | UNKNOWN` ;
+- classe de preuve `MACHINE_READBACK | LOCAL_PROBE | PROVIDER_ACK | USER_CONFIRMED | CONFIGURED | UNKNOWN` ;
+- métadonnées hashées, timestamp, TTL et expiration ;
+- stockage Room local et utilisable hors connexion ;
+- exposition uniquement via API locale authentifiée pour le détail ;
+- intégration au Context Builder et au tableau de bord serveur ;
+- événement Chronicle uniquement lors d'un changement matériel afin d'éviter le bruit.
+
+La première implémentation candidate couvre l'API locale, l'exécuteur local borné, le store-and-forward, le worker PC, le relais Telegram/réseau et le gouverneur de ressources.
+
+Cette exigence ne vaut pas preuve terrain. Le 2.2 reste non publiable tant que l'exact-head CI, l'émulateur Android, l'identité/signature APK et les gates terrain requis n'ont pas passé.
+
+### Communication R81
+
+La tranche interactive normale est **25 minutes** : cible 23 minutes de travail substantiel + environ 2 minutes de fermeture.
+
+Le `PRIMARY_ASSISTANT` possède le chemin normal `START -> WORK -> CLOSE_INTENT -> Gmail END -> provider ACK -> CLOSED -> pointer ChatGPT`.
+
+Un automate éventuel est **strictement un secours d'urgence** après interruption/échec du close primaire. Il ne doit jamais remplacer la fenêtre de travail utile ni être utilisé pour attendre artificiellement l'heure de fin.
