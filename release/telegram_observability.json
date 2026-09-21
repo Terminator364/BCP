@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.20-cadence-telemetry-v18",
+  "version": "2026.09.21-comms-resilience-v19",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "04b35117dcc049ce1426627ccec5af6c5c796a01f95f53d77e6a342514fc39b5",
+  "sha256": "e67c7b8c2130d91e0950708388d89fea68ad20b9838f73a3425a0853e7ce9ef6",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V18 R54 preserves the human-first compact cockpit and mail-first guidance, renders normal human time in Kinshasa when a timestamp exists, and produces structured WinAnsi/Bold/paginated human PDFs while retaining UTC machine evidence.",
+  "notes": "Telegram V19 R61 classifies sustained direct Bot API timeout as DIRECT_TRANSPORT_OUTAGE, persists outage/recovery evidence, exposes when a fresh Nexus authorization is the qualified recovery action, and keeps bounded direct retry without pretending the bot is healthy.",
   "requirements_revision": "2026-09-21-R60"
 }
