@@ -421,13 +421,15 @@ def main() -> int:
     delivery_policy = load(".project-memory/DELIVERY_REDUNDANCY_POLICY.json")
     pre_human_policy = load(".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json")
     communication_policy = load(".project-memory/COMMUNICATION_SURVIVAL_POLICY.json")
+    abc = load(".project-memory/ABC_REQUIREMENTS_TRACEABILITY.json")
+    abc_spec = read("docs/BCP_CANONICAL_SPEC_ABC_R76.md")
     comm_protocol = load(".project-memory/COMMUNICATION_PROTOCOL.json")
     comm_state_machine = load(".project-memory/COMMUNICATION_STATE_MACHINE.json")
     takeover = load(".project-memory/NEW_CONVERSATION_TAKEOVER.json")
     assert cadence_policy["acceptable_window_minutes"] == [26, 30]
     assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [26, 30]
     assert delivery_policy["cadence"]["work_slice_minutes"] == "30_TOTAL_26_WORK_4_CLOSEOUT"
-    assert delivery_policy["cadence"]["target_minutes"] == 30
+    assert delivery_policy["cadence"]["target_minutes"] == 25
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
     assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK"
@@ -439,8 +441,8 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
     assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 26
     assert delivery_policy["cadence"]["backup_earliest_offset_minutes"] == 28
-    assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] == 29
-    assert delivery_policy["cadence"]["absolute_end_deadline_minutes"] == 30
+    assert delivery_policy["cadence"]["hard_close_guard_offset_minutes"] is None
+    assert delivery_policy["cadence"]["absolute_end_deadline_minutes"] == 25
     assert delivery_policy["cadence"]["user_relaunch_must_never_be_required"] is True
     assert delivery_policy["checkpoint_delivery_order"] == [
         "EMAIL_START_NOTICE", "SUBSTANTIVE_WORK",
@@ -464,12 +466,16 @@ def main() -> int:
     assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
     assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 26
     assert communication_policy["checkpoint_protocol"]["backup_earliest_offset_minutes"] == 28
-    assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] == 29
-    assert communication_policy["checkpoint_protocol"]["absolute_end_deadline_minutes"] == 30
+    assert communication_policy["checkpoint_protocol"]["hard_close_guard_offset_minutes"] is None
+    assert communication_policy["checkpoint_protocol"]["absolute_end_deadline_minutes"] == 25
     assert communication_policy["anti_false_success"]["duplicate_end_prevention"] in {"SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND", "SEARCH_BY_DELIVERY_KEY_OR_CHECKPOINT_ID_BEFORE_SEND"}
     assert delivery_policy["channels"]["email"]["scheduler_completion_is_not_delivery_proof"] is True
     assert delivery_policy["channels"]["email"]["foreground_end_send_primary"] is True
     assert communication_policy["anti_false_success"]["scheduler_completed_is_not_delivery"] is True
+    assert abc["rule"].startswith("FULL_CAHIER_DES_CHARGES_EQUALS_A_PLUS_B_PLUS_C")
+    assert 0 < abc["scoring"]["overall_percent"] < 100
+    assert "A+B+C" in abc_spec
+    assert "PRIMARY LOW-POWER EDGE/API APPLIANCE" in abc_spec
     assert comm_protocol["schema"] == "bcp.communication_protocol/1"
     assert comm_protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert comm_protocol["cadence_minutes"] == 30
