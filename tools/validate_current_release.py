@@ -13,6 +13,8 @@ ANDROID = ROOT / "release" / "android.json"
 NEXUS = ROOT / "release" / "nexus_bootstrap.json"
 TELEGRAM = ROOT / "release" / "telegram_observability.json"
 SERVER_SOURCE = ROOT / "windows" / "bcp_server.py"
+INSTALLER_SOURCE = ROOT / "windows" / "INSTALL_BCP_FINAL.ps1"
+ACCEPTANCE_SOURCE = ROOT / "windows" / "BCP_FINAL_ACCEPTANCE_CURRENT.ps1"
 TELEGRAM_SOURCE = ROOT / "windows" / "bcp_telegram_observability.py"
 SPEC = ROOT / "docs" / "CANONICAL_PRODUCT_REQUIREMENTS.md"
 CADENCE_POLICY = ROOT / ".project-memory" / "INTERACTIVE_WORK_CADENCE_POLICY.json"
@@ -55,6 +57,8 @@ def main() -> int:
     telegram_manifest = load(TELEGRAM)
     source = SERVER_SOURCE.read_bytes()
     telegram_source = TELEGRAM_SOURCE.read_bytes()
+    installer_source = INSTALLER_SOURCE.read_text(encoding="utf-8")
+    acceptance_source = ACCEPTANCE_SOURCE.read_text(encoding="utf-8")
     spec = SPEC.read_text(encoding="utf-8")
     cadence = load(CADENCE_POLICY)
     delivery = load(DELIVERY_POLICY)
@@ -123,6 +127,14 @@ def main() -> int:
         fail("server_source_sha_drift")
     if pc.get("distribution_ready") is not True or pc.get("auto_update_eligible") is not True:
         fail("server_distribution_contract")
+
+    release_version = str(srv.get("version") or "")
+    installer_match = re.search(r'\$InstallerVersion\s*=\s*"([^"]+)"', installer_source)
+    acceptance_match = re.search(r'\$TargetVersion\s*=\s*"([^"]+)"', acceptance_source)
+    if not installer_match or installer_match.group(1) != release_version:
+        fail("installer_version_pin_drift")
+    if not acceptance_match or acceptance_match.group(1) != release_version:
+        fail("acceptance_version_pin_drift")
 
     if android.get("version") != str(edge.get("version_name")):
         fail("android_version_drift")
