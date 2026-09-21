@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/4",
+  "schema": "bcp.new_conversation_takeover/3",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -42,13 +42,15 @@
   ],
   "communication_contract": {
     "cadence_minutes": 25,
-    "useful_work_minutes": 23,
-    "normal_close_reserve_minutes": 2,
-    "gmail_label": "BCP",
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
     "normal_close_owner": "PRIMARY_ASSISTANT",
-    "scheduled_backup_required": false,
-    "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
-    "ui_thinking_indicator_authoritative": false
+    "automation_normal_close_forbidden": true,
+    "automation_role": "OPTIONAL_EMERGENCY_RECOVERY_ONLY",
+    "start_provider_ack_required": true,
+    "end_provider_ack_and_sent_readback_required": true,
+    "chat_final_before_end_ack_forbidden": true,
+    "user_reexplanation_required": false
   },
   "product_truth": {
     "phone_direction": "coherent dedicated Android full-node/server appliance",
@@ -59,5 +61,17 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9
-  }
+  },
+  "updated_at": "2026-09-22",
+  "continuation_code": "BCPGO BCP",
+  "product_scope": {
+    "formula": "A+B+C",
+    "source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "coverage": ".project-memory/BCP_ABC_COVERAGE.json",
+    "canonical_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
+    "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
+  },
+  "current_active_tranche": "BCP-R81-START-20260922-0033",
+  "current_delivery_key": "BCP25-20260922-0033-R81"
 }
