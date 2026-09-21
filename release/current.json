@@ -1,7 +1,7 @@
 {
   "schema": "bcp.current_release/1",
   "channel": "CURRENT",
-  "requirements_revision": "2026-09-21-R74",
+  "requirements_revision": "2026-09-21-R75",
   "zero_usd": true,
   "overall_state": "CI_SIGNED_DISTRIBUTED_FIELD_RELAY_PENDING",
   "update_policy": {
