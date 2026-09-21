@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CHECKPOINTED",
+  "delivery_state": "CLOSE_INTENT_PERSISTED",
+  "status": "CLOSEOUT",
   "started_at_kinshasa": "2026-09-22T00:31:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-22T00:54:00+01:00",
   "normal_end_target_kinshasa": "2026-09-22T00:56:00+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "scheduled_backup_role": "EMERGENCY_ONLY_AFTER_PRIMARY_CLOSE_FAILURE",
@@ -55,5 +55,21 @@
       "gmail_end_message_id": "1a0c64fe29b21b78",
       "status": "CLOSED_RECONCILED"
     }
-  ]
+  ],
+  "no_more_product_mutations": true,
+  "closeout_started_at_kinshasa": "2026-09-22T00:53:00+01:00",
+  "final_technical_checkpoint": {
+    "pr_number": 151,
+    "exact_candidate_head_before_close_checkpoint": "b569ca2ba5c29ea6823e403a577dbd458d9f30a1",
+    "current_release_contract": "PASS",
+    "nexus_one_shot": "PASS_ON_PREVIOUS_EXACT_HEAD_AND_RERUNNING_AFTER_UI_FIX",
+    "android_build": "PASS_ON_PREVIOUS_EXACT_HEAD_AND_RERUNNING_AFTER_UI_FIX",
+    "field_deterministic_contract": "PASS",
+    "android_emulator_issue_found": "server-first dashboard became taller; old simulation incorrectly assumed permissions controls were visible in first viewport",
+    "android_emulator_fix": "real scroll path plus top/permissions screenshots added before any field install",
+    "product_delta": "Room v5 phone capability registry + authenticated API + local capability snapshot task + server-first capability UI",
+    "abc_functional_percent": 54.65,
+    "abc_evidence_maturity_percent": 42.65,
+    "publication_allowed": false
+  }
 }
