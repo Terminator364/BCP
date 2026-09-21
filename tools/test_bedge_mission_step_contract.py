@@ -16,9 +16,9 @@ def ck(name, condition):
 
 
 ck("mission-entity", 'tableName = "edge_mission_steps"' in ENTITY)
-ck("mission-db-version", "version = 4" in DB)
+ck("mission-db-version", "version = 5" in DB)
 ck("mission-migration", "Migration(3, 4)" in DB and "MIGRATION_3_4" in DB)
-ck("mission-migration-chain", ".addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)" in DB)
+ck("mission-migration-chain", ".addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)" in DB)
 ck("mission-dao", "putMissionStep" in DAO and "resumableMissionSteps" in DAO and "updateMissionStepState" in DAO)
 for state in [
     "NOT_DISPATCHED", "DISPATCH_ATTEMPTED", "PROVIDER_ACKED", "STREAM_OBSERVED",
