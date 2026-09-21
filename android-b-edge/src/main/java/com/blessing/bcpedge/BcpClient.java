@@ -64,6 +64,37 @@ public final class BcpClient {
         telemetry.add(type, detail);
     }
 
+    public JSONObject registerEdgeRelay() {
+        JSONObject out = new JSONObject();
+        try {
+            if (getServer().isEmpty() || getToken().isEmpty()) {
+                out.put("ok", false);
+                out.put("state", "NOT_PAIRED");
+                return out;
+            }
+            JSONObject body = new JSONObject();
+            body.put("port", EdgeRelayPolicy.RELAY_PORT);
+            body.put("capability", "HTTPS_CONNECT_TELEGRAM");
+            body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
+            body.put("edge_version", EDGE_VERSION);
+            JSONObject r = requestJson(
+                    "POST", getServer() + "/v1/edge/relay/register",
+                    body.toString(), getToken(), "edge-relay-register",
+                    1500, 3000);
+            telemetry.add("EDGE_RELAY_REGISTERED",
+                    r.optString("relay_host", "") + ":" + r.optInt("relay_port", 0));
+            return r;
+        } catch (Exception ex) {
+            try {
+                out.put("ok", false);
+                out.put("state", "REGISTRATION_DEFERRED");
+                out.put("error_class", ex.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+            telemetry.add("EDGE_RELAY_REGISTRATION_DEFERRED", ex.getClass().getSimpleName());
+            return out;
+        }
+    }
+
     public JSONObject serverUpdateStatus() throws Exception {
         ensureConnected();
         return requestJson("GET", getServer() + "/v1/system/update", null,
@@ -262,6 +293,7 @@ public final class BcpClient {
         telemetry.add("PAIRING_PASS", server);
         progress.onStage("CONNECTED", "Appairé à " + pair.optString("pc_name", "BCP PC"));
         heartbeat("PAIRING_PASS");
+        registerEdgeRelay();
         JSONObject promoted = autoPromoteServerIfNeeded(progress);
         if (promoted != null) {
             String fp = promoted.optString("identity_fingerprint", "");
@@ -572,6 +604,7 @@ public final class BcpClient {
             JSONObject ctx = contextPack();
             out.put("context_cached", ctx.length() > 0);
             flushQueuedJobs();
+            out.put("edge_relay", registerEdgeRelay());
             out.put("queued_jobs_remaining", orchestrator.pendingCount());
             orchestrator.putMemory(getProject(), "OPERATING_STATE", "last_sync", out, "MACHINE_READBACK", false, null);
             telemetry.add("ORCHESTRATOR_SYNC_PASS", orchestrator.getMode());
