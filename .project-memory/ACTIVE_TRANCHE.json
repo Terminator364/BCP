@@ -7,20 +7,20 @@
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
   "work_state": "CHECKPOINTED",
-  "delivery_state": "CLOSE_INTENT_PERSISTED",
-  "status": "CLOSE_INTENT_PERSISTED",
+  "delivery_state": "CLOSED",
+  "status": "CLOSED",
   "started_at_kinshasa": "2026-09-21T20:37:00+01:00",
   "close_reserve_begins_kinshasa": "2026-09-21T21:00:00+01:00",
   "absolute_end_deadline_kinshasa": "2026-09-21T21:02:00+01:00",
   "gmail_start_message_id": "1a0c5794ea3a2e7a",
   "gmail_start_thread_id": "1a0c5794ea3a2e7a",
-  "gmail_end_message_id": null,
-  "gmail_end_thread_id": null,
-  "end_mail_verified": false,
+  "gmail_end_message_id": "1a0c58ef9561fec6",
+  "gmail_end_thread_id": "1a0c58ef9561fec6",
+  "end_mail_verified": true,
   "gmail_label": "BCP",
   "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
-  "final_app_reply_gate": "END_ACK_REQUIRED",
+  "final_app_reply_gate": "OPEN_AFTER_END_ACK",
   "communication_guard": {
     "final_app_reply_requires_end_ack_persisted": true,
     "closed_tranche_reuse_forbidden": true,
@@ -67,5 +67,8 @@
       "later CI jobs remain queued/in progress"
     ]
   },
-  "next_atomic_action": "On next tranche, Gmail START first. Fix only the remaining exact-head CI regressions discovered by R76, rerun full Android/CURRENT/Field gates, then merge PR #146 only if main is unchanged and every mandatory gate is green. No APK install before coherent A+B+C 2.2 gate."
+  "next_atomic_action": "On next tranche, Gmail START first. Fix only the remaining exact-head CI regressions discovered by R76, rerun full Android/CURRENT/Field gates, then merge PR #146 only if main is unchanged and every mandatory gate is green. No APK install before coherent A+B+C 2.2 gate.",
+  "end_checkpoint_id": "BCP-R76-ABC-PHONE-FULLNODE-END-20260921-2100",
+  "closed_at_provider_ts": "2026-09-21T20:01:16+00:00",
+  "closed_at_local": "2026-09-21T21:01:16+01:00"
 }
