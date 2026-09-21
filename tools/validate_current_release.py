@@ -107,7 +107,7 @@ def main() -> int:
     cadence_delivery = delivery.get("cadence") or {}
     if cadence_delivery.get("end_watchdog_required_at_start") is not True:
         fail("end_watchdog_required_at_start_contract")
-    if int(cadence_delivery.get("end_watchdog_offset_minutes") or 0) != 25:
+    if int(cadence_delivery.get("end_watchdog_offset_minutes") or 0) != 29:
         fail("end_watchdog_offset_contract")
     if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
         fail("start_work_end_chat_order_contract")
