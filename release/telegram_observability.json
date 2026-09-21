@@ -9,5 +9,5 @@
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
   "notes": "Telegram V22 preserves V21 direct-to-B-EDGE fallback and adds durable route evidence for direct Telegram, B-EDGE relay success, and no-working-route failure so field telemetry can prove which communications path was actually used.",
-  "requirements_revision": "2026-09-21-R73"
+  "requirements_revision": "2026-09-21-R74"
 }
