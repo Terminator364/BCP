@@ -128,17 +128,11 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" shell am force-stop com.blessing.bcpedge.evergreen
           sleep 1
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-relaunch.txt
           sleep 4
-          PID="$(adb shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
+          PID="$("$ADB" shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
           test -n "$PID"
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          ADB="$SDK/platform-tools/adb"
           "$ADB" pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
           grep -F "BCP Edge Evergreen" bcp-window-relaunch.xml >/dev/null
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
