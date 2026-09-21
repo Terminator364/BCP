@@ -19,7 +19,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.1.2-rc1-edge-relay";
+    private static final String EDGE_VERSION = "2.2.0-rc1-full-node";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -77,6 +77,11 @@ public final class BcpClient {
             body.put("capability", "HTTPS_CONNECT_TELEGRAM");
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
+            body.put("node_role", "DEDICATED_EDGE_API_SERVER");
+            body.put("api_port", EdgeRelayPolicy.RELAY_PORT);
+            body.put("api_version", "v1");
+            body.put("store_and_forward", true);
+            body.put("durable_queue", true);
             JSONObject r = requestJson(
                     "POST", getServer() + "/v1/edge/relay/register",
                     body.toString(), getToken(), "edge-relay-register",
