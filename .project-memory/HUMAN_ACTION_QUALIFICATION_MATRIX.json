@@ -101,7 +101,6 @@
       ],
       "required_workflows": [
         "BCP Android Human-Action Simulation",
-        "BCP Android Build",
         "BCP Coordinated Product Qualification"
       ],
       "required_evidence": [
@@ -109,7 +108,10 @@
         "apk_install",
         "launcher_activity_start",
         "ui_hierarchy_contains_BCP_Edge",
-        "no_immediate_process_crash"
+        "ui_hierarchy_contains_connect_button",
+        "no_immediate_process_crash",
+        "no_pc_available_startup_remains_alive",
+        "cold_relaunch"
       ],
       "remaining_field_boundary": [
         "actual old phone OEM/Android image",
