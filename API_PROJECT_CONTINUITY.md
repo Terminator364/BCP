@@ -1,3 +1,25 @@
+# R66 Fresh Conversation Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+R66 invariants:
+- Gmail START before substantive work; Gmail END provider-acknowledged before any ChatGPT end output; both messages use subject prefix `[BCP]` and Gmail label `BCP`;
+- target tranche is ~25 minutes with the one-shot end watchdog armed at START;
+- the dedicated old Android phone is PHONE_PRIMARY continuity infrastructure, not a passive client;
+- preserve authenticated phone-local project/context/memory/jobs API, durable resume intents, Room store-forward, phone-owned PC sentinel and phone-owned Telegram outbound liveness;
+- never assume a SIM in the old phone;
+- do not run two Telegram `getUpdates` pollers against the same bot token; inbound ownership remains single-writer until a durable poller lease exists;
+- Wi-Fi Direct / Wi-Fi Aware / LocalOnlyHotspot / Bluetooth companion / USB are capability-gated fallback transports, not claims of field verification;
+- Windows remains the fenced heavy worker for Windows-only work, not the sole continuity authority;
+- do not ask the user to retry/install the R66 phone candidate until exact-head CI and signed-package/readback gates pass.
+
+Current candidate:
+- PR #134, branch `work/bcp/r65-phone-server-full-node-20260921-1345`;
+- BCP server target 0.7.16;
+- B-EDGE source candidate 2.1.4-rc1-phone-primary-comms-evergreen;
+- R66 adds phone-owned liveness plus local project/context/memory/jobs and durable resume-intent endpoints;
+- exact-head CI must be reread after the latest R66 commits.
+
 # R65 Fresh Conversation Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
