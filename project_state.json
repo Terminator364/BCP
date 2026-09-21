@@ -85,7 +85,7 @@
     "pre_human_action_simulation_policy": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     "human_action_qualification_matrix": ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
     "communication_survival_policy": ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
-    "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "communication_recovery_runbook": "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md",
     "phone_edge_research_evidence": "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
     "active_tranche_ledger": ".project-memory/ACTIVE_TRANCHE.json"
   },
@@ -161,7 +161,7 @@
     ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R68_20260921.json",
     ".project-memory/FIELD_EVIDENCE_BEDGE_2_1_2_R69_20260921.json",
     ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
-    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R71.md",
+    "docs/BCP_COMMUNICATION_SURVIVAL_AND_CROSS_CHAT_RECOVERY_R72.md",
     "docs/R71_PHONE_EDGE_RESEARCH_EVIDENCE.md",
     ".project-memory/ACTIVE_TRANCHE.json"
   ],
