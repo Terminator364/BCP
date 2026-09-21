@@ -50,6 +50,7 @@ public final class BcpClient {
     static String edgeVersionForTelemetry() { return EDGE_VERSION; }
     public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
+    public JSONArray communicationHistory() { return orchestrator.communicationHistory(getProject()); }
 
     public JSONObject localContextPack() {
         JSONObject out = new JSONObject();
