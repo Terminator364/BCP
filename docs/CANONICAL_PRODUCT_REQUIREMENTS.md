@@ -1,7 +1,7 @@
 # API / BCP — Cahier des charges canonique courant
 
 Status: CANONICAL PRODUCT REQUIREMENT
-Revision: 2026-09-21-R64
+Revision: 2026-09-21-R69
 Supersedes: fragmented requirements only as an index; underlying detailed requirement files remain authoritative.
 
 ## Mission
@@ -1883,3 +1883,39 @@ No R64 user-facing install/update may be requested until:
 4. server registration accepts only authenticated private-LAN B-EDGE state;
 5. CURRENT/server/Android/Telegram versions and hashes are coordinated;
 6. field installation/readback proves the signed B-EDGE runtime before the relay is represented as FIELD_ACTIVE.
+
+
+## P0 — Dedicated Android Edge/API server appliance — R69
+
+The dedicated old Android phone is a first-class BCP infrastructure node, not a passive telemetry client and not merely a Telegram tunnel. The PC remains the Windows/heavy-compute node; it MUST NOT be the sole communication center.
+
+The phone node MUST, within ordinary Android application capabilities and without requiring a SIM:
+- run a visible foreground Edge/API server with an honest persistent notification;
+- restore the server path after supported reboot/package-replacement lifecycle events;
+- expose a bounded local API for health, capabilities, authenticated node status, durable sync and bounded job admission;
+- authenticate private LAN API access with the existing paired BCP credential and never expose arbitrary shell execution;
+- retain the existing Telegram HTTPS CONNECT relay restricted to `api.telegram.org:443`, preserving end-to-end Telegram TLS;
+- keep Room/WAL-backed project, memory, queue, receipt, dependency and sentinel state so a PC outage does not erase continuity;
+- provide store-and-forward semantics and idempotent replay after connectivity returns;
+- advertise local presence by normal LAN NSD and, when the device supports and the user grants the necessary Android permission, by Wi-Fi Direct DNS-SD and a low-power BLE beacon;
+- remain useful on Wi-Fi, a temporary hotspot, or a local-only link; no cellular modem/SIM is assumed in the old phone;
+- request only permissions tied to concrete node capabilities and explain each permission in the UI;
+- support an optional Android battery-optimization exemption for this dedicated 24/7 use case, while remaining functional in a degraded standard-battery mode if the user declines;
+- preserve low-data operation: control messages, receipts, compact telemetry and queue metadata are preferred over bulk transfer;
+- never invent PC progress while the PC is unreachable.
+
+The first user-facing screen MUST make the phone-node role observable. It must show, in human language, the local server state, API/listener state, durable queue/store-and-forward state, transport/discovery readiness and the Android permissions/autonomy status. A technically working server hidden behind a generic “connected” screen is not sufficient.
+
+Representative Android qualification MUST exercise the exact installable candidate in an emulator or equivalent:
+1. install the APK;
+2. launch the real resolved launcher activity;
+3. grant or simulate only the declared dedicated-server runtime permissions;
+4. verify the full-node UI;
+5. verify a real local HTTP `/health` response from the foreground phone service;
+6. verify `/v1/node/capabilities` advertises durable queue/store-and-forward and rejects arbitrary proxy/shell semantics;
+7. verify a private endpoint rejects unauthenticated access;
+8. force-stop/relaunch and verify the local API becomes healthy again.
+
+Field promotion additionally requires the actual old phone to prove: in-place upgrade without uninstall, permission flow, foreground notification/service, paired identity preservation, local API readback, relay registration, reboot/restart survival and at least one authenticated PC↔phone/Telegram communication round-trip.
+
+The project MAY later evaluate fully-managed Android/DPC/device-owner provisioning for a truly appliance-like dedicated phone, but this is a separate opt-in migration because normal device-owner provisioning can require destructive enrollment/factory-reset conditions. R69 does not silently require or perform such a reset.
