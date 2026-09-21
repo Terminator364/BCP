@@ -128,7 +128,7 @@ def main() -> int:
         fail("pre_human_runtime_layer_missing")
     if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
         fail("human_action_matrix_ref_drift")
-    if communication.get("schema") != "bcp.communication_survival_policy/1":
+    if communication.get("schema") != "bcp.communication_survival_policy/2":
         fail("communication_survival_schema")
     if communication.get("cold_recovery", {}).get("code") != "BCPGO BCP":
         fail("communication_cold_recovery_code")
