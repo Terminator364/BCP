@@ -1,21 +1,19 @@
 {
-  "schema": "bcp.active_tranche/3",
+  "schema": "bcp.active_tranche/4",
   "project": "API/BCP",
-  "tranche_id": "BCP-R74-START-20260921-1901",
-  "delivery_key": "BCP30-20260921-1901-R74",
-  "cadence_minutes": 30,
-  "useful_work_minutes": 26,
-  "normal_close_reserve_minutes": 4,
+  "tranche_id": "BCP-R76-START-20260921-2037",
+  "delivery_key": "BCP25-20260921-2037-R76",
+  "cadence_minutes": 25,
+  "useful_work_minutes": 23,
+  "normal_close_reserve_minutes": 2,
   "work_state": "WORKING",
   "delivery_state": "START_ACKNOWLEDGED",
   "status": "WORKING",
-  "started_at_kinshasa": "2026-09-21T19:01:00+01:00",
-  "close_reserve_begins_kinshasa": "2026-09-21T19:27:00+01:00",
-  "backup_earliest_kinshasa": "2026-09-21T19:29:00+01:00",
-  "hard_guard_kinshasa": "2026-09-21T19:30:00+01:00",
-  "absolute_end_deadline_kinshasa": "2026-09-21T19:31:00+01:00",
-  "gmail_start_message_id": "1a0c5216e9b71648",
-  "gmail_start_thread_id": "1a0c5216e9b71648",
+  "started_at_kinshasa": "2026-09-21T20:37:00+01:00",
+  "close_reserve_begins_kinshasa": "2026-09-21T21:00:00+01:00",
+  "absolute_end_deadline_kinshasa": "2026-09-21T21:02:00+01:00",
+  "gmail_start_message_id": "1a0c5794ea3a2e7a",
+  "gmail_start_thread_id": "1a0c5794ea3a2e7a",
   "gmail_end_message_id": null,
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
@@ -27,22 +25,28 @@
     "final_app_reply_requires_end_ack_persisted": true,
     "closed_tranche_reuse_forbidden": true,
     "scheduler_completion_is_not_delivery_proof": true,
-    "user_message_is_not_closeout_trigger": true,
+    "user_message_is_not_normal_closeout_trigger": true,
     "search_before_send": true,
-    "delivery_key_required": true
+    "delivery_key_required": true,
+    "scheduled_close_automation_required": false
   },
   "work_scope": [
-    "PORT_KINLINK_STYLE_COMMUNICATION_STATE_MACHINE",
-    "SYNC_COLD_CONTINUATION_BCPGO",
-    "CONTINUE_BEDGE_FULL_NODE_WITHOUT_MICRO_BETA"
+    "REBUILD_CANONICAL_SPEC_AS_A_PLUS_B_PLUS_C",
+    "MEASURE_PRODUCT_COVERAGE_AGAINST_FULL_SPEC",
+    "PROMOTE_DEDICATED_PHONE_TO_PRIMARY_EDGE_APPLIANCE",
+    "SYNC_25_MIN_COMMUNICATION_AND_COLD_CONTINUITY"
   ],
-  "branch": "work/bcp/r74-kinlink-comms-port-20260921-1901",
-  "previous_tranche": {
-    "tranche_id": "BCP-R73-START-20260921-1818",
-    "delivery_key": "BCP30-20260921-1818-R73",
-    "closed_at_kinshasa": "2026-09-21T19:00:00+01:00",
-    "end_email_message_id": "1a0c520e8cc2673f",
-    "checkpoint_id": "BCP-R73-COMMS-END-20260921-1900",
-    "closure_reason": "CORRECTIVE_AFTER_SCHEDULER_COMPLETED_WITHOUT_GMAIL_END"
+  "branch": "work/bcp/r76-abc-spec-phone-fullnode-comms-20260921-2037",
+  "previous_tranches_reconciled": {
+    "r74": {
+      "end_message_id": "1a0c539e52ecf523",
+      "delivery_state": "CLOSED",
+      "close_owner": "SHADOW_BACKUP"
+    },
+    "r75": {
+      "end_message_id": "1a0c570d27ec8e58",
+      "delivery_state": "CLOSED",
+      "close_owner": "HARD_GUARD"
+    }
   }
 }
