@@ -185,6 +185,16 @@ def append_log(event: str, **fields: Any) -> None:
         h.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+def direct_transport_state(failures: int) -> str:
+    return "DIRECT_TRANSPORT_OUTAGE" if int(failures) >= DIRECT_OUTAGE_FAILURE_THRESHOLD else "DEGRADED_RETRY"
+
+
+def direct_recovery_action(nexus_state: str, sustained: bool) -> str:
+    if sustained and str(nexus_state or "").upper() == "HUMAN_AUTH_REQUIRED":
+        return "FRESH_NEXUS_AUTHORIZATION_REQUIRED"
+    return "WAIT_FOR_NETWORK_OR_QUALIFIED_NEXUS_FAILOVER" if sustained else "DIRECT_RETRY"
+
+
 def write_worker_health(mode: str, state: str, **fields: Any) -> None:
     rec = {
         "schema": "bcp.telegram_worker_health/1",
@@ -3174,7 +3184,7 @@ class Telegram:
                 sustained = failures >= DIRECT_OUTAGE_FAILURE_THRESHOLD
                 bootstrap = read_json(NEXUS_BOOTSTRAP_RECEIPT_PATH, {}) or {}
                 nexus_state = str(bootstrap.get("state") or bootstrap.get("status") or "NOT_READY")[:80]
-                state = "DIRECT_TRANSPORT_OUTAGE" if sustained else "DEGRADED_RETRY"
+                state = direct_transport_state(failures)
                 append_log(
                     "DIRECT_TELEGRAM_OUTAGE" if sustained else "RETRY",
                     error_class=type(e).__name__,
@@ -3194,11 +3204,7 @@ class Telegram:
                         "error_detail": detail,
                         "next_retry_seconds": delay,
                         "nexus_state": nexus_state,
-                        "recovery_action": (
-                            "FRESH_NEXUS_AUTHORIZATION_REQUIRED"
-                            if nexus_state == "HUMAN_AUTH_REQUIRED"
-                            else "WAIT_FOR_NETWORK_OR_QUALIFIED_NEXUS_FAILOVER"
-                        ),
+                        "recovery_action": direct_recovery_action(nexus_state, sustained),
                     })
                 write_worker_health(
                     "DIRECT_TELEGRAM", state,
@@ -3209,11 +3215,7 @@ class Telegram:
                     transport_outage=sustained,
                     transport_outage_since=first_failure_at,
                     nexus_state=nexus_state,
-                    recovery_action=(
-                        "FRESH_NEXUS_AUTHORIZATION_REQUIRED"
-                        if sustained and nexus_state == "HUMAN_AUTH_REQUIRED"
-                        else "DIRECT_RETRY"
-                    ),
+                    recovery_action=direct_recovery_action(nexus_state, sustained),
                 )
                 time.sleep(delay)
             except Exception as e:
@@ -3871,6 +3873,10 @@ def selftest() -> int:
         assert HEALTH_PATH.name == "telegram_worker_health.json"
         assert TRANSPORT_OUTAGE_PATH.name == "telegram_transport_outage.json"
         assert DIRECT_OUTAGE_FAILURE_THRESHOLD == 3
+        assert direct_transport_state(2) == "DEGRADED_RETRY"
+        assert direct_transport_state(3) == "DIRECT_TRANSPORT_OUTAGE"
+        assert direct_recovery_action("HUMAN_AUTH_REQUIRED", True) == "FRESH_NEXUS_AUTHORIZATION_REQUIRED"
+        assert direct_recovery_action("NOT_READY", True) == "WAIT_FOR_NETWORK_OR_QUALIFIED_NEXUS_FAILOVER"
         assert MISSION_WATCHDOG_STATE_PATH.name == "mission_watchdog.json"
         assert "bcp:continue" in json.dumps(Telegram.keyboard(), ensure_ascii=False)
         assert Telegram._callback_action.__name__ == "_callback_action"
