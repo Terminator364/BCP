@@ -35,11 +35,11 @@
       "meaning": "required capability not yet implemented/qualified"
     }
   },
-  "current_weighted_maturity_pct": null,
+  "current_weighted_maturity_pct": 57.5,
   "current_by_origin_pct": {
-    "A": null,
-    "B": null,
-    "C": null
+    "A": 64.3,
+    "B": 50.7,
+    "C": 57.5
   },
   "note": "This is a conservative evidence-maturity score, not a marketing completion number. Evidence state must be updated by readback/CI/field proof, never by prose alone.",
   "requirements": [
@@ -942,5 +942,17 @@
       "current_state": "GAP_OPEN",
       "evidence": []
     }
-  ]
+  ],
+  "score_calculation_receipt": {
+    "requirement_count": 80,
+    "state_counts": {
+      "FIELD_PROVEN": 14,
+      "CI_PROVEN": 4,
+      "CODE_PRESENT": 38,
+      "DESIGN_ONLY": 20,
+      "GAP_OPEN": 4
+    },
+    "formula": "sum(state_score)/requirement_count*100",
+    "calculated_revision": "2026-09-21-R77"
+  }
 }
