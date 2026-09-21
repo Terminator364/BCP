@@ -82,7 +82,7 @@ def main() -> int:
         and row.get("event") == "START_ACKNOWLEDGED"
     ]
     assert len(starts) == 1
-    assert starts[0]["start_message_id"] == active["gmail_start_message_id"]
+    assert (starts[0].get("gmail_start_message_id") or starts[0].get("start_message_id")) == active["gmail_start_message_id"]
 
     r73_ends = [
         row for row in ledger_rows
