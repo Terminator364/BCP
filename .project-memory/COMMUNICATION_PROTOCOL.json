@@ -1,7 +1,7 @@
 {
-  "schema": "bcp.communication_protocol/2",
+  "schema": "bcp.communication_protocol/3",
   "project": "API/BCP",
-  "revision": "2026-09-21-R77",
+  "revision": "2026-09-22-R81",
   "cadence_minutes": 25,
   "primary_work_budget_minutes": 23,
   "normal_close_reserve_minutes": 2,
@@ -24,7 +24,7 @@
     "STOP_NEW_PRODUCT_MUTATIONS",
     "PERSIST_FINAL_TECHNICAL_CHECKPOINT_AND_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
-    "SEND_COMPLETE_GMAIL_END_IF_MISSING",
+    "PRIMARY_ASSISTANT_SEND_COMPLETE_GMAIL_END_IF_MISSING",
     "VERIFY_END_PROVIDER_ACK_MESSAGE_ID_AND_SENT_READBACK",
     "APPLY_GMAIL_LABEL_BCP",
     "PERSIST_END_ACKNOWLEDGED_AND_CLOSED",
@@ -43,12 +43,18 @@
   "backup_semantics": {
     "scheduled_jobs_are_normal_close_dependency": false,
     "default_enabled": false,
-    "role": "OPTIONAL_EMERGENCY_RECOVERY_ONLY",
+    "role": "EMERGENCY_ONLY_IF_PRIMARY_TURN_IS_INTERRUPTED_OR_GMAIL_END_CANNOT_COMPLETE",
+    "activation_window": "ONLY_AFTER_NORMAL_END_TARGET_OR_DETECTED_PRIMARY_CLOSE_FAILURE",
     "scheduler_completion_is_delivery_proof": false,
-    "must_search_gmail_before_send": true
+    "must_search_gmail_before_send": true,
+    "must_not_replace_primary_useful_work": true,
+    "maximum_normal_backup_count": 1
   },
   "work_proof": {
-    "chatgpt_thinking_indicator": "VISIBLE_UI_SIGNAL_ONLY_NOT_TOTAL_TRANCHE_PROOF",
+    "chatgpt_thinking_indicator": "VISIBLE_UI_SIGNAL_ONLY_NOT_CONTROLLABLE_NOT_TOTAL_TRANCHE_PROOF",
+    "target_wall_clock_minutes": 25,
+    "target_substantive_work_minutes": 23,
+    "close_reserve_minutes": 2,
     "authoritative_evidence": [
       "git_commits",
       "ci_runs",
@@ -57,7 +63,7 @@
       "durable_receipts",
       "field_telemetry"
     ],
-    "rule": "TARGET_REAL_SUBSTANTIVE_WORK_WITH_DURABLE_EVIDENCE; NEVER_FAKE_UI_THINKING_DURATION"
+    "rule": "PRIMARY_ASSISTANT_DOES_REAL_SUBSTANTIVE_WORK_BEFORE_NORMAL_END; AUTOMATION_IS_NEVER_USED_AS_WAITING_SUBSTITUTE"
   },
   "scheduled_backup_required": false,
   "scheduled_backup_default_enabled": false
