@@ -45,9 +45,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;google_apis;x86_64"
-          echo "no" | avdmanager create avd -n bcp_api35 -k "system-images;android-35;google_apis;x86_64" --force
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          AVDMANAGER="$SDK/cmdline-tools/latest/bin/avdmanager"
+          test -x "$SDKMANAGER"
+          test -x "$AVDMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;google_apis;x86_64"
+          echo "no" | "$AVDMANAGER" create avd -n bcp_api35 -k "system-images;android-35;google_apis;x86_64" --force
 
       - name: Build exact debug APK
         shell: bash
@@ -57,7 +62,8 @@ jobs:
           APK="android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk"
           test -s "$APK"
           sha256sum "$APK" | tee android-emulator-apk.sha256
-          aapt dump badging "$APK" | tee android-emulator-apk.badging.txt
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          "$SDK/build-tools/35.0.0/aapt" dump badging "$APK" | tee android-emulator-apk.badging.txt
           grep -F "package: name='com.blessing.bcpedge.evergreen'" android-emulator-apk.badging.txt >/dev/null
 
       - name: Boot representative Android phone
@@ -65,18 +71,28 @@ jobs:
         run: |
           set -euo pipefail
           sudo chmod 666 /dev/kvm || true
-          nohup emulator -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
-          adb wait-for-device
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          export PATH="$SDK/platform-tools:$SDK/emulator:$PATH"
+          nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
+          "$SDK/platform-tools/adb" wait-for-device
           for i in $(seq 1 120); do
             BOOT="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
             if [ "$BOOT" = "1" ]; then break; fi
             sleep 2
           done
           test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-          adb shell input keyevent 82 || true
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell input keyevent 82 || true
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell settings put global window_animation_scale 0
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell settings put global transition_animation_scale 0
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell settings put global animator_duration_scale 0
           echo "BCP_ANDROID_EMULATOR_BOOT=PASS"
 
       - name: Install and launch exact user-facing app
@@ -84,10 +100,16 @@ jobs:
         run: |
           set -euo pipefail
           APK="android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk"
-          adb install -r "$APK" | tee adb-install.txt
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" install -r "$APK" | tee adb-install.txt
           grep -F "Success" adb-install.txt >/dev/null
-          adb shell am force-stop com.blessing.bcpedge.evergreen || true
-          adb shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-start.txt
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell am force-stop com.blessing.bcpedge.evergreen || true
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-start.txt
           grep -E "Status: ok|Status:.*ok" activity-start.txt >/dev/null
           sleep 5
           PID="$(adb shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
@@ -98,8 +120,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          adb shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
-          adb pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
           grep -F "BCP Edge Evergreen" bcp-window.xml >/dev/null
           grep -F "CONNECTER AUTOMATIQUEMENT" bcp-window.xml >/dev/null
           if adb logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
@@ -112,14 +138,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          adb shell am force-stop com.blessing.bcpedge.evergreen
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell am force-stop com.blessing.bcpedge.evergreen
           sleep 1
-          adb shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-relaunch.txt
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell am start -W -n com.blessing.bcpedge.evergreen/.MainActivity | tee activity-relaunch.txt
           sleep 4
           PID="$(adb shell pidof com.blessing.bcpedge.evergreen | tr -d '\r')"
           test -n "$PID"
-          adb shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
-          adb pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
           grep -F "BCP Edge Evergreen" bcp-window-relaunch.xml >/dev/null
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
 
