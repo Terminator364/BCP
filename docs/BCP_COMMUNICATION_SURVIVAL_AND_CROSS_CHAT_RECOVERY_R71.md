@@ -1,8 +1,9 @@
-# BCP — Communication Survival & Cross-Conversation Recovery R71
+# BCP — Communication Survival & Cross-Conversation Recovery R72
 
 Status: CANONICAL CANDIDATE  
 Date: 2026-09-21  
-Continuation code: `BCPGO BCP`
+Continuation code: `BCPGO BCP`  
+Supersedes closeout timing in R71.
 
 ## 1. Purpose
 
@@ -32,18 +33,20 @@ ChatGPT is not canonical state. A new conversation must recover from durable pro
 
 1. Resolve project context only as much as necessary.
 2. Gmail START + provider ACK.
-3. Arm one-shot END watchdog for minute 29.
-4. Work until about minute 29.
-5. Persist branch/state/checkpoint.
-6. Gmail END + retry until provider ACK.
-7. Disable watchdog if normal END succeeded.
-8. ChatGPT emits only Gmail/date-time/checkpoint pointer.
+3. Persist an ACTIVE_TRANCHE record with exact due times.
+4. Work normally.
+5. By T+26, persist a pre-close durable snapshot.
+6. At T+27, normal closeout searches Gmail for the checkpoint id; if END is absent, it sends the complete END.
+7. At T+28, an independent hard guard repeats the search and sends END if still absent.
+8. T+30 is an absolute END deadline, not the time at which closeout begins.
+9. Gmail END is retried until provider ACK, then read back and labeled BCP.
+10. ChatGPT emits only Gmail/date-time/checkpoint pointer.
 
-A missing ChatGPT reply must never be required to trigger the END checkpoint.
+A user message, UI refresh, or "eh oh" is never a trigger for closeout. The closeout is timer-driven and idempotent.
 
 ## 4. Failure matrix
 
-- ChatGPT UI stalls: no project state loss; watchdog sends END; next conversation uses `BCPGO BCP`.
+- ChatGPT UI stalls: no project state loss; normal/hard close guards send END from durable state; next conversation uses `BCPGO BCP`.
 - Gmail START fails: substantive tranche does not start.
 - Gmail END fails: retry; no ChatGPT end output.
 - Telegram direct timeout/DNS/TLS failure: classify and try fresh B-EDGE relay; otherwise persist outage.
