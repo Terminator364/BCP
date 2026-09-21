@@ -38,7 +38,12 @@
     "project_mail_label_source": ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
     "bcp_install_current_source": "API_BCP/00_INSTALL_CURRENT/BCP_EDGE_CURRENT.apk",
     "bcp_phone_primary_edge_node": true,
-    "bcpgo_bcp_loads_current_install_manifest": true
+    "bcpgo_bcp_loads_current_install_manifest": true,
+    "bcp_phone_full_server_target": true,
+    "bcp_phone_candidate_version": "2.2.0-rc1-full-node-evergreen",
+    "bcp_phone_candidate_must_pass_emulated_local_api_server_gate": true,
+    "bcp_phone_no_sim_assumed": true,
+    "bcp_pc_is_heavy_worker_not_sole_communications_center": true
   },
   "universal": [
     {
@@ -75,7 +80,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R68_PHONE_EDGE_AND_MAIL_CONTRACT",
+      "status": "VALID_SCOPED_ALIAS_WITH_R69_FULL_PHONE_SERVER_AND_MAIL_CONTRACT",
       "fallback": "BCPGO BCP"
     },
     {
