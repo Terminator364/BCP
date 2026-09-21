@@ -112,8 +112,8 @@ def main() -> int:
         fail("active_tranche_primary_close_owner")
     if active_tranche.get("final_app_reply_gate") not in {"END_ACK_REQUIRED", "OPEN_AFTER_END_ACK"}:
         fail("active_tranche_final_reply_gate")
-    if active_tranche.get("communication_guard", {}).get("user_message_is_not_closeout_trigger") is not True:
-        fail("active_tranche_user_message_trigger_contract")
+    if active_tranche.get("communication_guard", {}).get("user_message_is_not_normal_closeout_trigger") is not True:
+        fail("active_tranche_user_message_normal_trigger_contract")
     email = delivery.get("channels", {}).get("email", {})
     if email.get("start_notice_required_before_substantive_work") is not True:
         fail("start_email_before_work_contract")
