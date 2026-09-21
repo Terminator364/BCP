@@ -2117,5 +2117,24 @@
     "pc_power_source": "AC",
     "field_gate_bcp_0_7_13": "PASS",
     "nexus_field_auth": "PENDING_HUMAN_PROVIDER_GATE"
+  },
+  "field_readback_lookup_strategy": {
+    "status": "CANONICAL_R60",
+    "provider": "GOOGLE_DRIVE",
+    "method": "DETERMINISTIC_FOLDER_TRAVERSAL_NOT_BROAD_SEARCH",
+    "path": [
+      "API_BCP",
+      "02_TELEMETRY",
+      "BCP",
+      "BCP_RUNTIME_LATEST.json"
+    ],
+    "required_fields": [
+      "server_version",
+      "server_sha256",
+      "updated_at",
+      "update_state",
+      "nexus_bootstrap_state"
+    ],
+    "public_repo_drive_ids_forbidden": true
   }
 }
