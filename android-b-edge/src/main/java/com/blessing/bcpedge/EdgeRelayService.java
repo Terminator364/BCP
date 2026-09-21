@@ -313,11 +313,12 @@ public final class EdgeRelayService extends Service {
             }
             JSONObject payload = new JSONObject(body.toString());
             payload.put("idempotency_key", idem);
-            JSONObject queued = new BcpClient(this).queueJob(
-                    "LOCAL_COMMUNICATION_RECORD", payload, false);
-            queued.put("ok", queued.optBoolean("executed_locally", false)
+            JSONObject queued = new BcpClient(this).recordCommunication(payload);
+            queued.put("ok", queued.optBoolean("ok", false)
+                    || queued.optBoolean("executed_locally", false)
                     || queued.optBoolean("queued", false)
                     || "COMMITTED".equals(queued.optString("result", ""))
+                    || "ALREADY_COMMITTED".equals(queued.optString("result", ""))
                     || "QUEUED".equals(queued.optString("result", "")));
             writeJson(out, 202, queued);
             return;
