@@ -116,6 +116,15 @@ jobs:
           grep -F 'MAX_QUOTA = 8L * 1024L * 1024L * 1024L' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java >/dev/null
           grep -F 'DATA_SAVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
           grep -F 'STORE_AND_FORWARD' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
+          grep -F 'PC_LOCAL_LAN' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRouteManager.java >/dev/null
+          grep -F 'PHONE_OUTBOUND_DATA_SAVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRouteManager.java >/dev/null
+          grep -F 'remote_delivery_claimed' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRouteManager.java >/dev/null
+          grep -F 'PROVIDER_ACK_REQUIRED' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeCommunicationJournal.java >/dev/null
+          grep -F '/v1/node/routes' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F '/v1/node/communications' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F 'LOCAL_ROUTE_SNAPSHOT' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeLocalTaskEngine.java >/dev/null
+          grep -F 'LOCAL_COMMUNICATION_SUMMARY' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeLocalTaskEngine.java >/dev/null
+          grep -F 'Cahier produit: A+B+C' "$MAIN" >/dev/null
           echo "EDGE_FULL_NODE_STATIC_GUARDS=PASS"
 
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
