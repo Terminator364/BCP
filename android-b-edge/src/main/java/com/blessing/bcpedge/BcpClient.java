@@ -26,6 +26,7 @@ public final class BcpClient {
     private final CredentialStore credentials;
     private final EdgeOrchestrator orchestrator;
     private final EdgeContentStore contentStore;
+    private final EdgeCommunicationJournal communicationJournal;
 
     public BcpClient(Context context) {
         this.context = context.getApplicationContext();
@@ -34,6 +35,7 @@ public final class BcpClient {
         this.credentials = new CredentialStore(context);
         this.orchestrator = new EdgeOrchestrator(context);
         this.contentStore = new EdgeContentStore(context);
+        this.communicationJournal = new EdgeCommunicationJournal(context);
     }
 
     public String getServer() { return prefs.getString("server", ""); }
@@ -50,6 +52,11 @@ public final class BcpClient {
     static String edgeVersionForTelemetry() { return EDGE_VERSION; }
     public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
+    public JSONObject routeStatus() { return EdgeRouteManager.snapshot(context); }
+    public JSONObject communicationStatus() { return communicationJournal.summary(); }
+    public void recordCommunication(String event, String route, String detail, String providerReceipt) {
+        communicationJournal.append(event, route, detail, providerReceipt);
+    }
 
     public JSONObject localContextPack() {
         JSONObject out = new JSONObject();
@@ -62,6 +69,8 @@ public final class BcpClient {
             out.put("memory", orchestrator.memorySnapshot(getProject()));
             out.put("content_store", contentStore.status());
             out.put("network", EdgeNetworkState.snapshot(context));
+            out.put("route", EdgeRouteManager.snapshot(context));
+            out.put("communications", communicationJournal.summary());
             out.put("source", "B_EDGE_LOCAL_CONTEXT_BUILDER");
             out.put("offline_capable", true);
         } catch (Exception ignored) {}
@@ -93,6 +102,11 @@ public final class BcpClient {
 
     public void recordEvent(String type, String detail) {
         telemetry.add(type, detail);
+        if (type != null && (type.contains("TELEGRAM") || type.contains("NETWORK")
+                || type.contains("RELAY") || type.contains("COMMUNICATION"))) {
+            communicationJournal.append(type, EdgeRouteManager.snapshot(context)
+                    .optString("preferred_route", "UNKNOWN"), detail, null);
+        }
     }
 
     public JSONObject registerEdgeRelay() {
