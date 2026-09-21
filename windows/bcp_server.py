@@ -507,6 +507,10 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
     resources = windows_resource_status()
     mission_watchdog = read_json(MISSION_WATCHDOG_STATE_PATH, {}) or {}
     resume_request = read_json(MISSION_RESUME_REQUEST_PATH, {}) or {}
+    try:
+        communication = communication_outbox_stats()
+    except Exception:
+        communication = {}
     rec = {
         "schema": "bcp.external_runtime/1",
         "reason": str(reason)[:80],
@@ -563,6 +567,12 @@ def mirror_external_runtime_status(reason: str = "PERIODIC_HEARTBEAT") -> list[s
         "mission_watchdog_last_action": str(mission_watchdog.get("last_action") or "")[:160],
         "mission_resume_request_state": str(resume_request.get("state") or "")[:80],
         "mission_resume_request_id": str(resume_request.get("request_id") or "")[:120],
+        "communication_outbox_depth": int(communication.get("depth") or 0),
+        "communication_delivered_receipts": int(communication.get("delivered_receipts") or 0),
+        "communication_oldest_pending_at": str(communication.get("oldest_pending_at") or "")[:80],
+        "communication_last_delivery_route": str(communication.get("last_delivery_route") or "")[:80],
+        "communication_last_delivered_at": str(communication.get("last_delivered_at") or "")[:80],
+        "communication_last_receiver_node": str(communication.get("last_receiver_node") or "")[:80],
     }
     written: list[str] = []
     for root in external_telemetry_roots():
