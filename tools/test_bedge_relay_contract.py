@@ -34,7 +34,19 @@ def main() -> int:
     assert '"proxy-authorization"' in relay
     assert "CredentialStore(this).getToken()" in relay
     assert "FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING" in relay
-    assert 'android:foregroundServiceType="remoteMessaging"' in manifest
+    assert "FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE" in relay
+    assert "DEDICATED_EDGE_API_SERVER" in relay
+    assert '"/v1/node/status"' in policy
+    assert '"/v1/node/sync"' in policy
+    assert '"/v1/node/jobs"' in policy
+    assert '"/v1/node/shell"' not in policy
+    assert "EdgePresenceAdvertiser" in relay
+    assert 'android:foregroundServiceType="remoteMessaging|connectedDevice"' in manifest
+    assert "FOREGROUND_SERVICE_CONNECTED_DEVICE" in manifest
+    assert "RECEIVE_BOOT_COMPLETED" in manifest
+    assert "NEARBY_WIFI_DEVICES" in manifest
+    assert "BLUETOOTH_SCAN" in manifest
+    assert "POST_NOTIFICATIONS" in manifest
     assert "FOREGROUND_SERVICE_REMOTE_MESSAGING" in manifest
 
     assert "http.client.HTTPSConnection" in telegram
