@@ -52,7 +52,7 @@ def main():
     ck("chat-before-end-ack-forbidden", '"chat_output_before_end_ack_forbidden": true' in policy)
     ck("primary-close-no-scheduler", '"two_guard_closeout_required": false' in policy and '"scheduled_close_automation_required": false' in registry)
     ck("normal-closeout-23-min", '"normal_closeout_offset_minutes": 23' in policy)
-    ck("backup-close-28-min", '"backup_earliest_offset_minutes": 28' in policy)
+    ck("no-scheduled-backup-close", '"backup_earliest_offset_minutes": null' in policy)
     ck("no-hard-close-automation", '"hard_close_guard_offset_minutes": null' in policy)
     ck("absolute-end-25-min", '"absolute_end_deadline_minutes": 25' in policy)
     ck("scheduler-completion-not-delivery", '"scheduler_completion_is_not_delivery_proof": true' in policy and '"scheduler_completed_is_not_delivery": true' in communication)
