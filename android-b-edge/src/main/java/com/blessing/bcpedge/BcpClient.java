@@ -25,6 +25,7 @@ public final class BcpClient {
     private final TelemetryStore telemetry;
     private final CredentialStore credentials;
     private final EdgeOrchestrator orchestrator;
+    private final EdgeContentStore contentStore;
 
     public BcpClient(Context context) {
         this.context = context.getApplicationContext();
@@ -32,6 +33,7 @@ public final class BcpClient {
         this.telemetry = new TelemetryStore(context);
         this.credentials = new CredentialStore(context);
         this.orchestrator = new EdgeOrchestrator(context);
+        this.contentStore = new EdgeContentStore(context);
     }
 
     public String getServer() { return prefs.getString("server", ""); }
@@ -46,6 +48,7 @@ public final class BcpClient {
     public JSONArray projectRegistry() { return orchestrator.projectRegistry(); }
     public String getEdgeVersion() { return EDGE_VERSION; }
     static String edgeVersionForTelemetry() { return EDGE_VERSION; }
+    public JSONObject contentStoreStatus() { return contentStore.status(); }
     public JSONObject sentinelStatus() { return orchestrator.sentinelStatus(getProject()); }
 
     public JSONObject observePcSentinel(boolean reachable) {
@@ -510,6 +513,7 @@ public final class BcpClient {
                     .putString("cached_resume_json", r.toString())
                     .putLong("cached_resume_at", System.currentTimeMillis())
                     .commit();
+            contentStore.putJson("resume", getProject() + "-resume", r);
         } catch (Exception ignored) {}
     }
 
@@ -529,6 +533,7 @@ public final class BcpClient {
                     getServer() + "/v1/projects/" + enc(getProject()) + "/context",
                     null, getToken(), null, 2200, 5000);
             orchestrator.cacheContext(getProject(), r);
+            contentStore.putJson("context", getProject() + "-context", r);
             return r;
         } catch (Exception ex) {
             orchestrator.setMode("EDGE_ONLY");
