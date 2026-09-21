@@ -1,0 +1,30 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r77-abc-canonical-and-comms25-20260921-2251",
+  "project_or_mission": "API/BCP R77 canonical A+B+C + 25min communication synchronization",
+  "base_main_sha": "3c82dc3d40dc59db50d2825e9914a809e63f815d",
+  "created_at": "2026-09-21T22:51:11+01:00",
+  "work_branch": "work/bcp/r77-abc-canonical-and-comms25-20260921",
+  "intended_file_scope": [
+    "docs/FULL_PRODUCT_SPEC_A_B_C.md",
+    ".project-memory/FULL_PRODUCT_SPEC_A_B_C.json",
+    ".project-memory/COMMUNICATION_PROTOCOL.json",
+    ".project-memory/COMMUNICATION_STATE_MACHINE.json",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/DELIVERY_REDUNDANCY_POLICY.json",
+    ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "API_PROJECT_CONTINUITY.md",
+    "project_state.json",
+    "release/android_candidate.json",
+    "tools/validate_current_release.py",
+    "tools/validate_field_ecosystem.py"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Field Ecosystem Preflight",
+    "BCP Android Human-Action Simulation",
+    "BCP Coordinated Product Qualification"
+  ]
+}
