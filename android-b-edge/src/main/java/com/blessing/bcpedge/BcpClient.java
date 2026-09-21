@@ -149,6 +149,47 @@ public final class BcpClient {
         return out;
     }
 
+    public JSONObject registerCapability(JSONObject body) {
+        JSONObject out = new JSONObject();
+        try {
+            if (body == null) body = new JSONObject();
+            String capabilityId = body.optString("capability_id", "").trim();
+            String provider = body.optString("provider", "B_EDGE").trim();
+            String kind = body.optString("kind", "GENERIC").trim();
+            String state = body.optString("state", "UNKNOWN").trim();
+            String transport = body.optString("transport", "LOCAL").trim();
+            String nodeId = body.optString("node_id", "B-EDGE").trim();
+            String evidence = body.optString("evidence_class", "MACHINE_READBACK").trim().toUpperCase(Locale.ROOT);
+            JSONObject details = body.optJSONObject("details");
+            if (details == null) details = new JSONObject();
+            if (capabilityId.isEmpty()) throw new IllegalArgumentException("capability_id_required");
+            if (details.toString().getBytes(StandardCharsets.UTF_8).length > 32 * 1024) {
+                throw new IllegalArgumentException("capability_details_too_large");
+            }
+            if (!Arrays.asList("SYSTEM_POLICY","USER_DECLARED","VALIDATED","MACHINE_READBACK",
+                    "MACHINE_VERIFIED","SOURCE_VERIFIED","CACHE","MODEL_PROPOSED",
+                    "UNTRUSTED_EXTERNAL","UNVERIFIED").contains(evidence)) {
+                throw new IllegalArgumentException("invalid_evidence_class");
+            }
+            long now = System.currentTimeMillis();
+            Long expiresAt = body.has("expires_at_ms") ? Long.valueOf(body.optLong("expires_at_ms")) : Long.valueOf(now + 5L * 60L * 1000L);
+            orchestrator.putCapability(getProject(), capabilityId, nodeId, provider, kind,
+                    state, transport, details, evidence, body.optLong("observed_at_ms", now), expiresAt);
+            out.put("ok", true);
+            out.put("result", "CAPABILITY_RECORDED");
+            out.put("capability_id", capabilityId.toUpperCase(Locale.ROOT));
+            out.put("project", getProject());
+            out.put("authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY");
+        } catch (Exception e) {
+            try {
+                out.put("ok", false);
+                out.put("result", "HOLD");
+                out.put("error", e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
     public JSONObject admitMemoryClaim(JSONObject body) {
         if (body == null) body = new JSONObject();
         Object value = body.opt("value");
