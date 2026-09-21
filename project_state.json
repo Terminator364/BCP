@@ -4,7 +4,7 @@
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
   "status": "R70_FULL_NODE_2_2_0_CANDIDATE_30MIN_EXACT_HEAD_CI_PENDING",
   "last_completed_atomic_action": "R70 coherent full-node implementation now includes dedicated foreground Edge/API server, Room durable queue/memory/receipts, reboot recovery, NSD/Wi-Fi Direct/BLE presence, real Android permission onboarding, server-first dashboard, adaptive network/data-saver truth, and an app-private adaptive content cache capped at 8 GiB for context/resume snapshots. Cadence is 30 minutes with Gmail START/END ACK gating.",
-  "next_action": "Qualify the exact R70 candidate head with Android build, unit/lint, API-35 emulator install/launch/UI/full-node service/local-API tests, CURRENT contract, coordinated product and field ecosystem gates. Auto-fix failures. Do not request another phone install until the coherent 2.2.0 full-node vertical slice is green, signed with the pinned Evergreen identity, published to Drive CURRENT in place, and hash-read back.",
+  "next_action": "Continue R70 as a coherent full-node release, not a micro-beta: fix the current Android lint finding, qualify the local API/storage/network/UI stack, then close the canonical production gaps (encrypted authenticated LAN transport and an EDGE_ONLY remote-control path that does not depend on the PC being online) before signing/publishing a phone APK for the user.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -2393,6 +2393,16 @@
     ],
     "permission_principle": "REQUEST_REAL_CAPABILITY_PERMISSIONS_ONLY_NOT_PERMISSION_THEATER",
     "pc_role": "WINDOWS_AND_HEAVY_COMPUTE_EXECUTOR_NOT_SOLE_COMMUNICATIONS_CENTER",
-    "next_install_policy": "QUALIFY_COHERENT_VERTICAL_SLICE_BEFORE_USER_INSTALL"
+    "next_install_policy": "QUALIFY_COHERENT_VERTICAL_SLICE_BEFORE_USER_INSTALL",
+    "remaining_before_field_release": [
+      "ENCRYPTED_AUTHENTICATED_LAN_TRANSPORT_REPLACES_CLEAR_HTTP_PRODUCTION_PATH",
+      "EDGE_ONLY_REMOTE_CONTROL_PATH_WHEN_PC_IS_OFFLINE_EITHER_PHONE_NATIVE_OR_NEXUS_BACKED",
+      "EXPLICIT_ERROR_LEDGER_AND_PROVIDER_QUOTA_LOCAL_READBACK_IN_SERVER_DASHBOARD",
+      "CONTEXT_BUILDER_PROVES_MINIMAL_CONTEXT_PACK_FROM_LOCAL_MEMORY_LAYERS",
+      "RESOURCE_GOVERNOR_AND_STORAGE_PRESSURE_FIELD_SHAPED_TESTS",
+      "EXACT_HEAD_ANDROID_EMULATOR_FULL_NODE_PASS",
+      "PINNED_EVERGREEN_SIGNING_V2_V3_AND_DRIVE_CURRENT_HASH_READBACK"
+    ],
+    "release_gate": "NO_USER_INSTALL_UNTIL_REMAINING_FULL_NODE_GAPS_ARE_CLOSED_OR_EXPLICITLY_CLASSIFIED_AS_POST_FIELD_NONBLOCKING"
   }
 }
