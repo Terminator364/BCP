@@ -1,6 +1,6 @@
 {
   "schema": "bcp.human_action_qualification_matrix/1",
-  "revision": "2026-09-21-R59",
+  "revision": "2026-09-21-R69",
   "status": "CANONICAL_CANDIDATE",
   "rule": "A user-facing action may be requested only when its representative_preflight is PASS on the exact candidate head/package, unless the remaining uncertainty is explicitly an irreducible external/provider/physical field boundary.",
   "actions": [
@@ -91,10 +91,12 @@
     },
     {
       "action_id": "ANDROID_BEDGE_INSTALL_OR_OPEN",
-      "user_action": "Install/open BCP Edge and use the primary UI",
+      "user_action": "Install/update BCP Edge Server in place, grant the dedicated-server Android permissions when prompted, and keep the app as the old-phone Edge/API node",
       "entrypoints": [
         "android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk",
-        "com.blessing.bcpedge.evergreen/com.blessing.bcpedge.MainActivity"
+        "com.blessing.bcpedge.evergreen/com.blessing.bcpedge.MainActivity",
+        "http://127.0.0.1:8876/health",
+        "http://127.0.0.1:8876/v1/node/capabilities"
       ],
       "representative_environment": [
         "android_emulator_api_35"
@@ -107,15 +109,23 @@
         "apk_build",
         "apk_install",
         "launcher_activity_start",
-        "ui_hierarchy_contains_BCP_Edge",
-        "ui_hierarchy_contains_connect_button",
+        "ui_hierarchy_contains_BCP_Edge_Server",
+        "ui_hierarchy_contains_server_permission_control",
         "no_immediate_process_crash",
-        "no_pc_available_startup_remains_alive",
-        "cold_relaunch"
+        "foreground_server_listener_port_8876",
+        "public_health_200_role_DEDICATED_EDGE_API_SERVER",
+        "capabilities_store_and_forward_true",
+        "private_node_status_rejects_unauthenticated_request_401",
+        "nearby_runtime_permissions_declared",
+        "boot_restore_receiver_declared",
+        "cold_relaunch_restores_local_api"
       ],
       "remaining_field_boundary": [
-        "actual old phone OEM/Android image",
-        "actual home Wi-Fi/mDNS behavior",
+        "actual old phone OEM/Android image and runtime permission dialogs",
+        "actual battery-optimization vendor policy",
+        "actual home Wi-Fi/mDNS/Wi-Fi Direct/Bluetooth radio behavior",
+        "real reboot persistence on the dedicated phone",
+        "real PC-to-phone authenticated API and Telegram relay round-trip",
         "battery/power interruptions"
       ],
       "field_readback_required_before_completion": true
