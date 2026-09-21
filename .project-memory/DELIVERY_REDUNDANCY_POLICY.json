@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/11",
-  "revision": "2026-09-21-R74",
+  "schema": "bcp.delivery_redundancy_policy/12",
+  "revision": "2026-09-21-R76",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -54,7 +54,7 @@
       "end_mail_readback_required": true,
       "scheduler_completion_is_not_delivery_proof": true,
       "foreground_end_send_primary": true,
-      "backup_end_must_be_minimal_and_precomposed": true,
+      "backup_end_must_be_minimal_and_precomposed": false,
       "delivery_key_required": true,
       "start_message_id_persist_required": true,
       "end_message_id_persist_required": true,
@@ -68,24 +68,24 @@
     }
   },
   "cadence": {
-    "work_slice_minutes": "30_TOTAL_26_WORK_4_CLOSEOUT",
-    "target_minutes": 30,
+    "work_slice_minutes": "25_TOTAL_23_WORK_2_CLOSEOUT",
+    "target_minutes": 25,
     "checkpoint_each_slice": true,
     "mail_each_slice": true,
     "blind_retry_loops": false,
     "start_mail_each_slice": true,
     "end_mail_each_slice": true,
-    "preclose_snapshot_offset_minutes": 26,
-    "normal_closeout_offset_minutes": 26,
-    "hard_close_guard_offset_minutes": 29,
-    "absolute_end_deadline_minutes": 30,
-    "two_guard_closeout_required": true,
+    "preclose_snapshot_offset_minutes": 23,
+    "normal_closeout_offset_minutes": 23,
+    "hard_close_guard_offset_minutes": null,
+    "absolute_end_deadline_minutes": 25,
+    "two_guard_closeout_required": false,
     "user_relaunch_must_never_be_required": true,
-    "closeout_behavior": "PRIMARY_ASSISTANT_ENTERS_CLOSE_RESERVE_AT_T+26_AND_SENDS_END; SHADOW_BACKUP_AT_T+28; HARD_GUARD_AT_T+29; GMAIL_SENT_READBACK_IS_ONLY_DELIVERY_AUTHORITY",
-    "useful_work_target_minutes": 26,
+    "closeout_behavior": "PRIMARY_ASSISTANT_ENTERS_CLOSE_RESERVE_AT_T+23_AND_SENDS_END_WITH_GMAIL_SENT_READBACK; NO_SCHEDULED_AUTOMATION_REQUIRED",
+    "useful_work_target_minutes": 23,
     "useful_work_minimum_minutes": 20,
-    "normal_close_reserve_minutes": 4,
-    "backup_earliest_offset_minutes": 28
+    "normal_close_reserve_minutes": 2,
+    "backup_earliest_offset_minutes": null
   },
   "action_message_contract": {
     "one_human_gate_at_a_time": true,
@@ -123,9 +123,8 @@
   },
   "close_ownership": {
     "normal_owner": "PRIMARY_ASSISTANT",
-    "backup_owner": "SHADOW_BACKUP",
-    "hard_guard_owner": "HARD_GUARD",
-    "scheduler_is_backup_only": true,
-    "user_message_is_never_trigger": true
+    "scheduled_automation_required": false,
+    "recovery_owner": "NEXT_SUPPORTED_INVOCATION_IF_RUNTIME_INTERRUPTED",
+    "user_message_is_never_normal_trigger": true
   }
 }
