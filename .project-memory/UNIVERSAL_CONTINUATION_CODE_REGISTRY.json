@@ -22,9 +22,12 @@
       "CHECKPOINT_ID"
     ],
     "cadence_window_minutes": [
-      8,
-      10
-    ]
+      20,
+      25
+    ],
+    "cadence_target_minutes": 25,
+    "pre_human_action_simulation_policy_ref": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
+    "load_pre_human_action_simulation_policy_before_user_action": true
   },
   "universal": [
     {
