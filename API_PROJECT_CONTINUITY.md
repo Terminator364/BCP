@@ -1,3 +1,31 @@
+# R73 Provider-Proof Closeout Handoff — 2026-09-21
+
+Canonical continuation code: `BCPGO BCP`.
+
+R72 exposed a concrete communication defect: the timer jobs reached scheduler completion but **no Gmail END existed in SENT** until the user relaunched the conversation. Therefore scheduler completion is now explicitly non-authoritative.
+
+R73 closeout contract:
+1. Gmail START + provider acknowledgement before substantive work.
+2. Foreground active session owns the primary END send before returning.
+3. Durable pre-close snapshot by ~T+26.
+4. Normal backup guard at ~T+27.
+5. Hard backup guard at ~T+29.
+6. Absolute tranche deadline T+30.
+7. Every END path searches Gmail SENT first by checkpoint/tranche id.
+8. END success requires a real Gmail message id plus SENT search/readback and BCP label.
+9. Backup END payload is precomposed/minimal and MUST NOT depend on a long GitHub/Drive synthesis.
+10. Scheduler status, automation-card completion, ChatGPT UI output, Drive mirror, and phone queue acceptance are **not** proof of Gmail delivery.
+11. User messages such as “eh oh” are never delivery triggers.
+12. After END ACK, ChatGPT remains pointer-only.
+
+Current live tranche: `BCP-R73-START-20260921-1818`.
+START Gmail message id: `1a0c4f9af98fc491`.
+R72 corrective END Gmail message id: `1a0c4f9478cb3e5a`.
+
+The phone-product direction is unchanged: no micro-beta. Continue B-EDGE 2.2.0 full-node as a coherent dedicated Android Edge/API server appliance.
+
+---
+
 # R72 Dual-Closeout Communication Handoff — 2026-09-21
 
 Canonical continuation code: `BCPGO BCP`.
