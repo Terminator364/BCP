@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R87_BEDGE_2_2_SIGNED_STAGED_FINAL_RELEASE_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R87 qualified source head 95cbf79fc46fb82b46243ab405e5a31036358b6f across CURRENT, Android Build, Android Human-Action emulator, Coordinated Product, Field Ecosystem, Coordinated PC, Managed Server, Final Acceptance, Nexus and Telegram gates. The exact 2.2 release APK was then signed privately with the pinned Evergreen identity, verified under APK Signature Scheme v2/v3, SHA-256 a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a, and byte/hash/signature read back from private Drive staging.",
-  "next_action": "Run exact-head CI on the final 2.2 release manifests/promotion state. If green, atomically replace stable Drive CURRENT file 1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR with the already-qualified signed bytes, read back exact SHA-256 and v2/v3/certificate, then merge PR #157 under the writer fence. Only after merge/readback authorize the unavoidable Android in-place install human gate; then collect real-device full-node/reboot/communications evidence.",
+  "status": "R87_BEDGE_2_2_CURRENT_READY_HUMAN_IN_PLACE_INSTALL_GATE",
+  "last_completed_atomic_action": "R87 completed machine-side B-EDGE 2.2 field-ready productization. Exact final release head 6e4b9b0ef5daf05cf2feac5cb91919bb4948fa87 passed CURRENT #1519, Managed Server #502, Telegram #823, Nexus Transport #786, Final Acceptance #521, Nexus One-Shot #440, Coordinated PC #525, Android Build #860, Coordinated Product #1558, Field Ecosystem #1475 and Android Human-Action #358. The signed Evergreen APK SHA-256 a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a was installed into the same private Drive CURRENT file and read back with APK Signature Scheme v2/v3 and the exact pinned certificate. PR #157 merged to main e07f8f379533f74a2e9362fca5f95ad60f932bee.",
+  "next_action": "TRUE_HUMAN_GATE: on the existing B-EDGE Android phone, perform the qualified in-place update to 2.2.0-full-node-evergreen without uninstalling. After install, collect machine/field evidence for local API, discovery, pairing, bidirectional pinned TLS, durable memory/queue/Chronicle/capabilities/receipts, reboot/black-start/recovery, and Telegram/relay delivery truth. Local AI remains DESIGN_ONLY until these P0 field gates close.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -121,9 +121,33 @@
         "v3"
       ],
       "drive_staging_readback": "PASS",
-      "stable_drive_current_replaced": false,
-      "install_authorized": false,
-      "field_verified": false
+      "stable_drive_current_replaced": true,
+      "install_authorized": true,
+      "field_verified": false,
+      "final_release_head": "6e4b9b0ef5daf05cf2feac5cb91919bb4948fa87",
+      "merged_main_sha": "e07f8f379533f74a2e9362fca5f95ad60f932bee",
+      "final_release_gates": {
+        "current_release_contract": 1519,
+        "managed_server": 502,
+        "telegram_observability": 823,
+        "nexus_transport": 786,
+        "final_acceptance": 521,
+        "nexus_one_shot": 440,
+        "coordinated_pc": 525,
+        "android_build": 860,
+        "coordinated_product": 1558,
+        "field_ecosystem": 1475,
+        "android_human_action": 358
+      },
+      "drive_current_readback_sha256": "a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a",
+      "drive_current_signature_readback": "V2_V3_PASS_CERT_PIN_MATCH",
+      "drive_rollback_previous_revision_preserved": true,
+      "human_gate": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
+    },
+    "r87_continuity_regression": {
+      "id": "BCP-ERR-R87-TAKEOVER-ACTIVE-TRANCHE-SKEW",
+      "status": "FIXED",
+      "proof": "BCP Qualified CURRENT Release Contract #1507 and final #1519"
     }
   },
   "field_gates": [
