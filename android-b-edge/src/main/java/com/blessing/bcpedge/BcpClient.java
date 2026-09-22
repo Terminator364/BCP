@@ -238,6 +238,62 @@ public final class BcpClient {
         return out;
     }
 
+    /**
+     * Refreshes the server-dashboard governance snapshot off the Android UI thread.
+     * Room intentionally disallows main-thread queries; UI callers read only the
+     * SharedPreferences snapshot produced here.
+     */
+    public JSONObject refreshUiGovernanceCache() {
+        JSONObject out = new JSONObject();
+        try {
+            JSONObject capabilities = localCapabilities();
+            JSONObject claims = localMemoryClaims(100);
+            prefs.edit()
+                    .putString("ui_capabilities_cache", capabilities.toString())
+                    .putString("ui_memory_claims_cache", claims.toString())
+                    .putLong("ui_governance_cache_at", System.currentTimeMillis())
+                    .apply();
+            out.put("ok", capabilities.optBoolean("ok", false) && claims.optBoolean("ok", false));
+            out.put("capabilities", capabilities.optInt("count", 0));
+            out.put("claims", claims.optInt("count", 0));
+            out.put("cached_at_ms", System.currentTimeMillis());
+        } catch (Exception e) {
+            try {
+                out.put("ok", false);
+                out.put("error", e.getClass().getSimpleName());
+            } catch (Exception ignored) {}
+        }
+        return out;
+    }
+
+    public JSONObject cachedCapabilities() {
+        return cachedJson("ui_capabilities_cache", "B_EDGE_LOCAL_CAPABILITY_REGISTRY_CACHE");
+    }
+
+    public JSONObject cachedMemoryClaims() {
+        return cachedJson("ui_memory_claims_cache", "B_EDGE_MEMORY_ADMISSION_LEDGER_CACHE");
+    }
+
+    private JSONObject cachedJson(String key, String authority) {
+        try {
+            String raw = prefs.getString(key, "");
+            if (raw != null && !raw.isEmpty()) {
+                JSONObject out = new JSONObject(raw);
+                out.put("cached", true);
+                out.put("cached_at_ms", prefs.getLong("ui_governance_cache_at", 0L));
+                return out;
+            }
+        } catch (Exception ignored) {}
+        JSONObject out = new JSONObject();
+        try {
+            out.put("ok", false);
+            out.put("cached", true);
+            out.put("count", 0);
+            out.put("authority", authority);
+        } catch (Exception ignored) {}
+        return out;
+    }
+
     public JSONObject localContextPack() {
         JSONObject out = new JSONObject();
         try {
