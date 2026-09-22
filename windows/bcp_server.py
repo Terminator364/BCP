@@ -4774,7 +4774,19 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/v1/edge/relay/register":
             try:
                 body = self.read_json()
-                self.send_json(200, register_edge_relay(self.remote_ip(), body))
+                relay_ip = self.remote_ip()
+                if bool(getattr(self.server, "transport_secure", False)):
+                    claimed = str(body.get("edge_lan_ip") or "").strip()
+                    if not claimed:
+                        raise ValueError("edge_lan_ip_required_over_tls_proxy")
+                    try:
+                        claimed_addr = ip_address(claimed)
+                    except Exception as exc:
+                        raise ValueError("edge_lan_ip_invalid") from exc
+                    if not (claimed_addr.is_private or claimed_addr.is_link_local) or claimed_addr.is_loopback:
+                        raise ValueError("edge_lan_ip_not_private_non_loopback")
+                    relay_ip = claimed
+                self.send_json(200, register_edge_relay(relay_ip, body))
             except ValueError as e:
                 self.send_json(400, {"ok": False, "error": "edge_relay_registration_rejected", "detail": str(e)[:240]})
             except Exception as e:
