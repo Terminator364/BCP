@@ -1,0 +1,30 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r87-field-promotion-20260922-1138",
+  "project_or_mission": "BCP P0 productization / B-EDGE 2.2 field-ready promotion",
+  "base_main_sha": "db941dbfb5c7b473793b09092b48114f76f2f86d",
+  "created_at": "2026-09-22T11:38:39+01:00",
+  "work_branch": "work/bcp/r87-field-promotion-20260922-1138",
+  "intended_file_scope": [
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    "release/android_candidate.json",
+    "release/android.json",
+    "release/current.json",
+    ".project-memory/ERROR_LEDGER.jsonl",
+    "android-b-edge/**",
+    ".github/workflows/**",
+    "tools/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Coordinated Product Qualification",
+    "BCP Field Ecosystem Preflight"
+  ],
+  "mutation_rule": "SERIAL_P0_PRODUCTIZATION_ONLY_NO_LOCAL_AI_RUNTIME"
+}
