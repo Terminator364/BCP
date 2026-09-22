@@ -63,8 +63,9 @@
     "ucmf_current_postulate": 9,
     "current_integration_branch": "work/bcp/r85-closeout-20260922-1013",
     "current_main_base_sha": "15b7bca6ceac474c6f4454d3a37df363fa13d2d6",
-    "current_integration_rule": "FINISH_R85_PROVIDER_ACK_CLOSEOUT_THEN_R86_ENCRYPT_PIN_BEDGE_TO_PC",
-    "current_secure_lan_state": "PARTIAL_PC_TO_EDGE_TLS_PINNED_RELAY_HMAC_EDGE_TO_PC_HTTP_REMAINS"
+    "current_integration_rule": "RECONCILE_AND_MERGE_R85_CLOSEOUT_PR154_IF_EXACT_HEAD_GREEN_THEN_START_R86_EDGE_TO_PC_TLS",
+    "current_secure_lan_state": "PARTIAL_PC_TO_EDGE_TLS_PINNED_RELAY_HMAC_EDGE_TO_PC_HTTP_REMAINS",
+    "next_product_front": "R86_ENCRYPT_PIN_BEDGE_TO_PC_CONTROL_PLANE"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -78,7 +79,7 @@
   },
   "current_active_tranche": "BCP-R85-START-20260922-0951",
   "current_delivery_key": "BCP25-20260922-0951-R85",
-  "current_active_tranche_status": "CLOSEOUT",
-  "current_end_checkpoint": null,
-  "current_end_message_id": null
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R85-END-20260922-1016",
+  "current_end_message_id": "1a0c8672f6af7db0"
 }
