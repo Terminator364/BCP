@@ -142,7 +142,26 @@ def main() -> int:
     require(edge_permissions, "requestCoreRuntimePermissions", "requestBatteryUnrestricted", "batteryUnrestricted")
     require(edge_presence, "NsdManager", "WifiP2pManager", "BluetoothLeAdvertiser", "ADVERTISE_MODE_LOW_POWER")
     require(edge_boot, "BOOT_OR_PACKAGE_REPLACED", "startForegroundService")
-    require(edge_main, "BCP Edge Server", "AUTORISATIONS SERVEUR", "ACTIVER / RENFORCER LE MODE SERVEUR 24/7")
+    require(
+        edge_main,
+        "BCP Edge Server",
+        "EN UN COUP D’ŒIL",
+        "ACTION REQUISE",
+        "Activité",
+        "APPAREILS CONNUS",
+        "CONFIANCE & TRANSPORT",
+        "REPAIRS",
+        "AUTORISATIONS & 24/7",
+        "OUTILS AVANCÉS",
+        "AFFICHER LE DERNIER DÉTAIL TECHNIQUE",
+        "localMissionSteps(20, false)",
+        "localEventTail(12)",
+        "countPendingJobs()",
+        "LAST_SCREEN_KEY",
+        "onBackPressed",
+    )
+    assert 'output.setVisibility(View.GONE)' in edge_main
+    assert '"PARAMÈTRES / DIAGNOSTIC"' not in edge_main
     require(
         edge_local_executor,
         "LOCAL_CONTEXT_SNAPSHOT", "LOCAL_HEALTH_SNAPSHOT",
