@@ -154,11 +154,17 @@
       "proof": "BCP Qualified CURRENT Release Contract #1507 and final #1519"
     },
     "r88_communication_policy": {
-      "status": "IMPLEMENTED_ON_WRITER_BRANCH",
-      "branch": "work/bcp/r88-adaptive-communication-window-20260922-1321",
+      "status": "MERGED_MAIN_EXACT_HEAD_GREEN",
+      "exact_policy_head": "ce207d37ea09172edcb5728342d22e43d53f64fe",
+      "merged_main_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7",
       "gmail_start_message_id": "1a0c911086fff770",
       "delivery_key": "BCPADAPT-20260922-1321-R88",
-      "estimated_end_window_local": "13:32-13:38",
+      "exact_head_gates": {
+        "current_release_contract": 1526,
+        "nexus_one_shot": 445,
+        "coordinated_product": 1564
+      },
+      "error_ledger": "BCP-ERR-R88-CURRENT-VALIDATOR-FIXED-CADENCE-LOCK-CLOSURE",
       "product_bytes_changed": false,
       "p0_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
     }
@@ -2932,6 +2938,8 @@
     "completion_rule": "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER",
     "success_metric": "USABLE_PRODUCT_AND_DURABLE_EVIDENCE_NOT_TIME_SPENT",
     "protocol_ref": ".project-memory/COMMUNICATION_PROTOCOL.json",
-    "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
+    "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
+    "status": "CANONICAL_MERGED_MAIN",
+    "merged_main_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7"
   }
 }
