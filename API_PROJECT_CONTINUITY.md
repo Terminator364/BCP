@@ -1,3 +1,21 @@
+# R83 Android proof repair handoff — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## R83 authoritative state
+
+- PR: **#152**, branch `work/bcp/r82-reconcile-r81-20260922-0102`.
+- R82 failing head `7cb49d7c1aeca6f4ab574acb6d471301d225bdc8` failed only `BCP Android Human-Action Simulation #302`.
+- Artifact for #302 proved the exact defect: the CI phone is **320x640** while the workflow swiped from `(520,1500)` to `(520,360)`; all five captured UI dumps had the same SHA-256, so no scroll occurred.
+- R83 now derives swipe coordinates from `adb shell wm size`, records geometry and per-step UI dump hashes, and explicitly requires a real dump transition.
+- Exact pre-close head `86555d75a6624d451612afdeb6ec505fc8213c78` passed all six required gates: CURRENT #1418, Nexus #392, Coordinated Product #1465, Android Build #784, Android Human-Action Simulation #308 and Field Ecosystem #1377.
+- Android #308 artifact `10671198592` records `320x640 x=160 y1=524 y2=179`; dump SHA changes on real scrolling; all four critical dashboard targets are observed.
+- **Do not install B-EDGE 2.2 yet.** Final closure receipt + exact-head qualification + writer-fenced PR #152 integration are still required.
+
+Next durable action: finish R83 provider-proof close, qualify the resulting exact head, reread `main`, merge PR #152 only if the exact head stays green and main remains compatible; then continue the largest A+B+C blocker: authenticated + encrypted LAN, followed by direct-boot/black-start and field Telegram relay proof.
+
+---
+
 # R82 Fresh Conversation Handoff — 2026-09-22
 
 Canonical continuation code: `BCPGO BCP`.
