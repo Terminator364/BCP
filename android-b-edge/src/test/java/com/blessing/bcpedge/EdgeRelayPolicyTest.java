@@ -14,14 +14,31 @@ public class EdgeRelayPolicyTest {
         assertFalse(EdgeRelayPolicy.isAllowedConnectTarget(null, 443));
     }
 
-    @Test public void pairedBearerMustMatchExactly() {
-        assertTrue(EdgeRelayPolicy.isValidProxyAuthorization("Bearer abc123", "abc123"));
+    @Test public void privateApiBearerMustMatchExactly() {
         assertTrue(EdgeRelayPolicy.isValidBearerAuthorization("Bearer abc123", "abc123"));
-        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Bearer abc124", "abc123"));
         assertFalse(EdgeRelayPolicy.isValidBearerAuthorization("Bearer abc124", "abc123"));
-        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Basic abc123", "abc123"));
-        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization(null, "abc123"));
-        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Bearer abc123", ""));
+        assertFalse(EdgeRelayPolicy.isValidBearerAuthorization("Basic abc123", "abc123"));
+    }
+
+    @Test public void proxyAuthUsesFreshHmacAndRejectsBearer() throws Exception {
+        long now = 2_000_000L;
+        String token = "paired-secret";
+        String target = "api.telegram.org:443";
+        String nonce = "abcdefghijklmnop";
+        String canonical = "CONNECT\\n" + target + "\\n" + now + "\\n" + nonce;
+        javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec(
+                token.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] digest = mac.doFinal(canonical.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        StringBuilder sig = new StringBuilder();
+        for (byte b : digest) sig.append(String.format(java.util.Locale.ROOT, "%02x", b & 0xff));
+        String header = "BCP-HMAC-SHA256 " + now + ":" + nonce + ":" + sig;
+
+        assertTrue(EdgeRelayPolicy.isValidProxyAuthorization(header, token, target, now));
+        assertEquals(nonce, EdgeRelayPolicy.proxyAuthNonce(header));
+        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization(header, token, target, now + 121));
+        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization(header, "wrong", target, now));
+        assertFalse(EdgeRelayPolicy.isValidProxyAuthorization("Bearer " + token, token, target, now));
     }
 
     @Test public void localApiSurfaceIsBounded() {
