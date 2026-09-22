@@ -1,9 +1,7 @@
 {
-  "schema": "bcp.communication_state_machine/3",
-  "revision": "2026-09-22-R81",
-  "cadence_minutes": 25,
-  "useful_work_minutes": 23,
-  "normal_close_reserve_minutes": 2,
+  "schema": "bcp.communication_state_machine/4",
+  "revision": "2026-09-22-R88",
+  "scheduling_model": "ADAPTIVE_TASK_WINDOW",
   "work_states": [
     "IDLE",
     "WORKING",
@@ -16,6 +14,7 @@
     "START_SEND_PENDING",
     "START_ACKNOWLEDGED",
     "WORKING",
+    "ESTIMATE_UPDATE_OPTIONAL",
     "CLOSE_INTENT_PERSISTED",
     "END_SEND_PENDING",
     "END_ACKNOWLEDGED",
@@ -34,10 +33,27 @@
     "END_SEND_PENDING->END_ACKNOWLEDGED",
     "END_ACKNOWLEDGED->CLOSED"
   ],
+  "optional_path": [
+    "WORKING->ESTIMATE_UPDATE_OPTIONAL",
+    "ESTIMATE_UPDATE_OPTIONAL->WORKING"
+  ],
+  "timing": {
+    "fixed_cadence_minutes": null,
+    "fixed_close_reserve_minutes": null,
+    "estimated_end_window_required_at_start": true,
+    "estimate_is_advisory": true,
+    "update_trigger": "ESTIMATED_END_WINDOW_NO_LONGER_CREDIBLE_OR_SCOPE_MATERIALLY_CHANGED",
+    "scheduled_backup_required": false,
+    "automation_may_run_only_if_foreground_interrupted": true
+  },
   "crash_windows": [
     {
       "window": "after START ack before close intent",
-      "recovery": "resume from durable work checkpoint; never final-reply without END"
+      "recovery": "resume from durable work checkpoint; preserve latest estimate; never final-reply without END"
+    },
+    {
+      "window": "after estimate update",
+      "recovery": "resume same tranche with revised window and next uncommitted action"
     },
     {
       "window": "after CLOSE_INTENT before Gmail send",
@@ -52,13 +68,6 @@
       "recovery": "treat tranche as OPEN_DELIVERY_FAILURE; send END; scheduler status has zero authority"
     }
   ],
-  "timing": {
-    "primary_work_target_minutes": 23,
-    "primary_close_reserve_begins_minute": 23,
-    "normal_end_target_minute": 25,
-    "scheduled_backup_required": false,
-    "automation_may_run_only_if_foreground_interrupted": true
-  },
   "invariants": [
     "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
     "new work cannot reuse a CLOSED tranche",
@@ -66,10 +75,11 @@
     "the user message is never a closeout trigger",
     "delivery_key is unique per tranche",
     "END send is search-before-send and idempotent",
-    "normal closeout is owned by PRIMARY_ASSISTANT and must not depend on an automation",
+    "normal closeout is owned by PRIMARY_ASSISTANT and must not depend on automation",
     "healthy foreground tranche remains owned by PRIMARY_ASSISTANT from START through END",
-    "normal tranche does not hand closeout to an automation",
-    "reasoning UI duration is not a stop condition",
-    "foreground work continues until close reserve unless a true gate makes further work impossible"
+    "elapsed time is never proof of work",
+    "no tranche is padded to an estimate",
+    "no tranche is truncated solely because an estimate elapsed",
+    "completion occurs at real checkpoint, true human gate, or objective tool/safety failure"
   ]
 }
