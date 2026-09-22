@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R83_PR152_MERGED_CLOSEOUT",
-  "last_completed_atomic_action": "R83 fixed the Android UI simulation defect, obtained all six exact-head PASS gates, merged PR #152 with expected-head fencing, and verified canonical main at e28f47397ad1ff81e7906b6b6e9d6028fb566347.",
-  "next_action": "Finish the R83 provider-proven Gmail close. Next product tranche continues the canonical authenticated encrypted LAN transport requirement, then direct-boot/black-start and field Telegram relay proof.",
+  "status": "R83_CLOSED_PROVIDER_PROVEN",
+  "last_completed_atomic_action": "R83 completed PR #152 integration, verified main at e28f47397ad1ff81e7906b6b6e9d6028fb566347, sent the Gmail END, verified SENT plus BCP label, and persisted the provider receipt.",
+  "next_action": "Next BCPGO tranche starts from canonical main e28f47397ad1ff81e7906b6b6e9d6028fb566347 and continues the authenticated encrypted LAN requirement before any B-EDGE 2.2 field publication.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -34,7 +34,11 @@
     },
     "r83_merged_pr": 152,
     "r83_exact_green_pr_head": "bde2803fc063ed5b97a492b6e246885bfd71d9e6",
-    "r83_merged_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347"
+    "r83_merged_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
+    "r83_end_message_id": "1a0c69aad8f9535f",
+    "r83_end_provider_sent_readback": true,
+    "r83_end_receipt": ".project-memory/receipts/BCP-R83-END-20260922-0153.json",
+    "r83_closed_at_kinshasa": "2026-09-22T01:53:40+01:00"
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
