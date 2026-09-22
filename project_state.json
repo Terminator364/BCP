@@ -154,7 +154,7 @@
       "proof": "BCP Qualified CURRENT Release Contract #1507 and final #1519"
     },
     "r88_communication_policy": {
-      "status": "MERGED_MAIN_EXACT_HEAD_GREEN",
+      "status": "CLOSED_CANONICAL_POLICY",
       "exact_policy_head": "ce207d37ea09172edcb5728342d22e43d53f64fe",
       "merged_main_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7",
       "gmail_start_message_id": "1a0c911086fff770",
@@ -166,7 +166,10 @@
       },
       "error_ledger": "BCP-ERR-R88-CURRENT-VALIDATOR-FIXED-CADENCE-LOCK-CLOSURE",
       "product_bytes_changed": false,
-      "p0_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
+      "p0_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL",
+      "gmail_end_message_id": "1a0c91cbc4a16677",
+      "end_checkpoint": "BCP-R88-END-20260922-1334",
+      "provider_end_readback": true
     }
   },
   "field_gates": [
