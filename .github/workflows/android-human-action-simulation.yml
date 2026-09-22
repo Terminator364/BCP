@@ -82,7 +82,7 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$SDK/emulator/emulator" -list-avds | tee avd-list-boot.txt
           grep -Fx "bcp_api35" avd-list-boot.txt >/dev/null
-          nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
+          nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 2048 > emulator.log 2>&1 &
           EMU_PID=$!
           DEVICE=""
           for i in $(seq 1 60); do
@@ -157,10 +157,49 @@ jobs:
           set -euo pipefail
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
-          "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
-          "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
-          grep -F "BCP Edge Server" bcp-window.xml >/dev/null
-          grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null
+          COMPONENT="$(cat launcher-component.txt)"
+          APP_UI_READY=0
+          for UI_ATTEMPT in 1 2 3; do
+            "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
+            "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
+            if grep -F "BCP Edge Server" bcp-window.xml >/dev/null               && grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null; then
+              APP_UI_READY=1
+              break
+            fi
+
+            # Headless API-35 occasionally surfaces an unrelated Pixel Launcher ANR
+            # over the already-running B-EDGE activity. Close only that system dialog,
+            # never B-EDGE, then foreground the exact installed component again.
+            python - <<'PY' > system-dialog-tap.txt
+import re
+import xml.etree.ElementTree as ET
+root = ET.parse("bcp-window.xml").getroot()
+for node in root.iter("node"):
+    if node.attrib.get("resource-id") == "android:id/aerr_close":
+        title = ""
+        for other in root.iter("node"):
+            if other.attrib.get("resource-id") == "android:id/alertTitle":
+                title = other.attrib.get("text", "")
+                break
+        if "BCP" in title or "bcp" in title.lower():
+            raise SystemExit("refusing_to_close_bedge_anr")
+        m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
+        if m:
+            x1,y1,x2,y2 = map(int, m.groups())
+            print((x1+x2)//2, (y1+y2)//2)
+        break
+PY
+            if [ -s system-dialog-tap.txt ]; then
+              read TAP_X TAP_Y < system-dialog-tap.txt
+              "$ADB" shell input tap "$TAP_X" "$TAP_Y"
+              sleep 1
+            else
+              "$ADB" shell input keyevent 4 || true
+            fi
+            "$ADB" shell am start -W -n "$COMPONENT" >/dev/null || true
+            sleep 2
+          done
+          test "$APP_UI_READY" = "1"
 
           # Server controls and governance cards may legitimately be below the initial
           # viewport as the dashboard grows. Exercise bounded real-user scrolling and
