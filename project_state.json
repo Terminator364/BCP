@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R83_ANDROID_SCROLL_PROOF_FIXED_EXACT_HEAD_GREEN_STATE_SYNC",
-  "last_completed_atomic_action": "R83 recovered the failed Android Human-Action Simulation #302 artifact, proved all five scroll dumps were byte-identical because the hard-coded 520x1500 swipe was outside the real 320x640 emulator viewport, replaced that proof with geometry-derived bounded scrolling plus dump-hash evidence, and obtained an exact-head PASS on Android Human-Action Simulation #308 together with CURRENT #1418, Nexus #392, Coordinated Product #1465, Android Build #784 and Field Ecosystem #1377. B-EDGE 2.2 remains not authorized for field install.",
-  "next_action": "Persist the R83 close/provider receipt, issue one final qualification nonce on the resulting exact head, require the six PR #152 gates to be green on that exact head, reread canonical main under the Git writer fence, and integrate PR #152 only if main is still compatible. After integration, continue A+B+C with authenticated+encrypted LAN as the highest release-blocking phone full-node gap, then direct-boot/black-start and field Telegram relay proof.",
+  "status": "R83_PR152_MERGED_CLOSEOUT",
+  "last_completed_atomic_action": "R83 fixed the Android UI simulation defect, obtained all six exact-head PASS gates, merged PR #152 with expected-head fencing, and verified canonical main at e28f47397ad1ff81e7906b6b6e9d6028fb566347.",
+  "next_action": "Finish the R83 provider-proven Gmail close. Next product tranche continues the canonical authenticated encrypted LAN transport requirement, then direct-boot/black-start and field Telegram relay proof.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -31,7 +31,10 @@
       "android_build": 784,
       "android_human_action_simulation": 308,
       "field_ecosystem": 1377
-    }
+    },
+    "r83_merged_pr": 152,
+    "r83_exact_green_pr_head": "bde2803fc063ed5b97a492b6e246885bfd71d9e6",
+    "r83_merged_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347"
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
