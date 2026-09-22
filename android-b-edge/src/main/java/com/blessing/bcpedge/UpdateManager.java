@@ -153,45 +153,21 @@ public final class UpdateManager {
 
     private JSONObject getJsonAuthenticated(String u) throws Exception {
         ensureConnected();
-        HttpURLConnection c = (HttpURLConnection)new URL(u).openConnection();
-        c.setConnectTimeout(3000);
-        c.setReadTimeout(7000);
-        c.setUseCaches(false);
-        c.setRequestProperty("Accept", "application/json");
-        c.setRequestProperty("Authorization", "Bearer " + client.getToken());
-        int code = c.getResponseCode();
-        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
-        String raw = readAll(in);
-        if (code >= 400) throw new IOException("HTTP_" + code + ": " + raw);
-        return new JSONObject(raw);
+        return client.requestJson(
+                "GET", u, null, client.getToken(), null, 3000, 7000);
     }
 
     private void downloadAuthenticated(String u, File out) throws Exception {
         ensureConnected();
-        HttpURLConnection c = (HttpURLConnection)new URL(u).openConnection();
-        c.setConnectTimeout(5000);
-        c.setReadTimeout(30000);
-        c.setUseCaches(false);
-        c.setRequestProperty("Authorization", "Bearer " + client.getToken());
-        int code = c.getResponseCode();
-        if (code >= 400) {
-            String raw = readAll(c.getErrorStream());
-            throw new IOException("HTTP_" + code + ": " + raw);
-        }
-        long announced = c.getContentLengthLong();
-        if (announced > MAX_APK_BYTES) throw new IOException("APK_TOO_LARGE");
-        long total = 0;
-        try (InputStream in = c.getInputStream();
-             OutputStream os = new FileOutputStream(out)) {
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) >= 0) {
-                total += n;
-                if (total > MAX_APK_BYTES) throw new IOException("APK_TOO_LARGE");
-                os.write(buf, 0, n);
-            }
-        }
-        if (total <= 0) throw new IOException("APK_EMPTY");
+        PinnedTlsHttp.download(
+                u,
+                client.getToken(),
+                client.getPcTlsCertSha256(),
+                client.getEdgeVersion(),
+                5000,
+                30000,
+                out,
+                MAX_APK_BYTES);
     }
 
     private void validateManifest(JSONObject m) throws Exception {
