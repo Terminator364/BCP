@@ -4442,6 +4442,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/health":
+            tls = pc_tls_status(self.server.bcp_token)
             self.send_json(
                 200,
                 {
@@ -4451,9 +4452,26 @@ class Handler(BaseHTTPRequestHandler):
                     "pc_name": os.environ.get("COMPUTERNAME", "BCP-PC"),
                     "identity_fingerprint": public_identity_fingerprint(self.server.bcp_token),
                     "pairing_open": True,
+                    "transport_secure": bool(getattr(self.server, "transport_secure", False)),
+                    "tls_ready": bool(tls.get("ready")),
+                    "tls_port": int(tls.get("port") or PC_TLS_PORT),
+                    "tls_cert_sha256": str(tls.get("cert_sha256") or ""),
+                    "tls_binding_hmac_sha256": str(tls.get("binding_hmac_sha256") or ""),
+                    "tls_protocol": str(tls.get("protocol") or ""),
                     "time": utc_now(),
                 },
             )
+            return
+
+        if (
+            not bool(getattr(self.server, "transport_secure", False))
+            and str(self.headers.get("X-BCP-Edge-Version") or "").startswith("2.2.")
+        ):
+            self.send_json(426, {
+                "error": "secure_transport_required",
+                "tls_port": PC_TLS_PORT,
+                "tls_cert_sha256": str(pc_tls_status().get("cert_sha256") or ""),
+            })
             return
 
         if not self.authorized():
@@ -4685,6 +4703,15 @@ class Handler(BaseHTTPRequestHandler):
                 return
             try:
                 body = self.read_json()
+                edge_version = str(body.get("edge_version", ""))[:40]
+                if edge_version.startswith("2.2.") and not bool(getattr(self.server, "transport_secure", False)):
+                    tls = pc_tls_status(self.server.bcp_token)
+                    self.send_json(426, {
+                        "error": "secure_pairing_required",
+                        "tls_port": int(tls.get("port") or PC_TLS_PORT),
+                        "tls_cert_sha256": str(tls.get("cert_sha256") or ""),
+                    })
+                    return
                 device_name = str(body.get("device_name", ""))[:120]
                 expected_identity = public_identity_fingerprint(self.server.bcp_token)
                 supplied_identity = str(body.get("identity_fingerprint", ""))[:80]
@@ -4727,6 +4754,17 @@ class Handler(BaseHTTPRequestHandler):
                 )
             except Exception as e:
                 self.send_json(400, {"error": "pairing_failed", "detail": str(e)})
+            return
+
+        if (
+            not bool(getattr(self.server, "transport_secure", False))
+            and str(self.headers.get("X-BCP-Edge-Version") or "").startswith("2.2.")
+        ):
+            self.send_json(426, {
+                "error": "secure_transport_required",
+                "tls_port": PC_TLS_PORT,
+                "tls_cert_sha256": str(pc_tls_status().get("cert_sha256") or ""),
+            })
             return
 
         if not self.authorized():
@@ -5553,23 +5591,50 @@ def main():
 
     token = ensure_state()
     lifecycle = ensure_lifecycle_registration()
+
+    # Legacy/control bootstrap remains on 8765 for field 2.1.2 compatibility.
+    # The 2.2 secure path terminates TLS on 8766 and forwards only to the
+    # loopback-only backend below, which lets the handler know the transport is
+    # cryptographically protected before any bearer is accepted.
+    secure_backend = ThreadingHTTPServer(("127.0.0.1", PC_TLS_BACKEND_PORT), Handler)
+    secure_backend.bcp_token = token
+    secure_backend.transport_secure = True
+    secure_thread = threading.Thread(
+        target=lambda: secure_backend.serve_forever(poll_interval=0.5),
+        name="bcp-secure-backend",
+        daemon=True,
+    )
+    secure_thread.start()
+    tls_status = ensure_pc_tls_proxy()
+
     server = ThreadingHTTPServer((args.bind, args.port), Handler)
     server.bcp_token = token
+    server.transport_secure = False
     mirror_external_runtime_status("SERVER_START")
     if not lifecycle.get("registered", False):
         mirror_telemetry_status("LIFECYCLE_REGISTRATION_DEGRADED", {"status": "DEGRADED"})
+    mirror_telemetry_status("PC_TLS_READY", {
+        "status": "READY" if tls_status.get("ready") else "DEGRADED",
+        "transport_lane": "TLS_8766_PINNED",
+    })
     start_external_heartbeat_worker()
     start_conversation_receipt_worker()
     start_mdns_advertiser(args.port)
     start_nexus_human_gate_manifest_watcher()
     start_auto_update_worker(server, args.bind, args.port)
-    print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
+    print(
+        f"[BCP] v{SERVER_VERSION} legacy/bootstrap={args.bind}:{args.port} "
+        f"secure=0.0.0.0:{PC_TLS_PORT} backend=127.0.0.1:{PC_TLS_BACKEND_PORT}",
+        flush=True,
+    )
     try:
         server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:
         pass
     finally:
         server.server_close()
+        secure_backend.shutdown()
+        secure_backend.server_close()
     return 0
 
 
