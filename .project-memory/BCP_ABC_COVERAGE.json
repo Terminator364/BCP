@@ -1,8 +1,8 @@
 {
   "schema": "bcp.abc_coverage/1",
-  "revision": "2026-09-22-R81",
-  "status": "R81_CAPABILITY_MEMORY_GOVERNANCE_CANDIDATE_CI_PENDING",
-  "warning": "Macro evidence audit against A+B+C after direct current Drive read of UCMF001 V9/Postulates 1-9. Sealed V0.7 ZIP remains represented by durable SHA/manifest pointer and is not falsely claimed as byte-reread.",
+  "revision": "2026-09-22-R82",
+  "status": "R82_RECONCILED_MEMORY_CAPABILITY_UI_CANDIDATE_EXACT_HEAD_CI_PENDING",
+  "warning": "R82 preserves the richer R81 memory/provenance line and the parallel R81 capability/UI/research gains. Functional/evidence totals remain unchanged until exact-head CI and integration prove the reconciled candidate.",
   "scoring": {
     "functional_score_definition": "weighted fraction of required capability materially implemented in current code/design",
     "evidence_score_definition": "weighted maturity of deterministic CI/device/field proof; documentation alone scores low",
@@ -178,7 +178,7 @@
   },
   "top_gaps": [
     "ENCRYPTED_AUTHENTICATED_LAN_TRANSPORT_STILL_POC_CLEAR_HTTP",
-    "R81_MEMORY_CAPABILITY_GOVERNANCE_EXACT_HEAD_CI_AND_DEVICE_MIGRATION_PENDING",
+    "R82_RECONCILED_MEMORY_CAPABILITY_UI_EXACT_HEAD_CI_AND_DEVICE_MIGRATION_PENDING",
     "MISSION_STEP_ENVELOPE_AND_PROVIDER_STATE_NOT_YET_FIELD_PROVEN_ON_PHONE",
     "UNIVERSAL_CHRONICLE_NOT_YET_FIELD_PROVEN_ON_2_2_PHONE",
     "INSTALLED_PHONE_2_1_2_NOT_FULL_NODE_2_2",
