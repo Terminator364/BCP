@@ -2,7 +2,7 @@
   "schema": "bcp.qualification_trigger/1",
   "revision": "2026-09-22-R87",
   "purpose": "One-file exact-head qualification fence. Bump nonce/reason after the final durable candidate mutation so all critical workflows execute against the final exact commit SHA.",
-  "nonce": "R87-BEDGE-2-2-FIELD-PROMOTION-1",
+  "nonce": "R87-BEDGE-2-2-FIELD-PROMOTION-2",
   "required_workflows": [
     "BCP Android Build",
     "BCP Android Human-Action Simulation",
@@ -18,7 +18,7 @@
     "BCP Windows Bootstrap Validation"
   ],
   "exact_head_required": true,
-  "reason": "R87 exact-head P0 productization: signed B-EDGE 2.2 field-ready candidate production",
+  "reason": "R87 final exact-head qualification after takeover-pointer continuity repair",
   "required_head_contracts": [
     "R86_BIDIRECTIONAL_PINNED_TLS_MERGED",
     "BEDGE_2_2_FULL_NODE",
@@ -27,5 +27,5 @@
     "ACTIVE_TRANCHE_LEDGER",
     "CURRENT_RELEASE_ANTI_DOWNGRADE"
   ],
-  "updated_at": "2026-09-22T11:42:00+01:00"
+  "updated_at": "2026-09-22T11:46:00+01:00"
 }
