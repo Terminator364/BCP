@@ -25,7 +25,7 @@ import javax.net.ssl.SSLServerSocket;
  * BCP control-plane registration.
  */
 public final class EdgeTlsIdentity {
-    private static final String ALIAS = "bcp-edge-tls-v1";
+    private static final String ALIAS = "bcp-edge-tls-v2";
     private static final String KEYSTORE = "AndroidKeyStore";
 
     private EdgeTlsIdentity() {}
@@ -74,8 +74,14 @@ public final class EdgeTlsIdentity {
         gen.initialize(new KeyGenParameterSpec.Builder(
                 ALIAS, KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
                 .setKeySize(2048)
-                .setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA512)
-                .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PKCS1)
+                .setDigests(
+                        KeyProperties.DIGEST_NONE,
+                        KeyProperties.DIGEST_SHA256,
+                        KeyProperties.DIGEST_SHA384,
+                        KeyProperties.DIGEST_SHA512)
+                .setSignaturePaddings(
+                        KeyProperties.SIGNATURE_PADDING_RSA_PKCS1,
+                        KeyProperties.SIGNATURE_PADDING_RSA_PSS)
                 .setCertificateSubject(new javax.security.auth.x500.X500Principal("CN=BCP-EDGE"))
                 .setCertificateSerialNumber(new BigInteger(128, new java.security.SecureRandom()).abs())
                 .setCertificateNotBefore(start.getTime())
