@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.delivery_redundancy_policy/12",
-  "revision": "2026-09-21-R77",
+  "schema": "bcp.delivery_redundancy_policy/13",
+  "revision": "2026-09-22-R88",
   "status": "CANONICAL_CANDIDATE",
   "channels": {
     "chatgpt": {
@@ -28,8 +28,8 @@
       "start_notice_required_fields": [
         "PROJECT",
         "KINSHASA_DATE_TIME",
-        "TRANCHE_TARGET",
-        "WORK_SCOPE"
+        "WORK_SCOPE",
+        "ESTIMATED_END_WINDOW_LOCAL"
       ],
       "end_checkpoint_required_fields": [
         "PROJECT",
@@ -47,6 +47,7 @@
       "project_label_create_if_missing": true,
       "label_apply_to": [
         "EMAIL_START_NOTICE",
+        "EMAIL_ESTIMATE_UPDATE_IF_MATERIAL",
         "EMAIL_END_FULL_CHECKPOINT"
       ],
       "end_mail_search_before_send": true,
@@ -68,20 +69,19 @@
     }
   },
   "cadence": {
-    "work_slice_minutes": "25_TOTAL_23_WORK_2_CLOSEOUT",
-    "target_minutes": 25,
-    "checkpoint_each_slice": true,
-    "mail_each_slice": true,
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "fixed_minutes": null,
+    "checkpoint_each_tranche": true,
+    "mail_each_tranche": true,
     "blind_retry_loops": false,
-    "start_mail_each_slice": true,
-    "end_mail_each_slice": true,
-    "normal_closeout_offset_minutes": 23,
+    "start_mail_each_tranche": true,
+    "start_mail_includes_estimated_end_window": true,
+    "estimate_update_mail": "OPTIONAL_IF_ESTIMATE_MATERIALLY_CHANGES",
+    "end_mail_each_tranche": true,
     "user_relaunch_must_never_be_required": true,
-    "useful_work_target_minutes": 23,
-    "useful_work_minimum_minutes": 20,
-    "normal_close_reserve_minutes": 2,
     "scheduled_close_guards_required": false,
-    "closeout_behavior": "PRIMARY_ASSISTANT_ENTERS_CLOSE_RESERVE_AT_T+23; SEARCH_SENT_BY_DELIVERY_KEY; SEND_END_IF_MISSING; VERIFY_PROVIDER_ACK; PERSIST_CLOSED; THEN_CHAT_POINTER"
+    "closeout_behavior": "PRIMARY_ASSISTANT_CLOSES_AT_REAL_CHECKPOINT_OR_TRUE_GATE; SEARCH_SENT_BY_DELIVERY_KEY; SEND_END_IF_MISSING; VERIFY_PROVIDER_ACK; PERSIST_CLOSED; THEN_CHAT_POINTER",
+    "success_metric": "DURABLE_PRODUCT_PROGRESS_NOT_ELAPSED_TIME"
   },
   "action_message_contract": {
     "one_human_gate_at_a_time": true,
@@ -114,7 +114,8 @@
     "chatgpt_surface": "NO_OUTPUT_BEFORE_END_MAIL_ACK_THEN_POINTER_ONLY",
     "start_mail_before_substantive_work": true,
     "end_watchdog_prevents_user_relaunch_dependency": true,
-    "normal_closeout_before_deadline": true
+    "normal_closeout_before_deadline": false,
+    "adaptive_estimated_end_window": true
   },
   "close_ownership": {
     "normal_owner": "PRIMARY_ASSISTANT",
