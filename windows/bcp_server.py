@@ -5102,6 +5102,19 @@ def selftest():
         assert "edge_apk_sha256_mismatch" in source
         assert "identity_fingerprint" in source
         assert "pc_identity_confirmation_mismatch" in source
+        assert "PC_TLS_PORT = 8766" in source
+        assert "PC_TLS_BACKEND_PORT = 8767" in source
+        assert "New-SelfSignedCertificate" in source
+        assert "KeyExportPolicy NonExportable" in source
+        assert "SslStream" in source
+        assert "secure_transport_required" in source
+        assert "secure_pairing_required" in source
+        probe_token = "selftest-shared-secret"
+        probe_pin = "a" * 64
+        binding = pc_tls_binding(probe_token, probe_pin, 8766)
+        assert re.fullmatch(r"[0-9a-f]{64}", binding)
+        assert hmac.compare_digest(binding, pc_tls_binding(probe_token, probe_pin, 8766))
+        assert not hmac.compare_digest(binding, pc_tls_binding("different", probe_pin, 8766))
         assert "API_BCP" in source and "02_TELEMETRY" in source
         assert "/v1/system/chatgpt-pc/recover" in source
         assert "recovery_package_sha256_mismatch" in source
