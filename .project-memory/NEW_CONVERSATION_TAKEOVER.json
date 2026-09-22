@@ -61,11 +61,11 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9,
-    "current_integration_branch": "work/bcp/r86-edge-to-pc-secure-20260922-1024",
-    "current_main_base_sha": "eec2b2ca41e1bc0b8593d049efd00b27814b4fe2",
-    "current_integration_rule": "RESUME_PR155_EXACT_HEAD_CI_AFTER_R86_CLOSE_THEN_AUTOFIX_OR_MERGE",
-    "current_secure_lan_state": "CANDIDATE_2_2_BIDIRECTIONAL_PINNED_TLS_IMPLEMENTED_EXACT_HEAD_CI_PENDING",
-    "next_product_front": "PR155_EXACT_HEAD_QUALIFICATION_THEN_FIELD_PROMOTION_GATES"
+    "current_integration_branch": "work/bcp/r87-field-promotion-20260922-1138",
+    "current_main_base_sha": "db941dbfb5c7b473793b09092b48114f76f2f86d",
+    "current_integration_rule": "R87_QUALIFY_SIGN_VERIFY_PUBLISH_BEDGE_2_2_THEN_STOP_AT_ANDROID_INSTALL_GATE",
+    "current_secure_lan_state": "R86_BIDIRECTIONAL_PINNED_TLS_MERGED_CANDIDATE_2_2_FIELD_PROMOTION_PENDING",
+    "next_product_front": "SIGNED_BEDGE_2_2_EVERGREEN_DRIVE_CURRENT_IN_PLACE_UPDATE_FIELD_PROOF"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -77,9 +77,9 @@
     "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
-  "current_active_tranche": "BCP-R86-START-20260922-1024",
-  "current_delivery_key": "BCP25-20260922-1024-R86",
-  "current_active_tranche_status": "CLOSED",
-  "current_end_checkpoint": "BCP-R86-END-20260922-1047",
-  "current_end_message_id": "1a0c883c76f23039"
+  "current_active_tranche": "BCP-R87-START-20260922-1138",
+  "current_delivery_key": "BCP25-20260922-1138-R87",
+  "current_active_tranche_status": "WORKING",
+  "current_end_checkpoint": null,
+  "current_end_message_id": null
 }
