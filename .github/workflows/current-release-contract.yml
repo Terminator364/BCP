@@ -16,6 +16,10 @@ on:
       - "release/nexus_bootstrap.json"
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
+      - "tools/validate_reference_first.py"
+      - ".project-memory/REFERENCE_FIRST_POLICY.json"
+      - ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json"
+      - "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md"
       - "tools/test_active_tranche_delivery.py"
       - "tools/test_bedge_local_executor_contract.py"
       - "tools/test_bedge_chronicle_contract.py"
@@ -55,6 +59,10 @@ on:
       - "release/nexus_bootstrap.json"
       - "schemas/bcp_current_release.schema.json"
       - "tools/validate_current_release.py"
+      - "tools/validate_reference_first.py"
+      - ".project-memory/REFERENCE_FIRST_POLICY.json"
+      - ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json"
+      - "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md"
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -93,6 +101,8 @@ jobs:
           python -m json.tool .project-memory/COMMUNICATION_STATE_MACHINE.json > /dev/null
           python -m json.tool .project-memory/BCP_ABC_SOURCE_REGISTRY.json > /dev/null
           python -m json.tool .project-memory/BCP_ABC_COVERAGE.json > /dev/null
+          python -m json.tool .project-memory/REFERENCE_FIRST_POLICY.json > /dev/null
+          python -m json.tool .project-memory/EXTERNAL_REFERENCE_REGISTRY.json > /dev/null
           python -m json.tool .project-memory/UCMF001_CONTINUITY.json > /dev/null
           python -m json.tool .project-memory/NEW_CONVERSATION_TAKEOVER.json > /dev/null
           python - <<'PY'
@@ -114,6 +124,9 @@ jobs:
 
       - name: Validate active-tranche delivery proof
         run: python tools/test_active_tranche_delivery.py
+
+      - name: Validate reference-first anti-reinvention contract
+        run: python tools/validate_reference_first.py
 
       - name: Validate B-EDGE local executor contract
         run: python tools/test_bedge_local_executor_contract.py
