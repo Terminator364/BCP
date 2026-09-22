@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R89_SOURCE_BENCHMARK_COMPLETE_UI_CONVERGENCE_BEFORE_HUMAN_INSTALL",
-  "last_completed_atomic_action": "R89 recovered canonical BCP at main f40879b234ea619eff82445eedb5802796d1f9d8, researched mature open-source/industry references before any new UI implementation, compared those patterns against the actual B-EDGE MainActivity and Android human-action workflow, and documented a source-adoption matrix. Finding: BCP backend A+B is substantially ahead of the C-layer UI; current 2.2 is machine-qualified but its one-scroll-screen + modal diagnostics + raw JSON presentation would predictably trigger another immediate UI iteration after installation.",
-  "next_action": "R90 PRODUCT UI CONVERGENCE BEFORE HUMAN INSTALL: reuse the existing BCP backend and implement one coherent lightweight Android shell with Home, Activity, Devices and System/Repairs destinations; human-readable state/reason/action presentation; Chronicle/mission timeline; paired-device details; contextual permissions; technical JSON behind explicit disclosure. Extend emulator human-action qualification to navigate all four destinations and seeded repair/execution/device states. Only after that exact candidate is green, re-sign/read back Drive CURRENT and request one Android IN_PLACE install without uninstall.",
+  "status": "R89_CLOSED_REFERENCE_FIRST_CANONICAL_R90_UI_CONVERGENCE_NEXT",
+  "last_completed_atomic_action": "R89 consolidated duplicate anti-reinvention work into one canonical line, closed PR #161 as superseded, merged PR #162 at main 1f186d60d37b7a4d1d85b84d934aca4d88d96311 after exact-head CURRENT #1544 and Coordinated Product #1579 passed, and made mature-reference review + REUSE/ADAPT/BUILD_ONLY_IF_GAP + license/provenance + task-based acceptance mandatory before new product implementation.",
+  "next_action": "R90 PRODUCT UI CONVERGENCE: preserve the existing machine-qualified BCP 2.2 backend and implement a lightweight native Android shell with Home, Activity, Devices and System/Repairs over existing Chronicle, mission-step, pairing/discovery, capability, permission, queue, update and resource data. Extend the Android emulator workflow to navigate and verify these user tasks. Do not request the user's in-place install until the coherent candidate is exact-head green, signed, Drive CURRENT replaced/read back.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -205,6 +205,17 @@
         "Temporal": "MIT",
         "Home_Assistant": "APACHE-2.0"
       }
+    },
+    "r89_closeout": {
+      "status": "CLOSED_CANONICAL",
+      "benchmark_main_sha": "1f186d60d37b7a4d1d85b84d934aca4d88d96311",
+      "exact_head": "5010478742b48f09207d5f4ac6b5bb5e8ce7ee05",
+      "pr_merged": 162,
+      "superseded_pr_closed": 161,
+      "current_release_contract": 1544,
+      "coordinated_product": 1579,
+      "gmail_end_message_id": "1a0cb06b97c77708",
+      "end_checkpoint": "BCP-R89-END-20260922-2230"
     }
   },
   "field_gates": [
