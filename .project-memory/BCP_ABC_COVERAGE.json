@@ -173,10 +173,11 @@
     }
   ],
   "totals": {
-    "weight": null,
-    "functional_percent": null,
-    "evidence_maturity_percent": null,
-    "state": "STALE_PENDING_R89_DENOMINATOR_RECOMPUTE"
+    "weight": 100,
+    "functional_percent": 56.1,
+    "evidence_maturity_percent": 42.2,
+    "validity": "HISTORICAL_R82_ONLY_NOT_CURRENT_R89_COMPLETION",
+    "current_scores_valid": false
   },
   "top_gaps": [
     "R89_REFERENCE_FIRST_UX_RECONCILIATION_BEFORE_NEXT_USER_INSTALL",
