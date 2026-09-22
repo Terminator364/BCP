@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/4",
+  "schema": "bcp.new_conversation_takeover/5",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -28,11 +28,13 @@
     "RECONCILE_UNCLOSED_TRANCHE_BEFORE_NEW_WORK",
     "LOAD_COMMUNICATION_STATE_MACHINE_DELIVERY_LEDGER_AND_UCMF_V9_POINTER",
     "LOAD_GIT_WRITER_FENCE",
-    "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_ACK",
-    "PERSIST_START_RECEIPT_AND_DELIVERY_KEY",
+    "ESTIMATE_REAL_SCOPE_AND_END_WINDOW",
+    "SEND_GMAIL_START_WITH_SCOPE_AND_ESTIMATED_END_WINDOW_AND_REQUIRE_PROVIDER_ACK",
+    "PERSIST_START_RECEIPT_DELIVERY_KEY_AND_ESTIMATE",
     "LOAD_AND_APPLY_FULL_A_PLUS_B_PLUS_C_SPEC",
     "RESUME_ONLY_FROM_PROJECT_STATE_NEXT_UNCOMMITTED_ACTION",
-    "ENTER_CLOSE_RESERVE_AT_MINUTE_23",
+    "CONTINUE_UNTIL_REAL_CHECKPOINT_TRUE_HUMAN_GATE_OR_OBJECTIVE_FAILURE",
+    "OPTIONALLY_REESTIMATE_AND_SEND_ONE_UPDATE_IF_END_WINDOW_BECOMES_NONCREDIBLE",
     "PERSIST_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
     "SEND_COMPLETE_GMAIL_END_IF_MISSING",
@@ -41,13 +43,18 @@
     "ONLY_THEN_REPLY_BRIEFLY_IN_APP"
   ],
   "communication_contract": {
-    "cadence_minutes": 25,
-    "useful_work_target_minutes": 23,
-    "close_reserve_minutes": 2,
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "fixed_cadence_minutes": null,
+    "start_provider_ack_required": true,
+    "start_mail_includes_scope": true,
+    "start_mail_includes_estimated_end_window": true,
+    "estimate_is_advisory": true,
+    "estimate_update_mail": "OPTIONAL_IF_MATERIAL",
+    "never_wait_to_fill_estimate": true,
+    "never_stop_only_because_estimate_elapsed": true,
     "normal_close_owner": "PRIMARY_ASSISTANT",
     "automation_normal_close_forbidden": true,
     "automation_role": "OPTIONAL_EMERGENCY_RECOVERY_ONLY",
-    "start_provider_ack_required": true,
     "end_provider_ack_and_sent_readback_required": true,
     "chat_final_before_end_ack_forbidden": true,
     "user_reexplanation_required": false
@@ -77,9 +84,10 @@
     "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
-  "current_active_tranche": "BCP-R87-START-20260922-1138",
-  "current_delivery_key": "BCP25-20260922-1138-R87",
-  "current_active_tranche_status": "CLOSED",
-  "current_end_checkpoint": "BCP-R87-END-20260922-1207",
-  "current_end_message_id": "1a0c8ccca4a6d02e"
+  "current_active_tranche": "BCP-R88-START-20260922-1321",
+  "current_delivery_key": "BCPADAPT-20260922-1321-R88",
+  "current_active_tranche_status": "WORKING",
+  "current_end_checkpoint": null,
+  "current_end_message_id": null,
+  "current_communication_branch": "work/bcp/r88-adaptive-communication-window-20260922-1321"
 }
