@@ -1,0 +1,26 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r84-auth-encrypted-lan-20260922-0342",
+  "project_or_mission": "API/BCP R84 authenticated encrypted LAN increment",
+  "base_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
+  "created_at": "2026-09-22T03:43:19+01:00",
+  "work_branch": "work/bcp/r84-auth-encrypted-lan-20260922-0342",
+  "intended_file_scope": [
+    "android-b-edge/**",
+    "windows/bcp_server.py",
+    "windows/bcp_telegram_observability.py",
+    "tools/**",
+    ".github/workflows/**",
+    "docs/**",
+    ".project-memory/**",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Field Ecosystem Preflight",
+    "BCP Coordinated Product Qualification",
+    "BCP Qualified CURRENT Release Contract"
+  ]
+}
