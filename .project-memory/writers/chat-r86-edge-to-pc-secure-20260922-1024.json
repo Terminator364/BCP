@@ -1,0 +1,29 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r86-edge-to-pc-secure-20260922-1024",
+  "project_or_mission": "API/BCP R86 Edge-to-PC encrypted pinned control plane",
+  "base_main_sha": "eec2b2ca41e1bc0b8593d049efd00b27814b4fe2",
+  "created_at": "2026-09-22T10:24:10+01:00",
+  "work_branch": "work/bcp/r86-edge-to-pc-secure-20260922-1024",
+  "intended_file_scope": [
+    "windows/bcp_server.py",
+    "windows/INSTALL_BCP_FINAL.ps1",
+    "windows/BCP_FINAL_ACCEPTANCE_CURRENT.ps1",
+    "android-b-edge/**",
+    "release/**",
+    ".github/workflows/**",
+    "tools/**",
+    "docs/**",
+    ".project-memory/**",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Field Ecosystem Preflight",
+    "BCP Coordinated Product Qualification",
+    "BCP Windows Bootstrap Validation"
+  ]
+}

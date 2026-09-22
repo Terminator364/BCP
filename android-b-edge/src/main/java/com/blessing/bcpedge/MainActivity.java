@@ -204,7 +204,7 @@ public class MainActivity extends Activity {
                             + "\nRéseau: " + net.optString("transport", "AUCUN")
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
                             + "\nLAN/API + NSD: actif"
-                            + "\nSécurité LAN: TLS Edge actif · PC→Edge pinable · Edge→PC encore à chiffrer"
+                            + "\nSécurité LAN 2.2: TLS pinné bidirectionnel · legacy 2.1.2 isolé"
                             + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
                             + "\nStore-and-forward: actif");
 
@@ -360,13 +360,17 @@ public class MainActivity extends Activity {
             String pc = p.optString("pc_name", "BCP PC");
             String version = p.optString("version", "");
             String fp = p.optString("identity_fingerprint", "");
-            String hint = fp.isEmpty() ? "empreinte disponible après mise à niveau"
+            String tlsFp = p.optString("tls_cert_sha256", "");
+            String hint = fp.isEmpty() ? "indisponible"
                     : fp.substring(0, Math.min(12, fp.length()));
+            String tlsHint = tlsFp.isEmpty() ? "indisponible"
+                    : tlsFp.substring(0, Math.min(16, tlsFp.length()));
             new AlertDialog.Builder(this)
                     .setTitle("Confirmer ce PC")
                     .setMessage(pc + (version.isEmpty() ? "" : " · BCP " + version)
-                            + "\nEmpreinte: " + hint
-                            + "\n\nCette confirmation n’est demandée qu’au premier appairage.")
+                            + "\nIdentité PC: " + hint
+                            + "\nEmpreinte TLS: " + tlsHint
+                            + "\n\nCette confirmation lie ce téléphone au certificat TLS de ce PC.")
                     .setPositiveButton("CONFIRMER", (d, w) -> confirmPendingPairing())
                     .setNegativeButton("ANNULER", null)
                     .show();

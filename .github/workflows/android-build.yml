@@ -67,6 +67,7 @@ jobs:
           MANIFEST="android-b-edge/src/main/AndroidManifest.xml"
           GRADLE="android-b-edge/build.gradle"
           PATHS="android-b-edge/src/main/res/xml/file_paths.xml"
+          PINNED="android-b-edge/src/main/java/com/blessing/bcpedge/PinnedTlsHttp.java"
 
           grep -F 'applicationId "com.blessing.bcpedge.evergreen"' "$GRADLE" >/dev/null
           python - <<'PY'
@@ -120,6 +121,15 @@ jobs:
           grep -F 'Migration(4, 5)' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java >/dev/null
           grep -F 'EdgePresenceAdvertiser' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
           grep -F 'EdgeContentStore' "$CLIENT" >/dev/null
+          grep -F 'SECURE_PC_TRANSPORT_REQUIRED' "$CLIENT" >/dev/null
+          grep -F 'migratePairedServerToTls' "$CLIENT" >/dev/null
+          grep -F 'PC_TLS_PIN_MISMATCH' "$PINNED" >/dev/null
+          grep -F 'MessageDigest.isEqual' "$PINNED" >/dev/null
+          grep -F 'X-BCP-Edge-Version' "$PINNED" >/dev/null
+          if grep -F 'setRequestProperty("Authorization"' "$CLIENT" "$UPDATE"; then
+            echo "Direct HttpURLConnection bearer path reintroduced"
+            exit 1
+          fi
           grep -F 'MAX_QUOTA = 8L * 1024L * 1024L * 1024L' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java >/dev/null
           grep -F 'DATA_SAVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
           grep -F 'STORE_AND_FORWARD' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null

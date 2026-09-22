@@ -230,7 +230,7 @@ jobs:
             grep -F "AUTORISATIONS SERVEUR" "bcp-window-$STEP.xml" >/dev/null && FOUND_PERMISSIONS=1 || true
             grep -F "CAPACITÉS DU NŒUD" "bcp-window-$STEP.xml" >/dev/null && FOUND_CAPABILITIES=1 || true
             grep -F "Journal mémoire/provenance:" "bcp-window-$STEP.xml" >/dev/null && FOUND_MEMORY=1 || true
-            grep -F "Sécurité LAN: TLS Edge actif · PC→Edge pinable · Edge→PC encore à chiffrer" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
+            grep -F "Sécurité LAN 2.2: TLS pinné bidirectionnel · legacy 2.1.2 isolé" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
           done
           test "$SCROLL_CHANGED" = "1"
           test "$FOUND_PERMISSIONS" = "1"

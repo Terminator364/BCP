@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R85_CLOSED_PR153_MERGED_POSTMERGE_GREEN_CLOSEOUT_PR154_OPEN",
-  "last_completed_atomic_action": "R85 is provider-proof closed. PR #153 merged into main 15b7bca6ceac474c6f4454d3a37df363fa13d2d6 after exact-head TLS repair and all required pre-merge gates. All 12 post-merge main workflows passed, including Android Human-Action #334 proving HTTPS 8877 and cold relaunch. Gmail END 1a0c8672f6af7db0 was provider-acknowledged and read back from SENT.",
-  "next_action": "Reconcile PR #154 control-only closeout under writer fence and merge it only if its exact head is green and main remains compatible. Then start R86 from canonical main to encrypt and pin B-EDGE -> PC control traffic. Do not authorize B-EDGE 2.2 installation yet.",
+  "status": "R86_BIDIRECTIONAL_PINNED_TLS_IMPLEMENTED_EXACT_HEAD_CI_RUNNING",
+  "last_completed_atomic_action": "R86 implemented the candidate 2.2 phone-to-PC secure control path: Windows BCP 0.7.18 provisions a non-exportable CurrentUser TLS certificate, exposes TLS 8766 through a lightweight SslStream proxy to loopback-only backend 8767, publishes a SHA-256 cert pin plus paired HMAC binding on credential-free bootstrap 8765, and rejects 2.2 credential-bearing clear-LAN requests. B-EDGE 2.2 now pins the PC certificate before pairing, migrates already-paired HTTP endpoints only after verifying the HMAC binding locally, refuses bearer-over-HTTP, and uses pinned TLS for control JSON and APK downloads. A proxy source-address masking issue was counter-audited and fixed by carrying the authenticated private edge_lan_ip in the secure relay registration. PR #155 is open. Installer syntax/tail regressions found by CI were repaired; exact-head reruns remain pending.",
+  "next_action": "Resume PR #155 from product head 914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01 plus closeout metadata. Read exact-head reruns first. Prioritize Coordinated PC/Windows TLS provisioning-handshake, Android Build, Android Human-Action Simulation, Coordinated Product and Field Ecosystem. Auto-fix only on the same writer-fenced branch. Merge only if required exact-head gates are green. Do not publish/install B-EDGE 2.2 until signing/distribution/in-place-update gates are also satisfied.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -54,7 +54,26 @@
     "r85_end_gmail_message_id": "1a0c8672f6af7db0",
     "r85_end_checkpoint": "BCP-R85-END-20260922-1016",
     "r85_closeout_pr": 154,
-    "r85_provider_sent_readback": true
+    "r85_provider_sent_readback": true,
+    "r86_pr": 155,
+    "r86_product_head_before_close_intent": "914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01",
+    "r86_server_version": "0.7.18",
+    "r86_pc_tls_port": 8766,
+    "r86_pc_secure_backend": "127.0.0.1:8767",
+    "r86_field_edge_version": "2.1.2-rc1-edge-relay-evergreen",
+    "r86_candidate_edge_version": "2.2.0-full-node-evergreen",
+    "r86_install_authorized": false,
+    "r86_ci_at_freeze": {
+      "current_release_contract": "IN_PROGRESS_1490",
+      "managed_server": "QUEUED_477",
+      "final_acceptance": "IN_PROGRESS_496",
+      "coordinated_pc": "IN_PROGRESS_500",
+      "coordinated_product": "PENDING_1529",
+      "android_build": "PENDING_834",
+      "android_human_action": "PENDING_337",
+      "field_ecosystem": "PENDING_1446",
+      "nexus_one_shot": "IN_PROGRESS_420"
+    }
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",

@@ -13,7 +13,7 @@
   },
   "components": {
     "windows_bcp": {
-      "version": "0.7.17",
+      "version": "0.7.18",
       "source_manifest": "release/server.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -22,9 +22,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_server.py",
-        "sha256": "1229f4be1b5f688054378270656cb665c7295b25caa61997b6669cac49a477c8"
+        "sha256": "a52fc25e1c9ce9af4d802d0a908d0ee47b120ba20d3340ac21cc2e7166e807ea"
       },
-      "notes": "BCP 0.7.17 adds secure B-EDGE registration/pinning metadata and HMAC relay mode while preserving the current 2.1.2 field path."
+      "notes": "BCP 0.7.18 adds the pinned TLS 8766 phone-to-PC control path with a non-exportable Windows certificate and loopback-only backend; legacy 8765 remains bootstrap/2.1.2 compatibility."
     },
     "android_b_edge": {
       "version": "2.1.2-rc1-edge-relay-evergreen",
