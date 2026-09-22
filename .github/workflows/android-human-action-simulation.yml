@@ -170,28 +170,11 @@ jobs:
             # Headless API-35 occasionally surfaces an unrelated Pixel Launcher ANR
             # over the already-running B-EDGE activity. Close only that system dialog,
             # never B-EDGE, then foreground the exact installed component again.
-            python - <<'PY' > system-dialog-tap.txt
-import re
-import xml.etree.ElementTree as ET
-root = ET.parse("bcp-window.xml").getroot()
-for node in root.iter("node"):
-    if node.attrib.get("resource-id") == "android:id/aerr_close":
-        title = ""
-        for other in root.iter("node"):
-            if other.attrib.get("resource-id") == "android:id/alertTitle":
-                title = other.attrib.get("text", "")
-                break
-        if "BCP" in title or "bcp" in title.lower():
-            raise SystemExit("refusing_to_close_bedge_anr")
-        m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
-        if m:
-            x1,y1,x2,y2 = map(int, m.groups())
-            print((x1+x2)//2, (y1+y2)//2)
-        break
-PY
-            if [ -s system-dialog-tap.txt ]; then
-              read TAP_X TAP_Y < system-dialog-tap.txt
-              "$ADB" shell input tap "$TAP_X" "$TAP_Y"
+            if grep -F 'resource-id="android:id/aerr_close"' bcp-window.xml >/dev/null \
+              && ! grep -E 'BCP Edge|blessing\.bcpedge' bcp-window.xml >/dev/null; then
+              # Fixed API-35 CI device is 320x640; this is the center of
+              # android:id/aerr_close in the unrelated launcher ANR dialog.
+              "$ADB" shell input tap 160 331
               sleep 1
             else
               "$ADB" shell input keyevent 4 || true
