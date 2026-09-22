@@ -50,13 +50,20 @@
     "status": "CLOSED"
   },
   "no_more_product_mutations": false,
-  "candidate_head_sha": "7cb49d7c1aeca6f4ab574acb6d471301d225bdc8",
+  "candidate_head_sha": null,
   "pr_number": 152,
   "closeout_truth": {
     "r82_pr": 152,
     "r82_head_sha": "7cb49d7c1aeca6f4ab574acb6d471301d225bdc8",
     "android_human_action_simulation_run": 302,
     "exact_failure": "SCROLL_COORDINATES_OUTSIDE_320x640_VIEWPORT",
-    "install_authorized": false
+    "install_authorized": false,
+    "preclose_green_head_sha": "86555d75a6624d451612afdeb6ec505fc8213c78",
+    "all_six_required_gates_green": true,
+    "android_human_action_run": 308,
+    "android_artifact_id": 10671198592,
+    "root_cause": "SCROLL_COORDINATES_OUTSIDE_320x640_VIEWPORT",
+    "repair": "DYNAMIC_WM_SIZE_BOUNDED_SCROLL_PLUS_UI_DUMP_HASH_PROOF",
+    "final_close_and_requalification_required": true
   }
 }
