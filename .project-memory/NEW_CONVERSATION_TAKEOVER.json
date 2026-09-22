@@ -42,22 +42,42 @@
   ],
   "communication_contract": {
     "cadence_minutes": 25,
-    "useful_work_minutes": 23,
-    "normal_close_reserve_minutes": 2,
-    "gmail_label": "BCP",
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
     "normal_close_owner": "PRIMARY_ASSISTANT",
-    "scheduled_backup_required": false,
-    "final_app_reply_gate": "END_ACKNOWLEDGED_OR_CLOSED",
-    "ui_thinking_indicator_authoritative": false
+    "automation_normal_close_forbidden": true,
+    "automation_role": "OPTIONAL_EMERGENCY_RECOVERY_ONLY",
+    "start_provider_ack_required": true,
+    "end_provider_ack_and_sent_readback_required": true,
+    "chat_final_before_end_ack_forbidden": true,
+    "user_reexplanation_required": false
   },
   "product_truth": {
     "phone_direction": "coherent dedicated Android full-node/server appliance",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
     "continuation_code": "BCPGO BCP",
-    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_SOURCE_RECONCILED_R79_UCMF_V9",
+    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_R83_ANDROID_EXACT_HEAD_REPAIR",
     "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
-    "ucmf_current_postulate": 9
-  }
+    "ucmf_current_postulate": 9,
+    "current_integration_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "current_main_base_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "current_integration_rule": "REPAIR_EXACT_ANDROID_SCROLL_PROOF_THEN_REQUALIFY_AND_SERIALIZE_PR152"
+  },
+  "updated_at": "2026-09-22",
+  "continuation_code": "BCPGO BCP",
+  "product_scope": {
+    "formula": "A+B+C",
+    "source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
+    "coverage": ".project-memory/BCP_ABC_COVERAGE.json",
+    "canonical_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
+    "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
+  },
+  "current_active_tranche": "BCP-R83-START-20260922-0130",
+  "current_delivery_key": "BCP25-20260922-0130-R83",
+  "current_active_tranche_status": "WORKING",
+  "current_end_checkpoint": null,
+  "current_end_message_id": null
 }

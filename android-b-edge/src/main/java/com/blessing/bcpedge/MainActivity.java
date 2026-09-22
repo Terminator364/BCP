@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private TextView detail;
     private TextView nodeInfo;
     private TextView autonomyInfo;
+    private TextView capabilityInfo;
     private TextView permissionsInfo;
     private TextView output;
     private Button connect;
@@ -56,11 +57,18 @@ public class MainActivity extends Activity {
 
         updates.reconcileAfterLaunch();
         startEdgeServer();
+        io.submit(() -> {
+            try { client.refreshUiGovernanceCache(); } catch (Exception ignored) {}
+            runOnUiThread(this::refreshLocalPanels);
+        });
         autoConnect();
         refreshLocalPanels();
 
         heartbeat.scheduleAtFixedRate(() -> {
-            try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
+            try {
+                client.heartbeat("FOREGROUND");
+                client.refreshUiGovernanceCache();
+            } catch (Exception ignored) {}
             runOnUiThread(this::refreshLocalPanels);
         }, 60, 60, TimeUnit.SECONDS);
 
@@ -105,6 +113,12 @@ public class MainActivity extends Activity {
         autonomyInfo = text("File durable · LAN/API · découverte locale", 14, false);
         autonomyInfo.setPadding(0, dp(5), 0, 0);
         autonomyCard.addView(autonomyInfo);
+
+        LinearLayout capabilityCard = card(root);
+        capabilityCard.addView(label("CAPACITÉS DU NŒUD"));
+        capabilityInfo = text("Initialisation du registre local…", 14, false);
+        capabilityInfo.setPadding(0, dp(5), 0, 0);
+        capabilityCard.addView(capabilityInfo);
 
         LinearLayout permissionCard = card(root);
         permissionCard.addView(label("AUTORISATIONS SERVEUR"));
@@ -178,16 +192,49 @@ public class MainActivity extends Activity {
             JSONObject storage = client.contentStoreStatus();
             JSONObject net = EdgeNetworkState.snapshot(this);
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
+            JSONObject capabilities = client.cachedCapabilities();
+            JSONObject claims = client.cachedMemoryClaims();
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
             autonomyInfo.setText(
-                    "File durable Room: active"
+                    "File durable Room v5: active"
+                            + "\nRegistre capacités: " + capabilities.optInt("count", 0) + " observées"
+                            + "\nJournal mémoire/provenance: " + claims.optInt("count", 0) + " claims"
                             + "\nCache privé téléphone: " + usedMiB + " MiB / " + quotaGiB + " GiB"
                             + "\nRéseau: " + net.optString("transport", "AUCUN")
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
                             + "\nLAN/API + NSD: actif"
+                            + "\nSécurité LAN: POC authentifié · chiffrement final requis"
                             + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
                             + "\nStore-and-forward: actif");
+
+            org.json.JSONArray capRows = capabilities.optJSONArray("capabilities");
+            int capCount = capRows == null ? 0 : capRows.length();
+            int ready = 0, degraded = 0, permission = 0;
+            StringBuilder keyStates = new StringBuilder();
+            if (capRows != null) {
+                for (int i = 0; i < capRows.length(); i++) {
+                    JSONObject row = capRows.optJSONObject(i);
+                    if (row == null) continue;
+                    String state = row.optString("state", "UNKNOWN");
+                    if ("READY".equals(state) || "AVAILABLE".equals(state)) ready++;
+                    else if ("DEGRADED".equals(state) || "UNAVAILABLE".equals(state)
+                            || "POC_CLEAR_HTTP".equals(state)) degraded++;
+                    else if ("PERMISSION_REQUIRED".equals(state) || "WAITING_AUTH".equals(state)) permission++;
+                    if (i < 6) {
+                        if (keyStates.length() > 0) keyStates.append("\n");
+                        keyStates.append("• ")
+                                .append(row.optString("capability_id", row.optString("kind", "CAPABILITY")))
+                                .append(": ").append(state);
+                    }
+                }
+            }
+            capabilityInfo.setText(
+                    "Registre local: " + capCount + " capacités"
+                            + "\nPrêtes: " + ready
+                            + " · Dégradées/gap: " + degraded
+                            + " · Autorisation: " + permission
+                            + (keyStates.length() == 0 ? "" : "\n" + keyStates));
         } catch (Exception ignored) {}
     }
 
@@ -252,7 +299,13 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
-        if (client != null) refreshLocalPanels();
+        if (client != null) {
+            refreshLocalPanels();
+            io.submit(() -> {
+                try { client.refreshCapabilityRegistry(); } catch (Exception ignored) {}
+                runOnUiThread(this::refreshLocalPanels);
+            });
+        }
     }
 
     private void autoConnect() {
@@ -367,6 +420,7 @@ public class MainActivity extends Activity {
                 "Mettre à jour le serveur PC maintenant",
                 "Vérifier / mettre à jour BCP Edge",
                 "État orchestrateur / mémoire",
+                "Registre capacités / sources",
                 "TEST RAPIDE B-EDGE"
         };
         new AlertDialog.Builder(this)
@@ -415,6 +469,8 @@ public class MainActivity extends Activity {
                             return out;
                         });
                     } else if (which == 8) {
+                        runAction("CAPACITÉS / SOURCES", () -> client.localCapabilities());
+                    } else if (which == 9) {
                         runAction("TEST RAPIDE B-EDGE", () -> client.runQuickAcceptance());
                     }
                 })

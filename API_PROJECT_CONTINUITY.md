@@ -1,3 +1,99 @@
+# R83 Android proof repair handoff — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## R83 authoritative state
+
+- PR: **#152**, branch `work/bcp/r82-reconcile-r81-20260922-0102`.
+- R82 failing head `7cb49d7c1aeca6f4ab574acb6d471301d225bdc8` failed only `BCP Android Human-Action Simulation #302`.
+- Artifact for #302 proved the exact defect: the CI phone is **320x640** while the workflow swiped from `(520,1500)` to `(520,360)`; all five captured UI dumps had the same SHA-256, so no scroll occurred.
+- R83 now derives swipe coordinates from `adb shell wm size`, records geometry and per-step UI dump hashes, and explicitly requires a real dump transition.
+- Exact pre-close head `86555d75a6624d451612afdeb6ec505fc8213c78` passed all six required gates: CURRENT #1418, Nexus #392, Coordinated Product #1465, Android Build #784, Android Human-Action Simulation #308 and Field Ecosystem #1377.
+- Android #308 artifact `10671198592` records `320x640 x=160 y1=524 y2=179`; dump SHA changes on real scrolling; all four critical dashboard targets are observed.
+- **Do not install B-EDGE 2.2 yet.** Final closure receipt + exact-head qualification + writer-fenced PR #152 integration are still required.
+
+Next durable action: finish R83 provider-proof close, qualify the resulting exact head, reread `main`, merge PR #152 only if the exact head stays green and main remains compatible; then continue the largest A+B+C blocker: authenticated + encrypted LAN, followed by direct-boot/black-start and field Telegram relay proof.
+
+---
+
+# R82 Fresh Conversation Handoff — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## R82 authoritative current state
+
+- Canonical `main` base at tranche start: `faecd48e7735be4e7577280a95ed3fddcb9f04e4` (R79 merged).
+- Current fenced integration branch: `work/bcp/r82-reconcile-r81-20260922-0102`.
+- R82 reconciles concurrent R81 PR #150 and #151 instead of discarding either line.
+- Preserve #150 as the richer base: Room v5, durable capability registry, append-only memory admission/provenance/supersession, mission-step/Chronicle continuity and 25-minute provider-proof communications.
+- Preserve useful #151 additions: Android official full-node research evidence, dedicated capability UI, phone-local `LOCAL_CAPABILITY_SNAPSHOT` and capability diagnostics.
+- R82 also fixes proof infrastructure: Android emulator UI checks are viewport-independent; product build proof is recorded even when GitHub artifact storage finalization returns a transient provider 403, while publication remains fail-closed.
+- B-EDGE 2.2 remains unpublished and must not be installed until the coherent exact-head integration gate passes.
+
+## Communication and cold takeover
+
+Every new `BCPGO BCP` must load the durable A+B+C specification and the communication state before work:
+- 25-minute target = about 23 minutes useful work + about 2 minutes normal closeout;
+- Gmail START provider ACK before substantive work;
+- PRIMARY_ASSISTANT owns normal close; scheduled automation is not required and is emergency-only;
+- Gmail END is valid only after provider message id + SENT readback + durable receipt;
+- ChatGPT is pointer-only after the END acknowledgement;
+- no user re-explanation, `eh oh`, screenshot relay or manual state reconstruction is part of normal progress.
+
+R82 active delivery key: `BCP25-20260922-0102-R82`.
+
+## Product scope
+
+Cahier des charges = **A+B+C integral**:
+- A: original sealed preconception / promised product / UCMF source intent;
+- B: realistic research-backed expansion and better architecture;
+- C: all accumulated field feedback and work-style constraints.
+
+The dedicated Android phone is the primary persistent Edge/API coordinator. The PC is a Windows/heavy worker and compatibility node, not the sole communications center. The largest coherent release blocker after R82 integration remains authenticated + encrypted LAN transport, followed by direct-boot/black-start and field Telegram relay proof.
+
+---
+
+# R81 Fresh Conversation Handoff — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## Communication contract — P0
+
+Normal tranche = **25 minutes**, owned end-to-end by the active foreground assistant:
+`Gmail START provider-ACK -> ~23 min substantive work -> ~2 min PRIMARY_ASSISTANT closeout -> Gmail END provider-ACK/SENT readback -> ChatGPT pointer only`.
+
+A scheduled automation is **not** the normal close owner. It may only be an emergency recovery path after a genuine platform interruption. A visible ChatGPT “Réfléchi pendant…” duration is neither the mission clock nor a close trigger.
+
+Current R81:
+- START Gmail id: `1a0c650734064dba`;
+- delivery key: `BCP25-20260922-0033-R81`;
+- branch: `work/bcp/r81-abc-fullnode-20260922-0033`;
+- base main: `faecd48e7735be4e7577280a95ed3fddcb9f04e4`.
+
+## Product authority — A+B+C
+
+Every product mutation/release decision MUST load:
+- `.project-memory/BCP_ABC_SOURCE_REGISTRY.json`;
+- `.project-memory/BCP_ABC_COVERAGE.json`;
+- `docs/BCP_CANONICAL_SPEC_ABC.md`.
+
+A = original preconception/promises. B = research-backed realistic expansion. C = all field feedback/corrections/preferences. No subsystem fragment may silently become the denominator.
+
+R81 advances a coherent phone-governance vertical slice:
+- Room schema v5;
+- durable capability registry;
+- append-only memory claim ledger with source/authority/evidence/idempotency;
+- explicit ADMITTED/REJECTED and supersession semantics;
+- local Context Builder includes capability + memory claim evidence;
+- authenticated `/v1/node/capability-registry` and `/v1/node/memory-claims`;
+- server cockpit surfaces real capability/claim counts.
+
+Macro functional coverage candidate: **56.1%**; evidence maturity remains **42.2%** until exact-head qualification and device migration proof. No 2.2 install is authorized yet.
+
+Next action: exact-head CI -> auto-fix regressions -> main reread/writer fence -> reconcile if moved -> serialized merge if green -> post-merge readback. Then continue the largest A+B+C gaps, especially encrypted authenticated LAN, field relay proof, black-start/direct-boot and bulk-media plane.
+
+---
+
 # R79 A+B+C / UCMF V9 / 25-minute automatic communication handoff — 2026-09-21
 
 Canonical continuation: `BCPGO BCP`. UCMF scoped continuation: `UCMF001` or `BCPGO UCMF001`.

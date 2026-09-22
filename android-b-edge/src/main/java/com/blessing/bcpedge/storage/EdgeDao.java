@@ -22,6 +22,33 @@ public interface EdgeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void putMemory(EdgeMemoryEntity memory);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void putCapability(EdgeCapabilityEntity capability);
+
+    @Query("SELECT * FROM edge_capabilities WHERE projectId = :projectId AND (expiresAt IS NULL OR expiresAt > :now) ORDER BY updatedAt DESC LIMIT :limit")
+    List<EdgeCapabilityEntity> capabilities(String projectId, long now, int limit);
+
+    @Query("SELECT * FROM edge_capabilities WHERE projectId = :projectId AND capabilityId = :capabilityId LIMIT 1")
+    EdgeCapabilityEntity capability(String projectId, String capabilityId);
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    long insertMemoryClaim(EdgeMemoryClaimEntity claim);
+
+    @Query("SELECT * FROM edge_memory_claims WHERE projectId = :projectId AND idempotencyKey = :idempotencyKey LIMIT 1")
+    EdgeMemoryClaimEntity memoryClaimByIdempotency(String projectId, String idempotencyKey);
+
+    @Query("SELECT * FROM edge_memory_claims WHERE projectId = :projectId ORDER BY admittedAt DESC LIMIT :limit")
+    List<EdgeMemoryClaimEntity> memoryClaims(String projectId, int limit);
+
+    @Query("SELECT * FROM edge_memory_claims WHERE claimId = :claimId LIMIT 1")
+    EdgeMemoryClaimEntity memoryClaimById(String claimId);
+
+    @Query("SELECT * FROM edge_memory_claims WHERE projectId = :projectId AND scope = :scope AND memoryKey = :memoryKey AND state = 'ADMITTED' ORDER BY admittedAt DESC LIMIT 1")
+    EdgeMemoryClaimEntity latestAdmittedMemoryClaim(String projectId, String scope, String memoryKey);
+
+    @Query("UPDATE edge_memory_claims SET state = :state, reason = :reason, updatedAt = :updatedAt WHERE claimId = :claimId")
+    int setMemoryClaimState(String claimId, String state, String reason, long updatedAt);
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insertReceipt(EdgeReceiptEntity receipt);
 

@@ -1,8 +1,8 @@
 {
   "schema": "bcp.abc_coverage/1",
-  "revision": "2026-09-21-R79",
-  "status": "SOURCE_RECONCILED_MACRO_AUDIT_UCMF_V9",
-  "warning": "Macro evidence audit against A+B+C after direct current Drive read of UCMF001 V9/Postulates 1-9. Sealed V0.7 ZIP remains represented by durable SHA/manifest pointer and is not falsely claimed as byte-reread.",
+  "revision": "2026-09-22-R82",
+  "status": "R82_RECONCILED_MEMORY_CAPABILITY_UI_CANDIDATE_EXACT_HEAD_CI_PENDING",
+  "warning": "R82 preserves the richer R81 memory/provenance line and the parallel R81 capability/UI/research gains. Functional/evidence totals remain unchanged until exact-head CI and integration prove the reconciled candidate.",
   "scoring": {
     "functional_score_definition": "weighted fraction of required capability materially implemented in current code/design",
     "evidence_score_definition": "weighted maturity of deterministic CI/device/field proof; documentation alone scores low",
@@ -112,20 +112,23 @@
     {
       "id": "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
       "weight": 4,
-      "functional": 0.35,
-      "evidence": 0.15
+      "functional": 0.6,
+      "evidence": 0.15,
+      "note": "R81 adds append-only memory claim admission ledger with source/authority/evidence/idempotency/supersedes state; canonical derived memory is updated only after precedence admission. Exact-head CI and device migration proof pending."
     },
     {
       "id": "SOURCE_CAPABILITY_ADAPTERS",
       "weight": 3,
-      "functional": 0.25,
-      "evidence": 0.1
+      "functional": 0.6,
+      "evidence": 0.1,
+      "note": "R81 adds a phone-resident capability registry for local API, durable core, executor, network, discovery, resource governor, PC worker link and Telegram relay with observed/expiry/evidence metadata. Exact-head CI/device proof pending."
     },
     {
       "id": "PHONE_SERVER_FIRST_UI",
       "weight": 3,
-      "functional": 0.55,
-      "evidence": 0.35
+      "functional": 0.6,
+      "evidence": 0.35,
+      "note": "R81 cockpit surfaces durable Room v5, capability count and memory/provenance claim count; exact-head emulator proof pending."
     },
     {
       "id": "COORDINATED_RELEASE_UPDATE_ROLLBACK",
@@ -170,19 +173,18 @@
   ],
   "totals": {
     "weight": 100,
-    "functional_percent": 53.9,
+    "functional_percent": 56.1,
     "evidence_maturity_percent": 42.2
   },
   "top_gaps": [
+    "ENCRYPTED_AUTHENTICATED_LAN_TRANSPORT_STILL_POC_CLEAR_HTTP",
+    "R82_RECONCILED_MEMORY_CAPABILITY_UI_EXACT_HEAD_CI_AND_DEVICE_MIGRATION_PENDING",
     "MISSION_STEP_ENVELOPE_AND_PROVIDER_STATE_NOT_YET_FIELD_PROVEN_ON_PHONE",
-    "UNIVERSAL_CHRONICLE_IMPLEMENTED_BUT_NOT_YET_FIELD_PROVEN_ON_2_2_PHONE",
-    "LAN_TRANSPORT_STILL_CLEAR_TEXT_POC",
+    "UNIVERSAL_CHRONICLE_NOT_YET_FIELD_PROVEN_ON_2_2_PHONE",
     "INSTALLED_PHONE_2_1_2_NOT_FULL_NODE_2_2",
     "TELEGRAM_DIRECT_FIELD_OUTAGE_AND_EDGE_RELAY_NOT_FIELD_REGISTERED",
-    "MEMORY_ADMISSION_SUPERSESSION_AND_SOURCE_CAPABILITY_MATRIX_INCOMPLETE",
     "DIRECT_BOOT_BLACKSTART_AND_BULK_MEDIA_PIPELINE_INCOMPLETE",
-    "OPTIONAL_DEDICATED_DEVICE_OWNER_TIER_NOT_IMPLEMENTED_OR_FIELD_GATED",
-    "SEALED_V0_7_ZIP_NOT_BYTE_REREAD_BUT_HANDOFF_DOSSIER_CURRENT_UCMF_V9_RECONCILED"
+    "OPTIONAL_DEDICATED_DEVICE_OWNER_TIER_NOT_IMPLEMENTED_OR_FIELD_GATED"
   ],
   "release_rule": "No user-facing milestone may be represented as percentage-complete against A+B+C unless this matrix and source completeness are refreshed on the exact candidate head.",
   "source_completeness": {

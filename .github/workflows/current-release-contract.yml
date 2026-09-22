@@ -20,6 +20,7 @@ on:
       - "tools/test_bedge_local_executor_contract.py"
       - "tools/test_bedge_chronicle_contract.py"
       - "tools/test_bedge_mission_step_contract.py"
+      - "tools/test_bedge_memory_capability_contract.py"
       - "windows/bcp_server.py"
       - "android-b-edge/**"
       - "docs/CANONICAL_PRODUCT_REQUIREMENTS.md"
@@ -122,6 +123,9 @@ jobs:
 
       - name: Validate B-EDGE mission-step continuity contract
         run: python tools/test_bedge_mission_step_contract.py
+
+      - name: Validate B-EDGE memory/capability contract
+        run: python tools/test_bedge_memory_capability_contract.py
 
       - name: Server update self-test
         run: python windows/bcp_server.py --selftest

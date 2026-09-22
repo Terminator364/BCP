@@ -112,8 +112,12 @@ jobs:
           grep -F '/v1/node/capabilities' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F '/v1/node/jobs' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F '/v1/node/mission-steps' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F '/v1/node/capability-registry' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
+          grep -F '/v1/node/memory-claims' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F 'mission_step_envelope_v1' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
-          grep -F 'Migration(3, 4)' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java >/dev/null
+          grep -F 'memory_admission_ledger' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
+          grep -F 'capability_registry' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
+          grep -F 'Migration(4, 5)' android-b-edge/src/main/java/com/blessing/bcpedge/storage/EdgeDatabase.java >/dev/null
           grep -F 'EdgePresenceAdvertiser' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
           grep -F 'EdgeContentStore' "$CLIENT" >/dev/null
           grep -F 'MAX_QUOTA = 8L * 1024L * 1024L * 1024L' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeContentStore.java >/dev/null
@@ -164,7 +168,20 @@ jobs:
           test -s ./apksigner.jar
           sha256sum ./apksigner.jar | tee apksigner.jar.sha256
 
-      - uses: actions/upload-artifact@v4
+      - name: Android build proof manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "BCP_ANDROID_PRODUCT_PROOF=PASS"
+            cat android-b-edge-release-unsigned.apk.sha256
+            cat apksigner.jar.sha256
+            grep -m1 "package: name='com.blessing.bcpedge.evergreen'" android-b-edge-release.badging.txt
+          } | tee android-build-proof.txt
+
+      - id: upload_unsigned
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
         with:
           name: android-b-edge-evergreen-unsigned
           path: |
@@ -173,4 +190,15 @@ jobs:
             android-b-edge-release.badging.txt
             apksigner.jar
             apksigner.jar.sha256
+            android-build-proof.txt
           if-no-files-found: error
+
+      - name: Record artifact-provider outcome
+        if: always()
+        shell: bash
+        run: |
+          echo "BCP_ANDROID_ARTIFACT_PROVIDER_OUTCOME=${{ steps.upload_unsigned.outcome }}"
+          if [ "${{ steps.upload_unsigned.outcome }}" != "success" ]; then
+            echo "BCP_ANDROID_ARTIFACT_PROVIDER_DEGRADED=TRUE"
+            echo "Product build/tests/hash contract passed; publication remains blocked until a later artifact/readback gate succeeds."
+          fi

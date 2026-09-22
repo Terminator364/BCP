@@ -20,6 +20,7 @@ public final class EdgeLocalTaskEngine {
         return "LOCAL_CONTEXT_SNAPSHOT".equals(k)
                 || "LOCAL_HEALTH_SNAPSHOT".equals(k)
                 || "LOCAL_QUEUE_SUMMARY".equals(k)
+                || "LOCAL_CAPABILITY_SNAPSHOT".equals(k)
                 || "LOCAL_MEMORY_COMPACT".equals(k);
     }
 
@@ -55,6 +56,15 @@ public final class EdgeLocalTaskEngine {
                 JSONArray jobs = orchestrator.pendingJobs(projectId);
                 out.put("pending_count", jobs.length());
                 out.put("jobs", jobs);
+                return out;
+            }
+            if ("LOCAL_CAPABILITY_SNAPSHOT".equals(k)) {
+                BcpClient client = new BcpClient(context);
+                JSONObject refreshed = client.refreshCapabilityRegistry();
+                out.put("capabilities", refreshed.optJSONArray("capabilities"));
+                out.put("count", refreshed.optInt("count", 0));
+                out.put("authority", refreshed.optString("authority", "B_EDGE_LOCAL_CAPABILITY_REGISTRY"));
+                out.put("offline_capable", true);
                 return out;
             }
             if ("LOCAL_MEMORY_COMPACT".equals(k)) {

@@ -1,6 +1,6 @@
 {
   "schema": "bcp.human_action_qualification_matrix/1",
-  "revision": "2026-09-21-R70",
+  "revision": "2026-09-22-R81",
   "status": "CANONICAL_CANDIDATE",
   "rule": "A user-facing action may be requested only when its representative_preflight is PASS on the exact candidate head/package, unless the remaining uncertainty is explicitly an irreducible external/provider/physical field boundary.",
   "actions": [
@@ -122,7 +122,14 @@
         "capabilities_private_content_cache_true",
         "adaptive_network_state_exposed",
         "local_context_builder_private_endpoint_declared",
-        "no_micro_beta_release_gate_satisfied_before_field_install"
+        "no_micro_beta_release_gate_satisfied_before_field_install",
+        "room_v4_to_v5_migration_non_destructive",
+        "capability_registry_contract",
+        "memory_claim_admission_provenance_contract",
+        "same_key_supersession_lineage_contract",
+        "capability_and_memory_private_endpoints_401_without_auth",
+        "server_cockpit_displays_capability_and_memory_claim_counts",
+        "lan_cleartext_poc_gap_is_visible_not_misrepresented_as_production_ready"
       ],
       "remaining_field_boundary": [
         "actual old phone OEM/Android image and runtime permission dialogs",

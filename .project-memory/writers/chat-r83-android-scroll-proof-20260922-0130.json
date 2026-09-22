@@ -1,0 +1,23 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r83-android-scroll-proof-20260922-0130",
+  "project_or_mission": "API/BCP R83 exact-head Android proof repair and serialized PR152 qualification",
+  "base_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+  "branch_base_sha": "7cb49d7c1aeca6f4ab574acb6d471301d225bdc8",
+  "created_at": "2026-09-22T01:30:20+01:00",
+  "work_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+  "intended_file_scope": [
+    ".github/workflows/android-human-action-simulation.yml",
+    ".project-memory/**",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Field Ecosystem Preflight",
+    "BCP Coordinated Product Qualification",
+    "BCP Nexus One-Shot Human-Action Qualification"
+  ]
+}

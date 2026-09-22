@@ -89,7 +89,7 @@ def main() -> int:
         "sentinelStaleMs",
         "sentinelAlertCooldownMs",
     )
-    require(edge_db, "EdgeSentinelEntity.class", "EdgeEventEntity.class", "EdgeMissionStepEntity.class", "Migration(1, 2)", "Migration(2, 3)", "Migration(3, 4)", "addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)")
+    require(edge_db, "EdgeSentinelEntity.class", "EdgeEventEntity.class", "EdgeMissionStepEntity.class", "EdgeCapabilityEntity.class", "EdgeMemoryClaimEntity.class", "Migration(1, 2)", "Migration(2, 3)", "Migration(3, 4)", "Migration(4, 5)", "addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)")
     require(edge_worker, "sentinel_state", "resume_pending", "return Result.success(out);", "EDGE_RECONCILE_START")
     require(
         edge_scheduler,
@@ -132,6 +132,10 @@ def main() -> int:
         '"/v1/node/status"',
         '"/v1/node/sync"',
         '"/v1/node/jobs"',
+        '"/v1/node/capability-registry"',
+        '"/v1/node/memory-claims"',
+        '"capability_registry", true',
+        '"memory_admission_ledger", true',
         "EdgePresenceAdvertiser",
     )
     assert '"/v1/node/shell"' not in edge_server
@@ -466,13 +470,16 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["scheduler_completion_is_not_delivery_proof"] is True
     assert delivery_policy["channels"]["email"]["foreground_end_send_primary"] is True
     assert communication_policy["anti_false_success"]["scheduler_completed_is_not_delivery"] is True
-    assert comm_protocol["schema"] == "bcp.communication_protocol/2"
+    assert comm_protocol["schema"] == "bcp.communication_protocol/3"
     assert comm_protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert comm_protocol["cadence_minutes"] == 25
     assert comm_protocol["primary_work_budget_minutes"] == 23
     assert comm_protocol["normal_close_reserve_minutes"] == 2
     assert comm_protocol["scheduled_backup_required"] is False
-    assert comm_state_machine["schema"] == "bcp.communication_state_machine/2"
+    assert comm_protocol["normal_work_contract"]["automation_is_never_normal_owner"] is True
+    assert comm_protocol["backup_semantics"]["default_enabled"] is False
+    assert comm_protocol["backup_semantics"]["must_not_preempt_healthy_foreground_tranche"] is True
+    assert comm_state_machine["schema"] == "bcp.communication_state_machine/3"
     assert comm_state_machine["useful_work_minutes"] == 23
     assert comm_state_machine["normal_close_reserve_minutes"] == 2
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in comm_state_machine["normal_path"]

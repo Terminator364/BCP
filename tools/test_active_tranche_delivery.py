@@ -26,7 +26,7 @@ def main() -> int:
         if line.strip()
     ]
 
-    assert active["schema"] == "bcp.active_tranche/4"
+    assert active["schema"] == "bcp.active_tranche/5"
     assert active["project"] == "API/BCP"
     assert active["cadence_minutes"] == 25
     assert active["useful_work_minutes"] == 23
@@ -66,15 +66,29 @@ def main() -> int:
     assert comm["anti_false_success"]["user_relaunch_must_never_be_delivery_trigger"] is True
     assert comm["channels"]["gmail"]["end_delivery_proof"]["proof"] == "SENT_SEARCH_MATCH_PLUS_PROVIDER_MESSAGE_ID"
 
-    assert protocol["schema"] == "bcp.communication_protocol/2"
+    assert protocol["schema"] == "bcp.communication_protocol/3"
     assert protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert protocol["primary_work_budget_minutes"] == 23
     assert protocol["normal_close_reserve_minutes"] == 2
     assert protocol["scheduled_backup_required"] is False
+    assert protocol["normal_work_contract"]["automation_is_never_normal_owner"] is True
+    assert active["communication_guard"]["foreground_turn_owns_normal_close"] is True
+    assert active["communication_guard"]["automation_only_after_platform_interruption"] is True
 
-    assert state_machine["schema"] == "bcp.communication_state_machine/2"
+    assert state_machine["schema"] == "bcp.communication_state_machine/3"
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]
     assert takeover["trigger_code"] == "BCPGO BCP"
+    assert takeover["current_active_tranche"] == active["tranche_id"]
+    assert takeover["current_delivery_key"] == active["delivery_key"]
+    assert takeover["current_active_tranche_status"] == active["status"]
+    contract = takeover["communication_contract"]
+    assert contract["cadence_minutes"] == 25
+    assert contract["useful_work_target_minutes"] == 23
+    assert contract["close_reserve_minutes"] == 2
+    assert contract["normal_close_owner"] == "PRIMARY_ASSISTANT"
+    assert contract["automation_normal_close_forbidden"] is True
+    assert takeover["product_scope"]["formula"] == "A+B+C"
+    assert takeover["product_scope"]["phone_role"] == "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR"
 
     starts = [
         row for row in ledger_rows

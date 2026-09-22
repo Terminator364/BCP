@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R79_UCMF_V9_ABC_MISSION_STEP_EXACT_HEAD_CI_RUNNING",
-  "last_completed_atomic_action": "R79 directly resolved the current UCMF001 Drive master through Postulate 9/V9, expanded the A+B+C denominator to Postulates 1-9, recalibrated macro maturity to 53.9% functional / 42.2% evidence, made UCMF001 a first-class 25-minute cold-continuation pointer, and added B-EDGE Room v4 durable mission-step/provider-state envelopes so mission progress can survive ChatGPT/provider interruption independently of chat scrollback.",
-  "next_action": "Finish exact-head PR #149 qualification on the R79 head. If all required gates are green, reread main under the Git writer fence and merge the superseding R79 line. Then verify post-merge and continue the coherent B-EDGE 2.2 full-node against the largest A+B+C gaps: encrypted/authenticated LAN, memory admission/supersession, source-capability registry, server-first UI, black-start/direct-boot and bulk-media plane. Do not publish another phone micro-beta before the coherent release gate.",
+  "status": "R83_ANDROID_SCROLL_PROOF_FIXED_EXACT_HEAD_GREEN_STATE_SYNC",
+  "last_completed_atomic_action": "R83 recovered the failed Android Human-Action Simulation #302 artifact, proved all five scroll dumps were byte-identical because the hard-coded 520x1500 swipe was outside the real 320x640 emulator viewport, replaced that proof with geometry-derived bounded scrolling plus dump-hash evidence, and obtained an exact-head PASS on Android Human-Action Simulation #308 together with CURRENT #1418, Nexus #392, Coordinated Product #1465, Android Build #784 and Field Ecosystem #1377. B-EDGE 2.2 remains not authorized for field install.",
+  "next_action": "Persist the R83 close/provider receipt, issue one final qualification nonce on the resulting exact head, require the six PR #152 gates to be green on that exact head, reread canonical main under the Git writer fence, and integrate PR #152 only if main is still compatible. After integration, continue A+B+C with authenticated+encrypted LAN as the highest release-blocking phone full-node gap, then direct-boot/black-start and field Telegram relay proof.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -16,7 +16,22 @@
     "final_bootstrap_commit": "3c6d667e9390c92e9139d58dff2462207cf434b2",
     "sqlite_windows_fix_commit": "78a6beb784a643f3b91e31b2ccf0e57d5aaf5eb1",
     "error_ledger_commit": "36ca00d618f0b7db18048309fba2924635fb728c",
-    "local_zip_sha256": "dbb8ae256bafb2ce1f72d5cab02a6dab1726e3234a3bc4e5a27ac377fb5aabd3"
+    "local_zip_sha256": "dbb8ae256bafb2ce1f72d5cab02a6dab1726e3234a3bc4e5a27ac377fb5aabd3",
+    "r83_preclose_head_sha": "86555d75a6624d451612afdeb6ec505fc8213c78",
+    "r83_android_human_action_run_id": 35672543801,
+    "r83_android_human_action_run_number": 308,
+    "r83_android_human_action_artifact_id": 10671198592,
+    "r83_android_human_action_artifact_digest": "sha256:dd35dc62bef49d2ec181e3946d4d3af65a8eb548e6a79e7037c201a6d2de3175",
+    "r83_scroll_geometry": "320x640 x=160 y1=524 y2=179",
+    "r83_scroll_dump_changed_from_initial": true,
+    "r83_required_gate_runs": {
+      "current_release_contract": 1418,
+      "nexus_one_shot": 392,
+      "coordinated_product": 1465,
+      "android_build": 784,
+      "android_human_action_simulation": 308,
+      "field_ecosystem": 1377
+    }
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
@@ -1946,9 +1961,9 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R74",
-    "revision": "2026-09-21-R74",
+    "revision": "2026-09-22-R82",
     "cadence_minutes": 30,
-    "useful_work_target_minutes": 26,
+    "useful_work_target_minutes": 23,
     "useful_work_minimum_minutes": 20,
     "normal_close_reserve_minutes": 4,
     "primary_close_owner": "PRIMARY_ASSISTANT",
@@ -1960,7 +1975,11 @@
     "end_provider_ack_and_sent_readback_required": true,
     "scheduler_completion_is_delivery_proof": false,
     "chatgpt_thinking_indicator_is_work_proof": false,
-    "chatgpt_after_mail": "POINTER_ONLY_AFTER_END_ACK"
+    "chatgpt_after_mail": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK",
+    "target_minutes": 25,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "scheduled_close_guards_required": false
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2625,20 +2644,20 @@
     "continuity_code": "BCPGO BCP"
   },
   "abc_product_scope": {
-    "revision": "2026-09-21-R78",
+    "revision": "2026-09-22-R81",
     "formula": "A_PLUS_B_PLUS_C",
     "source_status": "HANDOFF_DOSSIER_UCMF_V4_READ_SEALED_ZIP_SHA_POINTER_PRESERVED",
-    "functional_macro_percent": 57,
-    "evidence_maturity_percent": 45.35,
+    "functional_macro_percent": 56.1,
+    "evidence_maturity_percent": 42.2,
     "percentage_is_absolute_completion": false,
     "universal_chronicle": "IMPLEMENTED_CANDIDATE_ROOM_V3_FIELD_2_2_PENDING",
     "top_next_gaps": [
       "ENCRYPTED_AUTHENTICATED_LAN",
-      "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
-      "SOURCE_CAPABILITY_REGISTRY",
+      "R81_EXACT_HEAD_AND_DEVICE_MIGRATION_PROOF",
       "TELEGRAM_PHONE_RELAY_FIELD_PROOF",
-      "FULL_SERVER_FIRST_UI",
-      "BEDGE_2_2_DEVICE_FIELD_PROMOTION"
+      "DIRECT_BOOT_BLACKSTART",
+      "BULK_MEDIA_DATA_PLANE",
+      "BEDGE_2_2_COHERENT_FIELD_PROMOTION"
     ]
   },
   "communication_cadence_r78": {
@@ -2692,5 +2711,71 @@
     "scheduled_normal_close_required": false,
     "current_tranche": "BCP-R79-START-20260921-2327",
     "current_tranche_start_message_id": "1a0c61524165617e"
+  },
+  "r81_phone_governance": {
+    "status": "IMPLEMENTED_CANDIDATE_EXACT_HEAD_CI_PENDING",
+    "branch": "work/bcp/r81-abc-fullnode-20260922-0033",
+    "base_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "room_database_version": 5,
+    "capabilities": [
+      "DURABLE_CAPABILITY_REGISTRY",
+      "APPEND_ONLY_MEMORY_CLAIM_LEDGER",
+      "PROVENANCE_AUTHORITY_EVIDENCE",
+      "IDEMPOTENT_MEMORY_ADMISSION",
+      "EXPLICIT_SUPERSESSION",
+      "LOCAL_CONTEXT_INCLUDES_CAPABILITIES_AND_MEMORY_CLAIMS",
+      "AUTHENTICATED_CAPABILITY_AND_MEMORY_APIS",
+      "SERVER_COCKPIT_GOVERNANCE_READBACK"
+    ],
+    "user_install_ready": false,
+    "reason": "EXACT_HEAD_CI_AND_COHERENT_FULL_NODE_RELEASE_GATES_PENDING"
+  },
+  "communication_r81": {
+    "tranche_id": "BCP-R81-START-20260922-0033",
+    "delivery_key": "BCP25-20260922-0033-R81",
+    "cadence_minutes": 25,
+    "useful_work_target_minutes": 23,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "normal_close_automation_dependency": false,
+    "start_message_id": "1a0c650734064dba",
+    "end_message_id": "1a0c6670b9bf7fe5",
+    "end_verified": true,
+    "closed_at_kinshasa": "2026-09-22T00:57:17+01:00"
+  },
+  "r82_reconciliation": {
+    "status": "ACTIVE_EXACT_HEAD_CI_PENDING",
+    "branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "main_base_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "source_prs": [
+      150,
+      151
+    ],
+    "preserve_from_150": [
+      "ROOM_V5",
+      "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
+      "CAPABILITY_REGISTRY",
+      "SERVER_UI_COUNTS",
+      "25_MIN_PROVIDER_PROOF_COMMUNICATION"
+    ],
+    "preserve_from_151": [
+      "ANDROID_PLATFORM_RESEARCH_EVIDENCE",
+      "DEDICATED_CAPABILITY_CARD",
+      "LOCAL_CAPABILITY_SNAPSHOT",
+      "CAPABILITY_DIAGNOSTIC"
+    ],
+    "proof_fixes": [
+      "VIEWPORT_INDEPENDENT_ANDROID_UI_SIMULATION",
+      "PRODUCT_BUILD_PROOF_SEPARATED_FROM_TRANSIENT_ARTIFACT_PROVIDER_403"
+    ],
+    "user_install_authorized": false
+  },
+  "continuation_handoff": {
+    "checkpoint_id": "BCP-R82-WORKING-20260922-0102",
+    "continuation_code": "BCPGO BCP",
+    "canonical_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "current_work_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "current_delivery_key": "BCP25-20260922-0102-R82",
+    "product_scope": "A_PLUS_B_PLUS_C_INTEGRAL"
   }
 }

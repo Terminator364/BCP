@@ -1,7 +1,7 @@
 {
-  "schema": "bcp.communication_protocol/2",
+  "schema": "bcp.communication_protocol/3",
   "project": "API/BCP",
-  "revision": "2026-09-21-R77",
+  "revision": "2026-09-22-R81",
   "cadence_minutes": 25,
   "primary_work_budget_minutes": 23,
   "normal_close_reserve_minutes": 2,
@@ -43,9 +43,10 @@
   "backup_semantics": {
     "scheduled_jobs_are_normal_close_dependency": false,
     "default_enabled": false,
-    "role": "OPTIONAL_EMERGENCY_RECOVERY_ONLY",
+    "role": "OPTIONAL_EMERGENCY_RECOVERY_ONLY_AFTER_FOREGROUND_PLATFORM_INTERRUPTION",
     "scheduler_completion_is_delivery_proof": false,
-    "must_search_gmail_before_send": true
+    "must_search_gmail_before_send": true,
+    "must_not_preempt_healthy_foreground_tranche": true
   },
   "work_proof": {
     "chatgpt_thinking_indicator": "VISIBLE_UI_SIGNAL_ONLY_NOT_TOTAL_TRANCHE_PROOF",
@@ -57,8 +58,20 @@
       "durable_receipts",
       "field_telemetry"
     ],
-    "rule": "TARGET_REAL_SUBSTANTIVE_WORK_WITH_DURABLE_EVIDENCE; NEVER_FAKE_UI_THINKING_DURATION"
+    "rule": "TARGET_REAL_SUBSTANTIVE_WORK_WITH_DURABLE_EVIDENCE; NEVER_FAKE_UI_THINKING_DURATION",
+    "wall_clock_contract": "START_PROVIDER_ACK_TO_END_PROVIDER_ACK_TARGET_25_MINUTES",
+    "normal_minimum_substantive_minutes": 20,
+    "target_substantive_minutes": 23
   },
   "scheduled_backup_required": false,
-  "scheduled_backup_default_enabled": false
+  "scheduled_backup_default_enabled": false,
+  "normal_work_contract": {
+    "rule": "THE_SAME_FOREGROUND_ASSISTANT_TURN_OWNS_START_WORK_CLOSEOUT_END",
+    "start_ack_before_work": true,
+    "target_substantive_minutes": 23,
+    "close_reserve_minutes": 2,
+    "do_not_end_early_because_reasoning_ui_or_tool_phase_finished": true,
+    "early_end_only_for_true_human_gate_or_tool_safety_failure": true,
+    "automation_is_never_normal_owner": true
+  }
 }

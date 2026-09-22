@@ -82,7 +82,7 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$SDK/emulator/emulator" -list-avds | tee avd-list-boot.txt
           grep -Fx "bcp_api35" avd-list-boot.txt >/dev/null
-          nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 1536 > emulator.log 2>&1 &
+          nohup "$SDK/emulator/emulator" -avd bcp_api35 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 2048 > emulator.log 2>&1 &
           EMU_PID=$!
           DEVICE=""
           for i in $(seq 1 60); do
@@ -157,12 +157,89 @@ jobs:
           set -euo pipefail
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
-          "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
-          "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
-          grep -F "BCP Edge Server" bcp-window.xml >/dev/null
-          grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null
-          grep -F "AUTORISATIONS SERVEUR" bcp-window.xml >/dev/null
-          grep -F "ACTIVER / RENFORCER LE MODE SERVEUR 24/7" bcp-window.xml >/dev/null
+          COMPONENT="$(cat launcher-component.txt)"
+          APP_UI_READY=0
+          for UI_ATTEMPT in 1 2 3; do
+            "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
+            "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
+            if grep -F "BCP Edge Server" bcp-window.xml >/dev/null               && grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null; then
+              APP_UI_READY=1
+              break
+            fi
+
+            # Headless API-35 occasionally surfaces an unrelated Pixel Launcher ANR
+            # over the already-running B-EDGE activity. Close only that system dialog,
+            # never B-EDGE, then foreground the exact installed component again.
+            if grep -F 'resource-id="android:id/aerr_close"' bcp-window.xml >/dev/null \
+              && ! grep -E 'BCP Edge|blessing\.bcpedge' bcp-window.xml >/dev/null; then
+              # Fixed API-35 CI device is 320x640; this is the center of
+              # android:id/aerr_close in the unrelated launcher ANR dialog.
+              "$ADB" shell input tap 160 331
+              sleep 1
+            else
+              "$ADB" shell input keyevent 4 || true
+            fi
+            "$ADB" shell am start -W -n "$COMPONENT" >/dev/null || true
+            sleep 2
+          done
+          test "$APP_UI_READY" = "1"
+
+          # Server controls and governance cards may legitimately be below the initial
+          # viewport as the dashboard grows. Exercise bounded real-user scrolling and
+          # require every critical card to become visible instead of assuming position.
+          FOUND_PERMISSIONS=0
+          FOUND_CAPABILITIES=0
+          FOUND_MEMORY=0
+          FOUND_LAN=0
+          # Derive swipe coordinates from the real emulator geometry. The API-35
+          # CI phone is currently 320x640; the previous 520x1500 gesture was fully
+          # outside that viewport, so all five UI dumps were byte-identical and no
+          # scroll ever occurred. Keep this proof geometry-independent.
+          WM_SIZE_RAW="$("$ADB" shell wm size | tr -d '\r' | tee wm-size.txt)"
+          WM_SIZE="$(printf '%s\n' "$WM_SIZE_RAW" | sed -n 's/.*Physical size: \([0-9][0-9]*x[0-9][0-9]*\).*/\1/p' | tail -1)"
+          if [ -z "$WM_SIZE" ]; then
+            WM_SIZE="$(printf '%s\n' "$WM_SIZE_RAW" | sed -n 's/.*Override size: \([0-9][0-9]*x[0-9][0-9]*\).*/\1/p' | tail -1)"
+          fi
+          test -n "$WM_SIZE"
+          SCREEN_W="${WM_SIZE%x*}"
+          SCREEN_H="${WM_SIZE#*x}"
+          test "$SCREEN_W" -gt 0
+          test "$SCREEN_H" -gt 0
+          SWIPE_X=$((SCREEN_W / 2))
+          SWIPE_Y1=$((SCREEN_H * 82 / 100))
+          SWIPE_Y2=$((SCREEN_H * 28 / 100))
+          test "$SWIPE_Y1" -gt "$SWIPE_Y2"
+          echo "BCP_ANDROID_SCROLL_GEOMETRY=${SCREEN_W}x${SCREEN_H} x=${SWIPE_X} y1=${SWIPE_Y1} y2=${SWIPE_Y2}" | tee scroll-geometry.txt
+
+          : > bcp-window-lower.xml
+          PREV_DUMP_SHA="$(sha256sum bcp-window.xml | awk '{print $1}')"
+          echo "step=0 sha256=$PREV_DUMP_SHA" > scroll-dump-sha256.txt
+          SCROLL_CHANGED=0
+          for STEP in 1 2 3 4 5; do
+            "$ADB" shell input swipe "$SWIPE_X" "$SWIPE_Y1" "$SWIPE_X" "$SWIPE_Y2" 420
+            sleep 1
+            "$ADB" shell uiautomator dump "/sdcard/bcp-window-$STEP.xml" >/dev/null
+            "$ADB" pull "/sdcard/bcp-window-$STEP.xml" "bcp-window-$STEP.xml" >/dev/null
+            CURRENT_DUMP_SHA="$(sha256sum "bcp-window-$STEP.xml" | awk '{print $1}')"
+            echo "step=$STEP sha256=$CURRENT_DUMP_SHA" >> scroll-dump-sha256.txt
+            if [ -n "$PREV_DUMP_SHA" ] && [ "$CURRENT_DUMP_SHA" != "$PREV_DUMP_SHA" ]; then
+              SCROLL_CHANGED=1
+            fi
+            PREV_DUMP_SHA="$CURRENT_DUMP_SHA"
+            cat "bcp-window-$STEP.xml" >> bcp-window-lower.xml
+            grep -F "AUTORISATIONS SERVEUR" "bcp-window-$STEP.xml" >/dev/null && FOUND_PERMISSIONS=1 || true
+            grep -F "CAPACITÉS DU NŒUD" "bcp-window-$STEP.xml" >/dev/null && FOUND_CAPABILITIES=1 || true
+            grep -F "Journal mémoire/provenance:" "bcp-window-$STEP.xml" >/dev/null && FOUND_MEMORY=1 || true
+            grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
+          done
+          test "$SCROLL_CHANGED" = "1"
+          test "$FOUND_PERMISSIONS" = "1"
+          test "$FOUND_CAPABILITIES" = "1"
+          test "$FOUND_MEMORY" = "1"
+          test "$FOUND_LAN" = "1"
+          "$ADB" exec-out screencap -p > bcp-server-dashboard-lower.png
+          test -s bcp-server-dashboard-lower.png
+
           if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
@@ -204,6 +281,9 @@ jobs:
           assert obj["content_addressed_private_cache"] is True
           assert obj["store_and_forward"] is True
           assert obj["telegram_https_connect_relay"] is True
+          assert obj["capability_registry"] is True
+          assert obj["memory_admission_ledger"] is True
+          assert obj["room_schema_version"] == 5
           assert obj["arbitrary_proxy"] is False
           assert obj["arbitrary_shell"] is False
           PY
@@ -211,6 +291,11 @@ jobs:
           PRIVATE_CODE="$(curl -sS -o edge-private-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/status)"
           test "$PRIVATE_CODE" = "401"
           grep -F '"unauthorized"' edge-private-unauthorized.json >/dev/null
+          for PATHNAME in v1/node/capability-registry v1/node/memory-claims; do
+            CODE="$(curl -sS -o "edge-private-${PATHNAME##*/}.json" -w '%{http_code}' "http://127.0.0.1:18876/$PATHNAME")"
+            test "$CODE" = "401"
+            grep -F '"unauthorized"' "edge-private-${PATHNAME##*/}.json" >/dev/null
+          done
           echo "BCP_ANDROID_LOCAL_API_SERVER=PASS"
 
       - name: Cold relaunch idempotence smoke
@@ -248,11 +333,18 @@ jobs:
             launcher-component.txt
             activity-relaunch.txt
             bcp-window.xml
+            bcp-window-lower.xml
+            wm-size.txt
+            scroll-geometry.txt
+            scroll-dump-sha256.txt
             bcp-server-dashboard.png
+            bcp-server-dashboard-lower.png
             bcp-window-relaunch.xml
             edge-health.json
             edge-capabilities.json
             edge-private-unauthorized.json
+            edge-private-capability-registry.json
+            edge-private-memory-claims.json
             edge-health-relaunch.json
             emulator.log
             avd-list-created.txt

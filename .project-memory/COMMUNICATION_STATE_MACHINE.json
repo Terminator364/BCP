@@ -1,6 +1,6 @@
 {
-  "schema": "bcp.communication_state_machine/2",
-  "revision": "2026-09-21-R77",
+  "schema": "bcp.communication_state_machine/3",
+  "revision": "2026-09-22-R81",
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
@@ -53,9 +53,11 @@
     }
   ],
   "timing": {
+    "primary_work_target_minutes": 23,
     "primary_close_reserve_begins_minute": 23,
     "normal_end_target_minute": 25,
-    "scheduled_backup_required": false
+    "scheduled_backup_required": false,
+    "automation_may_run_only_if_foreground_interrupted": true
   },
   "invariants": [
     "final ChatGPT closeout blocked until Gmail END provider ACK is durable",
@@ -64,6 +66,10 @@
     "the user message is never a closeout trigger",
     "delivery_key is unique per tranche",
     "END send is search-before-send and idempotent",
-    "normal closeout is owned by PRIMARY_ASSISTANT and must not depend on an automation"
+    "normal closeout is owned by PRIMARY_ASSISTANT and must not depend on an automation",
+    "healthy foreground tranche remains owned by PRIMARY_ASSISTANT from START through END",
+    "normal tranche does not hand closeout to an automation",
+    "reasoning UI duration is not a stop condition",
+    "foreground work continues until close reserve unless a true gate makes further work impossible"
   ]
 }

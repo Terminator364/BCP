@@ -246,6 +246,9 @@ public final class EdgeRelayService extends Service {
             caps.put("universal_event_ledger_mode", "APPEND_ONLY_LOCAL_CHRONICLE");
             caps.put("mission_step_envelope_v1", true);
             caps.put("provider_degraded_resume", true);
+            caps.put("capability_registry", true);
+            caps.put("memory_admission_ledger", true);
+            caps.put("room_schema_version", 5);
             caps.put("mission_authority", "DURABLE_BCP_STATE_NOT_CHAT_UI");
             caps.put("local_allowlisted_executor", true);
             caps.put("local_executor_kinds", new org.json.JSONArray()
@@ -281,6 +284,14 @@ public final class EdgeRelayService extends Service {
             writeJson(out, 200, new BcpClient(this).localMissionSteps(50, true));
             return;
         }
+        if ("GET".equals(method) && "/v1/node/capability-registry".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localCapabilities());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/memory-claims".equals(path)) {
+            writeJson(out, 200, new BcpClient(this).localMemoryClaims(100));
+            return;
+        }
         if ("POST".equals(method) && "/v1/node/events".equals(path)) {
             JSONObject body = readJsonBody(in, headers);
             String eventType = body.optString("event_type", "");
@@ -303,6 +314,21 @@ public final class EdgeRelayService extends Service {
             JSONObject body = readJsonBody(in, headers);
             JSONObject receipt = new BcpClient(this).updateMissionStepState(body);
             writeJson(out, receipt.optBoolean("ok", false) ? 200 : 404, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/capability-registry".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).registerCapability(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/memory-claims".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = new BcpClient(this).admitMemoryClaim(body);
+            int status = receipt.optBoolean("ok", false)
+                    ? ("REJECTED".equals(receipt.optString("result", "")) ? 409 : 202)
+                    : 400;
+            writeJson(out, status, receipt);
             return;
         }
         if ("POST".equals(method) && "/v1/node/sync".equals(path)) {
@@ -342,6 +368,10 @@ public final class EdgeRelayService extends Service {
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
             out.put("mission_steps", client.localMissionSteps(8, true));
+            JSONObject capRegistry = client.localCapabilities();
+            out.put("capability_count", capRegistry.optInt("count", 0));
+            JSONObject memoryClaims = client.localMemoryClaims(32);
+            out.put("memory_claim_count", memoryClaims.optInt("count", 0));
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());

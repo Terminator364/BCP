@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/13",
+  "schema": "bcp.interactive_work_cadence_policy/10",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
   "target_minutes": 25,
@@ -8,18 +8,20 @@
     25
   ],
   "principles": [
-    "Send Gmail START and persist provider message_id before substantive work.",
-    "Target approximately 23 minutes of useful work inside a 25-minute wall-clock tranche; return earlier only for a true human gate, tool/safety failure, or a completed atomic action that should not be artificially prolonged.",
-    "Reserve the final 2 minutes for PRIMARY_ASSISTANT closeout; do not start optional product mutations after minute 23.",
-    "Primary assistant sends and verifies the normal Gmail END directly; scheduled jobs are not required for normal closeout.",
-    "Persist CLOSE_INTENT before END, search Gmail by delivery_key, send if missing, persist END_ACKNOWLEDGED/CLOSED, then reply in ChatGPT.",
-    "The UI thinking-duration indicator is not controllable proof of wall-clock work; durable commits/tests/readbacks/receipts are the work evidence."
+    "Gmail START must be provider-acknowledged before substantive work.",
+    "The same active assistant turn owns the normal tranche from START through substantive work and Gmail END.",
+    "Target 23 minutes of useful work, then reserve approximately 2 minutes for closeout.",
+    "Do not end the normal tranche merely because a visible reasoning/tool phase completed early.",
+    "Only a true human gate or tool/safety failure may justify an early close.",
+    "Scheduled automations are not the normal close path; they are emergency recovery only after a platform interruption.",
+    "Gmail END success requires provider message id plus SENT readback and durable CLOSED receipt.",
+    "Only after END acknowledgement may ChatGPT show the short Gmail pointer."
   ],
   "limitations": [
     "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
     "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-21T22:21:00+01:00",
+  "updated_at": "2026-09-22T00:33:00+01:00",
   "target_internal_work_minutes": 23,
   "acceptable_internal_work_window_minutes": [
     20,
@@ -46,24 +48,22 @@
     "continuation_registry_ref": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
   },
   "response_timing": {
+    "start_email_before_substantive_work": true,
+    "foreground_turn_owns_normal_end": true,
+    "target_substantive_minutes": 23,
+    "close_reserve_minutes": 2,
+    "end_email_before_chat_pointer": true,
+    "end_email_retry_until_provider_ack": true,
+    "chat_output_before_end_ack_forbidden": true,
     "user_visible_target_minutes": [
       23,
       25
     ],
-    "useful_work_minimum_minutes": 20,
-    "useful_work_target_minutes": 23,
-    "internal_soft_cutoff_minutes": 23,
-    "normal_close_reserve_minutes": 2,
-    "checkpoint_before_optional_overrun": true,
-    "true_gate_may_return_early": true,
-    "transport_latency_is_separate_from_useful_work": true,
-    "start_email_before_substantive_work": true,
-    "end_email_before_chat_pointer": true,
-    "end_email_retry_until_provider_ack": true,
-    "chat_output_before_end_ack_forbidden": true,
-    "normal_close_owner": "PRIMARY_ASSISTANT",
-    "scheduled_close_guard_required": false,
-    "foreground_end_send_primary": true,
-    "scheduler_completion_is_not_delivery_proof": true
-  }
+    "normal_closeout_begins_minute": 23,
+    "absolute_end_target_minute": 25
+  },
+  "useful_work_target_minutes": 23,
+  "normal_close_reserve_minutes": 2,
+  "primary_close_owner": "PRIMARY_ASSISTANT",
+  "automation_role": "EMERGENCY_RECOVERY_ONLY"
 }
