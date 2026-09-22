@@ -191,18 +191,47 @@ jobs:
           FOUND_CAPABILITIES=0
           FOUND_MEMORY=0
           FOUND_LAN=0
+          # Derive swipe coordinates from the real emulator geometry. The API-35
+          # CI phone is currently 320x640; the previous 520x1500 gesture was fully
+          # outside that viewport, so all five UI dumps were byte-identical and no
+          # scroll ever occurred. Keep this proof geometry-independent.
+          WM_SIZE_RAW="$("$ADB" shell wm size | tr -d '\r' | tee wm-size.txt)"
+          WM_SIZE="$(printf '%s\n' "$WM_SIZE_RAW" | sed -n 's/.*Physical size: \([0-9][0-9]*x[0-9][0-9]*\).*/\1/p' | tail -1)"
+          if [ -z "$WM_SIZE" ]; then
+            WM_SIZE="$(printf '%s\n' "$WM_SIZE_RAW" | sed -n 's/.*Override size: \([0-9][0-9]*x[0-9][0-9]*\).*/\1/p' | tail -1)"
+          fi
+          test -n "$WM_SIZE"
+          SCREEN_W="${WM_SIZE%x*}"
+          SCREEN_H="${WM_SIZE#*x}"
+          test "$SCREEN_W" -gt 0
+          test "$SCREEN_H" -gt 0
+          SWIPE_X=$((SCREEN_W / 2))
+          SWIPE_Y1=$((SCREEN_H * 82 / 100))
+          SWIPE_Y2=$((SCREEN_H * 28 / 100))
+          test "$SWIPE_Y1" -gt "$SWIPE_Y2"
+          echo "BCP_ANDROID_SCROLL_GEOMETRY=${SCREEN_W}x${SCREEN_H} x=${SWIPE_X} y1=${SWIPE_Y1} y2=${SWIPE_Y2}" | tee scroll-geometry.txt
+
           : > bcp-window-lower.xml
+          PREV_DUMP_SHA=""
+          SCROLL_CHANGED=0
           for STEP in 1 2 3 4 5; do
-            "$ADB" shell input swipe 520 1500 520 360 420
+            "$ADB" shell input swipe "$SWIPE_X" "$SWIPE_Y1" "$SWIPE_X" "$SWIPE_Y2" 420
             sleep 1
             "$ADB" shell uiautomator dump "/sdcard/bcp-window-$STEP.xml" >/dev/null
             "$ADB" pull "/sdcard/bcp-window-$STEP.xml" "bcp-window-$STEP.xml" >/dev/null
+            CURRENT_DUMP_SHA="$(sha256sum "bcp-window-$STEP.xml" | awk '{print $1}')"
+            echo "step=$STEP sha256=$CURRENT_DUMP_SHA" >> scroll-dump-sha256.txt
+            if [ -n "$PREV_DUMP_SHA" ] && [ "$CURRENT_DUMP_SHA" != "$PREV_DUMP_SHA" ]; then
+              SCROLL_CHANGED=1
+            fi
+            PREV_DUMP_SHA="$CURRENT_DUMP_SHA"
             cat "bcp-window-$STEP.xml" >> bcp-window-lower.xml
             grep -F "AUTORISATIONS SERVEUR" "bcp-window-$STEP.xml" >/dev/null && FOUND_PERMISSIONS=1 || true
             grep -F "CAPACITÉS DU NŒUD" "bcp-window-$STEP.xml" >/dev/null && FOUND_CAPABILITIES=1 || true
             grep -F "Journal mémoire/provenance:" "bcp-window-$STEP.xml" >/dev/null && FOUND_MEMORY=1 || true
             grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
           done
+          test "$SCROLL_CHANGED" = "1"
           test "$FOUND_PERMISSIONS" = "1"
           test "$FOUND_CAPABILITIES" = "1"
           test "$FOUND_MEMORY" = "1"
@@ -304,6 +333,9 @@ jobs:
             activity-relaunch.txt
             bcp-window.xml
             bcp-window-lower.xml
+            wm-size.txt
+            scroll-geometry.txt
+            scroll-dump-sha256.txt
             bcp-server-dashboard.png
             bcp-server-dashboard-lower.png
             bcp-window-relaunch.xml
