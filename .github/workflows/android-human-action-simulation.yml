@@ -212,7 +212,8 @@ jobs:
           echo "BCP_ANDROID_SCROLL_GEOMETRY=${SCREEN_W}x${SCREEN_H} x=${SWIPE_X} y1=${SWIPE_Y1} y2=${SWIPE_Y2}" | tee scroll-geometry.txt
 
           : > bcp-window-lower.xml
-          PREV_DUMP_SHA=""
+          PREV_DUMP_SHA="$(sha256sum bcp-window.xml | awk '{print $1}')"
+          echo "step=0 sha256=$PREV_DUMP_SHA" > scroll-dump-sha256.txt
           SCROLL_CHANGED=0
           for STEP in 1 2 3 4 5; do
             "$ADB" shell input swipe "$SWIPE_X" "$SWIPE_Y1" "$SWIPE_X" "$SWIPE_Y2" 420
