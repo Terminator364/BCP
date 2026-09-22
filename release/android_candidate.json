@@ -10,8 +10,8 @@
   "requirements_revision": "2026-09-21-R74",
   "base_distributed_version_code": 212,
   "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
-  "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
-  "publication_allowed": false,
+  "distribution_status": "SIGNED_EXACT_HEAD_STAGED_NOT_CURRENT",
+  "publication_allowed": true,
   "publication_requirements": [
     "EXACT_HEAD_CI_GREEN",
     "NEW_APK_SIGNED_WITH_PINNED_CERTIFICATE",
@@ -58,5 +58,32 @@
     "PC TLS private key is non-exportable in the Windows CurrentUser certificate store; secure backend is loopback-only on 8767",
     "legacy B-EDGE 2.1.2 clear bootstrap compatibility remains isolated and does not authorize 2.2 bearer traffic over clear LAN"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.0-full-node_NEXUS-0.2.6"
+  "release_train": "BCP-0.7.18_EDGE-2.2.0-full-node_NEXUS-0.2.6",
+  "signed_apk_sha256": "a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a",
+  "signature_schemes_verified": [
+    "v2",
+    "v3"
+  ],
+  "signed_source_commit": "95cbf79fc46fb82b46243ab405e5a31036358b6f",
+  "signing_cert_sha256_verified": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "drive_staging_readback": {
+    "status": "PASS",
+    "byte_sha256": "a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a",
+    "size_bytes": 2293572
+  },
+  "exact_head_machine_qualification": {
+    "source_head": "95cbf79fc46fb82b46243ab405e5a31036358b6f",
+    "current_release_contract": "PASS_1507",
+    "android_build": "PASS_849",
+    "android_human_action_simulation": "PASS_350",
+    "coordinated_product": "PASS_1546",
+    "field_ecosystem": "PASS_1461",
+    "coordinated_pc": "PASS_515",
+    "managed_server": "PASS_492",
+    "final_acceptance": "PASS_511",
+    "nexus_transport": "PASS_777",
+    "nexus_one_shot": "PASS_432",
+    "telegram_observability": "PASS_814"
+  },
+  "remaining_human_gate": "ANDROID_IN_PLACE_INSTALL_AND_REAL_DEVICE_FIELD_PROOF"
 }

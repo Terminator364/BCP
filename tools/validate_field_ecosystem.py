@@ -152,8 +152,16 @@ def main() -> int:
     assert "ProcessBuilder" not in edge_local_executor
     assert "Runtime.getRuntime" not in edge_local_executor
     assert android_candidate["version_code"] > 210
-    assert android_candidate["publication_allowed"] is False
-    assert android_candidate["distribution_status"] == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
+    if android_candidate.get("publication_allowed") is True:
+        assert android_candidate.get("distribution_status") == "SIGNED_EXACT_HEAD_STAGED_NOT_CURRENT"
+        assert re.fullmatch(r"[0-9a-f]{64}", str(android_candidate.get("signed_apk_sha256") or ""))
+        assert android_candidate.get("signing_cert_sha256_verified") == android_candidate.get("expected_signing_cert_sha256")
+        assert set(android_candidate.get("signature_schemes_verified") or []) >= {"v2", "v3"}
+        staged = android_candidate.get("drive_staging_readback") or {}
+        assert staged.get("status") == "PASS"
+        assert staged.get("byte_sha256") == android_candidate.get("signed_apk_sha256")
+    else:
+        assert android_candidate.get("distribution_status") == "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED"
 
     # Kinshasa/home-Wi-Fi reality: direct Telegram may fail while DNS still works.
     # Nexus must therefore remain an independent HTTPS control-plane route.

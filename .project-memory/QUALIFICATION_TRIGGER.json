@@ -1,8 +1,8 @@
 {
   "schema": "bcp.qualification_trigger/1",
-  "revision": "2026-09-21-R72",
+  "revision": "2026-09-22-R87-FINAL",
   "purpose": "One-file exact-head qualification fence. Bump nonce/reason after the final durable candidate mutation so all critical workflows execute against the final exact commit SHA.",
-  "nonce": "R71-COMMS-SURVIVAL-FULL-NODE-FINAL-1",
+  "nonce": "R87-BEDGE-2-2-FINAL-RELEASE-HEAD-1",
   "required_workflows": [
     "BCP Android Build",
     "BCP Android Human-Action Simulation",
@@ -18,14 +18,16 @@
     "BCP Windows Bootstrap Validation"
   ],
   "exact_head_required": true,
-  "reason": "R72 dual pre-deadline communication closeout exact-head qualification",
+  "reason": "R87 final exact-head qualification of signed staged B-EDGE 2.2 release manifests before stable Drive CURRENT replacement",
   "required_head_contracts": [
-    "DELIVERY_REDUNDANCY_POLICY_R72",
-    "INTERACTIVE_WORK_CADENCE_POLICY_R72",
-    "COMMUNICATION_SURVIVAL_POLICY_R72",
-    "ACTIVE_TRANCHE_LEDGER",
-    "BCPGO_DUAL_CLOSEOUT_RECOVERY",
-    "CURRENT_REQUIREMENTS_R72"
+    "BEDGE_2_2_SIGNED_SHA256_A95460ED",
+    "EVERGREEN_CERT_PIN_0BAAD474",
+    "APK_SIGNATURE_SCHEME_V2_V3",
+    "R86_BIDIRECTIONAL_PINNED_TLS",
+    "R87_ANDROID_HUMAN_ACTION_EMULATOR_PASS",
+    "R87_DRIVE_STAGING_READBACK_PASS",
+    "A_PLUS_B_PLUS_C_INTEGRAL",
+    "ACTIVE_TRANCHE_LEDGER"
   ],
-  "updated_at": "2026-09-21T17:50:00+01:00"
+  "updated_at": "2026-09-22T11:54:00+01:00"
 }

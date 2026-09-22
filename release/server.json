@@ -7,8 +7,8 @@
   "auto_update": true,
   "rollback_on_health_failure": true,
   "minimum_selftest": "BCP_SERVER_SELFTEST=PASS",
-  "coordinated_edge_version": "2.1.2-rc1-edge-relay-evergreen",
+  "coordinated_edge_version": "2.2.0-full-node-evergreen",
   "requirements_revision": "2026-09-21-R74",
-  "release_train": "BCP-0.7.18_EDGE-2.1.2-edge-relay_NEXUS-0.2.6",
-  "notes": "BCP 0.7.18 adds a Windows-native non-exportable certificate TLS ingress on 8766 with loopback-only backend 8767, authenticated certificate-pin migration for already paired B-EDGE, and rejects 2.2 credential-bearing control calls over clear LAN while preserving 2.1.2 bootstrap compatibility."
+  "release_train": "BCP-0.7.18_EDGE-2.2.0-full-node_NEXUS-0.2.6",
+  "notes": "BCP 0.7.18 provides the bidirectional pinned-TLS control path required by B-EDGE 2.2: non-exportable Windows certificate, TLS 8766, loopback-only backend 8767, authenticated pin migration, and isolated legacy 2.1.2 bootstrap compatibility."
 }

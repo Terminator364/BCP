@@ -1,3 +1,23 @@
+# R87 B-EDGE 2.2 signed field-promotion checkpoint — 2026-09-22
+
+Canonical continuation: `BCPGO BCP`.
+
+- P0-only branch: `work/bcp/r87-field-promotion-20260922-1138`; PR #157.
+- Source-qualified head: `95cbf79fc46fb82b46243ab405e5a31036358b6f`.
+- B-EDGE release identity: versionCode **220**, versionName **2.2.0-full-node-evergreen**, package `com.blessing.bcpedge.evergreen`.
+- Exact signed APK SHA-256: `a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a`.
+- Evergreen certificate SHA-256: `0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617`; APK Signature Scheme v2/v3 verified.
+- The signed bytes were uploaded to private Drive staging and downloaded/read back with the identical SHA and signature identity.
+- Exact source head machine gates passed: CURRENT #1507, Android Build #849, Android Human-Action #350, Coordinated Product #1546, Field Ecosystem #1461, Coordinated PC #515, Managed Server #492, Final Acceptance #511, Nexus Transport #777, Nexus One-Shot #432, Telegram Observability #814.
+- One R87 continuity-only regression was found and fixed: ACTIVE_TRANCHE advanced to R87 while NEW_CONVERSATION_TAKEOVER still pointed to R86; ERROR_LEDGER id `BCP-ERR-R87-TAKEOVER-ACTIVE-TRANCHE-SKEW` and CURRENT #1507 prove the repair.
+- Final release manifests now stage 2.2 + signed hash and the coordinated server release train. Local AI remains DESIGN_ONLY.
+
+Next action: **final exact-head release CI -> atomically replace stable Drive CURRENT exact bytes -> Drive readback -> writer-fenced PR #157 merge -> only then Android in-place install human gate -> real-device full-node/reboot/communications proof.**
+
+Do not ask the user to install until the final release HEAD is green and stable Drive CURRENT is hash/signature-read back.
+
+---
+
 # Local inference capability research — 2026-09-22
 
 Canonical base after R86 integration: `f2e0e0682c693a6abbdabe01f129aa527401dcd6`.
