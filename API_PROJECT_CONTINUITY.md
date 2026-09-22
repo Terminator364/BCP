@@ -1,3 +1,15 @@
+# R87 provider-proof closure — 2026-09-22 12:07 Kinshasa
+
+- Checkpoint: `BCP-R87-END-20260922-1207`.
+- Gmail END provider/readback ID: `1a0c8ccca4a6d02e`.
+- R87 tranche is CLOSED.
+- Product state is **B-EDGE 2.2 CURRENT READY / real-device field-unverified**.
+- Next and only human gate: **in-place Android update; do not uninstall**.
+- Canonical instruction: open BCP Edge -> **Vérifier / mettre à jour BCP Edge** -> approve the Android update.
+- After install, resume field proof; do not start Local AI implementation.
+
+---
+
 # R87 field-ready closure / Android in-place install gate — 2026-09-22
 
 Canonical continuation: `BCPGO BCP`.
