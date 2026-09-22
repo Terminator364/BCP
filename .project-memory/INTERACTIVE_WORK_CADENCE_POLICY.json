@@ -1,43 +1,41 @@
 {
-  "schema": "bcp.interactive_work_cadence_policy/10",
+  "schema": "bcp.interactive_work_cadence_policy/11",
   "status": "ACTIVE_DEFAULT",
   "scope": "GLOBAL_TECHNICAL_PROJECT_DEFAULT_WHERE_CONTEXT_IS_AVAILABLE",
-  "target_minutes": 25,
-  "acceptable_window_minutes": [
-    23,
-    25
-  ],
+  "planning_model": "ADAPTIVE_TASK_WINDOW",
+  "fixed_target_minutes": null,
+  "fixed_acceptable_window_minutes": null,
   "principles": [
-    "Gmail START must be provider-acknowledged before substantive work.",
-    "The same active assistant turn owns the normal tranche from START through substantive work and Gmail END.",
-    "Target 23 minutes of useful work, then reserve approximately 2 minutes for closeout.",
-    "Do not end the normal tranche merely because a visible reasoning/tool phase completed early.",
-    "Only a true human gate or tool/safety failure may justify an early close.",
-    "Scheduled automations are not the normal close path; they are emergency recovery only after a platform interruption.",
+    "Gmail START must be provider-acknowledged before substantive mutations.",
+    "Each tranche gets a realistic task-specific end window estimated from actual scope, uncertainty, CI/tool latency, and known human gates.",
+    "The START mail communicates scope plus the estimated local end window.",
+    "There is no artificial minimum duration and no requirement to fill an estimated window.",
+    "Do not stop merely because an estimate elapsed while machine work can still materially reduce uncertainty.",
+    "If the end estimate becomes materially non-credible, send at most one concise update when useful and revise the durable estimate.",
+    "The same active assistant turn owns the normal tranche from START through work and Gmail END.",
     "Gmail END success requires provider message id plus SENT readback and durable CLOSED receipt.",
-    "Only after END acknowledgement may ChatGPT show the short Gmail pointer."
+    "Only after END acknowledgement may ChatGPT show the short Gmail pointer.",
+    "Usable product/checkpoint progress is the metric; elapsed time is not."
+  ],
+  "estimation_inputs": [
+    "NUMBER_AND_TYPE_OF_PENDING_ATOMIC_ACTIONS",
+    "KNOWN_CI_RUNTIME",
+    "KNOWN_TOOL_OR_PROVIDER_LATENCY",
+    "EXPECTED_DEBUG_ITERATIONS",
+    "CURRENT_HUMAN_GATE_DISTANCE",
+    "NETWORK_OR_SERVICE_UNCERTAINTY"
   ],
   "limitations": [
-    "This policy guides BCP/project work; it cannot retroactively rewrite past ChatGPT conversations.",
-    "ChatGPT itself does not continue executing after a response unless invoked again; resident BCP components may continue independently where implemented."
+    "The estimate is advisory, not a promise or background-execution commitment.",
+    "This policy cannot retroactively rewrite past tranche records.",
+    "ChatGPT does not continue after the turn ends; resident BCP components may continue independently where implemented."
   ],
-  "updated_at": "2026-09-22T00:33:00+01:00",
-  "target_internal_work_minutes": 23,
-  "acceptable_internal_work_window_minutes": [
-    20,
-    23
-  ],
-  "user_visible_target_window_minutes": [
-    23,
-    25
-  ],
-  "cutoff_strategy": "TARGET_23_MIN_USEFUL_WORK_THEN_2_MIN_PRIMARY_CLOSEOUT",
+  "updated_at": "2026-09-22T13:21:00+01:00",
   "measurement_truth": {
-    "chatgpt_thinking_indicator": "NOT_AUTHORITATIVE; MAY_BE MUCH SHORTER_THAN TOTAL_TOOL_ORCHESTRATION; NEVER_USED_AS_WORK_PROOF",
-    "manual_stopwatch": "USEFUL_IF_START_AND_STOP_ARE_SYNCHRONIZED",
+    "chatgpt_thinking_indicator": "NOT_AUTHORITATIVE_AND_NEVER_WORK_PROOF",
     "producer_event_timestamps": "AUTHORITATIVE_FOR_PRODUCER_SIDE_ONLY",
     "bcp_mirror_timestamp": "AUTHORITATIVE_FOR_LOCAL_MIRROR",
-    "telegram_send_receipt": "AUTHORITATIVE_FOR_TELEGRAM_API_ACCEPTANCE_ONLY",
+    "provider_ack": "AUTHORITATIVE_FOR_PROVIDER_ACCEPTANCE",
     "explicit_seen_ack": "AUTHORITATIVE_FOR_USER_ACK_ONLY",
     "work_proof": "GIT_COMMITS_CI_RUNS_PROVIDER_ACKS_DRIVE_READBACKS_FIELD_TELEMETRY"
   },
@@ -48,22 +46,17 @@
     "continuation_registry_ref": ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json"
   },
   "response_timing": {
-    "start_email_before_substantive_work": true,
+    "start_email_before_substantive_mutation": true,
+    "start_email_includes_estimated_end_window": true,
     "foreground_turn_owns_normal_end": true,
-    "target_substantive_minutes": 23,
-    "close_reserve_minutes": 2,
     "end_email_before_chat_pointer": true,
     "end_email_retry_until_provider_ack": true,
     "chat_output_before_end_ack_forbidden": true,
-    "user_visible_target_minutes": [
-      23,
-      25
-    ],
-    "normal_closeout_begins_minute": 23,
-    "absolute_end_target_minute": 25
+    "progress_update_email": "OPTIONAL_ONLY_IF_ESTIMATE_MATERIALLY_CHANGES",
+    "fixed_closeout_minute": null,
+    "fixed_absolute_end_minute": null
   },
-  "useful_work_target_minutes": 23,
-  "normal_close_reserve_minutes": 2,
+  "completion_rule": "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER",
   "primary_close_owner": "PRIMARY_ASSISTANT",
   "automation_role": "EMERGENCY_RECOVERY_ONLY"
 }
