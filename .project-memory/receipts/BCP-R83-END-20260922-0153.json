@@ -1,0 +1,19 @@
+{
+  "schema": "bcp.communication_receipt/1",
+  "project": "API/BCP",
+  "tranche_id": "BCP-R83-START-20260922-0130",
+  "delivery_key": "BCP25-20260922-0130-R83",
+  "checkpoint_id": "BCP-R83-END-20260922-0153",
+  "event": "END_ACKNOWLEDGED",
+  "gmail_end_message_id": "1a0c69aad8f9535f",
+  "gmail_end_thread_id": "1a0c69aad8f9535f",
+  "gmail_label": "BCP",
+  "provider_sent_readback": true,
+  "provider_email_ts_utc": "2026-09-22T00:53:40Z",
+  "closed_at_kinshasa": "2026-09-22T01:53:40+01:00",
+  "close_owner": "PRIMARY_ASSISTANT",
+  "delivery_state": "CLOSED",
+  "merged_pr": 152,
+  "merged_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
+  "install_authorized": false
+}
