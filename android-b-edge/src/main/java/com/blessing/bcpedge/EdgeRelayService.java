@@ -56,9 +56,13 @@ public final class EdgeRelayService extends Service {
     private final ScheduledExecutorService registration = Executors.newSingleThreadScheduledExecutor();
     private final Semaphore connectionSlots = new Semaphore(EdgeRelayPolicy.MAX_CONNECTIONS);
     private volatile boolean stopping = false;
-    private volatile ServerSocket serverSocket;
+    private volatile ServerSocket relayServerSocket;
+    private volatile ServerSocket tlsApiServerSocket;
+    private final java.util.concurrent.ConcurrentHashMap<String,Long> proxyNonceSeen =
+            new java.util.concurrent.ConcurrentHashMap<>();
     private EdgePresenceAdvertiser presence;
     private volatile JSONObject presenceState = new JSONObject();
+    private volatile String tlsCertificateSha256 = "";
 
     @Override public void onCreate() {
         super.onCreate();
@@ -72,14 +76,22 @@ public final class EdgeRelayService extends Service {
             startForeground(NOTIFICATION_ID, n);
         }
 
+        try {
+            tlsCertificateSha256 = EdgeTlsIdentity.certificateSha256(this);
+        } catch (Throwable e) {
+            mark("TLS_IDENTITY_FAILED", e.getClass().getSimpleName());
+        }
+
         presence = new EdgePresenceAdvertiser(this);
         try {
             presenceState = presence.start(
-                    EdgeRelayPolicy.RELAY_PORT,
-                    new BcpClient(this).getEdgeVersion());
+                    EdgeRelayPolicy.API_TLS_PORT,
+                    new BcpClient(this).getEdgeVersion(),
+                    tlsCertificateSha256);
         } catch (Throwable ignored) {}
 
-        io.submit(this::serveLoop);
+        io.submit(this::serveRelayLoop);
+        io.submit(this::serveTlsApiLoop);
         registration.scheduleWithFixedDelay(() -> {
             try {
                 BcpClient client = new BcpClient(EdgeRelayService.this);
@@ -103,7 +115,8 @@ public final class EdgeRelayService extends Service {
 
     @Override public void onDestroy() {
         stopping = true;
-        try { if (serverSocket != null) serverSocket.close(); } catch (Exception ignored) {}
+        try { if (relayServerSocket != null) relayServerSocket.close(); } catch (Exception ignored) {}
+        try { if (tlsApiServerSocket != null) tlsApiServerSocket.close(); } catch (Exception ignored) {}
         try { if (presence != null) presence.stop(); } catch (Exception ignored) {}
         registration.shutdownNow();
         io.shutdownNow();
@@ -113,57 +126,97 @@ public final class EdgeRelayService extends Service {
 
     @Nullable @Override public IBinder onBind(Intent intent) { return null; }
 
-    private void serveLoop() {
+    private void serveRelayLoop() {
         try (ServerSocket server = new ServerSocket()) {
             server.setReuseAddress(true);
             server.bind(new InetSocketAddress("0.0.0.0", EdgeRelayPolicy.RELAY_PORT), 8);
-            serverSocket = server;
-            mark("LISTENING", "port=" + EdgeRelayPolicy.RELAY_PORT);
+            relayServerSocket = server;
+            mark("RELAY_LISTENING", "port=" + EdgeRelayPolicy.RELAY_PORT);
             while (!stopping) {
                 Socket client = server.accept();
-                if (!connectionSlots.tryAcquire()) {
-                    try {
-                        writeAscii(client.getOutputStream(),
-                                "HTTP/1.1 503 Busy\r\nConnection: close\r\n\r\n");
-                    } catch (Exception ignored) {}
-                    try { client.close(); } catch (Exception ignored) {}
-                    continue;
-                }
-                io.submit(() -> {
-                    try { handle(client); }
-                    finally {
-                        connectionSlots.release();
-                        try { client.close(); } catch (Exception ignored) {}
-                    }
-                });
+                dispatch(client, false);
             }
         } catch (Exception e) {
-            if (!stopping) mark("FAILED", e.getClass().getSimpleName());
+            if (!stopping) mark("RELAY_FAILED", e.getClass().getSimpleName());
         }
     }
 
-    private void handle(Socket client) {
+    private void serveTlsApiLoop() {
+        try (javax.net.ssl.SSLServerSocket server =
+                     EdgeTlsIdentity.createServerSocket(this, EdgeRelayPolicy.API_TLS_PORT)) {
+            tlsApiServerSocket = server;
+            tlsCertificateSha256 = EdgeTlsIdentity.certificateSha256(this);
+            mark("TLS_API_LISTENING",
+                    "port=" + EdgeRelayPolicy.API_TLS_PORT + ",fp=" + tlsCertificateSha256);
+            while (!stopping) {
+                Socket client = server.accept();
+                dispatch(client, true);
+            }
+        } catch (Exception e) {
+            if (!stopping) mark("TLS_API_FAILED", e.getClass().getSimpleName());
+        }
+    }
+
+    private void dispatch(Socket client, boolean tlsApi) {
+        if (!connectionSlots.tryAcquire()) {
+            try {
+                writeAscii(client.getOutputStream(),
+                        "HTTP/1.1 503 Busy\r\nConnection: close\r\n\r\n");
+            } catch (Exception ignored) {}
+            try { client.close(); } catch (Exception ignored) {}
+            return;
+        }
+        io.submit(() -> {
+            try {
+                if (tlsApi) handleTlsApi(client); else handleRelay(client);
+            } finally {
+                connectionSlots.release();
+                try { client.close(); } catch (Exception ignored) {}
+            }
+        });
+    }
+
+    private void handleRelay(Socket client) {
         try {
             client.setSoTimeout(EdgeRelayPolicy.TUNNEL_IDLE_TIMEOUT_MS);
             InputStream cin = client.getInputStream();
             OutputStream cout = client.getOutputStream();
-
             String requestLine = readLine(cin, 2048);
             if (requestLine == null) return;
             String[] parts = requestLine.trim().split("\\s+");
-            if (parts.length != 3) {
-                writeAscii(cout, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+            if (parts.length != 3 || !"CONNECT".equalsIgnoreCase(parts[0])) {
+                writeAscii(cout,
+                        "HTTP/1.1 405 Method Not Allowed\r\nConnection: close\r\n\r\n");
                 return;
             }
             Map<String,String> headers = readHeaders(cin, requestLine.length());
-            String method = parts[0].toUpperCase(Locale.ROOT);
-            if ("CONNECT".equals(method)) {
-                handleConnect(client, cin, cout, parts[1], headers);
+            handleConnect(client, cin, cout, parts[1], headers);
+        } catch (Exception e) {
+            mark("RELAY_REQUEST_ERROR", e.getClass().getSimpleName());
+        }
+    }
+
+    private void handleTlsApi(Socket client) {
+        try {
+            client.setSoTimeout(EdgeRelayPolicy.TUNNEL_IDLE_TIMEOUT_MS);
+            if (client instanceof javax.net.ssl.SSLSocket) {
+                ((javax.net.ssl.SSLSocket) client).startHandshake();
+            }
+            InputStream in = client.getInputStream();
+            OutputStream out = client.getOutputStream();
+            String requestLine = readLine(in, 2048);
+            if (requestLine == null) return;
+            String[] parts = requestLine.trim().split("\\s+");
+            if (parts.length != 3 || "CONNECT".equalsIgnoreCase(parts[0])) {
+                writeAscii(out,
+                        "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
                 return;
             }
-            handleApi(cin, cout, method, cleanPath(parts[1]), headers);
+            Map<String,String> headers = readHeaders(in, requestLine.length());
+            handleApi(in, out, parts[0].toUpperCase(Locale.ROOT),
+                    cleanPath(parts[1]), headers);
         } catch (Exception e) {
-            mark("REQUEST_ERROR", e.getClass().getSimpleName());
+            mark("TLS_API_REQUEST_ERROR", e.getClass().getSimpleName());
         }
     }
 
@@ -181,17 +234,26 @@ public final class EdgeRelayService extends Service {
             try { port = Integer.parseInt(target.substring(colon + 1)); }
             catch (Exception e) { port = -1; }
 
+            if (!EdgeRelayPolicy.isAllowedConnectTarget(host, port)) {
+                mark("TARGET_REJECT", host + ":" + port);
+                writeAscii(cout, "HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+                return;
+            }
+
             String expected = new CredentialStore(this).getToken();
-            if (!EdgeRelayPolicy.isValidProxyAuthorization(
-                    headers.get("proxy-authorization"), expected)) {
+            String auth = headers.get("proxy-authorization");
+            long now = System.currentTimeMillis() / 1000L;
+            if (!EdgeRelayPolicy.isValidProxyAuthorization(auth, expected, target, now)) {
                 mark("AUTH_REJECT", client.getInetAddress().getHostAddress());
                 writeAscii(cout,
                         "HTTP/1.1 407 Proxy Authentication Required\r\nConnection: close\r\n\r\n");
                 return;
             }
-            if (!EdgeRelayPolicy.isAllowedConnectTarget(host, port)) {
-                mark("TARGET_REJECT", host + ":" + port);
-                writeAscii(cout, "HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+            String nonce = EdgeRelayPolicy.proxyAuthNonce(auth);
+            if (nonce.isEmpty() || !claimProxyNonce(nonce, now)) {
+                mark("AUTH_REPLAY_REJECT", client.getInetAddress().getHostAddress());
+                writeAscii(cout,
+                        "HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n");
                 return;
             }
 
@@ -241,6 +303,11 @@ public final class EdgeRelayService extends Service {
             caps.put("ok", true);
             caps.put("role", "DEDICATED_EDGE_API_SERVER");
             caps.put("local_api", true);
+            caps.put("local_api_tls", true);
+            caps.put("local_api_tls_port", EdgeRelayPolicy.API_TLS_PORT);
+            caps.put("local_api_tls_cert_sha256", tlsCertificateSha256);
+            caps.put("relay_long_lived_bearer_on_lan", false);
+            caps.put("relay_auth", "BCP_HMAC_SHA256");
             caps.put("durable_queue", true);
             caps.put("universal_event_ledger", true);
             caps.put("universal_event_ledger_mode", "APPEND_ONLY_LOCAL_CHRONICLE");
@@ -356,6 +423,15 @@ public final class EdgeRelayService extends Service {
         }
     }
 
+    private boolean claimProxyNonce(String nonce, long nowEpochSeconds) {
+        long oldest = nowEpochSeconds - (EdgeRelayPolicy.PROXY_AUTH_MAX_SKEW_SECONDS * 2L);
+        for (Map.Entry<String,Long> e : proxyNonceSeen.entrySet()) {
+            if (e.getValue() < oldest) proxyNonceSeen.remove(e.getKey(), e.getValue());
+        }
+        if (proxyNonceSeen.size() > 512) proxyNonceSeen.clear();
+        return proxyNonceSeen.putIfAbsent(nonce, nowEpochSeconds) == null;
+    }
+
     private JSONObject nodeStatus() {
         JSONObject out = nodeSummary();
         try {
@@ -391,7 +467,13 @@ public final class EdgeRelayService extends Service {
             out.put("node", "B-EDGE");
             out.put("role", "DEDICATED_EDGE_API_SERVER");
             out.put("version", new BcpClient(this).getEdgeVersion());
-            out.put("port", EdgeRelayPolicy.RELAY_PORT);
+            out.put("port", EdgeRelayPolicy.API_TLS_PORT);
+            out.put("api_port", EdgeRelayPolicy.API_TLS_PORT);
+            out.put("api_scheme", "https");
+            out.put("api_tls", true);
+            out.put("api_tls_cert_sha256", tlsCertificateSha256);
+            out.put("relay_port", EdgeRelayPolicy.RELAY_PORT);
+            out.put("relay_auth", "BCP_HMAC_SHA256");
             out.put("server_mode_enabled", EdgePermissionManager.isServerModeEnabled(this));
             out.put("timestamp_ms", System.currentTimeMillis());
         } catch (Exception ignored) {}
