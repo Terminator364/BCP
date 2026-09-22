@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.21-comms-survival-v22",
+  "version": "2026.09.22-secure-lan-v23",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "de827751f5997aa92172e1c06ef82ce840be4b754b412dc47126f48f92b10125",
+  "sha256": "b995cd1b297bc89eb47dd76f40ea564f124e3805d6ca4429278224c222655c09",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "Telegram V22 preserves V21 direct-to-B-EDGE fallback and adds durable route evidence for direct Telegram, B-EDGE relay success, and no-working-route failure so field telemetry can prove which communications path was actually used.",
+  "notes": "R84 companion adds pinned HTTPS access to the B-EDGE 8877 API and HMAC-SHA256 timestamp+nonce authentication for 2.2 Telegram CONNECT relay registrations while retaining explicit 2.1.2 legacy compatibility.",
   "requirements_revision": "2026-09-21-R74"
 }

@@ -10,9 +10,9 @@
   "apk_sha256": "3eb1260dee31c3ff2b9668d22fd90460bdc331426f9f5361d46eb78b0a59e2cc",
   "distribution_status": "PRIVATE_STABLE_SIGNING_VERIFIED_READY_FOR_IN_PLACE_UPDATE",
   "note": "B-EDGE 2.1.2 dedicated Edge relay: main exact-head CI green, signed with the pinned Evergreen identity, v2/v3 verified, stable Drive CURRENT replaced in place with byte/hash readback, previous 2.1.0 copy preserved for rollback. Field install/runtime relay verification remains pending.",
-  "coordinated_server_version": "0.7.16",
+  "coordinated_server_version": "0.7.17",
   "requirements_revision": "2026-09-21-R74",
-  "release_train": "BCP-0.7.16_EDGE-2.1.2-edge-relay_NEXUS-0.2.6",
+  "release_train": "BCP-0.7.17_EDGE-2.1.2-edge-relay_NEXUS-0.2.6",
   "source_commit": "61736e160c65ee47be77f384a9c3369a33c122a3",
   "signature_schemes_verified": [
     "v2",

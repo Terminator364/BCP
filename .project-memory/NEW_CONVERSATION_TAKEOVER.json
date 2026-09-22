@@ -56,14 +56,15 @@
     "phone_direction": "coherent dedicated Android full-node/server appliance",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
     "continuation_code": "BCPGO BCP",
-    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_R83_ANDROID_EXACT_HEAD_REPAIR",
+    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_R84_AUTHENTICATED_ENCRYPTED_LAN",
     "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9,
-    "current_integration_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
-    "current_main_base_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
-    "current_integration_rule": "REPAIR_EXACT_ANDROID_SCROLL_PROOF_THEN_REQUALIFY_AND_SERIALIZE_PR152"
+    "current_integration_branch": "work/bcp/r84-auth-encrypted-lan-20260922-0342",
+    "current_main_base_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
+    "current_integration_rule": "FIX_ANDROID_HUMAN_ACTION_326_ONLY_THEN_REQUALIFY_PR153",
+    "current_secure_lan_state": "PARTIAL_PC_TO_EDGE_TLS_PINNED_RELAY_HMAC_EDGE_TO_PC_HTTP_REMAINS"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -75,8 +76,8 @@
     "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
-  "current_active_tranche": "BCP-R83-START-20260922-0130",
-  "current_delivery_key": "BCP25-20260922-0130-R83",
+  "current_active_tranche": "BCP-R85-START-20260922-0951",
+  "current_delivery_key": "BCP25-20260922-0951-R85",
   "current_active_tranche_status": "WORKING",
   "current_end_checkpoint": null,
   "current_end_message_id": null

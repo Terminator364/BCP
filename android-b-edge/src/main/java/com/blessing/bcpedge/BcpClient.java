@@ -67,24 +67,35 @@ public final class BcpClient {
             JSONObject sentinel = orchestrator.sentinelStatus(getProject());
 
             JSONObject api = new JSONObject();
-            api.put("port", EdgeRelayPolicy.RELAY_PORT);
+            String edgeTlsFingerprint = "";
+            try { edgeTlsFingerprint = EdgeTlsIdentity.certificateSha256(context); }
+            catch (Exception ignored) {}
+            api.put("port", EdgeRelayPolicy.API_TLS_PORT);
+            api.put("relay_port", EdgeRelayPolicy.RELAY_PORT);
             api.put("authenticated_private_endpoints", true);
             api.put("public_surface", "health+static_capabilities_only");
-            api.put("encrypted_transport", false);
-            api.put("transport_security", "CLEARTEXT_POC_AUTHENTICATED_PRIVATE_ENDPOINTS");
-            api.put("production_transport_ready", false);
+            api.put("encrypted_transport", true);
+            api.put("transport_security", "TLS_1_2_PLUS_PINNABLE_ANDROID_KEYSTORE_IDENTITY");
+            api.put("tls_certificate_sha256", edgeTlsFingerprint);
+            api.put("production_transport_ready", !edgeTlsFingerprint.isEmpty());
             orchestrator.putCapability(getProject(), "LOCAL_API_SERVER", "B-EDGE",
-                    "B_EDGE", "SERVER", "POC_CLEAR_HTTP", "LAN", api,
+                    "B_EDGE", "SERVER", "TLS_PINNABLE", "LAN", api,
                     "MACHINE_READBACK", now, expiry);
 
             JSONObject lanSecurity = new JSONObject();
-            lanSecurity.put("authenticated_private_endpoints", true);
-            lanSecurity.put("encrypted", false);
-            lanSecurity.put("target", "AUTHENTICATED_ENCRYPTED_LAN");
+            lanSecurity.put("edge_api_tls", true);
+            lanSecurity.put("edge_api_tls_port", EdgeRelayPolicy.API_TLS_PORT);
+            lanSecurity.put("edge_api_tls_certificate_sha256", edgeTlsFingerprint);
+            lanSecurity.put("relay_provider_payload_e2e_tls", true);
+            lanSecurity.put("relay_long_lived_bearer_on_clear_lan", false);
+            lanSecurity.put("relay_auth", "BCP_HMAC_SHA256");
+            lanSecurity.put("phone_to_pc_control_payload_encrypted", false);
+            lanSecurity.put("overall_state", "PARTIAL");
+            lanSecurity.put("target", "AUTHENTICATED_ENCRYPTED_LAN_BIDIRECTIONAL");
             lanSecurity.put("blocking_release_gap", true);
             orchestrator.putCapability(getProject(), "LAN_TRANSPORT_SECURITY", "B-EDGE",
-                    "BCP_POLICY", "SECURITY", "POC_CLEAR_HTTP", "LAN", lanSecurity,
-                    "SYSTEM_POLICY", now, expiry);
+                    "BCP_POLICY", "SECURITY", "PARTIAL", "TLS_PLUS_HMAC_TRANSITION", lanSecurity,
+                    "MACHINE_READBACK", now, expiry);
 
             JSONObject durable = new JSONObject();
             durable.put("room_wal", true);
@@ -589,8 +600,12 @@ public final class BcpClient {
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
             body.put("node_role", "DEDICATED_EDGE_API_SERVER");
-            body.put("api_port", EdgeRelayPolicy.RELAY_PORT);
+            body.put("api_port", EdgeRelayPolicy.API_TLS_PORT);
+            body.put("api_scheme", "https");
+            body.put("api_tls_sha256", EdgeTlsIdentity.certificateSha256(context));
             body.put("api_version", "v1");
+            body.put("relay_auth", "BCP_HMAC_SHA256");
+            body.put("relay_long_lived_bearer_on_lan", false);
             body.put("store_and_forward", true);
             body.put("durable_queue", true);
             JSONObject r = requestJson(

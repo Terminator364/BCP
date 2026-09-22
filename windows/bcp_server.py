@@ -32,7 +32,7 @@ DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
 EDGE_RELAY_STATE_PATH = STATE_DIR / "edge_relay.json"
-SERVER_VERSION = "0.7.16"
+SERVER_VERSION = "0.7.17"
 SERVER_FILE = Path(__file__).resolve()
 UPDATE_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/server.json"
 TELEGRAM_COMPANION_MANIFEST_URL = "https://raw.githubusercontent.com/Terminator364/BCP/main/release/telegram_observability.json"
@@ -108,13 +108,28 @@ def edge_relay_status(now_epoch: int | None = None) -> dict:
         and raw.get("capability") == "HTTPS_CONNECT_TELEGRAM"
         and expires > now
     )
+    secure_api_ready = bool(
+        active
+        and str(raw.get("api_scheme") or "").lower() == "https"
+        and int(raw.get("api_port") or 0) == 8877
+        and re.fullmatch(r"[0-9a-f]{64}", str(raw.get("api_tls_sha256") or "").lower())
+        and str(raw.get("relay_auth") or "") == "BCP_HMAC_SHA256"
+    )
     return {
-        "schema": "bcp.edge_relay_registration/1",
+        "schema": "bcp.edge_relay_registration/2",
         "active": active,
         "relay_host": str(raw.get("relay_host") or "") if active else "",
         "relay_port": int(raw.get("relay_port") or 0) if active else 0,
         "capability": str(raw.get("capability") or ""),
         "edge_version": str(raw.get("edge_version") or ""),
+        "relay_auth": str(raw.get("relay_auth") or "BEARER_LEGACY"),
+        "api_scheme": str(raw.get("api_scheme") or ""),
+        "api_port": int(raw.get("api_port") or 0),
+        "api_tls_sha256": str(raw.get("api_tls_sha256") or ""),
+        "secure_api_ready": secure_api_ready,
+        "long_lived_bearer_on_relay_lan": not bool(
+            str(raw.get("relay_auth") or "") == "BCP_HMAC_SHA256"
+        ),
         "registered_at": str(raw.get("registered_at") or ""),
         "expires_epoch": expires,
         "expires_in_seconds": max(0, expires - now),
@@ -131,13 +146,37 @@ def register_edge_relay(remote_ip: str, body: dict) -> dict:
         raise ValueError("edge_relay_port_not_allowed")
     if capability != "HTTPS_CONNECT_TELEGRAM":
         raise ValueError("edge_relay_capability_not_allowed")
+
+    api_scheme = str(body.get("api_scheme") or "").strip().lower()
+    api_port = int(body.get("api_port") or 0)
+    api_tls_sha256 = str(body.get("api_tls_sha256") or "").strip().lower()
+    relay_auth = str(body.get("relay_auth") or "BEARER_LEGACY").strip()
+
+    secure_advertised = bool(api_scheme or api_tls_sha256 or relay_auth == "BCP_HMAC_SHA256")
+    if secure_advertised:
+        if api_scheme != "https":
+            raise ValueError("edge_api_scheme_must_be_https")
+        if api_port != 8877:
+            raise ValueError("edge_api_tls_port_not_allowed")
+        if not re.fullmatch(r"[0-9a-f]{64}", api_tls_sha256):
+            raise ValueError("edge_api_tls_fingerprint_invalid")
+        if relay_auth != "BCP_HMAC_SHA256":
+            raise ValueError("edge_relay_auth_must_be_hmac")
+
     now = int(time.time())
     rec = {
-        "schema": "bcp.edge_relay_registration/1",
+        "schema": "bcp.edge_relay_registration/2",
         "relay_host": remote_ip,
         "relay_port": port,
         "capability": capability,
         "edge_version": str(body.get("edge_version") or "")[:80],
+        "api_scheme": api_scheme,
+        "api_port": api_port,
+        "api_tls_sha256": api_tls_sha256,
+        "relay_auth": relay_auth,
+        "relay_long_lived_bearer_on_lan": bool(
+            body.get("relay_long_lived_bearer_on_lan", relay_auth != "BCP_HMAC_SHA256")
+        ),
         "registered_at": utc_now(),
         "registered_epoch": now,
         "expires_epoch": now + ttl,

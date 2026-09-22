@@ -1,3 +1,23 @@
+# R84 Authenticated + encrypted LAN slice — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## R84 authoritative state
+
+- R83 is closed and PR #152 is merged on `main` at `e28f47397ad1ff81e7906b6b6e9d6028fb566347`.
+- Active writer-fenced branch: `work/bcp/r84-auth-encrypted-lan-20260922-0342`.
+- Field release remains **B-EDGE 2.1.2**. The 2.2 full-node candidate is still **not install-authorized**.
+- R84 introduces a persistent AndroidKeyStore RSA TLS identity and a dedicated B-EDGE HTTPS API on **8877**. The certificate SHA-256 fingerprint is advertised/registered for pin verification.
+- The existing **8876** lane becomes CONNECT-only and remains strictly limited to `api.telegram.org:443`; for 2.2 registrations, its proxy authentication is **HMAC-SHA256(timestamp + nonce + CONNECT target)** with replay/skew rejection, so the long-lived BCP bearer is no longer placed in the clear CONNECT header.
+- The PC has a pinned HTTPS client: it completes TLS, hashes the peer DER certificate, compares the SHA-256 pin with constant-time comparison, and only then sends the paired bearer inside TLS.
+- Truth boundary: **LAN security is PARTIAL, not complete**. PC -> B-EDGE private API is encrypted+pinable and the Telegram relay no longer exposes the long-lived bearer for 2.2. B-EDGE -> PC control payloads are still HTTP and remain the next encryption blocker.
+- Android emulator qualification has been moved from clear HTTP/8876 to HTTPS/8877 and requires a 64-hex TLS fingerprint in /health.
+- Official Android guidance used by this slice: avoid cleartext where possible, use TLS, and do not use a trust manager that accepts arbitrary certificates. The paired SHA-256 fingerprint is the trust anchor for this local appliance.
+
+Next durable action: exact-head PR qualification -> auto-fix regressions -> reread `main` under writer fence -> merge only if required gates are green. Then finish B-EDGE -> PC encrypted/pinned control transport before declaring authenticated+encrypted LAN complete.
+
+---
+
 # R83 Android proof repair handoff — 2026-09-22
 
 Canonical continuation code: `BCPGO BCP`.

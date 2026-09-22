@@ -9,6 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 SERVER = ROOT / "windows" / "bcp_server.py"
 TELEGRAM = ROOT / "windows" / "bcp_telegram_observability.py"
 RELAY = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "EdgeRelayService.java"
+TLS_IDENTITY = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "EdgeTlsIdentity.java"
 POLICY = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "EdgeRelayPolicy.java"
 MANIFEST = ROOT / "android-b-edge" / "src" / "main" / "AndroidManifest.xml"
 
@@ -24,14 +25,31 @@ def load_server():
 def main() -> int:
     telegram = TELEGRAM.read_text(encoding="utf-8")
     relay = RELAY.read_text(encoding="utf-8")
+    tls_identity = TLS_IDENTITY.read_text(encoding="utf-8")
     policy = POLICY.read_text(encoding="utf-8")
     manifest = MANIFEST.read_text(encoding="utf-8")
 
     assert '"api.telegram.org".equalsIgnoreCase' in policy
     assert "port != 443" in policy
     assert "MessageDigest.isEqual" in policy
+    assert "HmacSHA256" in policy
+    assert "BCP-HMAC-SHA256" in policy
+    assert "API_TLS_PORT = 8877" in policy
     assert "MAX_CONNECTIONS = 4" in policy
     assert '"proxy-authorization"' in relay
+    assert "AUTH_REPLAY_REJECT" in relay
+    assert "EdgeTlsIdentity.createServerSocket" in relay
+    assert "TLS_API_LISTENING" in relay
+    assert '"AndroidKeyStore"' in tls_identity
+    assert '"bcp-edge-tls-v3"' in tls_identity
+    assert "SSLServerSocket" in tls_identity
+    assert "DIGEST_NONE" in tls_identity
+    assert "SIGNATURE_PADDING_RSA_PSS" in tls_identity
+    assert "SIGNATURE_PADDING_RSA_PKCS1" in tls_identity
+    assert "PURPOSE_DECRYPT" in tls_identity
+    assert "ENCRYPTION_PADDING_NONE" in tls_identity
+    assert "ENCRYPTION_PADDING_RSA_PKCS1" in tls_identity
+    assert '"TLSv1.3"' in tls_identity and '"TLSv1.2"' in tls_identity
     assert "CredentialStore(this).getToken()" in relay
     assert "FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING" in relay
     assert "FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE" in relay
@@ -53,7 +71,12 @@ def main() -> int:
 
     assert "http.client.HTTPSConnection" in telegram
     assert 'conn.set_tunnel(' in telegram
-    assert '"Proxy-Authorization": "Bearer " + pair_token' in telegram
+    assert "BCP-HMAC-SHA256" in telegram
+    assert "_relay_proxy_authorization" in telegram
+    assert "hmac.new(" in telegram
+    assert "edge_api_json" in telegram
+    assert "edge_tls_pin_mismatch" in telegram
+    assert "getpeercert(binary_form=True)" in telegram
     assert 'BCP_PAIR_TOKEN_PATH = STATE_DIR / "bcp_token.txt"' in telegram
     assert 'parsed.hostname != "api.telegram.org"' in telegram
     assert 'EDGE_RELAY_FALLBACK_FAILED' in telegram
@@ -74,13 +97,19 @@ def main() -> int:
         original_time = bcp.time.time
         try:
             bcp.time.time = lambda: float(now)
+            secure_fp = "a" * 64
             result = bcp.register_edge_relay(
                 "192.168.44.23",
                 {
                     "port": 8876,
                     "capability": "HTTPS_CONNECT_TELEGRAM",
                     "ttl_seconds": 300,
-                    "edge_version": "test-edge",
+                    "edge_version": "2.2.0-full-node",
+                    "api_scheme": "https",
+                    "api_port": 8877,
+                    "api_tls_sha256": secure_fp,
+                    "relay_auth": "BCP_HMAC_SHA256",
+                    "relay_long_lived_bearer_on_lan": False,
                 },
             )
             assert result["ok"] is True
@@ -88,6 +117,27 @@ def main() -> int:
             assert result["relay_host"] == "192.168.44.23"
             assert result["relay_port"] == 8876
             assert result["expires_in_seconds"] == 300
+            assert result["secure_api_ready"] is True
+            assert result["api_port"] == 8877
+            assert result["api_tls_sha256"] == secure_fp
+            assert result["relay_auth"] == "BCP_HMAC_SHA256"
+            assert result["long_lived_bearer_on_relay_lan"] is False
+
+            try:
+                bcp.register_edge_relay(
+                    "192.168.44.23",
+                    {
+                        "port": 8876,
+                        "capability": "HTTPS_CONNECT_TELEGRAM",
+                        "api_scheme": "https",
+                        "api_port": 8877,
+                        "api_tls_sha256": "bad",
+                        "relay_auth": "BCP_HMAC_SHA256",
+                    },
+                )
+                raise AssertionError("invalid TLS fingerprint unexpectedly accepted")
+            except ValueError as exc:
+                assert "fingerprint_invalid" in str(exc)
 
             try:
                 bcp.register_edge_relay(

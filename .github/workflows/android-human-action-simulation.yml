@@ -230,7 +230,7 @@ jobs:
             grep -F "AUTORISATIONS SERVEUR" "bcp-window-$STEP.xml" >/dev/null && FOUND_PERMISSIONS=1 || true
             grep -F "CAPACITÉS DU NŒUD" "bcp-window-$STEP.xml" >/dev/null && FOUND_CAPABILITIES=1 || true
             grep -F "Journal mémoire/provenance:" "bcp-window-$STEP.xml" >/dev/null && FOUND_MEMORY=1 || true
-            grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
+            grep -F "Sécurité LAN: TLS Edge actif · PC→Edge pinable · Edge→PC encore à chiffrer" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
           done
           test "$SCROLL_CHANGED" = "1"
           test "$FOUND_PERMISSIONS" = "1"
@@ -255,23 +255,27 @@ jobs:
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
           "$ADB" forward --remove-all || true
-          "$ADB" forward tcp:18876 tcp:8876
+          "$ADB" forward tcp:18877 tcp:8877
           CODE=""
           for i in $(seq 1 20); do
-            CODE="$(curl -sS -o edge-health.json -w '%{http_code}' http://127.0.0.1:18876/health || true)"
+            CODE="$(curl -ksS -o edge-health.json -w '%{http_code}' https://127.0.0.1:18877/health || true)"
             if [ "$CODE" = "200" ]; then break; fi
             sleep 1
           done
           test "$CODE" = "200"
           python - <<'PY'
-          import json
+          import json,re
           obj=json.load(open("edge-health.json", encoding="utf-8"))
           assert obj["ok"] is True
           assert obj["role"] == "DEDICATED_EDGE_API_SERVER"
-          assert obj["port"] == 8876
+          assert obj["port"] == 8877
+          assert obj["api_tls"] is True
+          assert obj["api_scheme"] == "https"
+          assert re.fullmatch(r"[0-9a-f]{64}", obj["api_tls_cert_sha256"])
+          open("edge-tls-cert.sha256","w",encoding="utf-8").write(obj["api_tls_cert_sha256"]+"\n")
           PY
 
-          curl -fsS http://127.0.0.1:18876/v1/node/capabilities -o edge-capabilities.json
+          curl -kfsS https://127.0.0.1:18877/v1/node/capabilities -o edge-capabilities.json
           python - <<'PY'
           import json
           obj=json.load(open("edge-capabilities.json", encoding="utf-8"))
@@ -288,11 +292,11 @@ jobs:
           assert obj["arbitrary_shell"] is False
           PY
 
-          PRIVATE_CODE="$(curl -sS -o edge-private-unauthorized.json -w '%{http_code}' http://127.0.0.1:18876/v1/node/status)"
+          PRIVATE_CODE="$(curl -ksS -o edge-private-unauthorized.json -w '%{http_code}' https://127.0.0.1:18877/v1/node/status)"
           test "$PRIVATE_CODE" = "401"
           grep -F '"unauthorized"' edge-private-unauthorized.json >/dev/null
           for PATHNAME in v1/node/capability-registry v1/node/memory-claims; do
-            CODE="$(curl -sS -o "edge-private-${PATHNAME##*/}.json" -w '%{http_code}' "http://127.0.0.1:18876/$PATHNAME")"
+            CODE="$(curl -ksS -o "edge-private-${PATHNAME##*/}.json" -w '%{http_code}' "https://127.0.0.1:18877/$PATHNAME")"
             test "$CODE" = "401"
             grep -F '"unauthorized"' "edge-private-${PATHNAME##*/}.json" >/dev/null
           done
@@ -315,11 +319,21 @@ jobs:
           "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
           grep -F "BCP Edge Server" bcp-window-relaunch.xml >/dev/null
-          "$ADB" forward tcp:18877 tcp:8876
-          CODE="$(curl -sS -o edge-health-relaunch.json -w '%{http_code}' http://127.0.0.1:18877/health || true)"
+          "$ADB" forward tcp:18878 tcp:8877
+          CODE="$(curl -ksS -o edge-health-relaunch.json -w '%{http_code}' https://127.0.0.1:18878/health || true)"
           test "$CODE" = "200"
           grep -F '"DEDICATED_EDGE_API_SERVER"' edge-health-relaunch.json >/dev/null
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
+
+      - name: Capture Android runtime diagnostics
+        if: always()
+        shell: bash
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" logcat -d -v threadtime > bcp-logcat.txt 2>&1 || true
+          "$ADB" shell dumpsys activity services com.blessing.bcpedge.evergreen > bcp-service-dumpsys.txt 2>&1 || true
+          grep -E "TLS_API|SSLHandshake|KeyStore|AndroidKeyStore|B-EDGE|bcpedge" bcp-logcat.txt | tail -250 > bcp-tls-log-extract.txt || true
 
       - name: Upload representative simulation evidence
         if: always()
@@ -341,12 +355,16 @@ jobs:
             bcp-server-dashboard-lower.png
             bcp-window-relaunch.xml
             edge-health.json
+            edge-tls-cert.sha256
             edge-capabilities.json
             edge-private-unauthorized.json
             edge-private-capability-registry.json
             edge-private-memory-claims.json
             edge-health-relaunch.json
             emulator.log
+            bcp-logcat.txt
+            bcp-service-dumpsys.txt
+            bcp-tls-log-extract.txt
             avd-list-created.txt
             avd-list-boot.txt
           if-no-files-found: ignore
