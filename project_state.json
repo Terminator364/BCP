@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R87_CLOSED_BEDGE_2_2_CURRENT_READY_ANDROID_IN_PLACE_INSTALL_GATE",
-  "last_completed_atomic_action": "R87 completed machine-side B-EDGE 2.2 field-ready productization. Exact final release head 6e4b9b0ef5daf05cf2feac5cb91919bb4948fa87 passed CURRENT #1519, Managed Server #502, Telegram #823, Nexus Transport #786, Final Acceptance #521, Nexus One-Shot #440, Coordinated PC #525, Android Build #860, Coordinated Product #1558, Field Ecosystem #1475 and Android Human-Action #358. The signed Evergreen APK SHA-256 a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a was installed into the same private Drive CURRENT file and read back with APK Signature Scheme v2/v3 and the exact pinned certificate. PR #157 merged to main e07f8f379533f74a2e9362fca5f95ad60f932bee.",
-  "next_action": "TRUE_HUMAN_GATE: on the existing B-EDGE Android phone, perform the qualified in-place update to 2.2.0-full-node-evergreen without uninstalling. After install, collect machine/field evidence for local API, discovery, pairing, bidirectional pinned TLS, durable memory/queue/Chronicle/capabilities/receipts, reboot/black-start/recovery, and Telegram/relay delivery truth. Local AI remains DESIGN_ONLY until these P0 field gates close.",
+  "status": "R89_REFERENCE_FIRST_BENCHMARK_ACTIVE_BEDGE_2_2_TECHNICAL_BASELINE_INSTALL_DEFERRED",
+  "last_completed_atomic_action": "R89 external reference benchmark established a mandatory REUSE/ADAPT/BUILD_ONLY_IF_GAP gate across BCP. Current B-EDGE 2.2 remains the machine-qualified technical baseline; no product/release bytes were changed. Mature precedents were mapped for Android UX/settings/permissions, discovery/pairing, device identity, transport fallback, updater flows, durable workflows, idempotency/outbox, reusable flows and agent runtime boundaries.",
+  "next_action": "R90_REFERENCE_FIRST_COHERENT_SLICE: use docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md and .project-memory/EXTERNAL_REFERENCE_REGISTRY.json to redesign the B-EDGE human journey before the next user install: status-first Home, Devices-centric discovery/pairing/update, contextual permission stepper, true Settings/preferences, Advanced diagnostics, and task-based 320x640 emulator acceptance. Preserve the qualified 2.2 transport/security/durable-state baseline; do not ask the user to install until the coherent reference-first candidate is exact-head qualified.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -170,6 +170,36 @@
       "gmail_end_message_id": "1a0c91cbc4a16677",
       "end_checkpoint": "BCP-R88-END-20260922-1334",
       "provider_end_readback": true
+    },
+    "r89_reference_first": {
+      "status": "BENCHMARK_AND_POLICY_IMPLEMENTED_ON_WRITER_BRANCH",
+      "branch": "work/bcp/r89-reference-first-benchmark-20260922-1519",
+      "gmail_start_message_id": "1a0c97d2657f6b19",
+      "delivery_key": "BCPREF-20260922-1519-R89",
+      "benchmark": "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md",
+      "policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+      "registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+      "reference_families": [
+        "ANDROID",
+        "HOME_ASSISTANT",
+        "KDE_CONNECT",
+        "SYNCTHING",
+        "LOCALSEND",
+        "TAILSCALE",
+        "RUSTDESK",
+        "OBTAINIUM",
+        "TEMPORAL",
+        "PREFECT",
+        "LANGGRAPH",
+        "STRIPE",
+        "AWS",
+        "NODE_RED",
+        "OPENHANDS",
+        "UPTIME_KUMA"
+      ],
+      "current_ui_finding": "PROGRAMMATIC_SINGLE_SCROLL_ENGINEERING_DASHBOARD_PLUS_MIXED_SETTINGS_DIAGNOSTIC_ACTION_MENU",
+      "decision": "DEFER_ANDROID_INSTALL_UNTIL_ONE_COHERENT_REFERENCE_FIRST_CANDIDATE",
+      "product_bytes_changed": false
     }
   },
   "field_gates": [
@@ -253,7 +283,10 @@
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "local_ai_extension_architecture": "docs/BCP_LOCAL_INFERENCE_CAPABILITY_ARCHITECTURE.md",
     "local_ai_extension_policy": ".project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json",
-    "local_ai_eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md"
+    "local_ai_eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md",
+    "reference_first_policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+    "external_reference_registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+    "reference_first_benchmark": "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -338,7 +371,10 @@
     ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     ".project-memory/BCP_ABC_COVERAGE.json",
     "docs/BCP_CANONICAL_SPEC_ABC.md",
-    ".project-memory/UCMF001_CONTINUITY.json"
+    ".project-memory/UCMF001_CONTINUITY.json",
+    ".project-memory/REFERENCE_FIRST_POLICY.json",
+    ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+    "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -435,7 +471,14 @@
     "P0_optional_estimate_update_if_material": true,
     "P0_end_mail_actual_result_and_next_action": true,
     "P0_timer_driven_closeout": false,
-    "P0_checkpoint_or_true_gate_driven_closeout": true
+    "P0_checkpoint_or_true_gate_driven_closeout": true,
+    "P0_reference_first_before_new_implementation": true,
+    "P0_reuse_adapt_build_only_if_gap": true,
+    "P0_license_provenance_before_external_code_reuse": true,
+    "P0_task_based_ui_acceptance": true,
+    "P0_no_settings_as_operational_action_dump": true,
+    "P0_next_user_install_deferred_until_reference_reconciliation": true,
+    "P0_bedge_2_2_is_technical_baseline_not_target_ux": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2944,5 +2987,15 @@
     "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json",
     "status": "CANONICAL_MERGED_MAIN",
     "merged_main_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7"
+  },
+  "r89_reference_first": {
+    "status": "CANONICAL_CANDIDATE_CI_PENDING",
+    "current_baseline": "2.2.0-full-node-evergreen",
+    "baseline_role": "TECHNICAL_BASELINE_NOT_TARGET_UX",
+    "user_install_authorized": false,
+    "install_deferral_reason": "REFERENCE_FIRST_RECONCILIATION_REQUESTED_BEFORE_NEXT_HUMAN_INSTALL",
+    "implementation_freeze": "NO_NEW_AD_HOC_UI_SERVICE_PROTOCOL_UNTIL_REFERENCE_DECISION",
+    "next_slice": "HOME_DEVICES_PAIRING_PERMISSIONS_UPDATES_INFORMATION_ARCHITECTURE_AND_TASK_BASED_UI_TESTS",
+    "code_reuse_rule": "NO_EXTERNAL_CODE_COPY_BEFORE_LICENSE_PROVENANCE_REVIEW"
   }
 }
