@@ -1,3 +1,31 @@
+# R89 — Reference-first / anti-réinvention — 2026-09-22
+
+**Current product truth:** B-EDGE 2.2.0-full-node-evergreen remains the machine-qualified technical baseline. R89 changes no product/release bytes.
+
+**User-install instruction is temporarily deferred.** Before the next physical Android install, BCP must convert the external benchmark into one coherent candidate instead of forcing another install -> observe -> redesign loop.
+
+Mandatory engineering gate:
+`A+B+C -> external precedents -> gap map -> REUSE/ADAPT/BUILD_ONLY_IF_GAP -> licence/provenance -> user journey -> representative task simulation -> implementation`.
+
+Canonical R89 sources:
+- `docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md`
+- `.project-memory/REFERENCE_FIRST_POLICY.json`
+- `.project-memory/EXTERNAL_REFERENCE_REGISTRY.json`
+
+Highest-value R90 product deltas:
+- status-first Home with one primary next action visible without scrolling;
+- Devices-centric discovery/pairing/update flow;
+- Home Assistant/KDE Connect-style discovered-device flow with manual/QR fallback only;
+- contextual Android permission onboarding;
+- Settings restricted to preferences, not repair/update/test actions;
+- technical evidence behind Advanced diagnostics;
+- task-based emulator acceptance on compact 320x640;
+- preserve qualified 2.2 TLS, Room, WorkManager, Chronicle, capability and durable-state foundations.
+
+R89 also corrected current-truth drift: the fixed 25-minute communication rule is retired in favor of ADAPTIVE_TASK_WINDOW, and B-EDGE 2.2 bidirectional pinned TLS is CI-qualified even though real-device field proof remains pending.
+
+---
+
 # R88 — Adaptive communication windows — 2026-09-22
 
 The fixed 25-minute tranche rule is superseded for future BCP work.
