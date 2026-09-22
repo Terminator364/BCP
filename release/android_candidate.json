@@ -6,7 +6,7 @@
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
-  "coordinated_server_version": "0.7.16",
+  "coordinated_server_version": "0.7.17",
   "requirements_revision": "2026-09-21-R74",
   "base_distributed_version_code": 212,
   "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
@@ -49,7 +49,10 @@
     "phone-resident durable capability/source registry with evidence class, availability state, TTL and authenticated local API",
     "server-first UI exposes capability state locally without depending on the PC",
     "allowlisted LOCAL_CAPABILITY_SNAPSHOT executes on the phone in EDGE_ONLY mode",
-    "memory admission/provenance ledger prevents weaker unverified claims from silently replacing better-evidenced phone memory"
+    "memory admission/provenance ledger prevents weaker unverified claims from silently replacing better-evidenced phone memory",
+    "dedicated Edge API moves to HTTPS on port 8877 with persistent AndroidKeyStore TLS identity and paired SHA-256 certificate pin",
+    "Telegram CONNECT relay on port 8876 uses fresh HMAC-SHA256 timestamp+nonce authentication for 2.2 instead of exposing the long-lived BCP bearer on clear LAN",
+    "LAN transport security remains explicitly PARTIAL until B-EDGE to PC control traffic is also encrypted and pinned"
   ],
-  "release_train": "BCP-0.7.16_EDGE-2.2.0-full-node_NEXUS-0.2.6"
+  "release_train": "BCP-0.7.17_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }
