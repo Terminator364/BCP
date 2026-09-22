@@ -10,6 +10,7 @@ Canonical continuation code: `BCPGO BCP`.
 - Exact-head Android Human-Action #333 proves HTTPS 8877, the server UI, authenticated/private API boundaries and cold relaunch.
 - All required pre-merge gates were green; after merge, all 12 main workflows were green, including Android Build #821, Android Human-Action #334, Coordinated Product #1506 and Field Ecosystem #1424.
 - Security truth remains **PARTIAL**: PC -> B-EDGE is TLS + certificate-pinned; Telegram CONNECT relay uses HMAC for 2.2; B-EDGE -> PC control traffic still uses authenticated clear HTTP.
+- R85 provider-proof closure: Gmail END `1a0c8672f6af7db0`, checkpoint `BCP-R85-END-20260922-1016`; control-only closeout PR #154 carries the durable closure back to canonical `main`.
 - Field B-EDGE remains 2.1.2. **Do not install 2.2 yet.**
 
 Next product action after provider-proof R85 closure: create R86 from current main and encrypt + pin the B-EDGE -> PC control plane before declaring authenticated + encrypted LAN bidirectional.
