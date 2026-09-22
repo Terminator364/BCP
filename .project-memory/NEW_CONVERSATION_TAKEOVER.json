@@ -66,7 +66,7 @@
     "current_integration_rule": "PRESERVE_PR150_MEMORY_GOVERNANCE_PLUS_PR151_CAPABILITY_UI_RESEARCH_THEN_EXACT_HEAD_CI",
     "current_product_pr": 152,
     "current_product_head": "7cb49d7c1aeca6f4ab574acb6d471301d225bdc8",
-    "next_uncommitted_action": "READ_PR152_EXACT_HEAD_CI; FIX_ONLY_REAL_FAILURES; REREAD_MAIN; MERGE_IF_GREEN; THEN_RECONCILE_CLOSEOUT_STATE"
+    "next_uncommitted_action": "START_NEXT_25_MIN_TRANCHE; DOWNLOAD_ANDROID_SIMULATION_ARTIFACT_10671161695; IDENTIFY_EXACT_MISSING_UI_ASSERTION; FIX_AND_REQUALIFY_PR152; REREAD_MAIN_AND_MERGE_ONLY_IF_GREEN"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -80,8 +80,8 @@
   },
   "current_active_tranche": "BCP-R82-START-20260922-0102",
   "current_delivery_key": "BCP25-20260922-0102-R82",
-  "current_active_tranche_status": "CLOSEOUT",
-  "current_end_checkpoint": null,
-  "current_end_message_id": null,
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R82-END-20260922-0125",
+  "current_end_message_id": "1a0c6816efa19e88",
   "current_closeout_branch": "work/bcp/r82-closeout-20260922-0123"
 }
