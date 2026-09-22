@@ -1,3 +1,26 @@
+# R86 — B-EDGE → PC pinned TLS control plane — 2026-09-22
+
+Continuation code: `BCPGO BCP`.
+
+- Canonical base after R85 closeout: `eec2b2ca41e1bc0b8593d049efd00b27814b4fe2`.
+- Active PR: **#155** on `work/bcp/r86-edge-to-pc-secure-20260922-1024`.
+- Frozen R86 product head before closeout metadata: `914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01`.
+- Windows candidate: **0.7.18**.
+- Distributed B-EDGE remains **2.1.2-rc1-edge-relay-evergreen**; 2.2 remains unpublished/not install-authorized.
+- Candidate 2.2 phone → PC control: TLS on **8766**, exact certificate SHA-256 pinning, Windows certificate private key non-exportable, backend restricted to **127.0.0.1:8767**.
+- Port 8765 remains credential-free bootstrap / 2.1.2 compatibility. Candidate 2.2 credential-bearing requests are rejected on clear transport.
+- Existing paired phones can migrate without exposing the token: clear /health returns a TLS pin plus an HMAC binding derived from the already-paired secret; B-EDGE verifies that binding locally before storing `https://host:8766`.
+- Fresh pairing stores/confirms the TLS fingerprint before `/pair`; the returned paired token travels only inside pinned TLS.
+- Edge update manifest and APK download paths now use the same pinned TLS transport.
+- Counter-audit fix: TLS proxy loopback forwarding hides the phone source IP, so secure relay registration carries authenticated `edge_lan_ip`; server accepts it only through the secure backend and only when private/non-loopback.
+- CI found two installer-edit regressions (truncated TLS-health block, then duplicated tail); both were repaired before product freeze.
+- Exact-head reruns from `914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01` were still running at R86 closeout. **Do not merge PR #155 merely from earlier green runs.**
+- No user action/install is required at this checkpoint.
+
+Next durable action: read exact-head CI for PR #155; auto-fix any failure on the same writer-fenced branch; merge only after Windows TLS provisioning/handshake + Android compile/lint/runtime/coordinated gates are green. Publication/signing/Drive replacement remains a later explicit gate.
+
+---
+
 # R85 TLS runtime repair and PR #153 integration — 2026-09-22
 
 Canonical continuation code: `BCPGO BCP`.
