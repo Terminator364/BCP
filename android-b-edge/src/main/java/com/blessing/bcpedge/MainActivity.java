@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat;
 public class MainActivity extends Activity {
     private static final String UI_PREFS = "bcp_edge_ui";
     private static final String ONBOARDING_KEY = "server_onboarding_220_shown";
+    private static final String LAST_SCREEN_KEY = "last_product_screen";
 
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
@@ -138,7 +139,13 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        showScreen("HOME");
+        String saved = getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+                .getString(LAST_SCREEN_KEY, "HOME");
+        if (!"HOME".equals(saved) && !"ACTIVITY".equals(saved)
+                && !"DEVICES".equals(saved) && !"SYSTEM".equals(saved)) {
+            saved = "HOME";
+        }
+        showScreen(saved);
         return shell;
     }
 
@@ -337,6 +344,8 @@ public class MainActivity extends Activity {
 
     private void showScreen(String screen) {
         currentScreen = screen;
+        getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+                .edit().putString(LAST_SCREEN_KEY, screen).apply();
         View target = "ACTIVITY".equals(screen) ? activityScreen
                 : "DEVICES".equals(screen) ? devicesScreen
                 : "SYSTEM".equals(screen) ? systemScreen : homeScreen;
@@ -1008,6 +1017,15 @@ public class MainActivity extends Activity {
 
     private int dp(int v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!"HOME".equals(currentScreen)) {
+            showScreen("HOME");
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override protected void onDestroy() {
