@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
+  "work_state": "CLOSEOUT",
   "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "status": "CLOSEOUT",
   "started_at_kinshasa": "2026-09-22T10:24:10+01:00",
   "close_reserve_begins_kinshasa": "2026-09-22T10:47:10+01:00",
   "normal_end_target_kinshasa": "2026-09-22T10:49:10+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "final_app_reply_gate": "END_ACK_REQUIRED",
@@ -50,13 +50,19 @@
     "closeout_pr": 154,
     "status": "CLOSED"
   },
-  "no_more_product_mutations": false,
-  "candidate_head_sha": null,
-  "pr_number": null,
+  "no_more_product_mutations": true,
+  "candidate_head_sha": "914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01",
+  "pr_number": 155,
   "closeout_truth": {
     "base_main_sha": "eec2b2ca41e1bc0b8593d049efd00b27814b4fe2",
+    "product_head_before_close_intent": "914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01",
+    "pr_number": 155,
+    "server_version": "0.7.18",
+    "field_edge_version": "2.1.2-rc1-edge-relay-evergreen",
+    "candidate_edge_version": "2.2.0-full-node-evergreen",
+    "candidate_2_2_transport_security": "BIDIRECTIONAL_PINNED_TLS_IMPLEMENTED_CI_PENDING",
+    "legacy_2_1_2_clear_bootstrap_compatibility": true,
     "install_authorized": false,
-    "transport_security_state": "PARTIAL",
-    "next_blocker": "BEDGE_TO_PC_CONTROL_HTTP_NOT_YET_ENCRYPTED"
+    "exact_head_ci_state": "RERUNNING_AFTER_INSTALLER_SYNTAX_AND_DUPLICATE_TAIL_REPAIR"
   }
 }
