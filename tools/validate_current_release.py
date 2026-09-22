@@ -100,8 +100,13 @@ def main() -> int:
         fail("ucmf_continuity_schema")
     if ucmf.get("canonical_drive", {}).get("current_verified_postulate") != 9:
         fail("ucmf_postulate_not_9")
-    if ucmf.get("cold_bootstrap", {}).get("cadence_minutes") != 25:
-        fail("ucmf_cadence_not_25")
+    ucmf_boot = ucmf.get("cold_bootstrap", {})
+    if ucmf_boot.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("ucmf_adaptive_window_missing")
+    if ucmf_boot.get("estimated_end_window_required") is not True:
+        fail("ucmf_estimated_end_window_missing")
+    if ucmf_boot.get("cadence_minutes") is not None:
+        fail("ucmf_fixed_cadence_must_be_absent")
     if ucmf.get("cold_bootstrap", {}).get("normal_close_automation_required") is not False:
         fail("ucmf_normal_close_must_not_depend_on_automation")
     if "MISSION_PROVIDER_DEGRADED_RESILIENCE" not in {r.get("id") for r in (abc_coverage.get("rows") or [])}:
@@ -125,17 +130,28 @@ def main() -> int:
         if policy.get(key) is not expected:
             fail("policy." + key)
 
-    if int(cadence.get("target_minutes") or 0) != 25:
-        fail("cadence_target_not_25")
-    window = cadence.get("acceptable_window_minutes") or []
-    if window != [23, 25]:
-        fail("cadence_window_not_23_25")
+    if cadence.get("planning_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("adaptive_cadence_model_missing")
+    if cadence.get("fixed_target_minutes") is not None:
+        fail("fixed_target_minutes_must_be_null")
+    if cadence.get("fixed_acceptable_window_minutes") is not None:
+        fail("fixed_window_minutes_must_be_null")
+    response_timing = cadence.get("response_timing") or {}
+    if response_timing.get("start_email_includes_estimated_end_window") is not True:
+        fail("start_eta_contract_missing")
+    if cadence.get("completion_rule") != "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER":
+        fail("checkpoint_driven_completion_contract")
     if delivery.get("channels", {}).get("email", {}).get("send_before_chat_pointer") is not True:
         fail("email_first_delivery_contract")
     if delivery.get("channels", {}).get("chatgpt", {}).get("role") != "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK":
         fail("chat_pointer_only_contract")
-    if not str(active_tranche.get("delivery_key") or "").startswith("BCP25-"):
+    if not str(active_tranche.get("delivery_key") or "").startswith("BCP"):
         fail("active_tranche_delivery_key_contract")
+    if active_tranche.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("active_tranche_adaptive_window_contract")
+    estimated = active_tranche.get("estimated_end_window_local") or {}
+    if not estimated.get("earliest") or not estimated.get("latest") or estimated.get("advisory") is not True:
+        fail("active_tranche_estimated_end_window_contract")
     if active_tranche.get("close_owner") != "PRIMARY_ASSISTANT":
         fail("active_tranche_primary_close_owner")
     if active_tranche.get("final_app_reply_gate") not in {"END_ACK_REQUIRED", "OPEN_AFTER_END_ACK"}:
@@ -156,8 +172,12 @@ def main() -> int:
     cadence_delivery = delivery.get("cadence") or {}
     if cadence_delivery.get("scheduled_close_guards_required") is not False:
         fail("scheduled_close_guard_dependency_contract")
-    if int(cadence_delivery.get("normal_closeout_offset_minutes") or 0) != 23:
-        fail("normal_closeout_offset_contract")
+    if cadence_delivery.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("delivery_adaptive_window_contract")
+    if cadence_delivery.get("fixed_minutes") is not None:
+        fail("delivery_fixed_minutes_must_be_null")
+    if cadence_delivery.get("start_mail_includes_estimated_end_window") is not True:
+        fail("delivery_start_eta_contract")
     if cadence_delivery.get("user_relaunch_must_never_be_required") is not True:
         fail("user_relaunch_dependency_contract")
     if delivery.get("checkpoint_delivery_order") != ["EMAIL_START_NOTICE","SUBSTANTIVE_WORK","EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK","CHATGPT_POINTER_ONLY_AFTER_EMAIL_END_ACK","TELEGRAM_WITNESS_OPTIONAL"]:
@@ -168,12 +188,15 @@ def main() -> int:
         fail("pre_human_runtime_layer_missing")
     if pre_human.get("qualification_matrix_ref") != ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json":
         fail("human_action_matrix_ref_drift")
-    if communication.get("schema") != "bcp.communication_survival_policy/5":
+    if communication.get("schema") != "bcp.communication_survival_policy/6":
         fail("communication_survival_schema")
     if communication.get("cold_recovery", {}).get("code") != "BCPGO BCP":
         fail("communication_cold_recovery_code")
-    if communication.get("checkpoint_protocol", {}).get("target_minutes") != 25:
-        fail("communication_25_minute_checkpoint")
+    checkpoint_protocol = communication.get("checkpoint_protocol") or {}
+    if checkpoint_protocol.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("communication_adaptive_checkpoint")
+    if checkpoint_protocol.get("estimated_end_window_required_at_start") is not True:
+        fail("communication_estimated_end_window_required")
     if communication.get("channels", {}).get("gmail", {}).get("end_retry_until_provider_ack") is not True:
         fail("communication_gmail_end_ack")
     if communication.get("channels", {}).get("phone_edge", {}).get("store_and_forward") is not True:
@@ -190,39 +213,49 @@ def main() -> int:
         fail("foreground_end_send_primary_contract")
     if email.get("delivery_key_required") is not True:
         fail("email_delivery_key_contract")
-    if comm_protocol.get("schema") != "bcp.communication_protocol/3":
+    if comm_protocol.get("schema") != "bcp.communication_protocol/4":
         fail("communication_protocol_schema")
     if comm_protocol.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("communication_primary_owner")
-    if comm_protocol.get("cadence_minutes") != 25 or comm_protocol.get("primary_work_budget_minutes") != 23:
-        fail("communication_protocol_cadence")
-    if comm_protocol.get("normal_close_reserve_minutes") != 2:
-        fail("communication_close_reserve")
-    if comm_protocol.get("scheduled_backup_required") is not False:
+    if comm_protocol.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("communication_protocol_adaptive_window")
+    if comm_protocol.get("fixed_cadence_minutes") is not None:
+        fail("communication_protocol_fixed_cadence_must_be_null")
+    estimate = comm_protocol.get("estimate_semantics") or {}
+    if estimate.get("never_wait_to_fill_window") is not True or estimate.get("never_stop_only_because_window_elapsed") is not True:
+        fail("communication_estimate_semantics")
+    if (comm_protocol.get("backup_semantics") or {}).get("scheduled_jobs_are_normal_close_dependency") is not False:
         fail("communication_scheduled_backup_dependency")
     normal_work = comm_protocol.get("normal_work_contract") or {}
-    if normal_work.get("rule") != "THE_SAME_FOREGROUND_ASSISTANT_TURN_OWNS_START_WORK_CLOSEOUT_END":
+    if normal_work.get("same_foreground_turn_owns_start_work_closeout_end") is not True:
         fail("communication_foreground_same_turn_contract")
     if normal_work.get("automation_is_never_normal_owner") is not True:
         fail("communication_automation_normal_owner_forbidden")
     backup = comm_protocol.get("backup_semantics") or {}
     if backup.get("default_enabled") is not False or backup.get("must_not_preempt_healthy_foreground_tranche") is not True:
         fail("communication_backup_only_contract")
-    if comm_state_machine.get("schema") != "bcp.communication_state_machine/3":
+    if comm_state_machine.get("schema") != "bcp.communication_state_machine/4":
         fail("communication_state_machine_schema")
-    if comm_state_machine.get("useful_work_minutes") != 23 or comm_state_machine.get("normal_close_reserve_minutes") != 2:
-        fail("communication_state_machine_cadence")
+    if comm_state_machine.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("communication_state_machine_adaptive_window")
     if "END_SEND_PENDING->END_ACKNOWLEDGED" not in (comm_state_machine.get("normal_path") or []):
         fail("communication_state_machine_end_ack")
     timing = comm_state_machine.get("timing") or {}
-    if timing.get("primary_work_target_minutes") != 23 or timing.get("normal_end_target_minute") != 25:
-        fail("communication_state_machine_foreground_timing")
+    if timing.get("fixed_cadence_minutes") is not None or timing.get("fixed_close_reserve_minutes") is not None:
+        fail("communication_state_machine_fixed_timing_present")
+    if timing.get("estimated_end_window_required_at_start") is not True:
+        fail("communication_state_machine_estimated_window_missing")
     if timing.get("automation_may_run_only_if_foreground_interrupted") is not True:
         fail("communication_state_machine_automation_recovery_only")
     if takeover.get("trigger_code") != "BCPGO BCP":
         fail("new_conversation_takeover_code")
-    if takeover.get("communication_contract", {}).get("normal_close_owner") != "PRIMARY_ASSISTANT":
+    takeover_comm = takeover.get("communication_contract") or {}
+    if takeover_comm.get("normal_close_owner") != "PRIMARY_ASSISTANT":
         fail("new_conversation_takeover_close_owner")
+    if takeover_comm.get("scheduling_model") != "ADAPTIVE_TASK_WINDOW":
+        fail("new_conversation_takeover_adaptive_window")
+    if takeover_comm.get("start_mail_includes_estimated_end_window") is not True:
+        fail("new_conversation_takeover_start_eta")
     if human_actions.get("schema") != "bcp.human_action_qualification_matrix/1":
         fail("human_action_matrix_schema")
     actions = human_actions.get("actions") or []
