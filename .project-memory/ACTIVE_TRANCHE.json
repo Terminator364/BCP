@@ -6,22 +6,22 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "CLOSEOUT",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "CLOSEOUT",
+  "work_state": "CLOSED",
+  "delivery_state": "CLOSED",
+  "status": "CLOSED",
   "started_at_kinshasa": "2026-09-22T10:24:10+01:00",
   "close_reserve_begins_kinshasa": "2026-09-22T10:47:10+01:00",
   "normal_end_target_kinshasa": "2026-09-22T10:49:10+01:00",
   "gmail_start_message_id": "1a0c86e0da097b04",
   "gmail_start_thread_id": "1a0c86e0da097b04",
-  "gmail_end_message_id": null,
-  "gmail_end_thread_id": null,
-  "end_mail_verified": false,
+  "gmail_end_message_id": "1a0c883c76f23039",
+  "gmail_end_thread_id": "1a0c883c76f23039",
+  "end_mail_verified": true,
   "gmail_label": "BCP",
   "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
-  "final_app_reply_gate": "END_ACK_REQUIRED",
+  "final_app_reply_gate": "OPEN_AFTER_END_ACK",
   "communication_guard": {
     "final_app_reply_requires_end_ack_persisted": true,
     "closed_tranche_reuse_forbidden": true,
@@ -64,5 +64,6 @@
     "legacy_2_1_2_clear_bootstrap_compatibility": true,
     "install_authorized": false,
     "exact_head_ci_state": "RERUNNING_AFTER_INSTALLER_SYNTAX_AND_DUPLICATE_TAIL_REPAIR"
-  }
+  },
+  "closed_at_kinshasa": "2026-09-22T10:47:54+01:00"
 }
