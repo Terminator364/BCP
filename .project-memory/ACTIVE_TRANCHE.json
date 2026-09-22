@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
+  "work_state": "CLOSEOUT_PREP",
   "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "status": "CLOSEOUT_PREP",
   "started_at_kinshasa": "2026-09-22T01:30:20+01:00",
   "close_reserve_begins_kinshasa": "2026-09-22T01:53:20+01:00",
   "normal_end_target_kinshasa": "2026-09-22T01:55:20+01:00",
@@ -40,7 +40,7 @@
     "REQUALIFY_EXACT_HEAD_AND_MERGE_ONLY_IF_ALL_REQUIRED_GATES_GREEN",
     "PRESERVE_INTEGRAL_A_PLUS_B_PLUS_C_PHONE_FULL_NODE"
   ],
-  "branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+  "branch": "work/bcp/r83-postmerge-close-20260922-0148",
   "previous_verified_closure": {
     "tranche_id": "BCP-R82-START-20260922-0102",
     "delivery_key": "BCP25-20260922-0102-R82",
@@ -49,7 +49,7 @@
     "checkpoint": "BCP-R82-END-20260922-0125",
     "status": "CLOSED"
   },
-  "no_more_product_mutations": false,
+  "no_more_product_mutations": true,
   "candidate_head_sha": null,
   "pr_number": 152,
   "closeout_truth": {
@@ -64,6 +64,9 @@
     "android_artifact_id": 10671198592,
     "root_cause": "SCROLL_COORDINATES_OUTSIDE_320x640_VIEWPORT",
     "repair": "DYNAMIC_WM_SIZE_BOUNDED_SCROLL_PLUS_UI_DUMP_HASH_PROOF",
-    "final_close_and_requalification_required": true
+    "final_close_and_requalification_required": true,
+    "pr_152_merged": true,
+    "merged_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
+    "main_readback_verified": true
   }
 }
