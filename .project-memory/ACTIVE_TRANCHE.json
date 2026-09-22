@@ -5,9 +5,9 @@
   "delivery_key": "BCPBENCH-20260922-2141-R89",
   "scheduling_model": "ADAPTIVE_TASK_WINDOW",
   "fixed_cadence_minutes": null,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CLOSED",
+  "delivery_state": "CLOSED",
+  "status": "CLOSED",
   "started_at_kinshasa": "2026-09-22T21:41:00+01:00",
   "estimated_end_window_local": {
     "earliest": "2026-09-22T22:20:00+01:00",
@@ -18,10 +18,10 @@
   "gmail_start_message_id": "1a0cad990b8a0440",
   "gmail_start_thread_id": "1a0cad990b8a0440",
   "gmail_label": "BCP",
-  "end_mail_verified": false,
-  "close_intent_persisted": false,
+  "end_mail_verified": true,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
-  "final_app_reply_gate": "END_ACK_REQUIRED",
+  "final_app_reply_gate": "OPEN_AFTER_END_ACK",
   "branch": "work/bcp/r89-anti-reinvention-benchmark-20260922-2141",
   "base_main_sha": "f40879b234ea619eff82445eedb5802796d1f9d8",
   "work_scope": [
@@ -49,7 +49,17 @@
     "estimate_update_only_if_material": true
   },
   "scheduled_backup_required": false,
-  "gmail_end_message_id": null,
-  "gmail_end_thread_id": null,
-  "no_more_product_mutations": false
+  "gmail_end_message_id": "1a0cb06b97c77708",
+  "gmail_end_thread_id": "1a0cb06b97c77708",
+  "no_more_product_mutations": true,
+  "closed_at_kinshasa": "2026-09-22T22:30:10+01:00",
+  "closeout_truth": {
+    "merged_main_sha": "1f186d60d37b7a4d1d85b84d934aca4d88d96311",
+    "exact_head": "5010478742b48f09207d5f4ac6b5bb5e8ce7ee05",
+    "current_release_contract": "PASS_1544",
+    "coordinated_product": "PASS_1579",
+    "pr_merged": 162,
+    "superseded_pr_closed": 161,
+    "next_product_front": "R90_SOURCE_DRIVEN_UI_CONVERGENCE"
+  }
 }
