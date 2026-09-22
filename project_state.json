@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R82_RECONCILING_R81_LINES_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R82 opened a writer-fenced reconciliation branch from the richer R81 PR #150 line, preserved its Room v5 memory admission/provenance/capability registry, ported the useful R81 #151 Android research/server-first capability UI/local capability snapshot, and fixed two exact-head proof defects: viewport-assuming emulator checks and transient artifact-provider 403 misclassification. No field install is authorized.",
-  "next_action": "Create superseding R82 PR, qualify the exact reconciled head, auto-fix any remaining product regression, then reread main under the Git writer fence. Merge only if exact-head required gates are green. After integration, continue integral A+B+C with authenticated encrypted LAN as the highest release-blocking phone full-node gap, followed by direct-boot/black-start and field Telegram relay proof.",
+  "status": "R83_ANDROID_SCROLL_PROOF_FIXED_EXACT_HEAD_GREEN_STATE_SYNC",
+  "last_completed_atomic_action": "R83 recovered the failed Android Human-Action Simulation #302 artifact, proved all five scroll dumps were byte-identical because the hard-coded 520x1500 swipe was outside the real 320x640 emulator viewport, replaced that proof with geometry-derived bounded scrolling plus dump-hash evidence, and obtained an exact-head PASS on Android Human-Action Simulation #308 together with CURRENT #1418, Nexus #392, Coordinated Product #1465, Android Build #784 and Field Ecosystem #1377. B-EDGE 2.2 remains not authorized for field install.",
+  "next_action": "Persist the R83 close/provider receipt, issue one final qualification nonce on the resulting exact head, require the six PR #152 gates to be green on that exact head, reread canonical main under the Git writer fence, and integrate PR #152 only if main is still compatible. After integration, continue A+B+C with authenticated+encrypted LAN as the highest release-blocking phone full-node gap, then direct-boot/black-start and field Telegram relay proof.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -16,7 +16,22 @@
     "final_bootstrap_commit": "3c6d667e9390c92e9139d58dff2462207cf434b2",
     "sqlite_windows_fix_commit": "78a6beb784a643f3b91e31b2ccf0e57d5aaf5eb1",
     "error_ledger_commit": "36ca00d618f0b7db18048309fba2924635fb728c",
-    "local_zip_sha256": "dbb8ae256bafb2ce1f72d5cab02a6dab1726e3234a3bc4e5a27ac377fb5aabd3"
+    "local_zip_sha256": "dbb8ae256bafb2ce1f72d5cab02a6dab1726e3234a3bc4e5a27ac377fb5aabd3",
+    "r83_preclose_head_sha": "86555d75a6624d451612afdeb6ec505fc8213c78",
+    "r83_android_human_action_run_id": 35672543801,
+    "r83_android_human_action_run_number": 308,
+    "r83_android_human_action_artifact_id": 10671198592,
+    "r83_android_human_action_artifact_digest": "sha256:dd35dc62bef49d2ec181e3946d4d3af65a8eb548e6a79e7037c201a6d2de3175",
+    "r83_scroll_geometry": "320x640 x=160 y1=524 y2=179",
+    "r83_scroll_dump_changed_from_initial": true,
+    "r83_required_gate_runs": {
+      "current_release_contract": 1418,
+      "nexus_one_shot": 392,
+      "coordinated_product": 1465,
+      "android_build": 784,
+      "android_human_action_simulation": 308,
+      "field_ecosystem": 1377
+    }
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
