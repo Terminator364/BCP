@@ -101,7 +101,9 @@
     "foreground_turn_owns_start_work_end": true,
     "normal_close_must_not_wait_for_automation": true,
     "reasoning_ui_duration_is_not_close_trigger": true,
-    "abc_formula": "A_PLUS_B_PLUS_C"
+    "abc_formula": "A_PLUS_B_PLUS_C",
+    "r82_current_delivery_key": "BCP25-20260922-0102-R82",
+    "r82_reconciliation_branch": "work/bcp/r82-reconcile-r81-20260922-0102"
   },
   "universal": [
     {
@@ -138,7 +140,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R79_ABC_UCMF_V9_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE",
+      "status": "VALID_SCOPED_ALIAS_WITH_R82_ABC_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE_RECONCILIATION",
       "fallback": "BCPGO BCP"
     },
     {
