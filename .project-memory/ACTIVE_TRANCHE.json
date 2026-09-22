@@ -31,5 +31,25 @@
     "PRODUCE_ADOPT_ADAPT_KEEP_REJECT_MATRIX",
     "PRESERVE_ANDROID_2_2_IN_PLACE_INSTALL_P0"
   ],
-  "product_bytes_mutation_forbidden": true
+  "product_bytes_mutation_forbidden": true,
+  "communication_guard": {
+    "final_app_reply_requires_end_ack_persisted": true,
+    "closed_tranche_reuse_forbidden": true,
+    "scheduler_completion_is_not_delivery_proof": true,
+    "user_message_is_not_closeout_trigger": true,
+    "search_before_send": true,
+    "delivery_key_required": true,
+    "normal_closeout_depends_on_automation": false,
+    "foreground_turn_owns_normal_close": true,
+    "automation_only_after_platform_interruption": true,
+    "no_fixed_minimum_duration": true,
+    "no_fixed_maximum_duration": true,
+    "never_pad_to_estimate": true,
+    "never_truncate_only_because_estimate_elapsed": true,
+    "estimate_update_only_if_material": true
+  },
+  "scheduled_backup_required": false,
+  "gmail_end_message_id": null,
+  "gmail_end_thread_id": null,
+  "no_more_product_mutations": false
 }
