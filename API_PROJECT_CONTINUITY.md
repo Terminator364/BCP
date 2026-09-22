@@ -1,3 +1,40 @@
+# R82 Fresh Conversation Handoff — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## R82 authoritative current state
+
+- Canonical `main` base at tranche start: `faecd48e7735be4e7577280a95ed3fddcb9f04e4` (R79 merged).
+- Current fenced integration branch: `work/bcp/r82-reconcile-r81-20260922-0102`.
+- R82 reconciles concurrent R81 PR #150 and #151 instead of discarding either line.
+- Preserve #150 as the richer base: Room v5, durable capability registry, append-only memory admission/provenance/supersession, mission-step/Chronicle continuity and 25-minute provider-proof communications.
+- Preserve useful #151 additions: Android official full-node research evidence, dedicated capability UI, phone-local `LOCAL_CAPABILITY_SNAPSHOT` and capability diagnostics.
+- R82 also fixes proof infrastructure: Android emulator UI checks are viewport-independent; product build proof is recorded even when GitHub artifact storage finalization returns a transient provider 403, while publication remains fail-closed.
+- B-EDGE 2.2 remains unpublished and must not be installed until the coherent exact-head integration gate passes.
+
+## Communication and cold takeover
+
+Every new `BCPGO BCP` must load the durable A+B+C specification and the communication state before work:
+- 25-minute target = about 23 minutes useful work + about 2 minutes normal closeout;
+- Gmail START provider ACK before substantive work;
+- PRIMARY_ASSISTANT owns normal close; scheduled automation is not required and is emergency-only;
+- Gmail END is valid only after provider message id + SENT readback + durable receipt;
+- ChatGPT is pointer-only after the END acknowledgement;
+- no user re-explanation, `eh oh`, screenshot relay or manual state reconstruction is part of normal progress.
+
+R82 active delivery key: `BCP25-20260922-0102-R82`.
+
+## Product scope
+
+Cahier des charges = **A+B+C integral**:
+- A: original sealed preconception / promised product / UCMF source intent;
+- B: realistic research-backed expansion and better architecture;
+- C: all accumulated field feedback and work-style constraints.
+
+The dedicated Android phone is the primary persistent Edge/API coordinator. The PC is a Windows/heavy worker and compatibility node, not the sole communications center. The largest coherent release blocker after R82 integration remains authenticated + encrypted LAN transport, followed by direct-boot/black-start and field Telegram relay proof.
+
+---
+
 # R81 Fresh Conversation Handoff — 2026-09-22
 
 Canonical continuation code: `BCPGO BCP`.
