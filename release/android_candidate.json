@@ -1,18 +1,19 @@
 {
   "schema": "bcp.android_source_candidate/1",
   "channel": "ci-candidate",
-  "version_code": 220,
-  "version_name": "2.2.0-full-node-evergreen",
+  "version_code": 221,
+  "version_name": "2.2.1-reference-ui-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
   "requirements_revision": "2026-09-21-R74",
-  "base_distributed_version_code": 212,
-  "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
-  "distribution_status": "SIGNED_EXACT_HEAD_STAGED_NOT_CURRENT",
-  "publication_allowed": true,
+  "base_distributed_version_code": 220,
+  "base_distributed_version_name": "2.2.0-full-node-evergreen",
+  "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
+  "publication_allowed": false,
   "publication_requirements": [
+    "R90_REFERENCE_FIRST_UI_TASK_SIMULATION_GREEN",
     "EXACT_HEAD_CI_GREEN",
     "NEW_APK_SIGNED_WITH_PINNED_CERTIFICATE",
     "V2_V3_SIGNATURE_VERIFIED",
@@ -37,7 +38,6 @@
     "existing strict Telegram HTTPS CONNECT relay remains api.telegram.org:443 only",
     "paired BCP credential protects private local API and proxy access",
     "no arbitrary proxy target and no arbitrary shell surface",
-    "25-minute Gmail START/END continuity contract carried by BCPGO (23 min useful work + 2 min primary closeout)",
     "no-micro-beta field gate: next install only after coherent full-node exact-head qualification",
     "adaptive Wi-Fi/cellular/metered network truth with DATA_SAVER and STORE_AND_FORWARD routing hints",
     "app-private adaptive content cache up to 8 GiB for context/resume snapshots without consuming the whole 64 GB device",
@@ -56,34 +56,24 @@
     "already-paired B-EDGE migrates to PC TLS 8766 only after verifying an HMAC binding derived from the existing paired secret without transmitting that secret",
     "all B-EDGE 2.2 credential-bearing PC control requests and APK update downloads require exact-certificate pinned HTTPS",
     "PC TLS private key is non-exportable in the Windows CurrentUser certificate store; secure backend is loopback-only on 8767",
-    "legacy B-EDGE 2.1.2 clear bootstrap compatibility remains isolated and does not authorize 2.2 bearer traffic over clear LAN"
+    "legacy B-EDGE 2.1.2 clear bootstrap compatibility remains isolated and does not authorize 2.2 bearer traffic over clear LAN",
+    "reference-first product shell with Home, Activity, Devices and System/Repairs destinations",
+    "Home exposes overall state, next user action, phone/PC/network/queue truth and recent Chronicle events",
+    "Activity projects durable mission-step lifecycle and Chronicle evidence into human-readable transaction-like states",
+    "Devices exposes discovery, pairing and TLS trust without manual IP/token as the primary flow",
+    "System/Repairs surfaces actionable permission, battery, pairing, TLS, memory and recovery issues with technical JSON hidden by default",
+    "all R90 UI data is projected from existing Room Chronicle/mission/capability/memory/queue and pairing/resource state; no new database or backend authority"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.0-full-node_NEXUS-0.2.6",
-  "signed_apk_sha256": "a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a",
-  "signature_schemes_verified": [
-    "v2",
-    "v3"
-  ],
-  "signed_source_commit": "95cbf79fc46fb82b46243ab405e5a31036358b6f",
-  "signing_cert_sha256_verified": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "release_train": "BCP-0.7.18_EDGE-2.2.1-reference-ui_NEXUS-0.2.6",
+  "signed_apk_sha256": "",
+  "signature_schemes_verified": [],
+  "signed_source_commit": "",
+  "signing_cert_sha256_verified": "",
   "drive_staging_readback": {
-    "status": "PASS",
-    "byte_sha256": "a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a",
-    "size_bytes": 2293572
+    "status": "NOT_RUN"
   },
   "exact_head_machine_qualification": {
-    "source_head": "95cbf79fc46fb82b46243ab405e5a31036358b6f",
-    "current_release_contract": "PASS_1507",
-    "android_build": "PASS_849",
-    "android_human_action_simulation": "PASS_350",
-    "coordinated_product": "PASS_1546",
-    "field_ecosystem": "PASS_1461",
-    "coordinated_pc": "PASS_515",
-    "managed_server": "PASS_492",
-    "final_acceptance": "PASS_511",
-    "nexus_transport": "PASS_777",
-    "nexus_one_shot": "PASS_432",
-    "telegram_observability": "PASS_814"
+    "status": "PENDING_R90_EXACT_HEAD"
   },
-  "remaining_human_gate": "ANDROID_IN_PLACE_INSTALL_AND_REAL_DEVICE_FIELD_PROOF"
+  "remaining_human_gate": "BLOCKED_UNTIL_R90_MACHINE_QUALIFICATION_SIGNING_DRIVE_CURRENT_AND_IN_PLACE_INSTALL_READINESS"
 }
