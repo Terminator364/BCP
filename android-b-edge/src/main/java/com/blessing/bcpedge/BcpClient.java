@@ -615,6 +615,8 @@ public final class BcpClient {
             body.put("ttl_seconds", EdgeRelayPolicy.REGISTRATION_TTL_SECONDS);
             body.put("edge_version", EDGE_VERSION);
             body.put("node_role", "DEDICATED_EDGE_API_SERVER");
+            String edgeLanIp = localIpv4();
+            if (edgeLanIp != null && !edgeLanIp.isEmpty()) body.put("edge_lan_ip", edgeLanIp);
             body.put("api_port", EdgeRelayPolicy.API_TLS_PORT);
             body.put("api_scheme", "https");
             body.put("api_tls_sha256", EdgeTlsIdentity.certificateSha256(context));
