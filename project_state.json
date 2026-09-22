@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R81_CLOSED_PR150_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R81 completed a foreground-owned 25-minute tranche with Gmail START/END provider proof, advanced A+B+C phone governance (Room v5 capability registry + append-only memory admission/provenance/supersession), and opened PR #150. Exact-head CI is not yet fully closed; no B-EDGE 2.2 installation is authorized.",
-  "next_action": "On the next BCPGO BCP tranche, reconcile the CLOSED R81 delivery by exact key, read final PR #150 CI, auto-fix any remaining emulator/field regression, reread main under the writer fence, merge only if exact-head required gates are green, then continue A+B+C with authenticated encrypted LAN as the highest blocking phone full-node gap.",
+  "status": "R82_RECONCILING_R81_LINES_EXACT_HEAD_CI_PENDING",
+  "last_completed_atomic_action": "R82 opened a writer-fenced reconciliation branch from the richer R81 PR #150 line, preserved its Room v5 memory admission/provenance/capability registry, ported the useful R81 #151 Android research/server-first capability UI/local capability snapshot, and fixed two exact-head proof defects: viewport-assuming emulator checks and transient artifact-provider 403 misclassification. No field install is authorized.",
+  "next_action": "Create superseding R82 PR, qualify the exact reconciled head, auto-fix any remaining product regression, then reread main under the Git writer fence. Merge only if exact-head required gates are green. After integration, continue integral A+B+C with authenticated encrypted LAN as the highest release-blocking phone full-node gap, followed by direct-boot/black-start and field Telegram relay proof.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -1946,9 +1946,9 @@
   },
   "operational_cadence_policy": {
     "status": "CANONICAL_CANDIDATE_R74",
-    "revision": "2026-09-21-R74",
+    "revision": "2026-09-22-R82",
     "cadence_minutes": 30,
-    "useful_work_target_minutes": 26,
+    "useful_work_target_minutes": 23,
     "useful_work_minimum_minutes": 20,
     "normal_close_reserve_minutes": 4,
     "primary_close_owner": "PRIMARY_ASSISTANT",
@@ -1960,7 +1960,11 @@
     "end_provider_ack_and_sent_readback_required": true,
     "scheduler_completion_is_delivery_proof": false,
     "chatgpt_thinking_indicator_is_work_proof": false,
-    "chatgpt_after_mail": "POINTER_ONLY_AFTER_END_ACK"
+    "chatgpt_after_mail": "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK",
+    "target_minutes": 25,
+    "close_reserve_minutes": 2,
+    "normal_close_owner": "PRIMARY_ASSISTANT",
+    "scheduled_close_guards_required": false
   },
   "r53_human_cockpit_counter_audit": {
     "status": "IMPLEMENTED_CANDIDATE_CI_PENDING",
@@ -2723,5 +2727,40 @@
     "end_message_id": "1a0c6670b9bf7fe5",
     "end_verified": true,
     "closed_at_kinshasa": "2026-09-22T00:57:17+01:00"
+  },
+  "r82_reconciliation": {
+    "status": "ACTIVE_EXACT_HEAD_CI_PENDING",
+    "branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "main_base_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "source_prs": [
+      150,
+      151
+    ],
+    "preserve_from_150": [
+      "ROOM_V5",
+      "MEMORY_ADMISSION_PROVENANCE_SUPERSESSION",
+      "CAPABILITY_REGISTRY",
+      "SERVER_UI_COUNTS",
+      "25_MIN_PROVIDER_PROOF_COMMUNICATION"
+    ],
+    "preserve_from_151": [
+      "ANDROID_PLATFORM_RESEARCH_EVIDENCE",
+      "DEDICATED_CAPABILITY_CARD",
+      "LOCAL_CAPABILITY_SNAPSHOT",
+      "CAPABILITY_DIAGNOSTIC"
+    ],
+    "proof_fixes": [
+      "VIEWPORT_INDEPENDENT_ANDROID_UI_SIMULATION",
+      "PRODUCT_BUILD_PROOF_SEPARATED_FROM_TRANSIENT_ARTIFACT_PROVIDER_403"
+    ],
+    "user_install_authorized": false
+  },
+  "continuation_handoff": {
+    "checkpoint_id": "BCP-R82-WORKING-20260922-0102",
+    "continuation_code": "BCPGO BCP",
+    "canonical_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "current_work_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "current_delivery_key": "BCP25-20260922-0102-R82",
+    "product_scope": "A_PLUS_B_PLUS_C_INTEGRAL"
   }
 }
