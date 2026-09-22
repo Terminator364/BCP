@@ -119,7 +119,7 @@ Les retours utilisateur deviennent des exigences P0 :
 - permettre un onboarding Android d'autorisations réellement liées aux fonctions ;
 - considérer réseau mauvais, Wi-Fi cassé, hotspot temporaire et coupures de courant comme conditions normales ;
 - Gmail START -> travail -> Gmail END -> pointeur ChatGPT ;
-- cadence **25 minutes = cible 23 min travail + 2 min fermeture** ;
+- communication **ADAPTIVE_TASK_WINDOW** : Gmail START avec scope + fenêtre de fin estimée ; aucun minimum/max fixe artificiel ; Gmail END obligatoire avec résultat/preuves/next action ;
 - la fermeture normale appartient à l'assistant actif, sans dépendre d'un automate ;
 - Telegram, Gmail, Drive et relay ne sont “envoyés” qu'avec preuve du provider/readback ;
 - `BCPGO BCP` doit reprendre ces règles dans une nouvelle conversation.
@@ -181,3 +181,45 @@ R81 ferme une partie structurante de deux gaps A+B+C sans créer une nouvelle mi
 - migration Room **v4→v5** explicite ; aucune destructive migration autorisée.
 
 Cette tranche augmente la couverture fonctionnelle macro provisoire à **56,1 %** tout en gardant la maturité de preuve à **42,2 %** tant que l'exact-head CI et la migration sur appareil 2.2 ne sont pas prouvés. Elle ne constitue donc pas une autorisation d'installation.
+
+
+## 9. R89 — Reference-first / anti-réinvention
+
+R89 rend obligatoire la règle suivante avant toute nouvelle UI, fonction, couche de transport, service, protocole ou module majeur :
+
+`A+B+C -> références matures -> gap map -> REUSE/ADAPT/BUILD_ONLY_IF_GAP -> licence/provenance -> parcours utilisateur -> simulation représentative -> implémentation`.
+
+Sources de référence autorisées et priorisées :
+1. documentation officielle de plateforme/standard ;
+2. implémentations open source matures ;
+3. produits/documentations industrielles matures ;
+4. littérature de fiabilité distribuée ;
+5. vidéos/tutoriels uniquement pour observer les parcours humains, jamais comme seule autorité d'architecture/sécurité.
+
+Politique machine-readable : `.project-memory/REFERENCE_FIRST_POLICY.json`.
+Registre des précédents : `.project-memory/EXTERNAL_REFERENCE_REGISTRY.json`.
+Benchmark R89 : `docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md`.
+
+### Charge de preuve BUILD_ONLY_IF_GAP
+
+Une implémentation custom doit documenter pourquoi les précédents matures ne satisfont pas BCP : contrainte RDC/offline/4 Go/0 $, modèle de confiance, licence incompatible, footprint excessif, ou échec terrain mesuré. Le fait qu'un composant custom existe déjà n'est pas une justification.
+
+### UX B-EDGE cible
+
+La candidate 2.2 actuelle devient **baseline technique**, pas UX cible. La prochaine candidate cohérente doit appliquer :
+- Accueil status-first avec état, objectif, dernier succès et **une seule prochaine action principale visible sans scroll** ;
+- navigation compacte `Accueil / Missions / Appareils / Activité`, Paramètres secondaire ;
+- Paramètres réservé aux préférences peu fréquentes ; réparation/mise à jour/test restent contextuels à Appareils/Missions/Diagnostics ;
+- pairing inspiré des parcours Home Assistant/KDE Connect : découverte par nom -> sélection -> vérification humaine -> confirmé ; IP/QR seulement fallback ;
+- permissions demandées au moment où la capacité correspondante est activée ;
+- diagnostics techniques, TLS hashes, claims, registres et preuves derrière divulgation progressive ;
+- updater présenté comme état persistant `CHECKING -> AVAILABLE -> DOWNLOADING -> VERIFIED -> READY_TO_INSTALL -> INSTALLED/FAILED`.
+
+La simulation Android doit désormais prouver **des tâches utilisateur**, pas seulement la présence de chaînes après cinq scrolls.
+
+### Vérité courante R89
+
+- B-EDGE 2.2.0-full-node-evergreen : **machine-qualified / Drive CURRENT-ready / field-unverified**.
+- Transport candidate 2.2 : **TLS pinné bidirectionnel qualifié CI** ; les anciennes mentions de production LAN cleartext dans les sections historiques ne décrivent plus la candidate courante.
+- Le prochain clic utilisateur `ANDROID_IN_PLACE_INSTALL` est **temporairement différé par R89** : la baseline 2.2 est conservée, mais BCP doit d'abord intégrer les deltas reference-first à plus forte valeur dans une candidate cohérente afin d'éviter un nouveau cycle installer -> constater -> refaire.
+- Aucun byte produit/release n'est modifié par R89.
