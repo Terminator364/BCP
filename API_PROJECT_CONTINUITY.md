@@ -1,3 +1,42 @@
+# Local inference capability research — 2026-09-22
+
+Canonical base after R86 integration: `f2e0e0682c693a6abbdabe01f129aa527401dcd6`.
+
+## Decision
+
+Local inference is a **DESIGN_ONLY, P0-non-blocking** BCP extension. It does not create AI-NODE, a second Model Broker, Resource Governor, scheduler, memory authority, or Context Pack.
+
+Canonical research artifacts:
+- `docs/BCP_LOCAL_INFERENCE_CAPABILITY_ARCHITECTURE.md`
+- `.project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json`
+- `docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md`
+
+Minimal eventual extension, after immediate P0 field bring-up:
+`existing Capability Registry + existing Resource Governor + deterministic Context Projection + existing Model Broker LOCAL_INFERENCE adapter + validator/receipt path`.
+
+Preferred runtime direction if device evaluation proves value:
+- first qualification can use the existing external runtime evidence path;
+- product integration prefers a separate local Android inference process with no raw LAN model server;
+- A21s 4 GB remains local-AI denied by default until B-EDGE coexistence qualification;
+- 8 GB phone remains an opportunistic worker, never authority.
+
+## P0 next action
+
+Do **not** implement Local AI now.
+
+Proceed with:
+1. B-EDGE 2.2 candidate signing with pinned Evergreen identity;
+2. v2/v3 signature + APK SHA-256 proof;
+3. private Drive CURRENT replacement/readback;
+4. in-place update without uninstall;
+5. full-node field test;
+6. reboot/black-start/recovery;
+7. communication/relay field truth.
+
+The research mission is deliberately stopped at architecture/eval/chaos because more Local AI design would reduce product velocity without new field evidence.
+
+---
+
 # R86 — B-EDGE → PC pinned TLS control plane — 2026-09-22
 
 Continuation code: `BCPGO BCP`.

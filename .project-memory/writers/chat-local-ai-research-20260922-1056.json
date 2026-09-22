@@ -1,0 +1,22 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-local-ai-research-20260922-1056",
+  "project_or_mission": "BCP local inference capability deep architecture research",
+  "base_main_sha": "f2e0e0682c693a6abbdabe01f129aa527401dcd6",
+  "created_at": "2026-09-22T10:56:00+01:00",
+  "work_branch": "work/bcp/local-ai-capability-research-20260922-1056",
+  "intended_file_scope": [
+    "docs/BCP_LOCAL_INFERENCE_CAPABILITY_ARCHITECTURE.md",
+    "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md",
+    ".project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "mutation_rule": "DESIGN_RESEARCH_ONLY_NO_RUNTIME_NO_RELEASE_MUTATION",
+  "expected_evidence": [
+    "CANONICAL_RECOVERY_COMPLETE",
+    "PRIMARY_SOURCE_RESEARCH",
+    "ANTI_COMPLEXITY_COUNTER_AUDIT",
+    "P0_NON_INTERFERENCE"
+  ]
+}

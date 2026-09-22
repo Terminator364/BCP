@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R86_BIDIRECTIONAL_PINNED_TLS_IMPLEMENTED_EXACT_HEAD_CI_RUNNING",
-  "last_completed_atomic_action": "R86 implemented the candidate 2.2 phone-to-PC secure control path: Windows BCP 0.7.18 provisions a non-exportable CurrentUser TLS certificate, exposes TLS 8766 through a lightweight SslStream proxy to loopback-only backend 8767, publishes a SHA-256 cert pin plus paired HMAC binding on credential-free bootstrap 8765, and rejects 2.2 credential-bearing clear-LAN requests. B-EDGE 2.2 now pins the PC certificate before pairing, migrates already-paired HTTP endpoints only after verifying the HMAC binding locally, refuses bearer-over-HTTP, and uses pinned TLS for control JSON and APK downloads. A proxy source-address masking issue was counter-audited and fixed by carrying the authenticated private edge_lan_ip in the secure relay registration. PR #155 is open. Installer syntax/tail regressions found by CI were repaired; exact-head reruns remain pending.",
-  "next_action": "Resume PR #155 from product head 914c3f0838bc1eb34e3b7834b59a3f1a6dd7fb01 plus closeout metadata. Read exact-head reruns first. Prioritize Coordinated PC/Windows TLS provisioning-handshake, Android Build, Android Human-Action Simulation, Coordinated Product and Field Ecosystem. Auto-fix only on the same writer-fenced branch. Merge only if required exact-head gates are green. Do not publish/install B-EDGE 2.2 until signing/distribution/in-place-update gates are also satisfied.",
+  "status": "R86_MERGED_MAIN_LOCAL_AI_DESIGN_ONLY_P0_FIELD_PROMOTION_NEXT",
+  "last_completed_atomic_action": "R86 bidirectional pinned TLS was merged to canonical main at f2e0e0682c693a6abbdabe01f129aa527401dcd6 after the exact PR head ea0c6b186f2ad694e6c095bdc2c8b6107f458a9a passed all nine visible critical qualification workflows. Local inference research then recovered the canonical architecture and produced a minimal design-only extension reusing the existing Capability Registry, Resource Governor, Context Pack, Model Broker, memory admission, scheduler and receipts; no runtime/release code was added.",
+  "next_action": "P0 product acceleration: qualify the merged R86 main as needed, produce/sign the B-EDGE 2.2 full-node candidate with the pinned Evergreen identity, verify v2/v3 signatures and APK SHA-256, replace/read back private Drive CURRENT, perform in-place update without uninstall, then execute field full-node + reboot/black-start + communication/recovery proof. Local AI implementation remains blocked behind these immediate field gates.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -73,6 +73,28 @@
       "android_human_action": "PENDING_337",
       "field_ecosystem": "PENDING_1446",
       "nexus_one_shot": "IN_PROGRESS_420"
+    },
+    "r86_merge_main_sha": "f2e0e0682c693a6abbdabe01f129aa527401dcd6",
+    "r86_exact_pr_head": "ea0c6b186f2ad694e6c095bdc2c8b6107f458a9a",
+    "r86_exact_head_green": {
+      "current_release_contract": 1498,
+      "managed_server": 485,
+      "nexus_one_shot": 428,
+      "coordinated_pc": 508,
+      "final_acceptance": 504,
+      "coordinated_product": 1537,
+      "android_build": 842,
+      "field_ecosystem": 1454,
+      "android_human_action": 345
+    },
+    "r86_merged_to_main": true,
+    "local_ai_research": {
+      "status": "DESIGN_ONLY",
+      "architecture": "docs/BCP_LOCAL_INFERENCE_CAPABILITY_ARCHITECTURE.md",
+      "policy": ".project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json",
+      "eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md",
+      "p0_blocking": false,
+      "decision": "REUSE_EXISTING_BCP_COMPONENTS_NO_AI_NODE_NO_SECOND_BROKER_NO_RUNTIME_IMPLEMENTATION_BEFORE_FIELD_P0"
     }
   },
   "field_gates": [
@@ -153,7 +175,10 @@
     "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "abc_integral_spec": "docs/BCP_CANONICAL_SPEC_ABC.md",
-    "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json"
+    "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
+    "local_ai_extension_architecture": "docs/BCP_LOCAL_INFERENCE_CAPABILITY_ARCHITECTURE.md",
+    "local_ai_extension_policy": ".project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json",
+    "local_ai_eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -326,7 +351,9 @@
     "P0_23_minute_useful_work_plus_2_minute_closeout": true,
     "P0_ucmf_v9_mission_survives_conversation": true,
     "P0_phone_durable_mission_step_envelope": true,
-    "P0_integral_abc_spec_denominator": true
+    "P0_integral_abc_spec_denominator": true,
+    "P1_local_ai_after_bedge_2_2_field": true,
+    "P0_bedge_2_2_field_promotion_before_local_ai_runtime": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,

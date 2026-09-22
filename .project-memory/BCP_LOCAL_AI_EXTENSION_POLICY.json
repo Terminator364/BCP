@@ -1,0 +1,318 @@
+{
+  "schema": "bcp.local_ai_extension_policy/1",
+  "adopted_as": "DESIGN_ONLY_RESEARCH_CANDIDATE",
+  "created_at": "2026-09-22",
+  "canonical_base_sha": "f2e0e0682c693a6abbdabe01f129aa527401dcd6",
+  "p0_blocking": false,
+  "architecture": {
+    "authority": "BCP",
+    "local_ai_role": [
+      "CAPABILITY_PROVIDER",
+      "MODEL_PROVIDER",
+      "EXECUTION_WORKER"
+    ],
+    "forbidden_roles": [
+      "MISSION_AUTHORITY",
+      "MEMORY_AUTHORITY",
+      "POLICY_AUTHORITY",
+      "STATE_AUTHORITY",
+      "VALIDATION_AUTHORITY"
+    ],
+    "create_ai_node": false,
+    "create_second_model_broker": false,
+    "create_second_resource_governor": false,
+    "create_second_context_pack": false,
+    "raw_llama_server_lan_default": false,
+    "invariant": "BCP_CORRECT_WITH_ZERO_MODELS_AVAILABLE"
+  },
+  "existing_components_reused": {
+    "capability_registry": "EdgeCapabilityEntity + EdgeOrchestrator.putCapability/capabilityRegistry",
+    "resource_governor": "EdgeResourceGovernor",
+    "context_pack": "canonical BCP Context Pack",
+    "model_broker": "existing provider-neutral strategic broker",
+    "memory_admission": "existing evidence/provenance/supersession admission",
+    "scheduler": "existing deterministic BCP/B-EDGE scheduler",
+    "receipts": "existing durable action/mission receipts"
+  },
+  "minimal_new_concepts": [
+    "LOCAL_INFERENCE_PROVIDER_TYPE",
+    "LOCAL_AI_RESOURCE_CLASS",
+    "DETERMINISTIC_CONTEXT_PROJECTION_PROFILE",
+    "BCP_MODEL_REQUEST_RESULT_ENVELOPE",
+    "BCP_LOCAL_AI_EVAL_AND_DEVICE_QUALIFICATION"
+  ],
+  "resource_class_extension": {
+    "proposed": "LOCAL_AI",
+    "rationale": "REMOTE_AI currently requires validated Internet and therefore cannot truthfully represent offline inference",
+    "same_governor_required": true,
+    "hard_deny": [
+      "B_EDGE_CRITICAL_INTEGRITY_OR_RECOVERY_ACTIVE",
+      "LOW_MEMORY_OR_INSUFFICIENT_MEASURED_HEADROOM",
+      "SEVERE_THERMAL",
+      "MODEL_HASH_MISMATCH",
+      "STORAGE_RESERVE_VIOLATION",
+      "STALE_OR_SUPERSEDED_CONTEXT",
+      "RUNTIME_CRASH_LOOP"
+    ],
+    "defer": [
+      "LOW_BATTERY_NOT_CHARGING",
+      "POWER_SAVE",
+      "BETTER_READY_PROVIDER_WITHIN_DEADLINE",
+      "COLD_LOAD_THREATENS_ACTIVE_MISSION",
+      "CAPABILITY_TTL_STALE"
+    ],
+    "no_fixed_ram_threshold_until_device_measurement": true
+  },
+  "device_profiles": {
+    "A21S_4GB": {
+      "role": "PRIMARY_BEDGE_NODE",
+      "local_ai_status": "OPTIONAL_COLD_LOCAL_INFERENCE_CAPABILITY",
+      "observed_model": "Qwen2.5-1.5B-Instruct Q4_K_M",
+      "observed_file_size_approx_gb": 1.12,
+      "field_runtime": "PocketPal/llama.cpp CPU",
+      "observed_profile": {
+        "context": 1024,
+        "batch": 128,
+        "ubatch": 128,
+        "threads": 6,
+        "mmap": true,
+        "mlock": false,
+        "flash_attention": false,
+        "throughput_typical_tps": "3.5-4.0",
+        "throughput_peak_tps": 4.23
+      },
+      "evidence_scope": "DEVICE_MODEL_RUNTIME_OUTSIDE_BCP",
+      "coexistence_with_bedge": "UNVERIFIED",
+      "default_admission": "DENY_UNTIL_BCP_COEXISTENCE_DEVICE_QUALIFICATION"
+    },
+    "OPPORTUNISTIC_PHONE_8GB": {
+      "role": "OPPORTUNISTIC_LOCAL_AI_WORKER",
+      "infrastructure_authority": false,
+      "preferred_candidate": {
+        "model": "Qwen3-1.7B Q4_K_M",
+        "file_size_approx_gb": 1.28,
+        "observed_think_off_tps": "6.6-7.3",
+        "observed_ttft_seconds": "1.0-1.2 on favorable runs",
+        "status": "PRIMARY_LOCAL_SEMANTIC_CAPABILITY_CANDIDATE",
+        "evidence_scope": "DEVICE_MODEL_RUNTIME_OUTSIDE_BCP"
+      },
+      "qwen3_4b": {
+        "observed_file_size_approx_gb": 2.5,
+        "status": "CURRENT_RUNTIME_PROFILE_UNSTABLE",
+        "forbidden_inference": "DO_NOT_GENERALIZE_TO_4B_IMPOSSIBLE_ON_DEVICE"
+      }
+    }
+  },
+  "runtime_strategy": {
+    "option_a_main_process": {
+      "status": "NOT_BASELINE",
+      "reason": "weak crash/OOM containment against critical B-EDGE responsibilities"
+    },
+    "option_b_separate_bcp_process": {
+      "status": "PREFERRED_IF_INTEGRATION_PROVES_VALUE",
+      "transport": "BOUND_LOCAL_IPC",
+      "lan_listener": false,
+      "max_parallel_generations": 1
+    },
+    "option_c_external_runtime_adapter": {
+      "status": "PREFERRED_FIRST_DEVICE_QUALIFICATION_PATH",
+      "production_gate": "STABLE_AUTOMATABLE_LOCAL_INTERFACE_REQUIRED"
+    }
+  },
+  "context_projection": {
+    "canonical_context_pack_only": true,
+    "profiles": [
+      "LOCAL_1024",
+      "LOCAL_1536",
+      "LOCAL_2048"
+    ],
+    "deterministic_compiler": true,
+    "preserve": [
+      "MISSION",
+      "OBJECTIVE",
+      "WORKER_ROLE",
+      "APPLICABLE_INVARIANTS",
+      "PERMISSIONS",
+      "CANONICAL_REVISION",
+      "REQUIRED_FACTS",
+      "RELEVANT_KNOWN_ERRORS",
+      "RESOURCE_CONSTRAINTS",
+      "OUTPUT_CONTRACT",
+      "CONTEXT_PACK_HASH"
+    ],
+    "trim_first": [
+      "NARRATION",
+      "REDUNDANT_HISTORY",
+      "UNRELATED_DETAIL",
+      "SUPERSEDED_STATE",
+      "OPTIONAL_EXPLANATION"
+    ],
+    "model_may_summarize_own_authorization_rules": false
+  },
+  "model_request_contract": {
+    "required": [
+      "schema_version",
+      "mission_id",
+      "action_id",
+      "idempotency_key",
+      "expected_revision",
+      "requested_capability",
+      "context_pack_hash",
+      "context_projection_profile",
+      "privacy_class",
+      "reasoning_mode",
+      "generation_token_budget",
+      "reasoning_token_budget",
+      "final_answer_token_reserve",
+      "deadline",
+      "resource_budget",
+      "output_schema",
+      "validation_requirements"
+    ]
+  },
+  "model_result_contract": {
+    "required": [
+      "provider_id",
+      "node_id",
+      "model_id",
+      "model_hash",
+      "runtime",
+      "runtime_version",
+      "request_hash",
+      "context_pack_hash",
+      "source_revision",
+      "structured_output",
+      "stop_reason",
+      "metrics",
+      "reasoning_mode",
+      "validation_status",
+      "evidence_refs",
+      "generated_at"
+    ]
+  },
+  "reasoning_policy": {
+    "default": "OFF",
+    "allowed": [
+      "OFF",
+      "AUTO",
+      "ON"
+    ],
+    "on_requires": [
+      "REASON",
+      "TOKEN_BUDGET",
+      "TIMEOUT",
+      "RESOURCE_MARGIN",
+      "EXPECTED_VALUE"
+    ],
+    "examples": {
+      "CLASSIFY": "OFF",
+      "SUMMARIZE": "OFF",
+      "EXTRACT": "OFF",
+      "KNOWN_ERROR_MATCH": "OFF",
+      "NOVEL_DIAGNOSIS": "AUTO",
+      "ARCHITECTURE_CRITIC": "ON"
+    },
+    "final_answer_reserve_required": true
+  },
+  "memory_policy": {
+    "default_output_evidence_class": "MODEL_PROPOSED",
+    "model_cannot_self_promote_to": [
+      "MACHINE_VERIFIED",
+      "USER_DECLARED",
+      "POLICY",
+      "CANONICAL",
+      "PINNED"
+    ],
+    "stale_context_result_rejected": true,
+    "fake_authority_markers_untrusted": true
+  },
+  "storage_policy": {
+    "control_plane": "GITHUB",
+    "model_bytes_sources": [
+      "EXACT_UPSTREAM",
+      "PERSONAL_DRIVE_MIRROR",
+      "OPTIONAL_GITHUB_RELEASE",
+      "DEVICE_CACHE",
+      "LAN_LOCAL_TRANSFER",
+      "MANUAL_LOCAL_TRANSFER"
+    ],
+    "normal_git_weights_forbidden": true,
+    "immutable_hash_addressed_model_path": true,
+    "partial_then_atomic_rename": true,
+    "sha256_readback": true,
+    "no_redownload_exact_hash": true,
+    "loaded_model_gc_forbidden": true,
+    "loaded_model_in_place_overwrite_forbidden": true,
+    "large_transfer_preferences": [
+      "EXISTING_CACHE",
+      "LAN_LOCAL",
+      "NON_METERED",
+      "CHARGING"
+    ]
+  },
+  "buildhub_decision": {
+    "classification": "REDUCE_KEEP_SPECIALIZED_BUILD_FACTORY",
+    "keep": [
+      "BUILD_EXECUTION",
+      "PACKAGING",
+      "BUILD_RECEIPTS",
+      "OPTIONAL_OFFLINE_BUILD_IF_PROVEN"
+    ],
+    "do_not_duplicate": [
+      "MODEL_BROKER",
+      "CANONICAL_MEMORY",
+      "GLOBAL_SCHEDULER",
+      "LOCAL_AI_AUTHORITY"
+    ],
+    "retirement": "CONDITIONAL_ONLY_AFTER_CAPABILITY_COVERAGE_PROVEN"
+  },
+  "chatgpt_pc_decision": {
+    "local_heavy_llm_default": false,
+    "roles": [
+      "WINDOWS_EXECUTOR",
+      "CAPABILITY_SOURCE",
+      "TELEMETRY_RECEIPT_PRODUCER",
+      "TRANSPORT_RECOVERY_PARTICIPANT",
+      "MODEL_BROKER_CONSUMER"
+    ],
+    "forbidden_duplication": [
+      "SECOND_MODEL_BROKER",
+      "SECOND_MEMORY_AUTHORITY",
+      "SECOND_SCHEDULER"
+    ]
+  },
+  "promotion_gates": [
+    "DESIGN_ONLY",
+    "IMPLEMENTED",
+    "CI_VERIFIED",
+    "RUNTIME_VERIFIED",
+    "DEVICE_VERIFIED",
+    "BCP_INTEGRATION_VERIFIED",
+    "FIELD_VERIFIED"
+  ],
+  "p0_before_local_ai_runtime": [
+    "R86_POST_MERGE_SANITY",
+    "SIGNED_BEDGE_2_2",
+    "V2_V3_SIGNATURE_AND_APK_HASH",
+    "DRIVE_CURRENT_REPLACEMENT_READBACK",
+    "IN_PLACE_UPDATE",
+    "FULL_NODE_FIELD_TEST",
+    "REBOOT_BLACKSTART_RECOVERY_PROOF",
+    "COMMUNICATION_RELAY_TRUTH"
+  ],
+  "unverified": [
+    "A21S_BEDGE_PLUS_LLM_COEXISTENCE",
+    "A21S_LOCAL_AI_SAFE_RAM_HEADROOM",
+    "A21S_BATTERY_THERMAL_COST",
+    "8GB_PHONE_BCP_ADAPTER_INTEGRATION",
+    "8GB_PHONE_LONG_RUN_THERMAL_STABILITY",
+    "QWEN3_1_7B_BCP_TASK_QUALITY",
+    "QWEN3_1_7B_STRUCTURED_OUTPUT_RELIABILITY",
+    "POCKETPAL_STABLE_AUTOMATABLE_PROVIDER_INTERFACE",
+    "SEPARATE_PROCESS_IPC_IMPLEMENTATION",
+    "LOCAL_AI_RESOURCE_THRESHOLDS",
+    "MODEL_BROKER_LOCAL_PROVIDER_IMPLEMENTATION",
+    "CONTEXT_PROJECTION_QUALITY_AT_1024_1536_2048",
+    "LOCAL_AI_FIELD_RESILIENCE_ACROSS_REBOOT_NETWORK_THERMAL"
+  ]
+}
