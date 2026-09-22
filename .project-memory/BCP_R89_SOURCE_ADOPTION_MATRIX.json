@@ -1,0 +1,375 @@
+{
+  "schema": "bcp.r89_source_adoption_matrix/1",
+  "created_at": "2026-09-22T21:55:00+01:00",
+  "canonical_base_sha": "f40879b234ea619eff82445eedb5802796d1f9d8",
+  "purpose": "STOP_REINVENTING_SOLVED_PRODUCT_AND_UX_PATTERNS_BEFORE_MORE_BCP_UI_WORK",
+  "rule": "ADOPT_INTERACTION_AND_ARCHITECTURAL_PATTERNS_FIRST; COPY_SOURCE_CODE_ONLY_AFTER_LICENSE_AND_FIT_REVIEW",
+  "current_bcp_ui_truth": {
+    "implementation": "ONE_PROGRAMMATIC_JAVA_ACTIVITY_SCROLLVIEW_PLUS_ALERTDIALOG_SETTINGS",
+    "primary_screen": [
+      "GLOBAL_STATUS",
+      "SERVER_NODE_SUMMARY",
+      "AUTONOMY_TRANSPORT_SUMMARY",
+      "CAPABILITY_SUMMARY",
+      "PERMISSION_SUMMARY",
+      "ACTION_BUTTONS",
+      "RAW_JSON_OUTPUT"
+    ],
+    "settings_truth": "TEN_DIAGNOSTIC_ACTIONS_IN_SINGLE_ALERTDIALOG",
+    "strengths": [
+      "VERY_LIGHTWEIGHT",
+      "NO_HEAVY_UI_FRAMEWORK",
+      "EXISTING_A_PLUS_B_BACKEND_DATA_ALREADY_AVAILABLE",
+      "OFFLINE_LOCAL_NODE_REMAINS_VISIBLE_WHEN_PC_FAILS"
+    ],
+    "structural_gaps": [
+      "NO_PERSISTENT_INFORMATION_ARCHITECTURE",
+      "NO_DEDICATED_ACTIVITY_TIMELINE",
+      "NO_REPAIRS_OR_ACTION_REQUIRED_INBOX",
+      "NO_DEVICE_PAIRING_DETAIL_SCREEN",
+      "NO_QUEUE_CHRONICLE_RECEIPT_DRILLDOWN",
+      "NO_SEARCH_OR_FILTER",
+      "RAW_JSON_IS_PRIMARY_DIAGNOSTIC_RENDERING",
+      "SETTINGS_AND_DIAGNOSTICS_MIXED_IN_ONE_MODAL",
+      "NO_PROGRESSIVE_DISCLOSURE_FROM_HUMAN_SUMMARY_TO_TECHNICAL_DETAIL"
+    ]
+  },
+  "sources": [
+    {
+      "id": "HOME_ASSISTANT_ANDROID",
+      "category": [
+        "ONBOARDING",
+        "SETTINGS",
+        "PERMISSIONS",
+        "DIAGNOSTICS",
+        "DEDICATED_DEVICE"
+      ],
+      "source": "https://github.com/home-assistant/android",
+      "docs": [
+        "https://companion.home-assistant.io/docs/getting_started/",
+        "https://companion.home-assistant.io/docs/gallery/android/",
+        "https://www.home-assistant.io/integrations/repairs/",
+        "https://www.home-assistant.io/integrations/system_health/",
+        "https://companion.home-assistant.io/docs/integrations/android-home-app-launcher/"
+      ],
+      "license": "APACHE-2.0",
+      "adopt": [
+        "AUTO_DISCOVERY_FIRST_MANUAL_FALLBACK_SECOND",
+        "STEPWISE_ONBOARDING",
+        "CAPABILITY_SPECIFIC_SETTINGS",
+        "CONTEXTUAL_PERMISSION_REQUESTS",
+        "REPAIRS_DASHBOARD_FOR_ACTIONABLE_PROBLEMS",
+        "SYSTEM_HEALTH_PAGE",
+        "LOGS_AS_DEDICATED_TOOL_NOT_MAIN_UI",
+        "OPTIONAL_DEDICATED_DEVICE_LAUNCHER_MODE_PATTERN"
+      ],
+      "reject": [
+        "COPY_WHOLE_WEBVIEW_CENTRIC_FRONTEND",
+        "REQUEST_ALL_OPTIONAL_PERMISSIONS_AT_START"
+      ],
+      "decision": "ADOPT_UX_PATTERNS_ADAPT_TO_LIGHT_NATIVE_BCP"
+    },
+    {
+      "id": "SYNCTHING_AND_ANDROID_FORK",
+      "category": [
+        "STATE_MODEL",
+        "DEVICE_LIST",
+        "PROGRESS",
+        "OFFLINE_SYNC",
+        "BACKGROUND"
+      ],
+      "source": "https://github.com/syncthing/syncthing",
+      "docs": [
+        "https://docs.syncthing.net/intro/gui",
+        "https://github.com/mbrukman/syncthing-fork-android"
+      ],
+      "license": "MPL-2.0_CORE; ANDROID_FORK_LICENSE_REVIEW_REQUIRED",
+      "adopt": [
+        "TOP_LEVEL_DEVICES_STATUS_SEPARATION",
+        "EXPLICIT_NAMED_RUNTIME_STATES",
+        "VISIBLE_PROGRESS_WITH_REASON",
+        "UI_EXPLAINS_WHY_RUNNING_OR_NOT",
+        "RECENT_CHANGES_VIEW",
+        "BATTERY_AWARE_BACKGROUND_MODES",
+        "DISCOVER_AND_ADD_NEARBY_DEVICE"
+      ],
+      "decision": "ADOPT_STATE_AND_INFORMATION_ARCHITECTURE; NO_BLIND_CODE_COPY"
+    },
+    {
+      "id": "TAILSCALE",
+      "category": [
+        "PAIRING",
+        "TRUST",
+        "DEVICE_STATUS",
+        "ONBOARDING"
+      ],
+      "source": "https://tailscale.com/docs/features/access-control/device-management",
+      "docs": [
+        "https://tailscale.com/docs/features/access-control/device-management/device-approval",
+        "https://tailscale.com/docs/install/android"
+      ],
+      "license": "PRODUCT_DOC_PATTERN_REFERENCE",
+      "adopt": [
+        "MACHINES_DEVICE_LIST_WITH_TRUST_STATE",
+        "NEEDS_APPROVAL_EXPLICIT_BADGE",
+        "ONE_APPROVAL_THEN_IMMEDIATE_CONNECT",
+        "QR_OR_CODE_FALLBACK_FOR_DEVICE_ADD",
+        "NO_MANUAL_IP_AS_NORMAL_FLOW"
+      ],
+      "decision": "ADOPT_TRUST_AND_DEVICE_ONBOARDING_PATTERN"
+    },
+    {
+      "id": "KDE_CONNECT",
+      "category": [
+        "PHONE_PC_PAIRING",
+        "CAPABILITIES",
+        "LOCAL_TLS"
+      ],
+      "source": "https://github.com/KDE/kdeconnect-android",
+      "license": "GPL-2.0/GPL-3.0",
+      "adopt": [
+        "DISCOVERED_CONNECTED_AVAILABLE_DEVICE_GROUPS",
+        "PAIR_ONCE_THEN_ENABLE_CAPABILITIES_PLUGINS",
+        "LOCAL_WIFI_TLS_MODEL",
+        "PER_DEVICE_CAPABILITY_VIEW"
+      ],
+      "code_reuse": "PATTERN_ONLY_UNLESS_LICENSE_COMPATIBILITY_EXPLICITLY_ACCEPTED",
+      "decision": "ADOPT_INTERACTION_PATTERN_NOT_SOURCE_COPY"
+    },
+    {
+      "id": "LOCALSEND",
+      "category": [
+        "LOCAL_DISCOVERY",
+        "TLS_FINGERPRINT",
+        "TRANSFER",
+        "FALLBACK"
+      ],
+      "source": "https://github.com/localsend/localsend",
+      "docs": [
+        "https://github.com/localsend/protocol/blob/main/README.md"
+      ],
+      "license": "APACHE-2.0",
+      "adopt": [
+        "NEARBY_DEVICE_FIRST_UI",
+        "MULTIPLE_DISCOVERY_METHODS",
+        "CERTIFICATE_FINGERPRINT_AS_DEVICE_IDENTITY",
+        "PREPARE_THEN_ACCEPT_OR_REJECT_OPERATION",
+        "LAN_FIRST_NO_EXTERNAL_SERVER_REQUIRED",
+        "SIMPLE_HUMAN_ALIAS_PLUS_TECHNICAL_FINGERPRINT"
+      ],
+      "decision": "ADOPT_LOCAL_TRANSPORT_AND_NEARBY_DEVICE_UX_PATTERN",
+      "code_reuse": "PATTERN_FIRST; DIRECT_COPY_ONLY_AFTER_FILE_LEVEL_APACHE_2_0_PROVENANCE_CHECK"
+    },
+    {
+      "id": "TEMPORAL_UI",
+      "category": [
+        "MISSION_HISTORY",
+        "DURABLE_EXECUTION",
+        "DEBUG",
+        "RETRY"
+      ],
+      "source": "https://github.com/temporalio/ui",
+      "docs": [
+        "https://docs.temporal.io/web-ui"
+      ],
+      "license": "MIT",
+      "adopt": [
+        "EXECUTION_LIST_WITH_STATUS_FILTERS",
+        "TIMELINE_AND_COMPACT_HISTORY_VIEWS",
+        "PENDING_ACTIVITY_SECTION",
+        "WORKER_AVAILABILITY_SECTION",
+        "RELATIONSHIPS_PARENT_CHILD_VIEW",
+        "HUMAN_READABLE_SUMMARY_PLUS_RAW_JSON_DETAIL",
+        "ACTION_FROM_HISTORY_CANCEL_RETRY_RESET_WHEN_SAFE"
+      ],
+      "decision": "HIGH_PRIORITY_FOR_BCP_MISSIONS_CHRONICLE_RECEIPTS_UI"
+    },
+    {
+      "id": "N8N",
+      "category": [
+        "WORKFLOW_EXECUTIONS",
+        "FAILURE_RETRY",
+        "FILTERS"
+      ],
+      "source": "https://github.com/n8n-io/n8n",
+      "docs": [
+        "https://docs.n8n.io/build/understand-workflows/understand-executions/view-all-executions/",
+        "https://docs.n8n.io/build/understand-workflows/understand-executions/view-executions-for-a-single-workflow/"
+      ],
+      "license": "SOURCE_LICENSE_REVIEW_BEFORE_COPY",
+      "adopt": [
+        "EXECUTIONS_TAB",
+        "FAILED_RUNNING_SUCCESS_WAITING_FILTERS",
+        "RETRY_FAILED_EXECUTION_FROM_DETAIL",
+        "SEPARATE_EXECUTION_HISTORY_FROM_WORKFLOW_VERSION_HISTORY"
+      ],
+      "decision": "ADOPT_EXECUTION_UX_PATTERN"
+    },
+    {
+      "id": "NODE_RED",
+      "category": [
+        "DEBUG",
+        "STATUS",
+        "CONTEXT",
+        "ERROR_VISIBILITY"
+      ],
+      "source": "https://github.com/node-red/node-red",
+      "docs": [
+        "https://nodered.org/docs/user-guide/editor/sidebar/",
+        "https://nodered.org/docs/user-guide/editor/workspace/nodes",
+        "https://nodered.org/docs/user-guide/handling-errors"
+      ],
+      "license": "APACHE-2.0",
+      "adopt": [
+        "STATUS_CLOSE_TO_THE_COMPONENT_IT_DESCRIBES",
+        "ERROR_ICON_PLUS_HUMAN_TOOLTIP_REASON",
+        "DEDICATED_DEBUG_VIEW",
+        "DEDICATED_CONTEXT_DATA_VIEW",
+        "SOURCE_LINK_FROM_ERROR_TO_RELEVANT_COMPONENT"
+      ],
+      "decision": "ADOPT_DIAGNOSTIC_INFORMATION_PATTERN_NOT_CANVAS_EDITOR"
+    },
+    {
+      "id": "COCKPIT",
+      "category": [
+        "SERVER_COCKPIT",
+        "SYSTEM_HEALTH",
+        "LOGS",
+        "NETWORK",
+        "STORAGE"
+      ],
+      "source": "https://github.com/cockpit-project/cockpit",
+      "docs": [
+        "https://cockpit-project.org/"
+      ],
+      "license": "MIXED_LGPL_GPL",
+      "adopt": [
+        "OVERVIEW_FIRST_THEN_NETWORK_STORAGE_LOGS_SERVICES",
+        "REAL_SYSTEM_STATE_NOT_DUPLICATED_SHADOW_STATE",
+        "MULTI_HOST_SWITCHING_PATTERN",
+        "LIGHTWEIGHT_ON_DEMAND_ADMIN_UI_PRINCIPLE"
+      ],
+      "code_reuse": "PATTERN_ONLY_UNLESS_LICENSE_REVIEW",
+      "decision": "ADOPT_SERVER_COCKPIT_INFORMATION_ARCHITECTURE"
+    },
+    {
+      "id": "PORTAINER",
+      "category": [
+        "ENVIRONMENT_LIST",
+        "AUTO_ONBOARDING",
+        "ADMIN"
+      ],
+      "source": "https://github.com/portainer/portainer",
+      "docs": [
+        "https://docs.portainer.io/admin/environments"
+      ],
+      "license": "ZLIB_CORE_REPO_REPORTED; FEATURE_LICENSES_VARY",
+      "adopt": [
+        "ENVIRONMENTS_LIST_AS_SINGLE_ENTRY_TO_MULTI_NODE_ADMIN",
+        "AUTO_ONBOARDING_PATTERN",
+        "DETAIL_PAGE_PER_ENVIRONMENT"
+      ],
+      "decision": "SECONDARY_PATTERN_FOR_FUTURE_MULTI_NODE_VIEW"
+    },
+    {
+      "id": "ANDROID_OFFICIAL_UX",
+      "category": [
+        "NAVIGATION",
+        "PERMISSIONS",
+        "ADAPTIVE_UI"
+      ],
+      "docs": [
+        "https://developer.android.com/design/ui/mobile/guides/layout-and-content/layout-and-nav-patterns",
+        "https://developer.android.com/training/permissions/requesting",
+        "https://developer.android.com/training/permissions/usage-notes"
+      ],
+      "authority": "PLATFORM_PRIMARY",
+      "adopt": [
+        "3_TO_5_PRIMARY_DESTINATIONS",
+        "PRIMARY_ACTIONS_VISIBLE_SECONDARY_ACTIONS_OVERFLOW",
+        "REQUEST_PERMISSIONS_IN_CONTEXT",
+        "GRACEFUL_DEGRADATION_AFTER_DENIAL",
+        "EXPLAIN_SPECIFIC_FEATURE_IMPACT",
+        "ADAPT_LAYOUT_TO_WINDOW_SIZE"
+      ],
+      "decision": "MANDATORY_PLATFORM_CONSTRAINT"
+    },
+    {
+      "id": "ADYEN_PAYMENT_LIFECYCLE",
+      "category": [
+        "TRANSACTION_TUNNEL",
+        "STATE_MACHINE",
+        "NEXT_ACTION",
+        "ASYNC_TRUTH"
+      ],
+      "docs": [
+        "https://docs.adyen.com/account/payments-lifecycle",
+        "https://docs.adyen.com/online-payments/build-your-integration/payment-result-codes"
+      ],
+      "authority": "INDUSTRY_PRIMARY_DOCUMENTATION",
+      "source_verified_date": "2026-09-22",
+      "adopt": [
+        "SMALL_EXPLICIT_STATE_VOCABULARY",
+        "INTERMEDIATE_STATE_IS_NOT_FINAL_SUCCESS",
+        "EACH_NONFINAL_STATE_HAS_AN_EXPLICIT_NEXT_ACTION",
+        "ASYNC_PROVIDER_EVENT_OR_RECEIPT_CONFIRMS_FINAL_OUTCOME",
+        "HUMAN_UI_SHOWS_RESULT_WITHOUT_EXPOSING_RAW_BACKEND_RESPONSE"
+      ],
+      "bcp_mapping": [
+        "MISSION_RECEIVED",
+        "WAITING_OR_PENDING",
+        "ACTION_REQUIRED",
+        "PROCESSING",
+        "RESULT_COMMITTED",
+        "FAILED_SAFE_OR_RECONCILING"
+      ],
+      "decision": "ADOPT_TRANSACTION_TUNNEL_STATE_AND_NEXT_ACTION_PATTERN"
+    },
+    {
+      "id": "RUSTDESK",
+      "category": [
+        "REMOTE_CONTROL",
+        "RENDEZVOUS",
+        "DIRECT_FIRST",
+        "RELAY_FALLBACK"
+      ],
+      "source": "https://github.com/rustdesk/rustdesk",
+      "docs": [
+        "https://rustdesk.com/docs/en/self-host/"
+      ],
+      "license": "AGPL-3.0",
+      "adopt": [
+        "RENDEZVOUS_SEPARATE_FROM_RELAY",
+        "DIRECT_PATH_FIRST_RELAY_ONLY_IF_NEEDED",
+        "SELF_HOSTABLE_CONTROL_PLANE_PATTERN"
+      ],
+      "code_reuse": "PATTERN_ONLY_BY_DEFAULT; DIRECT_COPY_REQUIRES_EXPLICIT_LICENSE_DECISION",
+      "decision": "SECONDARY_REFERENCE_FOR_REMOTE_PC_TRANSPORT_NOT_A_RUNTIME_DEPENDENCY"
+    }
+  ],
+  "visual_video_references": [
+    {
+      "id": "HA_ANDROID_GALLERY",
+      "source": "https://companion.home-assistant.io/docs/gallery/android/",
+      "purpose": "ONBOARDING_SETTINGS_SENSOR_DETAIL_LOGS_VISUAL_REFERENCE"
+    },
+    {
+      "id": "LOCALSEND_ANDROID_WINDOWS_VIDEO",
+      "source": "https://www.youtube.com/watch?v=Gm3_CM6NAsU",
+      "purpose": "REAL_DISCOVERY_TRANSFER_ACCEPT_TROUBLESHOOT_FLOW"
+    },
+    {
+      "id": "KDE_CONNECT_ANDROID_WINDOWS_VIDEO",
+      "source": "https://www.youtube.com/watch?v=y57I0lKPBHk",
+      "purpose": "REAL_PAIRING_PERMISSION_FILE_REMOTE_CAPABILITY_FLOW"
+    }
+  ],
+  "adoption_guardrails": [
+    "DO_NOT_REBUILD_BACKEND_DATA_ALREADY_PRESENT_JUST_TO_MATCH_A_REFERENCE_UI",
+    "DO_NOT_IMPORT_HEAVY_UI_FRAMEWORK_BY_DEFAULT",
+    "DO_NOT_COPY_GPL_OR_MPL_SOURCE_BLINDLY",
+    "ATTRIBUTE_MATERIAL_INSPIRATIONS_IN_SOURCE_DOCS_AND_COMMENTS_WHERE_RELEVANT",
+    "PREFER_UI_OVER_EXISTING_BCP_APIS_ROOM_REGISTRY_CHRONICLE_AND_RECEIPTS",
+    "ONE_COHERENT_UI_RELEASE_BEFORE_NEXT_HUMAN_INSTALL"
+  ]
+}

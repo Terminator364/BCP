@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R87_CLOSED_BEDGE_2_2_CURRENT_READY_ANDROID_IN_PLACE_INSTALL_GATE",
-  "last_completed_atomic_action": "R87 completed machine-side B-EDGE 2.2 field-ready productization. Exact final release head 6e4b9b0ef5daf05cf2feac5cb91919bb4948fa87 passed CURRENT #1519, Managed Server #502, Telegram #823, Nexus Transport #786, Final Acceptance #521, Nexus One-Shot #440, Coordinated PC #525, Android Build #860, Coordinated Product #1558, Field Ecosystem #1475 and Android Human-Action #358. The signed Evergreen APK SHA-256 a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a was installed into the same private Drive CURRENT file and read back with APK Signature Scheme v2/v3 and the exact pinned certificate. PR #157 merged to main e07f8f379533f74a2e9362fca5f95ad60f932bee.",
-  "next_action": "TRUE_HUMAN_GATE: on the existing B-EDGE Android phone, perform the qualified in-place update to 2.2.0-full-node-evergreen without uninstalling. After install, collect machine/field evidence for local API, discovery, pairing, bidirectional pinned TLS, durable memory/queue/Chronicle/capabilities/receipts, reboot/black-start/recovery, and Telegram/relay delivery truth. Local AI remains DESIGN_ONLY until these P0 field gates close.",
+  "status": "R89_SOURCE_BENCHMARK_COMPLETE_UI_CONVERGENCE_BEFORE_HUMAN_INSTALL",
+  "last_completed_atomic_action": "R89 recovered canonical BCP at main f40879b234ea619eff82445eedb5802796d1f9d8, researched mature open-source/industry references before any new UI implementation, compared those patterns against the actual B-EDGE MainActivity and Android human-action workflow, and documented a source-adoption matrix. Finding: BCP backend A+B is substantially ahead of the C-layer UI; current 2.2 is machine-qualified but its one-scroll-screen + modal diagnostics + raw JSON presentation would predictably trigger another immediate UI iteration after installation.",
+  "next_action": "R90 PRODUCT UI CONVERGENCE BEFORE HUMAN INSTALL: reuse the existing BCP backend and implement one coherent lightweight Android shell with Home, Activity, Devices and System/Repairs destinations; human-readable state/reason/action presentation; Chronicle/mission timeline; paired-device details; contextual permissions; technical JSON behind explicit disclosure. Extend emulator human-action qualification to navigate all four destinations and seeded repair/execution/device states. Only after that exact candidate is green, re-sign/read back Drive CURRENT and request one Android IN_PLACE install without uninstall.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -170,6 +170,41 @@
       "gmail_end_message_id": "1a0c91cbc4a16677",
       "end_checkpoint": "BCP-R88-END-20260922-1334",
       "provider_end_readback": true
+    },
+    "r89_anti_reinvention": {
+      "status": "RESEARCHED_DESIGN_DELTA_ONLY",
+      "canonical_base_sha": "f40879b234ea619eff82445eedb5802796d1f9d8",
+      "benchmark_doc": "docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md",
+      "source_matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json",
+      "current_ui_impl": "ONE_PROGRAMMATIC_JAVA_SCROLLVIEW_PLUS_ALERTDIALOG_DIAGNOSTICS",
+      "current_human_action_test_gap": "SCROLL_AND_TEXT_PRESENCE_NOT_FULL_UX_NAVIGATION",
+      "references": [
+        "HOME_ASSISTANT",
+        "SYNCTHING",
+        "TAILSCALE",
+        "KDE_CONNECT",
+        "LOCALSEND",
+        "TEMPORAL_UI",
+        "N8N",
+        "NODE_RED",
+        "COCKPIT",
+        "PORTAINER",
+        "ANDROID_OFFICIAL"
+      ],
+      "decision": "DEFER_CURRENT_2_2_HUMAN_INSTALL_UNTIL_ONE_COHERENT_UI_CONVERGENCE_CANDIDATE",
+      "product_bytes_changed": false,
+      "policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+      "external_reference_registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+      "source_adoption_matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json",
+      "reconciliation": "PR161_GUARDRAILS_ABSORBED_INTO_PR162_SINGLE_CANONICAL_R89_LINE",
+      "license_corrections": {
+        "LocalSend": "APACHE-2.0",
+        "RustDesk": "AGPL-3.0_PATTERN_ONLY_DEFAULT",
+        "KDE_Connect": "GPL_FAMILY_PATTERN_ONLY_DEFAULT",
+        "Syncthing": "MPL-2.0_PATTERN_FIRST",
+        "Temporal": "MIT",
+        "Home_Assistant": "APACHE-2.0"
+      }
     }
   },
   "field_gates": [
@@ -253,7 +288,11 @@
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "local_ai_extension_architecture": "docs/BCP_LOCAL_INFERENCE_CAPABILITY_ARCHITECTURE.md",
     "local_ai_extension_policy": ".project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json",
-    "local_ai_eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md"
+    "local_ai_eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md",
+    "anti_reinvention_benchmark": "docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md",
+    "source_adoption_matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json",
+    "reference_first_policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+    "external_reference_registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -338,7 +377,9 @@
     ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     ".project-memory/BCP_ABC_COVERAGE.json",
     "docs/BCP_CANONICAL_SPEC_ABC.md",
-    ".project-memory/UCMF001_CONTINUITY.json"
+    ".project-memory/UCMF001_CONTINUITY.json",
+    "docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md",
+    ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json"
   ],
   "product_priorities": {
     "P0_session_survival": true,
@@ -435,7 +476,15 @@
     "P0_optional_estimate_update_if_material": true,
     "P0_end_mail_actual_result_and_next_action": true,
     "P0_timer_driven_closeout": false,
-    "P0_checkpoint_or_true_gate_driven_closeout": true
+    "P0_checkpoint_or_true_gate_driven_closeout": true,
+    "P0_source_benchmark_before_new_ui_design": true,
+    "P0_one_coherent_ui_convergence_before_next_human_install": true,
+    "P0_current_2_2_install_deferred_for_ui_convergence": true,
+    "P0_reference_first_before_new_implementation": true,
+    "P0_reuse_adapt_build_only_if_gap": true,
+    "P0_license_provenance_before_external_code_reuse": true,
+    "P0_task_based_ui_acceptance": true,
+    "P0_no_settings_as_operational_action_dump": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,

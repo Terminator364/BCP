@@ -1,3 +1,47 @@
+# R89 — Anti-reinvention benchmark before further BCP UI work — 2026-09-22
+
+Canonical source base: `f40879b234ea619eff82445eedb5802796d1f9d8`.
+
+## Decision
+
+Do **not** ask the user to install the current 2.2 package yet.
+
+The package remains machine-qualified and signed, but R89 found a productization gap that would likely force another immediate human install:
+- one large programmatic ScrollView;
+- diagnostics/settings collapsed into a single 10-item AlertDialog;
+- raw JSON as the primary detailed result;
+- no Activity/Chronicle execution UI;
+- no Devices detail hierarchy;
+- no Repairs/action-required inbox;
+- current emulator human-action proof validates scrolling/text/API/cold-relaunch, not full UX navigation or repair comprehension.
+
+Canonical references:
+- `docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md`
+- `.project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json`
+
+High-priority patterns:
+- Home Assistant -> onboarding, Repairs, System Health, contextual permissions;
+- Syncthing -> explicit runtime state/reason/progress;
+- Tailscale/KDE Connect/LocalSend -> discovery, device trust, pairing and nearby-device UX;
+- Temporal/n8n -> execution list, status filters, timeline/history and safe retry;
+- Node-RED -> debug/context/error presentation;
+- Cockpit -> server appliance cockpit hierarchy;
+- Android platform -> 3–5 primary destinations and contextual permission UX.
+
+## Next product action
+
+R90 is **implementation**, not further general research:
+1. preserve all existing Room/API/security/transport/update code;
+2. implement four lightweight native destinations: Home / Activity / Devices / System;
+3. add actionable Repairs derived from existing machine truth;
+4. render technical JSON only behind explicit Technical details;
+5. expand emulator human-action tests to exercise the actual navigation and seeded user states;
+6. only after exact-head green qualification, sign/read back Drive CURRENT and ask for one in-place install.
+
+This change intentionally delays the human install in order to avoid a second near-term reinstall and comply with the canonical “no micro-bêtas” rule.
+
+---
+
 # R88 — Adaptive communication windows — 2026-09-22
 
 The fixed 25-minute tranche rule is superseded for future BCP work.
