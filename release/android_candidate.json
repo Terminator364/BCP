@@ -6,7 +6,7 @@
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
-  "coordinated_server_version": "0.7.17",
+  "coordinated_server_version": "0.7.18",
   "requirements_revision": "2026-09-21-R74",
   "base_distributed_version_code": 212,
   "base_distributed_version_name": "2.1.2-rc1-edge-relay-evergreen",
@@ -52,7 +52,11 @@
     "memory admission/provenance ledger prevents weaker unverified claims from silently replacing better-evidenced phone memory",
     "dedicated Edge API moves to HTTPS on port 8877 with persistent AndroidKeyStore TLS identity and paired SHA-256 certificate pin",
     "Telegram CONNECT relay on port 8876 uses fresh HMAC-SHA256 timestamp+nonce authentication for 2.2 instead of exposing the long-lived BCP bearer on clear LAN",
-    "LAN transport security remains explicitly PARTIAL until B-EDGE to PC control traffic is also encrypted and pinned"
+    "B-EDGE 2.2 discovers PC TLS metadata over credential-free bootstrap 8765 and pins the PC certificate before pairing",
+    "already-paired B-EDGE migrates to PC TLS 8766 only after verifying an HMAC binding derived from the existing paired secret without transmitting that secret",
+    "all B-EDGE 2.2 credential-bearing PC control requests and APK update downloads require exact-certificate pinned HTTPS",
+    "PC TLS private key is non-exportable in the Windows CurrentUser certificate store; secure backend is loopback-only on 8767",
+    "legacy B-EDGE 2.1.2 clear bootstrap compatibility remains isolated and does not authorize 2.2 bearer traffic over clear LAN"
   ],
-  "release_train": "BCP-0.7.17_EDGE-2.2.0-full-node_NEXUS-0.2.6"
+  "release_train": "BCP-0.7.18_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }
