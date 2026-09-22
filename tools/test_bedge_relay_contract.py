@@ -41,11 +41,14 @@ def main() -> int:
     assert "EdgeTlsIdentity.createServerSocket" in relay
     assert "TLS_API_LISTENING" in relay
     assert '"AndroidKeyStore"' in tls_identity
-    assert '"bcp-edge-tls-v2"' in tls_identity
+    assert '"bcp-edge-tls-v3"' in tls_identity
     assert "SSLServerSocket" in tls_identity
     assert "DIGEST_NONE" in tls_identity
     assert "SIGNATURE_PADDING_RSA_PSS" in tls_identity
     assert "SIGNATURE_PADDING_RSA_PKCS1" in tls_identity
+    assert "PURPOSE_DECRYPT" in tls_identity
+    assert "ENCRYPTION_PADDING_NONE" in tls_identity
+    assert "ENCRYPTION_PADDING_RSA_PKCS1" in tls_identity
     assert '"TLSv1.3"' in tls_identity and '"TLSv1.2"' in tls_identity
     assert "CredentialStore(this).getToken()" in relay
     assert "FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING" in relay
