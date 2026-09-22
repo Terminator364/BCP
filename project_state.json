@@ -192,7 +192,19 @@
         "ANDROID_OFFICIAL"
       ],
       "decision": "DEFER_CURRENT_2_2_HUMAN_INSTALL_UNTIL_ONE_COHERENT_UI_CONVERGENCE_CANDIDATE",
-      "product_bytes_changed": false
+      "product_bytes_changed": false,
+      "policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+      "external_reference_registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+      "source_adoption_matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json",
+      "reconciliation": "PR161_GUARDRAILS_ABSORBED_INTO_PR162_SINGLE_CANONICAL_R89_LINE",
+      "license_corrections": {
+        "LocalSend": "APACHE-2.0",
+        "RustDesk": "AGPL-3.0_PATTERN_ONLY_DEFAULT",
+        "KDE_Connect": "GPL_FAMILY_PATTERN_ONLY_DEFAULT",
+        "Syncthing": "MPL-2.0_PATTERN_FIRST",
+        "Temporal": "MIT",
+        "Home_Assistant": "APACHE-2.0"
+      }
     }
   },
   "field_gates": [
@@ -278,7 +290,9 @@
     "local_ai_extension_policy": ".project-memory/BCP_LOCAL_AI_EXTENSION_POLICY.json",
     "local_ai_eval_chaos": "docs/BCP_LOCAL_AI_EVAL_AND_CHAOS.md",
     "anti_reinvention_benchmark": "docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md",
-    "source_adoption_matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json"
+    "source_adoption_matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json",
+    "reference_first_policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+    "external_reference_registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json"
   },
   "continuity_design": {
     "conversation_roles": [
@@ -465,7 +479,12 @@
     "P0_checkpoint_or_true_gate_driven_closeout": true,
     "P0_source_benchmark_before_new_ui_design": true,
     "P0_one_coherent_ui_convergence_before_next_human_install": true,
-    "P0_current_2_2_install_deferred_for_ui_convergence": true
+    "P0_current_2_2_install_deferred_for_ui_convergence": true,
+    "P0_reference_first_before_new_implementation": true,
+    "P0_reuse_adapt_build_only_if_gap": true,
+    "P0_license_provenance_before_external_code_reuse": true,
+    "P0_task_based_ui_acceptance": true,
+    "P0_no_settings_as_operational_action_dump": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
