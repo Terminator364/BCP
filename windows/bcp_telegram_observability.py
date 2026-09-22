@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import hmac
 import http.client
 import html
 import json
 import os
 from pathlib import Path
 import re
+import secrets
+import ssl
 import sqlite3
 import sys
 import time
@@ -434,7 +437,7 @@ def text_pdf_bytes(title: str, body: str) -> bytes:
 
 class Http:
     @staticmethod
-    def _edge_relay() -> tuple[str, int, str] | None:
+    def _edge_relay() -> tuple[str, int, str, str] | None:
         try:
             state = read_json(EDGE_RELAY_STATE_PATH, {}) or {}
             if not state.get("relay_host") or int(state.get("relay_port") or 0) != 8876:
@@ -446,9 +449,91 @@ class Http:
             pair_token = BCP_PAIR_TOKEN_PATH.read_text(encoding="utf-8").strip()
             if not pair_token:
                 return None
-            return str(state["relay_host"]), int(state["relay_port"]), pair_token
+            return (
+                str(state["relay_host"]),
+                int(state["relay_port"]),
+                pair_token,
+                str(state.get("relay_auth") or "BEARER_LEGACY"),
+            )
         except Exception:
             return None
+
+    @staticmethod
+    def _relay_proxy_authorization(pair_token: str, relay_auth: str,
+                                   target: str = "api.telegram.org:443") -> str:
+        if relay_auth != "BCP_HMAC_SHA256":
+            return "Bearer " + pair_token
+        ts = int(time.time())
+        nonce = secrets.token_urlsafe(18)
+        canonical = f"CONNECT\\n{target}\\n{ts}\\n{nonce}".encode("utf-8")
+        signature = hmac.new(
+            pair_token.encode("utf-8"), canonical, hashlib.sha256
+        ).hexdigest()
+        return f"BCP-HMAC-SHA256 {ts}:{nonce}:{signature}"
+
+    @staticmethod
+    def _edge_api() -> tuple[str, int, str, str] | None:
+        try:
+            state = read_json(EDGE_RELAY_STATE_PATH, {}) or {}
+            host = str(state.get("relay_host") or "")
+            port = int(state.get("api_port") or 0)
+            fingerprint = str(state.get("api_tls_sha256") or "").lower()
+            if not host or str(state.get("api_scheme") or "").lower() != "https":
+                return None
+            if port != 8877 or not re.fullmatch(r"[0-9a-f]{64}", fingerprint):
+                return None
+            if int(state.get("expires_epoch") or 0) <= int(time.time()):
+                return None
+            pair_token = BCP_PAIR_TOKEN_PATH.read_text(encoding="utf-8").strip()
+            if not pair_token:
+                return None
+            return host, port, fingerprint, pair_token
+        except Exception:
+            return None
+
+    def edge_api_json(self, path: str, method: str = "GET",
+                      payload: dict | None = None, timeout: int = 8) -> tuple[int, Any]:
+        edge = self._edge_api()
+        if edge is None:
+            raise RuntimeError("edge_secure_api_not_available")
+        host, port, expected_fingerprint, pair_token = edge
+        if not path.startswith("/"):
+            raise ValueError("edge_api_path_must_be_absolute")
+
+        body = None if payload is None else json.dumps(
+            payload, separators=(",", ":")
+        ).encode("utf-8")
+        headers = {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + pair_token,
+            "User-Agent": "BCP-PC-Pinned-Edge/1",
+        }
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+
+        # Trust is established by the paired SHA-256 certificate pin, not by
+        # accepting arbitrary certificates. No HTTP request carrying the bearer
+        # is sent until the peer certificate fingerprint has matched.
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        conn = http.client.HTTPSConnection(host, port, timeout=timeout, context=context)
+        try:
+            conn.connect()
+            peer_der = conn.sock.getpeercert(binary_form=True) if conn.sock else None
+            if not peer_der:
+                raise RuntimeError("edge_tls_peer_certificate_missing")
+            got = hashlib.sha256(peer_der).hexdigest()
+            if not hmac.compare_digest(got, expected_fingerprint):
+                raise RuntimeError("edge_tls_pin_mismatch")
+            conn.request(method, path, body=body, headers=headers)
+            res = conn.getresponse()
+            raw = res.read()
+            obj = json.loads(raw.decode("utf-8")) if raw else {}
+            append_log("EDGE_PINNED_TLS_API", status=int(res.status), relay_host=host)
+            return int(res.status), obj
+        finally:
+            conn.close()
 
     def _json_via_edge(self, url: str, method: str, body: bytes | None,
                        headers: dict, timeout: int) -> tuple[int, Any]:
@@ -458,12 +543,15 @@ class Http:
         relay = self._edge_relay()
         if relay is None:
             raise RuntimeError("edge_relay_not_available")
-        relay_host, relay_port, pair_token = relay
+        relay_host, relay_port, pair_token, relay_auth = relay
+        proxy_auth = self._relay_proxy_authorization(
+            pair_token, relay_auth, "api.telegram.org:443"
+        )
         conn = http.client.HTTPSConnection(relay_host, relay_port, timeout=timeout)
         conn.set_tunnel(
             "api.telegram.org",
             port=443,
-            headers={"Proxy-Authorization": "Bearer " + pair_token},
+            headers={"Proxy-Authorization": proxy_auth},
         )
         target = parsed.path or "/"
         if parsed.query:
@@ -481,6 +569,7 @@ class Http:
                 status=int(res.status),
                 relay_host=relay_host,
                 target_host="api.telegram.org",
+                relay_auth=relay_auth,
             )
             return int(res.status), obj
         finally:
