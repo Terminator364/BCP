@@ -300,6 +300,31 @@ Platform constraints:
 
 This is not optional style guidance when it intersects permission behavior.
 
+### 4.12 Banking/payment transaction tunnels — state + next action + asynchronous truth
+
+Primary industry references:
+- https://docs.adyen.com/account/payments-lifecycle
+- https://docs.adyen.com/online-payments/build-your-integration/payment-result-codes
+
+Adyen's payment UI/API model separates:
+- intermediate states such as Received / Pending / PresentToShopper;
+- final outcomes such as Authorised / Cancelled / Refused / Error;
+- an explicit action to take for each non-final state;
+- asynchronous confirmation for outcomes that are not final at the first response.
+
+BCP should adopt the **interaction contract**, not payment-domain semantics:
+
+`RECEIVED -> WAITING | ACTION_REQUIRED | PROCESSING -> RESULT_COMMITTED | FAILED_SAFE`
+
+Rules:
+- never show SUCCESS merely because an operation was accepted;
+- always show the current state and the next action;
+- if the final provider outcome is unknown, show `RECONCILING`, not success or generic failure;
+- durable receipt/readback is the analogue of the final payment confirmation;
+- raw provider/transport details belong behind Technical details.
+
+This directly strengthens BCP communications, updates, pairing, missions and recovery without adding a new backend subsystem.
+
 ## 5. Visual/video references
 
 Useful visual references:
