@@ -6,9 +6,9 @@
   "cadence_minutes": 25,
   "useful_work_minutes": 23,
   "normal_close_reserve_minutes": 2,
-  "work_state": "WORKING",
+  "work_state": "CLOSEOUT",
   "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "status": "CLOSEOUT",
   "started_at_kinshasa": "2026-09-22T03:43:19+01:00",
   "close_reserve_begins_kinshasa": "2026-09-22T04:06:19+01:00",
   "normal_end_target_kinshasa": "2026-09-22T04:08:19+01:00",
@@ -18,7 +18,7 @@
   "gmail_end_thread_id": null,
   "end_mail_verified": false,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
   "final_app_reply_gate": "END_ACK_REQUIRED",
@@ -50,15 +50,29 @@
     "closed_at_kinshasa": "2026-09-22T01:53:40+01:00",
     "status": "CLOSED"
   },
-  "no_more_product_mutations": false,
-  "candidate_head_sha": null,
-  "pr_number": null,
+  "no_more_product_mutations": true,
+  "candidate_head_sha": "77e755db5d0f3cc62bd4f16252245320f1e4e7ec",
+  "pr_number": 153,
   "closeout_truth": {
     "base_main_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
     "install_authorized": false,
     "current_distributed_edge": "2.1.2",
     "target_candidate": "2.2.0-full-node",
-    "transport_security_state": "PARTIAL_CLEAR_HTTP_POC",
-    "release_blocker": "AUTHENTICATED_ENCRYPTED_LAN"
+    "transport_security_state": "PARTIAL",
+    "release_blocker": "AUTHENTICATED_ENCRYPTED_LAN",
+    "product_head_before_close_intent": "77e755db5d0f3cc62bd4f16252245320f1e4e7ec",
+    "pr_number": 153,
+    "server_version": "0.7.17",
+    "telegram_version": "2026.09.22-secure-lan-v23",
+    "field_edge_version": "2.1.2-rc1-edge-relay-evergreen",
+    "secure_ingress": "PINNED_TLS_8877",
+    "relay_auth": "BCP_HMAC_SHA256",
+    "remaining_release_blocker": "BEDGE_TO_PC_CONTROL_HTTP_NOT_YET_ENCRYPTED",
+    "exact_head_ci_pending": [
+      "COORDINATED_PRODUCT_1491",
+      "ANDROID_BUILD_806",
+      "ANDROID_HUMAN_ACTION_321",
+      "FIELD_ECOSYSTEM_1409"
+    ]
   }
 }
