@@ -1,7 +1,7 @@
 {
   "schema": "bcp.abc_source_registry/1",
-  "revision": "2026-09-21-R79",
-  "status": "CANONICAL_CANDIDATE_SOURCE_RECONCILED_UCMF_V9",
+  "revision": "2026-09-22-R82",
+  "status": "CANONICAL_CANDIDATE_R82_R81_RECONCILIATION",
   "rule": "BCP product scope is the cumulative union A+B+C. No release or completion percentage may be computed from only one layer.",
   "A": {
     "meaning": "ORIGINAL_PRECONCEPTION_AND_PROMISED_PRODUCT",
@@ -143,6 +143,10 @@
       {
         "provider": "Android Developers",
         "topic": "dedicated/fully-managed device owner mode as optional appliance tier"
+      },
+      {
+        "ref": "docs/R81_PHONE_FULL_NODE_RESEARCH_EVIDENCE.md",
+        "role": "ANDROID_FULL_NODE_PLATFORM_RESEARCH_AND_NON_CLAIMS"
       }
     ],
     "expansion_principles": [
@@ -227,6 +231,7 @@
     "mode": "SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE",
     "removal_requires_explicit_supersession": true,
     "source_conflict_state": "SPEC_CONFLICT_HOLD",
-    "completion_denominator": "ALL_ACTIVE_A_PLUS_B_PLUS_C_REQUIREMENTS"
+    "completion_denominator": "ALL_ACTIVE_A_PLUS_B_PLUS_C_REQUIREMENTS",
+    "current_reconciliation": "R82_PRESERVE_PR150_MEMORY_GOVERNANCE_PLUS_PR151_CAPABILITY_UI_RESEARCH"
   }
 }
