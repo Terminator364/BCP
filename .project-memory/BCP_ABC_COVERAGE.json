@@ -1,8 +1,8 @@
 {
   "schema": "bcp.abc_coverage/1",
-  "revision": "2026-09-22-R82",
-  "status": "R82_RECONCILED_MEMORY_CAPABILITY_UI_CANDIDATE_EXACT_HEAD_CI_PENDING",
-  "warning": "R82 preserves the richer R81 memory/provenance line and the parallel R81 capability/UI/research gains. Functional/evidence totals remain unchanged until exact-head CI and integration prove the reconciled candidate.",
+  "revision": "2026-09-22-R89",
+  "status": "R89_DENOMINATOR_REFRESH_REQUIRED_REFERENCE_FIRST_SCOPE_ADDED",
+  "warning": "R89 added a mandatory reference-first/reuse-adapt-build gate and found stale pre-R89 assumptions in the prior matrix. Existing 56.1/42.2 values are preserved only as historical R82 estimates and MUST NOT be presented as current completion percentages until the denominator is recomputed against the R89 source registry.",
   "scoring": {
     "functional_score_definition": "weighted fraction of required capability materially implemented in current code/design",
     "evidence_score_definition": "weighted maturity of deterministic CI/device/field proof; documentation alone scores low",
@@ -28,7 +28,7 @@
       "weight": 6,
       "functional": 0.8,
       "evidence": 0.65,
-      "note": "25-minute KINLINK-style delivery state machine + Gmail provider IDs/readback implemented; current tranche validates normal close without automation."
+      "note": "R88 adaptive task-window delivery state machine + Gmail START scope/estimate + END provider IDs/readback are canonical; fixed 25-minute timing is retired."
     },
     {
       "id": "PHONE_LOCAL_API_SERVER",
@@ -64,7 +64,8 @@
       "id": "ENCRYPTED_AUTHENTICATED_LAN",
       "weight": 5,
       "functional": 0.25,
-      "evidence": 0.15
+      "evidence": 0.15,
+      "note": "Prior numeric score is stale: B-EDGE 2.2 / PC bidirectional pinned TLS is CI-qualified, but real-device field proof is still pending."
     },
     {
       "id": "TELEGRAM_COCKPIT_AND_RELAY",
@@ -128,7 +129,7 @@
       "weight": 3,
       "functional": 0.6,
       "evidence": 0.35,
-      "note": "R81 cockpit surfaces durable Room v5, capability count and memory/provenance claim count; exact-head emulator proof pending."
+      "note": "R89 classifies current B-EDGE 2.2 UI as a machine-qualified engineering baseline, not target UX. Reference-first status-first navigation/pairing/settings redesign and task-based emulator proof are required before next user install."
     },
     {
       "id": "COORDINATED_RELEASE_UPDATE_ROLLBACK",
@@ -172,16 +173,17 @@
     }
   ],
   "totals": {
-    "weight": 100,
-    "functional_percent": 56.1,
-    "evidence_maturity_percent": 42.2
+    "weight": null,
+    "functional_percent": null,
+    "evidence_maturity_percent": null,
+    "state": "STALE_PENDING_R89_DENOMINATOR_RECOMPUTE"
   },
   "top_gaps": [
-    "ENCRYPTED_AUTHENTICATED_LAN_TRANSPORT_STILL_POC_CLEAR_HTTP",
-    "R82_RECONCILED_MEMORY_CAPABILITY_UI_EXACT_HEAD_CI_AND_DEVICE_MIGRATION_PENDING",
+    "R89_REFERENCE_FIRST_UX_RECONCILIATION_BEFORE_NEXT_USER_INSTALL",
+    "BIDIRECTIONAL_PINNED_TLS_REQUIRES_REAL_DEVICE_FIELD_PROOF",
     "MISSION_STEP_ENVELOPE_AND_PROVIDER_STATE_NOT_YET_FIELD_PROVEN_ON_PHONE",
     "UNIVERSAL_CHRONICLE_NOT_YET_FIELD_PROVEN_ON_2_2_PHONE",
-    "INSTALLED_PHONE_2_1_2_NOT_FULL_NODE_2_2",
+    "BEDGE_2_2_MACHINE_QUALIFIED_BUT_NEXT_INSTALL_DEFERRED_FOR_COHERENT_REFERENCE_FIRST_CANDIDATE",
     "TELEGRAM_DIRECT_FIELD_OUTAGE_AND_EDGE_RELAY_NOT_FIELD_REGISTERED",
     "DIRECT_BOOT_BLACKSTART_AND_BULK_MEDIA_PIPELINE_INCOMPLETE",
     "OPTIONAL_DEDICATED_DEVICE_OWNER_TIER_NOT_IMPLEMENTED_OR_FIELD_GATED"
@@ -192,6 +194,11 @@
     "B": "CURRENT_RESEARCH_INDEXED",
     "C": "CURRENT_FIELD_FEEDBACK_INDEXED",
     "global_percentage_claim_allowed": false,
-    "reason": "Current UCMF V9 expands the active denominator; scores are conservative macro evidence estimates and sealed V0.7 ZIP bytes were not rematerialized."
+    "reason": "R89 expanded B/C with mandatory external-reference and anti-reinvention requirements; exact denominator/weights require a fresh coverage computation after R90 design reconciliation."
+  },
+  "historical_totals_r82": {
+    "weight": 100,
+    "functional_percent": 56.1,
+    "evidence_maturity_percent": 42.2
   }
 }
