@@ -1,0 +1,38 @@
+{
+  "schema": "blessing.cross_project_work_cadence/1",
+  "status": "ACTIVE",
+  "scope": "ALL_SOFTWARE_PROJECTS_PRINCIPAL_BCP",
+  "cadence": {
+    "target_minutes_min": 5,
+    "target_minutes_max": 6,
+    "end_each_slice_with_checkpoint": true,
+    "do_not_run_open_ended_without_checkpoint": true
+  },
+  "execution": {
+    "concrete_work_before_status": true,
+    "prefer_tests_and_prevention_before_field_install": true,
+    "no_blind_retry_loops": true,
+    "one_field_attempt_then_diagnose": true,
+    "human_gate_one_action_only": true
+  },
+  "delivery": {
+    "chat_response_required": true,
+    "email_checkpoint_required": true,
+    "email_body_must_match_chat_response_exactly": true,
+    "email_summary_variant_forbidden": true
+  },
+  "artifacts": {
+    "current_install_folder_policy": "KEEP_ONLY_CURRENT_INSTALLABLE_ARTIFACTS",
+    "replace_stable_current_names_in_place": true,
+    "remove_superseded_install_files_from_current_folder": true,
+    "archives_belong_outside_current_folder": true
+  },
+  "constrained_pc": {
+    "windows11_4gb_ram": true,
+    "ram_pressure_nominal": true,
+    "unstable_network_nominal": true,
+    "thermal_pressure_nominal": true,
+    "offline_manual_first_when_reliable": true
+  },
+  "precedence": "Project-specific safety gates may stop a slice earlier, but may not silently weaken these rules."
+}
