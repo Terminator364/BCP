@@ -45,7 +45,11 @@
     "local task receipts are persisted before jobs are removed from the durable queue",
     "local context/health/queue/memory-maintenance jobs remain available in EDGE_ONLY mode with no arbitrary shell",
     "Universal Chronicle append-only edge_events ledger with project-scoped idempotency and authenticated /v1/node/events tail/admission",
-    "A+B+C integral specification gate: candidate scope is measured against original preconception + researched expansion + accumulated field feedback"
+    "A+B+C integral specification gate: candidate scope is measured against original preconception + researched expansion + accumulated field feedback",
+    "phone-resident durable capability/source registry with evidence class, availability state, TTL and authenticated local API",
+    "server-first UI exposes capability state locally without depending on the PC",
+    "allowlisted LOCAL_CAPABILITY_SNAPSHOT executes on the phone in EDGE_ONLY mode",
+    "memory admission/provenance ledger prevents weaker unverified claims from silently replacing better-evidenced phone memory"
   ],
   "release_train": "BCP-0.7.16_EDGE-2.2.0-full-node_NEXUS-0.2.6"
 }
