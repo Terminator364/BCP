@@ -148,7 +148,7 @@
       "docs": [
         "https://github.com/localsend/protocol/blob/main/README.md"
       ],
-      "license": "MIT_REPORTED_BY_PROJECT; VERIFY_FILE_BEFORE_COPY",
+      "license": "APACHE-2.0",
       "adopt": [
         "NEARBY_DEVICE_FIRST_UI",
         "MULTIPLE_DISCOVERY_METHODS",
@@ -157,7 +157,8 @@
         "LAN_FIRST_NO_EXTERNAL_SERVER_REQUIRED",
         "SIMPLE_HUMAN_ALIAS_PLUS_TECHNICAL_FINGERPRINT"
       ],
-      "decision": "ADOPT_LOCAL_TRANSPORT_AND_NEARBY_DEVICE_UX_PATTERN"
+      "decision": "ADOPT_LOCAL_TRANSPORT_AND_NEARBY_DEVICE_UX_PATTERN",
+      "code_reuse": "PATTERN_FIRST; DIRECT_COPY_ONLY_AFTER_FILE_LEVEL_APACHE_2_0_PROVENANCE_CHECK"
     },
     {
       "id": "TEMPORAL_UI",
@@ -323,6 +324,27 @@
         "FAILED_SAFE_OR_RECONCILING"
       ],
       "decision": "ADOPT_TRANSACTION_TUNNEL_STATE_AND_NEXT_ACTION_PATTERN"
+    },
+    {
+      "id": "RUSTDESK",
+      "category": [
+        "REMOTE_CONTROL",
+        "RENDEZVOUS",
+        "DIRECT_FIRST",
+        "RELAY_FALLBACK"
+      ],
+      "source": "https://github.com/rustdesk/rustdesk",
+      "docs": [
+        "https://rustdesk.com/docs/en/self-host/"
+      ],
+      "license": "AGPL-3.0",
+      "adopt": [
+        "RENDEZVOUS_SEPARATE_FROM_RELAY",
+        "DIRECT_PATH_FIRST_RELAY_ONLY_IF_NEEDED",
+        "SELF_HOSTABLE_CONTROL_PLANE_PATTERN"
+      ],
+      "code_reuse": "PATTERN_ONLY_BY_DEFAULT; DIRECT_COPY_REQUIRES_EXPLICIT_LICENSE_DECISION",
+      "decision": "SECONDARY_REFERENCE_FOR_REMOTE_PC_TRANSPORT_NOT_A_RUNTIME_DEPENDENCY"
     }
   ],
   "visual_video_references": [
