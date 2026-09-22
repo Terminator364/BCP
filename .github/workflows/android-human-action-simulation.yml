@@ -151,29 +151,37 @@ jobs:
           test -n "$PID"
           echo "BCP_ANDROID_APP_PROCESS=PASS pid=$PID"
 
-      - name: Verify visible primary UI and no immediate crash
+      - name: Verify source-driven product navigation and no immediate crash
         shell: bash
         run: |
           set -euo pipefail
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
           ADB="$SDK/platform-tools/adb"
           COMPONENT="$(cat launcher-component.txt)"
+
+          dump_ui() {
+            local name="$1"
+            "$ADB" shell uiautomator dump "/sdcard/$name.xml" >/dev/null
+            "$ADB" pull "/sdcard/$name.xml" "$name.xml" >/dev/null
+          }
+
+          # Recover from a rare unrelated launcher ANR, then require the actual
+          # R90 Home product shell rather than a technical dashboard fragment.
           APP_UI_READY=0
           for UI_ATTEMPT in 1 2 3; do
-            "$ADB" shell uiautomator dump /sdcard/bcp-window.xml >/dev/null
-            "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
-            if grep -F "BCP Edge Server" bcp-window.xml >/dev/null               && grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null; then
+            dump_ui "bcp-home"
+            if grep -F "BCP Edge Server" bcp-home.xml >/dev/null \
+              && grep -F "EN UN COUP D’ŒIL" bcp-home.xml >/dev/null \
+              && grep -F "ACTION REQUISE" bcp-home.xml >/dev/null \
+              && grep -F "Accueil" bcp-home.xml >/dev/null \
+              && grep -F "Activité" bcp-home.xml >/dev/null \
+              && grep -F "Appareils" bcp-home.xml >/dev/null \
+              && grep -F "Système" bcp-home.xml >/dev/null; then
               APP_UI_READY=1
               break
             fi
-
-            # Headless API-35 occasionally surfaces an unrelated Pixel Launcher ANR
-            # over the already-running B-EDGE activity. Close only that system dialog,
-            # never B-EDGE, then foreground the exact installed component again.
-            if grep -F 'resource-id="android:id/aerr_close"' bcp-window.xml >/dev/null \
-              && ! grep -E 'BCP Edge|blessing\.bcpedge' bcp-window.xml >/dev/null; then
-              # Fixed API-35 CI device is 320x640; this is the center of
-              # android:id/aerr_close in the unrelated launcher ANR dialog.
+            if grep -F 'resource-id="android:id/aerr_close"' bcp-home.xml >/dev/null \
+              && ! grep -E 'BCP Edge|blessing\.bcpedge' bcp-home.xml >/dev/null; then
               "$ADB" shell input tap 160 331
               sleep 1
             else
@@ -183,18 +191,9 @@ jobs:
             sleep 2
           done
           test "$APP_UI_READY" = "1"
+          "$ADB" exec-out screencap -p > bcp-home.png
+          test -s bcp-home.png
 
-          # Server controls and governance cards may legitimately be below the initial
-          # viewport as the dashboard grows. Exercise bounded real-user scrolling and
-          # require every critical card to become visible instead of assuming position.
-          FOUND_PERMISSIONS=0
-          FOUND_CAPABILITIES=0
-          FOUND_MEMORY=0
-          FOUND_LAN=0
-          # Derive swipe coordinates from the real emulator geometry. The API-35
-          # CI phone is currently 320x640; the previous 520x1500 gesture was fully
-          # outside that viewport, so all five UI dumps were byte-identical and no
-          # scroll ever occurred. Keep this proof geometry-independent.
           WM_SIZE_RAW="$("$ADB" shell wm size | tr -d '\r' | tee wm-size.txt)"
           WM_SIZE="$(printf '%s\n' "$WM_SIZE_RAW" | sed -n 's/.*Physical size: \([0-9][0-9]*x[0-9][0-9]*\).*/\1/p' | tail -1)"
           if [ -z "$WM_SIZE" ]; then
@@ -203,50 +202,69 @@ jobs:
           test -n "$WM_SIZE"
           SCREEN_W="${WM_SIZE%x*}"
           SCREEN_H="${WM_SIZE#*x}"
-          test "$SCREEN_W" -gt 0
-          test "$SCREEN_H" -gt 0
-          SWIPE_X=$((SCREEN_W / 2))
-          SWIPE_Y1=$((SCREEN_H * 82 / 100))
-          SWIPE_Y2=$((SCREEN_H * 28 / 100))
-          test "$SWIPE_Y1" -gt "$SWIPE_Y2"
-          echo "BCP_ANDROID_SCROLL_GEOMETRY=${SCREEN_W}x${SCREEN_H} x=${SWIPE_X} y1=${SWIPE_Y1} y2=${SWIPE_Y2}" | tee scroll-geometry.txt
+          NAV_Y=$((SCREEN_H - 28))
+          X_HOME=$((SCREEN_W / 8))
+          X_ACTIVITY=$((SCREEN_W * 3 / 8))
+          X_DEVICES=$((SCREEN_W * 5 / 8))
+          X_SYSTEM=$((SCREEN_W * 7 / 8))
+          printf 'size=%sx%s nav_y=%s home=%s activity=%s devices=%s system=%s\n' \
+            "$SCREEN_W" "$SCREEN_H" "$NAV_Y" "$X_HOME" "$X_ACTIVITY" "$X_DEVICES" "$X_SYSTEM" \
+            | tee product-navigation-geometry.txt
 
-          : > bcp-window-lower.xml
-          PREV_DUMP_SHA="$(sha256sum bcp-window.xml | awk '{print $1}')"
-          echo "step=0 sha256=$PREV_DUMP_SHA" > scroll-dump-sha256.txt
-          SCROLL_CHANGED=0
-          for STEP in 1 2 3 4 5; do
-            "$ADB" shell input swipe "$SWIPE_X" "$SWIPE_Y1" "$SWIPE_X" "$SWIPE_Y2" 420
-            sleep 1
-            "$ADB" shell uiautomator dump "/sdcard/bcp-window-$STEP.xml" >/dev/null
-            "$ADB" pull "/sdcard/bcp-window-$STEP.xml" "bcp-window-$STEP.xml" >/dev/null
-            CURRENT_DUMP_SHA="$(sha256sum "bcp-window-$STEP.xml" | awk '{print $1}')"
-            echo "step=$STEP sha256=$CURRENT_DUMP_SHA" >> scroll-dump-sha256.txt
-            if [ -n "$PREV_DUMP_SHA" ] && [ "$CURRENT_DUMP_SHA" != "$PREV_DUMP_SHA" ]; then
-              SCROLL_CHANGED=1
-            fi
-            PREV_DUMP_SHA="$CURRENT_DUMP_SHA"
-            cat "bcp-window-$STEP.xml" >> bcp-window-lower.xml
-            grep -F "AUTORISATIONS SERVEUR" "bcp-window-$STEP.xml" >/dev/null && FOUND_PERMISSIONS=1 || true
-            grep -F "CAPACITÉS DU NŒUD" "bcp-window-$STEP.xml" >/dev/null && FOUND_CAPABILITIES=1 || true
-            grep -F "Journal mémoire/provenance:" "bcp-window-$STEP.xml" >/dev/null && FOUND_MEMORY=1 || true
-            grep -F "Sécurité LAN 2.2: TLS pinné bidirectionnel · legacy 2.1.2 isolé" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
-          done
-          test "$SCROLL_CHANGED" = "1"
-          test "$FOUND_PERMISSIONS" = "1"
-          test "$FOUND_CAPABILITIES" = "1"
-          test "$FOUND_MEMORY" = "1"
-          test "$FOUND_LAN" = "1"
-          "$ADB" exec-out screencap -p > bcp-server-dashboard-lower.png
-          test -s bcp-server-dashboard-lower.png
+          # Activity: durable mission lifecycle + Chronicle, not raw JSON as primary UX.
+          "$ADB" shell input tap "$X_ACTIVITY" "$NAV_Y"
+          sleep 1
+          dump_ui "bcp-activity"
+          grep -F "ÉTAT DES MISSIONS" bcp-activity.xml >/dev/null
+          grep -F "MISSIONS RÉCENTES" bcp-activity.xml >/dev/null
+          grep -F "CHRONICLE" bcp-activity.xml >/dev/null
+          if grep -F '{"' bcp-activity.xml >/dev/null; then
+            echo "Raw JSON unexpectedly visible in primary Activity UI"
+            exit 1
+          fi
+          "$ADB" exec-out screencap -p > bcp-activity.png
 
-          if "$ADB" logcat -d -t 400 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
+          # Devices: discovery/trust first; no manual IP/token field is a primary action.
+          "$ADB" shell input tap "$X_DEVICES" "$NAV_Y"
+          sleep 1
+          dump_ui "bcp-devices"
+          grep -F "APPAREILS CONNUS" bcp-devices.xml >/dev/null
+          grep -F "CONFIANCE & TRANSPORT" bcp-devices.xml >/dev/null
+          grep -F "RECHERCHER / RECONNECTER LE PC" bcp-devices.xml >/dev/null
+          ! grep -E 'SAISIR.*IP|TOKEN MANUEL|ENTRER.*TOKEN' bcp-devices.xml >/dev/null
+          "$ADB" exec-out screencap -p > bcp-devices.png
+
+          # System: Repairs and permissions are primary; deep technical output stays hidden.
+          "$ADB" shell input tap "$X_SYSTEM" "$NAV_Y"
+          sleep 1
+          dump_ui "bcp-system"
+          grep -F "REPAIRS" bcp-system.xml >/dev/null
+          grep -F "AUTORISATIONS & 24/7" bcp-system.xml >/dev/null
+          ! grep -F "PARAMÈTRES / DIAGNOSTIC" bcp-system.xml >/dev/null
+          if grep -F '{"' bcp-system.xml >/dev/null; then
+            echo "Raw JSON unexpectedly visible in primary System UI"
+            exit 1
+          fi
+          "$ADB" exec-out screencap -p > bcp-system.png
+
+          # Android Back from a secondary destination must return Home, not exit.
+          "$ADB" shell input keyevent 4
+          sleep 1
+          dump_ui "bcp-back-home"
+          grep -F "EN UN COUP D’ŒIL" bcp-back-home.xml >/dev/null
+          grep -F "ACTION REQUISE" bcp-back-home.xml >/dev/null
+
+          # Persist Activity selection so the cold-relaunch test can prove screen continuity.
+          "$ADB" shell input tap "$X_ACTIVITY" "$NAV_Y"
+          sleep 1
+          dump_ui "bcp-activity-before-relaunch"
+          grep -F "ÉTAT DES MISSIONS" bcp-activity-before-relaunch.xml >/dev/null
+
+          if "$ADB" logcat -d -t 500 | grep -E "FATAL EXCEPTION: main|Process: com\.blessing\.bcpedge\.evergreen.*has died"; then
             echo "Immediate B-EDGE crash detected"
             exit 1
           fi
-          "$ADB" exec-out screencap -p > bcp-server-dashboard.png
-          test -s bcp-server-dashboard.png
-          echo "BCP_ANDROID_PRIMARY_UI=PASS"
+          echo "BCP_ANDROID_R90_TASK_NAVIGATION=PASS"
 
       - name: Verify real local phone API server surface
         shell: bash
@@ -318,7 +336,16 @@ jobs:
           test -n "$PID"
           "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch.xml >/dev/null
           "$ADB" pull /sdcard/bcp-window-relaunch.xml bcp-window-relaunch.xml >/dev/null
-          grep -F "BCP Edge Server" bcp-window-relaunch.xml >/dev/null
+          # R90 persists the user's last product destination. Activity was selected
+          # before force-stop, so relaunch must restore Activity rather than silently
+          # resetting navigation.
+          grep -F "ÉTAT DES MISSIONS" bcp-window-relaunch.xml >/dev/null
+          grep -F "MISSIONS RÉCENTES" bcp-window-relaunch.xml >/dev/null
+          "$ADB" shell input keyevent 4
+          sleep 1
+          "$ADB" shell uiautomator dump /sdcard/bcp-window-relaunch-home.xml >/dev/null
+          "$ADB" pull /sdcard/bcp-window-relaunch-home.xml bcp-window-relaunch-home.xml >/dev/null
+          grep -F "EN UN COUP D’ŒIL" bcp-window-relaunch-home.xml >/dev/null
           "$ADB" forward tcp:18878 tcp:8877
           CODE="$(curl -ksS -o edge-health-relaunch.json -w '%{http_code}' https://127.0.0.1:18878/health || true)"
           test "$CODE" = "200"
@@ -346,14 +373,20 @@ jobs:
             activity-start.txt
             launcher-component.txt
             activity-relaunch.txt
-            bcp-window.xml
-            bcp-window-lower.xml
+            bcp-home.xml
+            bcp-home.png
+            bcp-activity.xml
+            bcp-activity.png
+            bcp-devices.xml
+            bcp-devices.png
+            bcp-system.xml
+            bcp-system.png
+            bcp-back-home.xml
+            bcp-activity-before-relaunch.xml
+            product-navigation-geometry.txt
             wm-size.txt
-            scroll-geometry.txt
-            scroll-dump-sha256.txt
-            bcp-server-dashboard.png
-            bcp-server-dashboard-lower.png
             bcp-window-relaunch.xml
+            bcp-window-relaunch-home.xml
             edge-health.json
             edge-tls-cert.sha256
             edge-capabilities.json
