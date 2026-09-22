@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R84_CLOSED_PR153_EXACT_HEAD_CI_CONTINUATION_REQUIRED",
-  "last_completed_atomic_action": "R84 closed with provider-proven Gmail delivery after implementing the first secure LAN slice: B-EDGE HTTPS API on 8877 with AndroidKeyStore identity and paired SHA-256 pin, plus HMAC-SHA256 timestamp+nonce authentication for the 2.2 Telegram CONNECT relay. Windows candidate is 0.7.17 and Telegram companion candidate is 2026.09.22-secure-lan-v23. B-EDGE field release remains 2.1.2 and no 2.2 install is authorized.",
-  "next_action": "Resume PR #153 from its latest exact branch head after R84 close metadata. Read exact CI results, auto-fix regressions, and integrate only after required gates are green. Then encrypt and pin B-EDGE -> PC control traffic; overall LAN security remains PARTIAL until that is proven.",
+  "status": "R85_PR153_MERGED_POSTMERGE_GREEN_PROVIDER_CLOSEOUT",
+  "last_completed_atomic_action": "R85 diagnosed Android Human-Action TLS failures from CI artifacts, traced run #331 to AndroidKeyStore INCOMPATIBLE_PADDING_MODE, regenerated the TLS identity as bcp-edge-tls-v3 with PURPOSE_DECRYPT plus RSA NONE/PKCS1 encryption paddings, proved HTTPS 8877 and cold relaunch on emulator run #333, merged PR #153 at exact head d9d4ab7c4d1820ff1bb73dc93657f090e368c8b9 into main 15b7bca6ceac474c6f4454d3a37df363fa13d2d6, and then passed all 12 post-merge main workflows including Android Human-Action #334.",
+  "next_action": "After R85 Gmail END is provider-acknowledged and closeout state is reconciled, start R86 from main 15b7bca6ceac474c6f4454d3a37df363fa13d2d6. Encrypt and pin the B-EDGE -> PC control plane so LAN security becomes bidirectional. Preserve field B-EDGE 2.1.2 and do not authorize 2.2 installation until the coherent release gate says so.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -41,7 +41,16 @@
     "r84_end_gmail_message_id": "1a0c7153de3a8bf9",
     "r84_end_checkpoint": "BCP-R84-END-20260922-0407",
     "r84_pr": 153,
-    "r84_product_head_before_close_intent": "77e755db5d0f3cc62bd4f16252245320f1e4e7ec"
+    "r84_product_head_before_close_intent": "77e755db5d0f3cc62bd4f16252245320f1e4e7ec",
+    "r85_pr": 153,
+    "r85_qualified_pr_head": "d9d4ab7c4d1820ff1bb73dc93657f090e368c8b9",
+    "r85_merged_main_sha": "15b7bca6ceac474c6f4454d3a37df363fa13d2d6",
+    "r85_android_human_action_premerge": 333,
+    "r85_android_human_action_postmerge": 334,
+    "r85_https_8877_runtime": true,
+    "r85_cold_relaunch": true,
+    "r85_all_postmerge_workflows_green": true,
+    "r85_security_state": "PARTIAL"
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
