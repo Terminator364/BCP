@@ -21,7 +21,10 @@
     ".project-memory/COMMUNICATION_SURVIVAL_POLICY.json",
     ".project-memory/GIT_WRITER_LEASE_POLICY.json",
     ".project-memory/UNIVERSAL_CONTINUATION_CODE_REGISTRY.json",
-    "release/current.json"
+    "release/current.json",
+    ".project-memory/REFERENCE_FIRST_POLICY.json",
+    ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+    "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md"
   ],
   "takeover_algorithm": [
     "READ_DURABLE_STATE_FIRST",
@@ -32,6 +35,8 @@
     "SEND_GMAIL_START_WITH_SCOPE_AND_ESTIMATED_END_WINDOW_AND_REQUIRE_PROVIDER_ACK",
     "PERSIST_START_RECEIPT_DELIVERY_KEY_AND_ESTIMATE",
     "LOAD_AND_APPLY_FULL_A_PLUS_B_PLUS_C_SPEC",
+    "LOAD_REFERENCE_FIRST_POLICY_AND_EXTERNAL_REFERENCE_REGISTRY",
+    "DO_NOT_IMPLEMENT_NEW_UI_SERVICE_PROTOCOL_OR_MODULE_BEFORE_REUSE_ADAPT_BUILD_DECISION",
     "RESUME_ONLY_FROM_PROJECT_STATE_NEXT_UNCOMMITTED_ACTION",
     "CONTINUE_UNTIL_REAL_CHECKPOINT_TRUE_HUMAN_GATE_OR_OBJECTIVE_FAILURE",
     "OPTIONALLY_REESTIMATE_AND_SEND_ONE_UPDATE_IF_END_WINDOW_BECOMES_NONCREDIBLE",
@@ -68,11 +73,13 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9,
-    "current_integration_branch": "work/bcp/r88-closeout-20260922-1333",
-    "current_main_base_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7",
-    "current_integration_rule": "R88_CLOSED_ADAPTIVE_COMMUNICATION_CANONICAL; NEXT_ANDROID_IN_PLACE_INSTALL_FIELD_GATE",
+    "current_integration_branch": "work/bcp/r89-reference-first-benchmark-20260922-1519",
+    "current_main_base_sha": "f40879b234ea619eff82445eedb5802796d1f9d8",
+    "current_integration_rule": "R89_REFERENCE_FIRST_BENCHMARK_ACTIVE; BEDGE_2_2_IS_TECHNICAL_BASELINE; USER_INSTALL_DEFERRED",
     "current_secure_lan_state": "BIDIRECTIONAL_PINNED_TLS_CI_VERIFIED_BEDGE_2_2_CURRENT_FIELD_INSTALL_PENDING",
-    "next_product_front": "ANDROID_IN_PLACE_INSTALL_THEN_FULL_NODE_REBOOT_COMMUNICATION_FIELD_PROOF"
+    "next_product_front": "R90_COHERENT_REFERENCE_FIRST_BEDGE_UX_AND_FLOW_SLICE_THEN_EXACT_HEAD_QUALIFICATION",
+    "reference_first_policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+    "external_reference_registry": ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -84,10 +91,10 @@
     "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
-  "current_active_tranche": "BCP-R88-START-20260922-1321",
-  "current_delivery_key": "BCPADAPT-20260922-1321-R88",
-  "current_active_tranche_status": "CLOSED",
-  "current_end_checkpoint": "BCP-R88-END-20260922-1334",
-  "current_end_message_id": "1a0c91cbc4a16677",
-  "current_communication_branch": "work/bcp/r88-adaptive-communication-window-20260922-1321"
+  "current_active_tranche": "BCP-R89-START-20260922-1519",
+  "current_delivery_key": "BCPREF-20260922-1519-R89",
+  "current_active_tranche_status": "WORKING",
+  "current_end_checkpoint": null,
+  "current_end_message_id": null,
+  "current_communication_branch": "work/bcp/r89-reference-first-benchmark-20260922-1519"
 }
