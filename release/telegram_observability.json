@@ -4,7 +4,7 @@
   "version": "2026.09.22-secure-lan-v23",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
   "sha256": "b995cd1b297bc89eb47dd76f40ea564f124e3805d6ca4429278224c222655c09",
-  "minimum_server_version": "0.7.17",
+  "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
