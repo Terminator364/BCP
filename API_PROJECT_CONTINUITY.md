@@ -1,3 +1,22 @@
+# R85 TLS runtime repair and PR #153 integration — 2026-09-22
+
+Canonical continuation code: `BCPGO BCP`.
+
+## R85 authoritative state
+
+- PR #153 is merged on `main` at `15b7bca6ceac474c6f4454d3a37df363fa13d2d6`; exact merged PR head was `d9d4ab7c4d1820ff1bb73dc93657f090e368c8b9`.
+- Android Human-Action #326 exposed an HTTPS 8877 handshake failure. The added runtime diagnostics in #331 proved the exact AndroidKeyStore error: `INCOMPATIBLE_PADDING_MODE`.
+- The persistent TLS identity is now `bcp-edge-tls-v3`, with TLS-compatible RSA authorization including `PURPOSE_DECRYPT`, encryption paddings NONE + RSA_PKCS1, signature paddings RSA_PKCS1 + RSA_PSS and DIGEST_NONE/SHA2.
+- Exact-head Android Human-Action #333 proves HTTPS 8877, the server UI, authenticated/private API boundaries and cold relaunch.
+- All required pre-merge gates were green; after merge, all 12 main workflows were green, including Android Build #821, Android Human-Action #334, Coordinated Product #1506 and Field Ecosystem #1424.
+- Security truth remains **PARTIAL**: PC -> B-EDGE is TLS + certificate-pinned; Telegram CONNECT relay uses HMAC for 2.2; B-EDGE -> PC control traffic still uses authenticated clear HTTP.
+- R85 provider-proof closure: Gmail END `1a0c8672f6af7db0`, checkpoint `BCP-R85-END-20260922-1016`; control-only closeout PR #154 carries the durable closure back to canonical `main`.
+- Field B-EDGE remains 2.1.2. **Do not install 2.2 yet.**
+
+Next product action after provider-proof R85 closure: create R86 from current main and encrypt + pin the B-EDGE -> PC control plane before declaring authenticated + encrypted LAN bidirectional.
+
+---
+
 # R84 Authenticated + encrypted LAN slice — 2026-09-22
 
 Canonical continuation code: `BCPGO BCP`.
