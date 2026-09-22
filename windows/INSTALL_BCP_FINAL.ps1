@@ -7,10 +7,12 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$InstallerVersion = "0.7.17"
+$InstallerVersion = "0.7.18"
 # Keep this target synchronized with release/server.json.
 $RuleName = "BCP Local LAN 8765"
+$TlsRuleName = "BCP Secure LAN 8766 TLS"
 $Port = 8765
+$TlsPort = 8766
 $ScriptRoot = Split-Path -Parent $PSCommandPath
 $BundledServer = Join-Path $ScriptRoot "bcp_server.py"
 
@@ -62,15 +64,18 @@ function Get-ChatGptPcCli([string]$ChatRoot) {
     return $null
 }
 function Stop-OldBcpListener {
-    $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+    $listeners = @()
+    foreach ($candidatePort in @($Port,$TlsPort)) {
+        $listeners += @(Get-NetTCPConnection -LocalPort $candidatePort -State Listen -ErrorAction SilentlyContinue)
+    }
     foreach ($l in $listeners) {
         $pidValue = [int]$l.OwningProcess
         if ($pidValue -le 0) { continue }
         $proc = Get-CimInstance Win32_Process -Filter ("ProcessId=" + $pidValue) -ErrorAction SilentlyContinue
         $cmd = if ($proc) { [string]$proc.CommandLine } else { "" }
         $name = if ($proc) { [string]$proc.Name } else { "" }
-        $isBcp = ($cmd -match "(?i)bcp_server|ChatGPT_ManagedApps\\bcp|BCP PC Node|server.py") -or (($name -match "(?i)python|powershell") -and ($cmd -match "(?i)8765"))
-        if (-not $isBcp) { throw "PORT_8765_IN_USE_BY_NON_BCP pid=$pidValue name=$name" }
+        $isBcp = ($cmd -match "(?i)bcp_server|bcp_tls_proxy|ChatGPT_ManagedApps\\bcp|BCP PC Node|server.py") -or (($name -match "(?i)python|powershell|bcp_tls_proxy") -and ($cmd -match "(?i)8765|8766|8767"))
+        if (-not $isBcp) { throw ("PORT_" + [string]$l.LocalPort + "_IN_USE_BY_NON_BCP pid=$pidValue name=$name") }
         Stop-Process -Id $pidValue -Force -ErrorAction Stop
     }
 }
@@ -86,15 +91,22 @@ function Ensure-NetworkAndFirewall {
         $profile = Get-NetConnectionProfile -InterfaceIndex $cfg.InterfaceIndex -ErrorAction Stop
     }
     if ($profile.NetworkCategory -notin @("Private","DomainAuthenticated")) { throw "NETWORK_PROFILE_NOT_TRUSTED category=$($profile.NetworkCategory)" }
-    Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+    foreach ($n in @($RuleName,$TlsRuleName)) {
+        Get-NetFirewallRule -DisplayName $n -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+    }
     try {
         New-NetFirewallRule -DisplayName $RuleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -Profile Private,Domain -RemoteAddress LocalSubnet -EdgeTraversalPolicy Block -ErrorAction Stop | Out-Null
+        New-NetFirewallRule -DisplayName $TlsRuleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $TlsPort -Profile Private,Domain -RemoteAddress LocalSubnet -EdgeTraversalPolicy Block -ErrorAction Stop | Out-Null
     } catch {
         $netsh = Join-Path $env:WINDIR "System32\netsh.exe"
         if (-not (Test-Path -LiteralPath $netsh)) { throw }
-        & $netsh advfirewall firewall delete rule name="$RuleName" | Out-Null
+        foreach ($n in @($RuleName,$TlsRuleName)) {
+            & $netsh advfirewall firewall delete rule name="$n" | Out-Null
+        }
         & $netsh advfirewall firewall add rule name="$RuleName" dir=in action=allow protocol=TCP localport=$Port profile=private remoteip=localsubnet edge=no | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw "FIREWALL_RULE_CREATE_FAILED" }
+        if ($LASTEXITCODE -ne 0) { throw "FIREWALL_LEGACY_RULE_CREATE_FAILED" }
+        & $netsh advfirewall firewall add rule name="$TlsRuleName" dir=in action=allow protocol=TCP localport=$TlsPort profile=private remoteip=localsubnet edge=no | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "FIREWALL_TLS_RULE_CREATE_FAILED" }
     }
     $ip = ($cfg.IPv4Address | Select-Object -First 1).IPAddress
     if (-not $ip) { throw "ACTIVE_INTERFACE_HAS_NO_IPV4" }
@@ -198,9 +210,51 @@ try {
     Start-Process -FilePath $ChatPython -ArgumentList @($ServerTarget,"--bind","0.0.0.0","--port","8765") -WorkingDirectory $AppRoot -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
     $localHealth = Wait-Health "http://127.0.0.1:8765/health" 15
     if (-not $localHealth) { throw "LOCAL_HEALTH_TIMEOUT" }
+    if ($localHealth.tls_ready -ne $true -or [int]$localHealth.tls_port -ne $TlsPort -or [string]$localHealth.tls_cert_sha256 -notmatch '^[0-9a-f]{64}
+
+    $receipt = [ordered]@{
+        schema="bcp.install.receipt/1";status="PASS";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;
+        chatgpt_pc_root=$ChatRoot;chatgpt_pc_python=$ChatPython;chatgpt_pc_cli=$cli;app_root=$AppRoot;pc_ipv4=$net.IPv4;
+        network_profile=$net.NetworkCategory;firewall_rule=if($IntegrationTest){"CI_BYPASS"}else{($RuleName + ";" + $TlsRuleName)};local_health=$true;lan_health=$true;tls_health=$true;tls_port=$TlsPort;tls_cert_sha256=[string]$localHealth.tls_cert_sha256;server_version=[string]$localHealth.version;
+        scheduled_task_created=$false;manual_ip_token_required=$false;integration_test=[bool]$IntegrationTest;next="Open BCP Edge; automatic discovery/pairing should complete."
+    }
+    $receiptPath = Join-Path $ReceiptDir ("install-" + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ") + ".json")
+    Write-JsonAtomic $receipt $receiptPath
+    Copy-Item -Force -LiteralPath $receiptPath -Destination (Join-Path $ChatRoot "logs\BCP_LAST_INSTALL_RECEIPT.json") -ErrorAction SilentlyContinue
+    Write-Host ""
+    Write-Host "============================================================" -ForegroundColor Green
+    Write-Host " BCP INSTALLATION = PASS" -ForegroundColor Green
+    Write-Host "============================================================" -ForegroundColor Green
+    Write-Host ("PC bootstrap: " + $net.IPv4 + ":8765")
+    Write-Host ("PC sécurisé TLS: " + $net.IPv4 + ":8766")
+    Write-Host "ChatGPT-PC registration: PASS"
+    Write-Host "Firewall: PASS"
+    Write-Host "Local health: PASS"
+    Write-Host "LAN health: PASS"
+    Write-Host ""
+    if (-not $IntegrationTest) { Write-Host "On the old phone: reopen BCP Edge. Do not type IP/token/project." }
+    exit 0
+}
+catch {
+    $message = $_.Exception.Message
+    Stage "INSTALL" "FAIL" $message
+    $receipt = [ordered]@{schema="bcp.install.receipt/1";status="FAIL";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;error=$message;scheduled_task_created=$false;integration_test=[bool]$IntegrationTest;logs=$InstallLog}
+    $receiptPath = Join-Path $ReceiptDir ("install-fail-" + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ") + ".json")
+    Write-JsonAtomic $receipt $receiptPath
+    Copy-Item -Force -LiteralPath $receiptPath -Destination (Join-Path $ChatRoot "logs\BCP_LAST_INSTALL_RECEIPT.json") -ErrorAction SilentlyContinue
+    Write-Host ""
+    Write-Host ("BCP INSTALLATION = FAIL: " + $message) -ForegroundColor Red
+    Write-Host ("Receipt: " + $receiptPath)
+    exit 1
+}
+) {
+        throw "LOCAL_TLS_HEALTH_INVALID"
+    }
     $lanHealth = Wait-Health ("http://" + $net.IPv4 + ":8765/health") 8
     if (-not $lanHealth) { throw "LAN_HEALTH_TIMEOUT" }
-    Stage "START_SERVER" "PASS" ("server=" + $net.IPv4 + ":8765")
+    $tlsListener = Get-NetTCPConnection -LocalPort $TlsPort -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $tlsListener) { throw "TLS_LISTENER_8766_MISSING" }
+    Stage "START_SERVER" "PASS" ("bootstrap=" + $net.IPv4 + ":8765 tls=" + $net.IPv4 + ":8766")
 
     $receipt = [ordered]@{
         schema="bcp.install.receipt/1";status="PASS";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;
