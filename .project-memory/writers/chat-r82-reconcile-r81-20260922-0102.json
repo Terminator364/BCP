@@ -1,0 +1,28 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r82-reconcile-r81-20260922-0102",
+  "project_or_mission": "API/BCP R82 reconcile concurrent R81 lines and continue A+B+C full-node",
+  "base_main_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+  "branch_base_sha": "3af552c5ad5bfa10c12c196e36ca95cf87d6a9d9",
+  "created_at": "2026-09-22T01:02:00+01:00",
+  "work_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+  "intended_file_scope": [
+    ".github/workflows/android-build.yml",
+    ".github/workflows/android-human-action-simulation.yml",
+    "android-b-edge/**",
+    "docs/R81_PHONE_FULL_NODE_RESEARCH_EVIDENCE.md",
+    "release/android_candidate.json",
+    ".project-memory/**",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    "tools/**"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Field Ecosystem Preflight",
+    "BCP Coordinated Product Qualification",
+    "BCP Nexus One-Shot Human-Action Qualification"
+  ]
+}
