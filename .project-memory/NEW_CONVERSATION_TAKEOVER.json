@@ -1,5 +1,5 @@
 {
-  "schema": "bcp.new_conversation_takeover/3",
+  "schema": "bcp.new_conversation_takeover/4",
   "trigger_code": "BCPGO BCP",
   "purpose": "resume API/BCP from durable project and communication state",
   "repository": "Terminator364/BCP",
@@ -56,11 +56,14 @@
     "phone_direction": "coherent dedicated Android full-node/server appliance",
     "pc_direction": "Windows/heavy worker and compatibility node, not sole communication center",
     "continuation_code": "BCPGO BCP",
-    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_SOURCE_RECONCILED_R79_UCMF_V9",
+    "canonical_scope": "A_PLUS_B_PLUS_C_INTEGRAL_R82_R81_RECONCILIATION",
     "abc_source_registry": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
-    "ucmf_current_postulate": 9
+    "ucmf_current_postulate": 9,
+    "current_integration_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "current_main_base_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
+    "current_integration_rule": "PRESERVE_PR150_MEMORY_GOVERNANCE_PLUS_PR151_CAPABILITY_UI_RESEARCH_THEN_EXACT_HEAD_CI"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -72,9 +75,9 @@
     "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
-  "current_active_tranche": "BCP-R81-START-20260922-0033",
-  "current_delivery_key": "BCP25-20260922-0033-R81",
-  "current_active_tranche_status": "CLOSED",
-  "current_end_checkpoint": "BCP-R81-END-20260922-0057",
-  "current_end_message_id": "1a0c6670b9bf7fe5"
+  "current_active_tranche": "BCP-R82-START-20260922-0102",
+  "current_delivery_key": "BCP25-20260922-0102-R82",
+  "current_active_tranche_status": "WORKING",
+  "current_end_checkpoint": null,
+  "current_end_message_id": null
 }
