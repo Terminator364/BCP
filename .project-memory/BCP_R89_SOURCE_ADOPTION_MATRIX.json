@@ -292,6 +292,37 @@
         "ADAPT_LAYOUT_TO_WINDOW_SIZE"
       ],
       "decision": "MANDATORY_PLATFORM_CONSTRAINT"
+    },
+    {
+      "id": "ADYEN_PAYMENT_LIFECYCLE",
+      "category": [
+        "TRANSACTION_TUNNEL",
+        "STATE_MACHINE",
+        "NEXT_ACTION",
+        "ASYNC_TRUTH"
+      ],
+      "docs": [
+        "https://docs.adyen.com/account/payments-lifecycle",
+        "https://docs.adyen.com/online-payments/build-your-integration/payment-result-codes"
+      ],
+      "authority": "INDUSTRY_PRIMARY_DOCUMENTATION",
+      "source_verified_date": "2026-09-22",
+      "adopt": [
+        "SMALL_EXPLICIT_STATE_VOCABULARY",
+        "INTERMEDIATE_STATE_IS_NOT_FINAL_SUCCESS",
+        "EACH_NONFINAL_STATE_HAS_AN_EXPLICIT_NEXT_ACTION",
+        "ASYNC_PROVIDER_EVENT_OR_RECEIPT_CONFIRMS_FINAL_OUTCOME",
+        "HUMAN_UI_SHOWS_RESULT_WITHOUT_EXPOSING_RAW_BACKEND_RESPONSE"
+      ],
+      "bcp_mapping": [
+        "MISSION_RECEIVED",
+        "WAITING_OR_PENDING",
+        "ACTION_REQUIRED",
+        "PROCESSING",
+        "RESULT_COMMITTED",
+        "FAILED_SAFE_OR_RECONCILING"
+      ],
+      "decision": "ADOPT_TRANSACTION_TUNNEL_STATE_AND_NEXT_ACTION_PATTERN"
     }
   ],
   "visual_video_references": [
