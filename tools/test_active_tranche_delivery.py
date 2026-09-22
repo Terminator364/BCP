@@ -78,6 +78,17 @@ def main() -> int:
     assert state_machine["schema"] == "bcp.communication_state_machine/3"
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]
     assert takeover["trigger_code"] == "BCPGO BCP"
+    assert takeover["current_active_tranche"] == active["tranche_id"]
+    assert takeover["current_delivery_key"] == active["delivery_key"]
+    assert takeover["current_active_tranche_status"] == active["status"]
+    contract = takeover["communication_contract"]
+    assert contract["cadence_minutes"] == 25
+    assert contract["useful_work_target_minutes"] == 23
+    assert contract["close_reserve_minutes"] == 2
+    assert contract["normal_close_owner"] == "PRIMARY_ASSISTANT"
+    assert contract["automation_normal_close_forbidden"] is True
+    assert takeover["product_scope"]["formula"] == "A+B+C"
+    assert takeover["product_scope"]["phone_role"] == "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR"
 
     starts = [
         row for row in ledger_rows
