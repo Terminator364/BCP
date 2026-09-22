@@ -11,6 +11,8 @@ TELEGRAM = ROOT / "windows" / "bcp_telegram_observability.py"
 RELAY = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "EdgeRelayService.java"
 TLS_IDENTITY = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "EdgeTlsIdentity.java"
 POLICY = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "EdgeRelayPolicy.java"
+PINNED_TLS = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "PinnedTlsHttp.java"
+CLIENT = ROOT / "android-b-edge" / "src" / "main" / "java" / "com" / "blessing" / "bcpedge" / "BcpClient.java"
 MANIFEST = ROOT / "android-b-edge" / "src" / "main" / "AndroidManifest.xml"
 
 
@@ -27,6 +29,8 @@ def main() -> int:
     relay = RELAY.read_text(encoding="utf-8")
     tls_identity = TLS_IDENTITY.read_text(encoding="utf-8")
     policy = POLICY.read_text(encoding="utf-8")
+    pinned_tls = PINNED_TLS.read_text(encoding="utf-8")
+    client = CLIENT.read_text(encoding="utf-8")
     manifest = MANIFEST.read_text(encoding="utf-8")
 
     assert '"api.telegram.org".equalsIgnoreCase' in policy
@@ -50,6 +54,14 @@ def main() -> int:
     assert "ENCRYPTION_PADDING_NONE" in tls_identity
     assert "ENCRYPTION_PADDING_RSA_PKCS1" in tls_identity
     assert '"TLSv1.3"' in tls_identity and '"TLSv1.2"' in tls_identity
+    assert "PC_TLS_PIN_MISMATCH" in pinned_tls
+    assert "MessageDigest.isEqual" in pinned_tls
+    assert "X-BCP-Edge-Version" in pinned_tls
+    assert "PINNED_TLS_REQUIRES_HTTPS" in pinned_tls
+    assert "SECURE_PC_TRANSPORT_REQUIRED" in client
+    assert "migratePairedServerToTls" in client
+    assert "tls_binding_hmac_sha256" in client
+    assert 'body.put("edge_lan_ip", edgeLanIp)' in client
     assert "CredentialStore(this).getToken()" in relay
     assert "FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING" in relay
     assert "FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE" in relay
@@ -90,6 +102,16 @@ def main() -> int:
     assert "telegram_bot_token" not in proxy_section
 
     bcp = load_server()
+    server_source = SERVER.read_text(encoding="utf-8")
+    assert "PC_TLS_PORT = 8766" in server_source
+    assert "PC_TLS_BACKEND_PORT = 8767" in server_source
+    assert "KeyExportPolicy NonExportable" in server_source
+    assert "SslStream" in server_source
+    assert "secure_transport_required" in server_source
+    assert "secure_pairing_required" in server_source
+    assert "edge_lan_ip_required_over_tls_proxy" in server_source
+    assert "transport_secure = True" in server_source
+    assert "transport_secure = False" in server_source
     with tempfile.TemporaryDirectory() as td:
         root = pathlib.Path(td)
         bcp.EDGE_RELAY_STATE_PATH = root / "edge_relay.json"
