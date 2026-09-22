@@ -210,8 +210,14 @@ try {
     Start-Process -FilePath $ChatPython -ArgumentList @($ServerTarget,"--bind","0.0.0.0","--port","8765") -WorkingDirectory $AppRoot -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
     $localHealth = Wait-Health "http://127.0.0.1:8765/health" 15
     if (-not $localHealth) { throw "LOCAL_HEALTH_TIMEOUT" }
-    if ($localHealth.tls_ready -ne $true -or [int]$localHealth.tls_port -ne $TlsPort -or [string]$localHealth.tls_cert_sha256 -notmatch '^[0-9a-f]{64}
-
+    if ($localHealth.tls_ready -ne $true -or [int]$localHealth.tls_port -ne $TlsPort -or [string]$localHealth.tls_cert_sha256 -notmatch "^[0-9a-f]{64}$") {
+        throw "LOCAL_TLS_HEALTH_INVALID"
+    }
+    $lanHealth = Wait-Health ("http://" + $net.IPv4 + ":8765/health") 8
+    if (-not $lanHealth) { throw "LAN_HEALTH_TIMEOUT" }
+    $tlsListener = Get-NetTCPConnection -LocalPort $TlsPort -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $tlsListener) { throw "TLS_LISTENER_8766_MISSING" }
+    Stage "START_SERVER" "PASS" ("bootstrap=" + $net.IPv4 + ":8765 tls=" + $net.IPv4 + ":8766")
     $receipt = [ordered]@{
         schema="bcp.install.receipt/1";status="PASS";installer_version=$InstallerVersion;started_at=$startedAt;finished_at=UtcNow;
         chatgpt_pc_root=$ChatRoot;chatgpt_pc_python=$ChatPython;chatgpt_pc_cli=$cli;app_root=$AppRoot;pc_ipv4=$net.IPv4;
