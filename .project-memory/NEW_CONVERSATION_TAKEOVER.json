@@ -70,7 +70,7 @@
     "ucmf_current_postulate": 9,
     "current_integration_branch": "work/bcp/r88-closeout-20260922-1333",
     "current_main_base_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7",
-    "current_integration_rule": "R88_POLICY_MERGED_CLOSEOUT_PENDING_END_ACK; THEN_ANDROID_IN_PLACE_INSTALL",
+    "current_integration_rule": "R88_CLOSED_ADAPTIVE_COMMUNICATION_CANONICAL; NEXT_ANDROID_IN_PLACE_INSTALL_FIELD_GATE",
     "current_secure_lan_state": "BIDIRECTIONAL_PINNED_TLS_CI_VERIFIED_BEDGE_2_2_CURRENT_FIELD_INSTALL_PENDING",
     "next_product_front": "ANDROID_IN_PLACE_INSTALL_THEN_FULL_NODE_REBOOT_COMMUNICATION_FIELD_PROOF"
   },
@@ -86,8 +86,8 @@
   },
   "current_active_tranche": "BCP-R88-START-20260922-1321",
   "current_delivery_key": "BCPADAPT-20260922-1321-R88",
-  "current_active_tranche_status": "CLOSEOUT",
-  "current_end_checkpoint": "BCP-R88-END-PENDING",
-  "current_end_message_id": null,
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R88-END-20260922-1334",
+  "current_end_message_id": "1a0c91cbc4a16677",
   "current_communication_branch": "work/bcp/r88-adaptive-communication-window-20260922-1321"
 }
