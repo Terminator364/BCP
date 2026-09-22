@@ -68,9 +68,9 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9,
-    "current_integration_branch": "work/bcp/r87-closeout-20260922-1205",
-    "current_main_base_sha": "a6a3162b181f088598528eb2bba53b1966489ebd",
-    "current_integration_rule": "R87_FIELD_READY_NEXT_ANDROID_IN_PLACE_INSTALL; R88_COMMUNICATION_POLICY_ONLY",
+    "current_integration_branch": "work/bcp/r88-closeout-20260922-1333",
+    "current_main_base_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7",
+    "current_integration_rule": "R88_POLICY_MERGED_CLOSEOUT_PENDING_END_ACK; THEN_ANDROID_IN_PLACE_INSTALL",
     "current_secure_lan_state": "BIDIRECTIONAL_PINNED_TLS_CI_VERIFIED_BEDGE_2_2_CURRENT_FIELD_INSTALL_PENDING",
     "next_product_front": "ANDROID_IN_PLACE_INSTALL_THEN_FULL_NODE_REBOOT_COMMUNICATION_FIELD_PROOF"
   },
@@ -86,8 +86,8 @@
   },
   "current_active_tranche": "BCP-R88-START-20260922-1321",
   "current_delivery_key": "BCPADAPT-20260922-1321-R88",
-  "current_active_tranche_status": "WORKING",
-  "current_end_checkpoint": null,
+  "current_active_tranche_status": "CLOSEOUT",
+  "current_end_checkpoint": "BCP-R88-END-PENDING",
   "current_end_message_id": null,
   "current_communication_branch": "work/bcp/r88-adaptive-communication-window-20260922-1321"
 }
