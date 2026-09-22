@@ -1,3 +1,44 @@
+# R87 provider-proof closure — 2026-09-22 12:07 Kinshasa
+
+- Checkpoint: `BCP-R87-END-20260922-1207`.
+- Gmail END provider/readback ID: `1a0c8ccca4a6d02e`.
+- R87 tranche is CLOSED.
+- Product state is **B-EDGE 2.2 CURRENT READY / real-device field-unverified**.
+- Next and only human gate: **in-place Android update; do not uninstall**.
+- Canonical instruction: open BCP Edge -> **Vérifier / mettre à jour BCP Edge** -> approve the Android update.
+- After install, resume field proof; do not start Local AI implementation.
+
+---
+
+# R87 field-ready closure / Android in-place install gate — 2026-09-22
+
+Canonical continuation: `BCPGO BCP`.
+
+## Authoritative product state
+
+- PR #157 is merged on `main` at `e07f8f379533f74a2e9362fca5f95ad60f932bee`.
+- Exact final release head `6e4b9b0ef5daf05cf2feac5cb91919bb4948fa87` passed all required visible critical qualifications, including Android Human-Action #358 with emulator install, UI, local API and cold relaunch.
+- Stable private Drive `BCP_EDGE_CURRENT.apk` was replaced **in place** with B-EDGE **2.2.0-full-node-evergreen**, versionCode **220**, preserving the prior Drive revision for rollback.
+- Exact signed APK SHA-256: `a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a`.
+- Evergreen signing certificate SHA-256: `0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617`.
+- APK Signature Scheme v2 and v3 were verified before publication and again after Drive readback.
+- Distribution is ready; **field verification remains false** until the real phone completes the in-place update and field suite.
+- R87 continuity-pointer skew was repaired and regression-proven by CURRENT #1507 and final CURRENT #1519.
+- Local AI remains DESIGN_ONLY and does not preempt P0.
+
+## Next true human gate
+
+On the existing B-EDGE phone, open **BCP Edge**, choose **“Vérifier / mettre à jour BCP Edge”**, then approve the Android package update when the system asks.
+
+**Do not uninstall the existing app.** The package ID and Evergreen signing identity are intentionally unchanged to preserve an in-place upgrade.
+
+Immediately after installation, the next machine/field qualification is:
+local API -> discovery -> pairing -> bidirectional pinned TLS -> memory/queue/Chronicle/capabilities/receipts -> reboot/black-start/recovery -> Telegram/relay delivery truth.
+
+No additional architecture or Local AI implementation is permitted before this P0 field gate is closed.
+
+---
+
 # R87 B-EDGE 2.2 signed field-promotion checkpoint — 2026-09-22
 
 Canonical continuation: `BCPGO BCP`.
