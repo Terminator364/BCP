@@ -152,6 +152,15 @@
       "id": "BCP-ERR-R87-TAKEOVER-ACTIVE-TRANCHE-SKEW",
       "status": "FIXED",
       "proof": "BCP Qualified CURRENT Release Contract #1507 and final #1519"
+    },
+    "r88_communication_policy": {
+      "status": "IMPLEMENTED_ON_WRITER_BRANCH",
+      "branch": "work/bcp/r88-adaptive-communication-window-20260922-1321",
+      "gmail_start_message_id": "1a0c911086fff770",
+      "delivery_key": "BCPADAPT-20260922-1321-R88",
+      "estimated_end_window_local": "13:32-13:38",
+      "product_bytes_changed": false,
+      "p0_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
     }
   },
   "field_gates": [
@@ -364,7 +373,7 @@
     "P0_conversation_delivery_ledger": true,
     "P0_chatgpt_ui_delivery_uncertainty": true,
     "P0_telegram_conversation_inbox": true,
-    "P0_bounded_interactive_checkpoint_cadence": true,
+    "P0_bounded_interactive_checkpoint_cadence": false,
     "P0_local_conversation_receipt_bridge": true,
     "P0_sequence_gap_repair": true,
     "P0_producer_watermark_sync": true,
@@ -375,7 +384,7 @@
     "P0_global_5_to_7_minute_tranche_cadence": false,
     "P0_email_only_detailed_checkpoint": true,
     "P0_interactive_work_tranche_8_to_10_minutes": false,
-    "P0_interactive_work_tranche_25_minutes": true,
+    "P0_interactive_work_tranche_25_minutes": false,
     "P0_pre_human_action_simulation_gate": true,
     "P0_gmail_start_before_substantive_work": true,
     "P0_gmail_end_provider_ack_before_chat_output": true,
@@ -402,15 +411,22 @@
     "P0_scheduler_completion_is_not_delivery_proof": true,
     "P0_foreground_end_send_primary": true,
     "P0_backup_minimal_end_payload": true,
-    "P0_25_minute_23_work_2_closeout": true,
+    "P0_25_minute_23_work_2_closeout": false,
     "P0_primary_assistant_normal_close_without_automation": true,
     "P0_integral_abc_release_gate": true,
-    "P0_23_minute_useful_work_plus_2_minute_closeout": true,
+    "P0_23_minute_useful_work_plus_2_minute_closeout": false,
     "P0_ucmf_v9_mission_survives_conversation": true,
     "P0_phone_durable_mission_step_envelope": true,
     "P0_integral_abc_spec_denominator": true,
     "P1_local_ai_after_bedge_2_2_field": true,
-    "P0_bedge_2_2_field_promotion_before_local_ai_runtime": true
+    "P0_bedge_2_2_field_promotion_before_local_ai_runtime": true,
+    "P0_usable_product_over_fixed_work_duration": true,
+    "P0_adaptive_task_window_communication": true,
+    "P0_start_mail_scope_and_estimated_end_window": true,
+    "P0_optional_estimate_update_if_material": true,
+    "P0_end_mail_actual_result_and_next_action": true,
+    "P0_timer_driven_closeout": false,
+    "P0_checkpoint_or_true_gate_driven_closeout": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2903,5 +2919,19 @@
     "current_work_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
     "current_delivery_key": "BCP25-20260922-0102-R82",
     "product_scope": "A_PLUS_B_PLUS_C_INTEGRAL"
+  },
+  "communication_policy_current": {
+    "revision": "2026-09-22-R88",
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "fixed_cadence_minutes": null,
+    "start_mail_required": true,
+    "start_mail_estimated_end_window_required": true,
+    "estimate_update_mail": "OPTIONAL_IF_MATERIAL",
+    "end_mail_required": true,
+    "provider_ack_and_readback_required": true,
+    "completion_rule": "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER",
+    "success_metric": "USABLE_PRODUCT_AND_DURABLE_EVIDENCE_NOT_TIME_SPENT",
+    "protocol_ref": ".project-memory/COMMUNICATION_PROTOCOL.json",
+    "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
   }
 }

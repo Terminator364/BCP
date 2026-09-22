@@ -21,11 +21,6 @@
       "KINSHASA_DAY_DATE_TIME",
       "CHECKPOINT_ID"
     ],
-    "cadence_window_minutes": [
-      23,
-      25
-    ],
-    "cadence_target_minutes": 25,
     "pre_human_action_simulation_policy_ref": ".project-memory/PRE_HUMAN_ACTION_SIMULATION_POLICY.json",
     "load_pre_human_action_simulation_policy_before_user_action": true,
     "load_delivery_policy_before_substantive_work": true,
@@ -67,8 +62,6 @@
       "API_PROJECT_CONTINUITY.md",
       "release/current.json"
     ],
-    "preclose_snapshot_offset_minutes": 23,
-    "normal_closeout_offset_minutes": 23,
     "user_message_is_not_closeout_trigger": true,
     "active_tranche_state_ref": ".project-memory/ACTIVE_TRANCHE.json",
     "load_active_tranche_before_resume": true,
@@ -79,9 +72,6 @@
     "gmail_end_requires_sent_search_readback": true,
     "end_failsafe_template_ref": ".project-memory/END_FAILSAFE_TEMPLATE.json",
     "load_end_failsafe_template_before_resume": true,
-    "useful_work_target_minutes": 23,
-    "useful_work_minimum_minutes": 20,
-    "normal_close_reserve_minutes": 2,
     "communication_protocol_ref": ".project-memory/COMMUNICATION_PROTOCOL.json",
     "communication_state_machine_ref": ".project-memory/COMMUNICATION_STATE_MACHINE.json",
     "communication_delivery_ledger_ref": ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
@@ -94,7 +84,6 @@
     "abc_source_registry_ref": ".project-memory/BCP_ABC_SOURCE_REGISTRY.json",
     "abc_coverage_ref": ".project-memory/BCP_ABC_COVERAGE.json",
     "abc_canonical_spec_ref": "docs/BCP_CANONICAL_SPEC_ABC.md",
-    "absolute_end_deadline_minutes": 25,
     "load_abc_spec_before_product_mutation": true,
     "ucmf001_continuity_ref": ".project-memory/UCMF001_CONTINUITY.json",
     "load_ucmf_v9_when_bcp_scope_touches_memory_continuity": true,
@@ -103,7 +92,11 @@
     "reasoning_ui_duration_is_not_close_trigger": true,
     "abc_formula": "A_PLUS_B_PLUS_C",
     "r82_current_delivery_key": "BCP25-20260922-0102-R82",
-    "r82_reconciliation_branch": "work/bcp/r82-reconcile-r81-20260922-0102"
+    "r82_reconciliation_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "estimated_end_window_required_at_start": true,
+    "estimate_update_mail": "OPTIONAL_IF_MATERIAL",
+    "closeout_trigger": "REAL_CHECKPOINT_TRUE_HUMAN_GATE_OR_OBJECTIVE_FAILURE"
   },
   "universal": [
     {
@@ -140,7 +133,7 @@
         "APIAX07 RESYNC",
         "BCPGO BCP"
       ],
-      "status": "VALID_SCOPED_ALIAS_WITH_R82_ABC_25MIN_PRIMARY_CLOSE_PHONE_FULL_NODE_RECONCILIATION",
+      "status": "VALID_SCOPED_ALIAS_WITH_ADAPTIVE_START_END_PROVIDER_PROOF_PHONE_FULL_NODE_FIELD_GATE",
       "fallback": "BCPGO BCP"
     },
     {

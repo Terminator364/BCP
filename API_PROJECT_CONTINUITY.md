@@ -1,3 +1,23 @@
+# R88 — Adaptive communication windows — 2026-09-22
+
+The fixed 25-minute tranche rule is superseded for future BCP work.
+
+Canonical communication behavior:
+- Gmail START remains mandatory before substantive mutation.
+- START must state the actual work scope and a realistic **estimated end window in Kinshasa time**.
+- The window is advisory and task-specific; there is no artificial minimum or fixed maximum.
+- Finish immediately when the real checkpoint or true human gate is reached; never wait merely to fill the estimate.
+- If the estimate becomes materially non-credible, one concise update mail may revise the window when useful.
+- Gmail END remains mandatory and must contain actual result/evidence/next action; provider ACK + SENT readback + durable CLOSED receipt are required before chat closeout.
+- Time spent is never success evidence. Durable product progress is.
+- Scheduled automation remains emergency recovery only, never the normal close owner.
+
+Historical R59–R87 cadence fields remain historical receipts and must not be interpreted as the current policy.
+
+**P0 is unchanged:** B-EDGE 2.2 is already machine-qualified and Drive CURRENT-ready; the next true product gate remains Android **IN_PLACE install without uninstall**, followed by field full-node/reboot/communication proof.
+
+---
+
 # R87 provider-proof closure — 2026-09-22 12:07 Kinshasa
 
 - Checkpoint: `BCP-R87-END-20260922-1207`.

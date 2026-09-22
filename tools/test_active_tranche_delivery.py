@@ -26,12 +26,15 @@ def main() -> int:
         if line.strip()
     ]
 
-    assert active["schema"] == "bcp.active_tranche/5"
+    assert active["schema"] == "bcp.active_tranche/6"
     assert active["project"] == "API/BCP"
-    assert active["cadence_minutes"] == 25
-    assert active["useful_work_minutes"] == 23
-    assert active["normal_close_reserve_minutes"] == 2
-    assert active["delivery_key"].startswith("BCP25-")
+    assert active["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert active["fixed_cadence_minutes"] is None
+    assert active["delivery_key"].startswith("BCP")
+    estimate = active["estimated_end_window_local"]
+    assert estimate["earliest"] and estimate["latest"]
+    assert estimate["advisory"] is True
+    assert estimate["may_be_reestimated"] is True
     assert active["gmail_start_message_id"]
     assert active["delivery_state"] in {
         "START_ACKNOWLEDGED", "WORKING", "CLOSE_INTENT_PERSISTED",
@@ -57,34 +60,44 @@ def main() -> int:
     assert email["end_mail_provider_ack_required"] is True
     assert email["end_mail_readback_required"] is True
     assert email["delivery_key_required"] is True
-    assert delivery["cadence"]["normal_closeout_offset_minutes"] == 23
+    assert delivery["cadence"]["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert delivery["cadence"]["fixed_minutes"] is None
+    assert delivery["cadence"]["start_mail_includes_estimated_end_window"] is True
     assert delivery["cadence"]["scheduled_close_guards_required"] is False
     assert delivery["close_ownership"]["normal_owner"] == "PRIMARY_ASSISTANT"
 
-    assert comm["schema"] == "bcp.communication_survival_policy/5"
+    assert comm["schema"] == "bcp.communication_survival_policy/6"
+    assert comm["checkpoint_protocol"]["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert comm["checkpoint_protocol"]["estimated_end_window_required_at_start"] is True
     assert comm["anti_false_success"]["scheduler_completed_is_not_delivery"] is True
     assert comm["anti_false_success"]["user_relaunch_must_never_be_delivery_trigger"] is True
     assert comm["channels"]["gmail"]["end_delivery_proof"]["proof"] == "SENT_SEARCH_MATCH_PLUS_PROVIDER_MESSAGE_ID"
 
-    assert protocol["schema"] == "bcp.communication_protocol/3"
+    assert protocol["schema"] == "bcp.communication_protocol/4"
     assert protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
-    assert protocol["primary_work_budget_minutes"] == 23
-    assert protocol["normal_close_reserve_minutes"] == 2
-    assert protocol["scheduled_backup_required"] is False
+    assert protocol["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert protocol["fixed_cadence_minutes"] is None
+    assert protocol["estimate_semantics"]["never_wait_to_fill_window"] is True
+    assert protocol["estimate_semantics"]["never_stop_only_because_window_elapsed"] is True
+    assert protocol["backup_semantics"]["scheduled_jobs_are_normal_close_dependency"] is False
     assert protocol["normal_work_contract"]["automation_is_never_normal_owner"] is True
     assert active["communication_guard"]["foreground_turn_owns_normal_close"] is True
     assert active["communication_guard"]["automation_only_after_platform_interruption"] is True
 
-    assert state_machine["schema"] == "bcp.communication_state_machine/3"
+    assert state_machine["schema"] == "bcp.communication_state_machine/4"
+    assert state_machine["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert state_machine["timing"]["fixed_cadence_minutes"] is None
+    assert state_machine["timing"]["estimated_end_window_required_at_start"] is True
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in state_machine["normal_path"]
     assert takeover["trigger_code"] == "BCPGO BCP"
     assert takeover["current_active_tranche"] == active["tranche_id"]
     assert takeover["current_delivery_key"] == active["delivery_key"]
     assert takeover["current_active_tranche_status"] == active["status"]
     contract = takeover["communication_contract"]
-    assert contract["cadence_minutes"] == 25
-    assert contract["useful_work_target_minutes"] == 23
-    assert contract["close_reserve_minutes"] == 2
+    assert contract["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert contract["fixed_cadence_minutes"] is None
+    assert contract["start_mail_includes_estimated_end_window"] is True
+    assert contract["estimate_is_advisory"] is True
     assert contract["normal_close_owner"] == "PRIMARY_ASSISTANT"
     assert contract["automation_normal_close_forbidden"] is True
     assert takeover["product_scope"]["formula"] == "A+B+C"

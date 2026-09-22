@@ -34,9 +34,6 @@
       "BCPGO UCMF001"
     ],
     "project_label": "BCP",
-    "cadence_minutes": 25,
-    "useful_work_target_minutes": 23,
-    "close_reserve_minutes": 2,
     "algorithm": [
       "MINIMAL_ROUTE_TO_BCP_UCMF_SCOPE",
       "READ_THIS_CONTINUITY_AND_COMMUNICATION_PROTOCOL",
@@ -44,13 +41,15 @@
       "SEND_GMAIL_START_AND_REQUIRE_PROVIDER_MESSAGE_ID",
       "LOAD_CURRENT_DRIVE_UCMF_MASTER_AND_A_PLUS_B_PLUS_C_SPEC",
       "RESUME_NEXT_DURABLE_UCMF_OR_BCP_ACTION_WITHOUT_CHAT_RECONSTRUCTION",
-      "PERSIST_CLOSE_INTENT_AT_CLOSE_RESERVE",
+      "PERSIST_CLOSE_INTENT_AT_REAL_CHECKPOINT_OR_TRUE_GATE",
       "SEND_GMAIL_END_AND_VERIFY_SENT_READBACK",
       "PERSIST_END_ACKNOWLEDGED_AND_CLOSED",
       "ONLY_THEN_CHAT_POINTER"
     ],
     "user_reexplanation_required": false,
-    "normal_close_automation_required": false
+    "normal_close_automation_required": false,
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "estimated_end_window_required": true
   },
   "integration_rule": "Accepted UCMF findings are merged additively into BCP A+B+C through SPEC_REFRESH_CURRENT_THEN_MERGE_REFINE_PRESERVE; DESIGN/MODEL evidence is never silently promoted to DEVICE/FIELD proof."
 }
