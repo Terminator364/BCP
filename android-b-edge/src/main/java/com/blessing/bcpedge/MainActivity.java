@@ -58,14 +58,17 @@ public class MainActivity extends Activity {
         updates.reconcileAfterLaunch();
         startEdgeServer();
         io.submit(() -> {
-            try { client.refreshCapabilityRegistry(); } catch (Exception ignored) {}
+            try { client.refreshUiGovernanceCache(); } catch (Exception ignored) {}
             runOnUiThread(this::refreshLocalPanels);
         });
         autoConnect();
         refreshLocalPanels();
 
         heartbeat.scheduleAtFixedRate(() -> {
-            try { client.heartbeat("FOREGROUND"); } catch (Exception ignored) {}
+            try {
+                client.heartbeat("FOREGROUND");
+                client.refreshUiGovernanceCache();
+            } catch (Exception ignored) {}
             runOnUiThread(this::refreshLocalPanels);
         }, 60, 60, TimeUnit.SECONDS);
 
@@ -189,8 +192,8 @@ public class MainActivity extends Activity {
             JSONObject storage = client.contentStoreStatus();
             JSONObject net = EdgeNetworkState.snapshot(this);
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
-            JSONObject capabilities = client.localCapabilities();
-            JSONObject claims = client.localMemoryClaims(100);
+            JSONObject capabilities = client.cachedCapabilities();
+            JSONObject claims = client.cachedMemoryClaims();
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
             autonomyInfo.setText(
