@@ -43,6 +43,7 @@ public final class BcpClient {
 
     public String getServer() { return prefs.getString("server", ""); }
     public String getToken() { return credentials.getToken(); }
+    public String getPcTlsCertSha256() { return prefs.getString("pc_tls_cert_sha256", ""); }
     public String getProject() { return prefs.getString("active_project", DEFAULT_PROJECT); }
     public void setProject(String projectId) {
         String p = projectId == null ? "" : projectId.trim();
@@ -715,11 +716,14 @@ public final class BcpClient {
             progress.onStage("RECONNECT", "Vérification du PC déjà appairé");
             telemetry.add("RECONNECT_TRY", savedServer);
             try {
-                JSONObject h = requestJson("GET", savedServer + "/health", null, null, null, 1200, 1500);
+                if (savedServer.startsWith("http://") && !getToken().isEmpty()) {
+                    savedServer = migratePairedServerToTls(savedServer);
+                }
+                JSONObject h = requestJson("GET", savedServer + "/health", null, null, null, 1200, 1800);
                 if (h.optBoolean("ok")) {
                     String fp = h.optString("identity_fingerprint", "");
                     if (!fp.isEmpty()) prefs.edit().putString("confirmed_pc_fingerprint", fp).apply();
-                    progress.onStage("CONNECTED", "PC retrouvé automatiquement");
+                    progress.onStage("CONNECTED", "PC retrouvé automatiquement · TLS pinné");
                     telemetry.add("RECONNECT_PASS", savedServer);
                     heartbeat("RECONNECT_PASS");
                     flushPendingCheckpoint();
@@ -744,6 +748,7 @@ public final class BcpClient {
         String pcName = candidate.optString("pc_name", "BCP PC");
         String fingerprint = candidate.optString("identity_fingerprint", "");
         String version = candidate.optString("version", "");
+        String tlsCertSha256 = candidate.optString("tls_cert_sha256", "");
 
         progress.onStage("PC_FOUND", pcName);
         telemetry.add("PC_DISCOVERED", pcName + "@" + server);
@@ -755,6 +760,7 @@ public final class BcpClient {
                     .putString("pending_pair_server", server)
                     .putString("pending_pair_pc_name", pcName)
                     .putString("pending_pair_fingerprint", fingerprint)
+                    .putString("pending_pair_tls_cert_sha256", tlsCertSha256)
                     .putString("pending_pair_version", version)
                     .apply();
             telemetry.add("PAIRING_CONFIRM_REQUIRED",
@@ -762,7 +768,11 @@ public final class BcpClient {
             throw new IOException("PAIR_CONFIRM_REQUIRED");
         }
 
-        return pairServer(server, fingerprint, progress);
+        if (!tlsCertSha256.matches("[0-9a-fA-F]{64}")) {
+            throw new IOException("PC_TLS_PIN_MISSING");
+        }
+        prefs.edit().putString("pc_tls_cert_sha256", tlsCertSha256.toLowerCase(Locale.ROOT)).apply();
+        return pairServer(server, fingerprint, tlsCertSha256, progress);
     }
 
     public JSONObject pendingPairingInfo() throws Exception {
@@ -770,6 +780,7 @@ public final class BcpClient {
         o.put("server", prefs.getString("pending_pair_server", ""));
         o.put("pc_name", prefs.getString("pending_pair_pc_name", "BCP PC"));
         o.put("identity_fingerprint", prefs.getString("pending_pair_fingerprint", ""));
+        o.put("tls_cert_sha256", prefs.getString("pending_pair_tls_cert_sha256", ""));
         o.put("version", prefs.getString("pending_pair_version", ""));
         return o;
     }
@@ -777,18 +788,22 @@ public final class BcpClient {
     public JSONObject confirmPendingPairing(Progress progress) throws Exception {
         String server = prefs.getString("pending_pair_server", "");
         String fingerprint = prefs.getString("pending_pair_fingerprint", "");
+        String tlsCertSha256 = prefs.getString("pending_pair_tls_cert_sha256", "");
         if (server.isEmpty()) throw new IOException("PAIRING_CANDIDATE_MISSING");
+        if (!tlsCertSha256.matches("[0-9a-fA-F]{64}")) throw new IOException("PC_TLS_PIN_MISSING");
+        SharedPreferences.Editor confirm = prefs.edit()
+                .putString("pc_tls_cert_sha256", tlsCertSha256.toLowerCase(Locale.ROOT));
         if (!fingerprint.isEmpty()) {
-            prefs.edit().putString("confirmed_pc_fingerprint", fingerprint).apply();
+            confirm.putString("confirmed_pc_fingerprint", fingerprint);
         } else {
-            // Legacy bootstrap: bind confirmation to the discovered endpoint until
-            // the server upgrades and exposes its stable identity fingerprint.
-            prefs.edit().putString("confirmed_pc_fingerprint", "legacy:" + server).apply();
+            confirm.putString("confirmed_pc_fingerprint", "legacy:" + server);
         }
-        return pairServer(server, fingerprint, progress);
+        confirm.apply();
+        return pairServer(server, fingerprint, tlsCertSha256, progress);
     }
 
-    private JSONObject pairServer(String server, String fingerprint, Progress progress) throws Exception {
+    private JSONObject pairServer(String server, String fingerprint, String tlsCertSha256,
+                                  Progress progress) throws Exception {
         JSONObject pairBody = new JSONObject();
         pairBody.put("device_name", Build.MANUFACTURER + " " + Build.MODEL);
         pairBody.put("edge_version", EDGE_VERSION);
@@ -815,7 +830,9 @@ public final class BcpClient {
                 .remove("pending_pair_server")
                 .remove("pending_pair_pc_name")
                 .remove("pending_pair_fingerprint")
-                .remove("pending_pair_version");
+                .remove("pending_pair_tls_cert_sha256")
+                .remove("pending_pair_version")
+                .putString("pc_tls_cert_sha256", tlsCertSha256.toLowerCase(Locale.ROOT));
         if (!returnedFingerprint.isEmpty()) {
             ed.putString("confirmed_pc_fingerprint", returnedFingerprint);
         }
@@ -891,15 +908,79 @@ public final class BcpClient {
 
     private JSONObject probeServer(String base,int connectMs,int readMs){
         try{
-            JSONObject h=requestJson("GET",base+"/health",null,null,null,connectMs,readMs);
+            JSONObject h=requestBootstrapJson(base+"/health", connectMs, readMs);
             if(!h.optBoolean("ok") || !h.optString("service","").startsWith("BCP")) return null;
+            if(!h.optBoolean("tls_ready", false)) return null;
+            int tlsPort=h.optInt("tls_port",0);
+            String tlsPin=h.optString("tls_cert_sha256","").toLowerCase(Locale.ROOT);
+            if(tlsPort<=0 || !tlsPin.matches("[0-9a-f]{64}")) return null;
+            URL bootstrap=new URL(base);
+            String secure="https://"+bootstrap.getHost()+":"+tlsPort;
             JSONObject found=new JSONObject();
-            found.put("server",base);
+            found.put("bootstrap_server",base);
+            found.put("server",secure);
             found.put("pc_name",h.optString("pc_name","BCP PC"));
             found.put("version",h.optString("version",""));
             found.put("identity_fingerprint",h.optString("identity_fingerprint",""));
+            found.put("tls_cert_sha256",tlsPin);
             return found;
         }catch(Exception ignored){return null;}
+    }
+
+    private String migratePairedServerToTls(String clearServer) throws Exception {
+        JSONObject h=requestBootstrapJson(clearServer+"/health",1200,1800);
+        if(!h.optBoolean("ok") || !h.optBoolean("tls_ready",false)) {
+            throw new IOException("PC_TLS_NOT_READY");
+        }
+        String tlsPin=h.optString("tls_cert_sha256","").toLowerCase(Locale.ROOT);
+        String binding=h.optString("tls_binding_hmac_sha256","").toLowerCase(Locale.ROOT);
+        int tlsPort=h.optInt("tls_port",0);
+        String version=h.optString("version","");
+        if(!tlsPin.matches("[0-9a-f]{64}") || !binding.matches("[0-9a-f]{64}") || tlsPort<=0) {
+            throw new IOException("PC_TLS_BOOTSTRAP_INVALID");
+        }
+        String expected=pcTlsBinding(getToken(),tlsPin,tlsPort,version);
+        if(!constantTimeHexEquals(expected,binding)) throw new IOException("PC_TLS_BINDING_MISMATCH");
+        URL old=new URL(clearServer);
+        String secure="https://"+old.getHost()+":"+tlsPort;
+        prefs.edit()
+                .putString("server",secure)
+                .putString("pc_tls_cert_sha256",tlsPin)
+                .apply();
+        telemetry.add("PC_TLS_MIGRATION_PASS",secure);
+        return secure;
+    }
+
+    private static String pcTlsBinding(String token,String certSha256,int port,String version) throws Exception {
+        String material="BCP-PC-TLS\\n"+certSha256.toLowerCase(Locale.ROOT)+"\\n"+port+"\\n"+version;
+        javax.crypto.Mac mac=javax.crypto.Mac.getInstance("HmacSHA256");
+        mac.init(new javax.crypto.spec.SecretKeySpec(
+                token.getBytes(StandardCharsets.UTF_8),"HmacSHA256"));
+        byte[] digest=mac.doFinal(material.getBytes(StandardCharsets.UTF_8));
+        StringBuilder out=new StringBuilder(64);
+        for(byte b:digest) out.append(String.format(Locale.ROOT,"%02x",b&0xff));
+        return out.toString();
+    }
+
+    private static boolean constantTimeHexEquals(String a,String b) {
+        return MessageDigest.isEqual(
+                a.getBytes(StandardCharsets.US_ASCII),
+                b.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    private static JSONObject requestBootstrapJson(String url,int connectMs,int readMs) throws Exception {
+        HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();
+        c.setRequestMethod("GET");
+        c.setConnectTimeout(connectMs);
+        c.setReadTimeout(readMs);
+        c.setUseCaches(false);
+        c.setRequestProperty("Accept","application/json");
+        c.setRequestProperty("X-BCP-Edge-Version",EDGE_VERSION);
+        int code=c.getResponseCode();
+        InputStream in=code>=400?c.getErrorStream():c.getInputStream();
+        String raw=readAll(in);
+        if(code>=400) throw new IOException("HTTP_"+code+": "+raw);
+        return raw.isEmpty()?new JSONObject():new JSONObject(raw);
     }
 
     private static String localIpv4() throws SocketException {
@@ -1301,28 +1382,19 @@ public final class BcpClient {
         } catch (Exception ignored) {}
     }
 
-    private static JSONObject requestJson(String method, String url, String body,
-                                          String token, String idem,
-                                          int connectMs, int readMs) throws Exception {
-        HttpURLConnection c = (HttpURLConnection)new URL(url).openConnection();
-        c.setRequestMethod(method);
-        c.setConnectTimeout(connectMs);
-        c.setReadTimeout(readMs);
-        c.setRequestProperty("Accept", "application/json");
-        if (token != null && !token.isEmpty()) c.setRequestProperty("Authorization", "Bearer " + token);
-        if (idem != null) c.setRequestProperty("Idempotency-Key", idem);
-        if (body != null) {
-            c.setDoOutput(true);
-            c.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            try (OutputStream os = c.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
-            }
+    JSONObject requestJson(String method, String url, String body,
+                           String token, String idem,
+                           int connectMs, int readMs) throws Exception {
+        URL parsed = new URL(url);
+        if ("https".equalsIgnoreCase(parsed.getProtocol())) {
+            return PinnedTlsHttp.requestJson(
+                    method, url, body, token, idem,
+                    getPcTlsCertSha256(), EDGE_VERSION, connectMs, readMs);
         }
-        int code = c.getResponseCode();
-        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
-        String raw = readAll(in);
-        if (code >= 400) throw new IOException("HTTP_" + code + ": " + raw);
-        return raw.isEmpty() ? new JSONObject() : new JSONObject(raw);
+        if (token != null && !token.isEmpty()) {
+            throw new SecurityException("SECURE_PC_TRANSPORT_REQUIRED");
+        }
+        return requestBootstrapJson(url, connectMs, readMs);
     }
 
     private static String readAll(InputStream in) throws IOException {
