@@ -79,7 +79,7 @@ PUSH_STATES = {
 }
 READ_ONLY_COMMANDS = {
     "/start", "/help", "/status", "/details", "/project", "/job", "/last", "/ci", "/holds",
-    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/ack", "/conversations", "/conversation", "/report", "/reporttech", "/timeplus",
+    "/tail", "/where", "/missions", "/objective", "/why", "/since", "/risks", "/ack", "/conversations", "/conversation", "/report", "/reporttech",
 }
 TOKEN_RE = re.compile(r"\b\d{6,12}:[A-Za-z0-9_-]{20,}\b")
 SECRET_PATTERNS = (
@@ -2771,7 +2771,7 @@ class Service:
             "📧 Si ChatGPT mobile est désynchronisé : consultez d’abord le mail miroir exact, puis Messages récents.\n\n"
             "Commandes équivalentes :\n"
             "/continue /status /conversations /since /why /risks /ack /quiet 120 /objective /missions /details\n"
-            "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n/timeplus — dernière version TimePlus à télécharger\n"
+            "/report — rapport 1/4 suivi humain\n/reporttech — rapport 4/4 audit technique\n"
             "/project <id>\n/job <code>\n/tail [code]\n/where [code]\n/last\n/ci\n/holds\n\n"
             "Les boutons donnent une lecture humaine de la situation et quatre rapports PDF complémentaires. "
             "Le compteur marqué ≈ est une estimation dynamique de micro-actions atomiques; les actions confirmées restent fondées sur des preuves durables. "
@@ -2800,7 +2800,7 @@ class Service:
                 return "Usage: /quiet 120 · /quiet off"
             return self.quiet_mode(minutes)
         if cmd not in READ_ONLY_COMMANDS:
-            return "Commandes: /continue /status /conversations /conversation <ID> /since /why /risks /ack /quiet 120 /objective /missions /details /report /reporttech /timeplus /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
+            return "Commandes: /continue /status /conversations /conversation <ID> /since /why /risks /ack /quiet 120 /objective /missions /details /report /reporttech /project <id> /job <code> /tail [code] /where [code] /last /ci /holds"
         if cmd in {"/start", "/help"}:
             return self.help()
         if cmd == "/status":
@@ -2833,14 +2833,6 @@ class Service:
             return "REPORT_PDF_SUMMARY"
         if cmd == "/reporttech":
             return "REPORT_PDF_TECHNICAL"
-        if cmd == "/timeplus":
-            return (
-                "📱 TimePlus V2.0.0 FINAL\n"
-                "Téléchargement navigateur direct :\n"
-                "https://drive.google.com/uc?export=download&id=1rW2IcjJDEU6hCBb5-xfOMnCMR5kZbLBn\n\n"
-                "Le fichier téléchargé est TimePlus-v2.0.0-ANDROID-INSTALL.zip. "
-                "Extraire puis renommer TimePlus-v2.0.0-FINAL.install en .apk."
-            )
         return self.holds()
 
 
@@ -4026,7 +4018,6 @@ def selftest() -> int:
         assert "Commandes:" in svc.dispatch("/run")
         assert svc.dispatch("/report") == "REPORT_PDF_SUMMARY"
         assert svc.dispatch("/reporttech") == "REPORT_PDF_TECHNICAL"
-        assert "TimePlus V2.0.0 FINAL" in svc.dispatch("/timeplus")
         assert human_timestamp("2026-09-20T21:51:24+00:00", seconds=True) == "20/09/2026 à 22:51:24 (Kinshasa)"
         summary_text = svc.report_summary()
         devices_text = svc.report_devices()
