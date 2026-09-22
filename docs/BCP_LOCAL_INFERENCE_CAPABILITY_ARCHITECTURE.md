@@ -633,6 +633,18 @@ Checked 2026-09-22:
    - https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage
    - https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases
 
+## 21B. Forum/community signals — practical only, not authority
+
+These signals do not override device receipts or primary documentation.
+
+- Recent LocalLLaMA reports show small 1B-class models running fully offline on Android, with large throughput variation by device/context/runtime. This supports treating performance as a per-profile capability, not a model-wide constant.
+  - https://www.reddit.com/r/LocalLLaMA/comments/1rm9f1m/running_a_local_llm_on_android_with_termux_no/
+- PocketPal users/developers repeatedly report memory, backend and chat-template sensitivity. This supports the rule that one failed 4B profile is not proof that all 4B configurations are impossible, and that model/runtime/profile/template belong in the qualification identity.
+  - https://www.reddit.com/r/LocalLLaMA/comments/1fppt99/
+  - https://www.reddit.com/r/LocalLLaMA/comments/1rktgha/
+- Community reports also note that UI wrappers may not expose a stable text-completion API. This reinforces using PocketPal as an evidence/qualification tool unless a stable automatable provider interface is actually verified.
+  - https://www.reddit.com/r/LocalLLaMA/comments/1moabey/llamacpp_on_android/
+
 ## 22. Contradictions removed
 
 - “Local = free” -> false; local has RAM/battery/thermal/load/storage/availability costs.
