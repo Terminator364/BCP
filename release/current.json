@@ -3,7 +3,7 @@
   "channel": "CURRENT",
   "requirements_revision": "2026-09-21-R74",
   "zero_usd": true,
-  "overall_state": "CI_SIGNED_DISTRIBUTED_FIELD_RELAY_PENDING",
+  "overall_state": "DISTRIBUTION_READY_FIELD_PENDING",
   "update_policy": {
     "unchanged_version_zero_download": true,
     "metered_large_download_default": false,
@@ -27,7 +27,7 @@
       "notes": "BCP 0.7.18 adds the pinned TLS 8766 phone-to-PC control path with a non-exportable Windows certificate and loopback-only backend; legacy 8765 remains bootstrap/2.1.2 compatibility."
     },
     "android_b_edge": {
-      "version": "2.1.2-rc1-edge-relay-evergreen",
+      "version": "2.2.0-full-node-evergreen",
       "source_manifest": "release/android.json",
       "qualification": "CI_SIGNED_DISTRIBUTED_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -36,9 +36,9 @@
       "artifact": {
         "transport": "PRIVATE_DRIVE_STABLE_CURRENT",
         "url": "https://drive.google.com/file/d/1nhGsvAvz_xFX9ni_-U4DlLZnvmcusHAR/view?usp=drivesdk",
-        "sha256": "3eb1260dee31c3ff2b9668d22fd90460bdc331426f9f5361d46eb78b0a59e2cc"
+        "sha256": "a95460edc340fdba6e045ef1ad3c8ddbc062c3a61f56fbb479360f2b00102e3a"
       },
-      "notes": "B-EDGE 2.1.2 dedicated Edge relay is v2/v3 signed with the pinned Evergreen identity, exact bytes/hash read back from stable Drive CURRENT, and prior 2.1.0 preserved for rollback. Field install/runtime relay registration and Telegram round-trip remain pending."
+      "notes": "B-EDGE 2.2 full-node is signed with the pinned Evergreen identity and v2/v3 verified. Exact source-head build + representative Android emulator full-node/API/relaunch qualification passed. Final stable Drive CURRENT byte replacement/readback and real-device in-place installation remain the only promotion/field gates."
     },
     "nexus": {
       "version": "0.2.6",
