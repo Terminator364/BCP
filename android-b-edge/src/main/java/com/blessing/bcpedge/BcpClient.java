@@ -90,12 +90,26 @@ public final class BcpClient {
             lanSecurity.put("relay_provider_payload_e2e_tls", true);
             lanSecurity.put("relay_long_lived_bearer_on_clear_lan", false);
             lanSecurity.put("relay_auth", "BCP_HMAC_SHA256");
-            lanSecurity.put("phone_to_pc_control_payload_encrypted", false);
-            lanSecurity.put("overall_state", "PARTIAL");
+            lanSecurity.put("phone_to_pc_control_payload_encrypted", getServer().startsWith("https://"));
+            lanSecurity.put("phone_to_pc_tls_cert_sha256", getPcTlsCertSha256());
+            lanSecurity.put("phone_to_pc_tls_pin_ready",
+                    getServer().startsWith("https://")
+                            && getPcTlsCertSha256().matches("[0-9a-f]{64}"));
+            lanSecurity.put("legacy_2_1_2_clear_bootstrap_compatibility", true);
+            lanSecurity.put("candidate_2_2_long_lived_bearer_over_clear_http", false);
+            lanSecurity.put("overall_state",
+                    getServer().startsWith("https://")
+                            && getPcTlsCertSha256().matches("[0-9a-f]{64}")
+                            ? "BIDIRECTIONAL_PINNED_TLS_CANDIDATE"
+                            : "SECURE_PC_LINK_PENDING");
             lanSecurity.put("target", "AUTHENTICATED_ENCRYPTED_LAN_BIDIRECTIONAL");
-            lanSecurity.put("blocking_release_gap", true);
+            lanSecurity.put("blocking_release_gap",
+                    !(getServer().startsWith("https://")
+                            && getPcTlsCertSha256().matches("[0-9a-f]{64}")));
             orchestrator.putCapability(getProject(), "LAN_TRANSPORT_SECURITY", "B-EDGE",
-                    "BCP_POLICY", "SECURITY", "PARTIAL", "TLS_PLUS_HMAC_TRANSITION", lanSecurity,
+                    "BCP_POLICY", "SECURITY",
+                    getServer().startsWith("https://") ? "TLS_PINNED" : "PENDING",
+                    "BIDIRECTIONAL_TLS_PLUS_HMAC", lanSecurity,
                     "MACHINE_READBACK", now, expiry);
 
             JSONObject durable = new JSONObject();
