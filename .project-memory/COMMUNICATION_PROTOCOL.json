@@ -1,27 +1,45 @@
 {
-  "schema": "bcp.communication_protocol/3",
+  "schema": "bcp.communication_protocol/4",
   "project": "API/BCP",
-  "revision": "2026-09-22-R81",
-  "cadence_minutes": 25,
-  "primary_work_budget_minutes": 23,
-  "normal_close_reserve_minutes": 2,
+  "revision": "2026-09-22-R88",
+  "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+  "fixed_cadence_minutes": null,
+  "duration_rule": "ESTIMATE_FROM_REAL_SCOPE_AND_CURRENT_GATES_NEVER_PAD_OR_TRUNCATE_TO_A_FIXED_CLOCK",
   "normal_close_owner": "PRIMARY_ASSISTANT",
   "gmail_label": "BCP",
   "continuation_code": "BCPGO BCP",
   "start_sequence": [
     "RECONCILE_OR_CLOSE_ANY_PRIOR_TRANCHE",
     "LOAD_COMMUNICATION_AND_DELIVERY_POLICIES",
-    "SEND_GMAIL_START",
-    "VERIFY_START_PROVIDER_ACK_MESSAGE_ID",
+    "ESTIMATE_SCOPE_COMPLEXITY_AND_REALISTIC_END_WINDOW",
+    "SEND_GMAIL_START_WITH_SCOPE_AND_ESTIMATED_END_WINDOW",
+    "VERIFY_START_PROVIDER_ACK_MESSAGE_ID_AND_INBOX_OR_SENT_READBACK",
     "APPLY_GMAIL_LABEL_BCP",
-    "PERSIST_ACTIVE_TRANCHE_START_RECEIPT",
+    "PERSIST_ACTIVE_TRANCHE_START_RECEIPT_WITH_ESTIMATE",
     "BEGIN_WORK"
   ],
-  "feedback_during_tranche": "QUEUE_AND_INTEGRATE_WITHOUT_BREAKING_ACTIVE_TRANCHE",
-  "only_early_stop": "TRUE_HUMAN_GATE_OR_TOOL_SAFETY_FAILURE_OBJECTIVELY_REQUIRED_TO_CONTINUE",
+  "start_mail_required_fields": [
+    "TRANCHE_OR_MISSION_ID",
+    "SCOPE",
+    "START_LOCAL_TIME",
+    "ESTIMATED_END_WINDOW_LOCAL",
+    "TRUE_HUMAN_GATE_IF_ALREADY_KNOWN",
+    "NO_ACTION_REQUIRED_IF_APPLICABLE"
+  ],
+  "estimate_semantics": {
+    "binding_deadline": false,
+    "purpose": "USER_VISIBILITY_AND_REALISTIC_EXPECTATION",
+    "estimate_may_change": true,
+    "update_mail_default": false,
+    "update_mail_trigger": "EXPECTED_END_WINDOW_NO_LONGER_CREDIBLE_OR_MATERIAL_SCOPE_CHANGE",
+    "update_mail_rule": "SEND_ONE_CONCISE_UPDATE_WITH_NEW_WINDOW_AND_REASON_WHEN_USEFUL; DO_NOT_SPAM",
+    "never_wait_to_fill_window": true,
+    "never_stop_only_because_window_elapsed": true
+  },
+  "work_rule": "CONTINUE_UNTIL_REAL_CHECKPOINT_TRUE_HUMAN_GATE_OR_OBJECTIVE_TOOL_SAFETY_FAILURE",
+  "feedback_during_tranche": "INTEGRATE_WITHOUT_RESETTING_TRANCHE; REESTIMATE_ONLY_IF_MATERIAL",
   "normal_end_sequence": [
-    "ENTER_NORMAL_CLOSE_RESERVE_AT_T_PLUS_23",
-    "STOP_NEW_PRODUCT_MUTATIONS",
+    "STOP_NEW_PRODUCT_MUTATIONS_AT_REAL_CHECKPOINT_OR_TRUE_GATE",
     "PERSIST_FINAL_TECHNICAL_CHECKPOINT_AND_CLOSE_INTENT",
     "SEARCH_GMAIL_SENT_BY_DELIVERY_KEY",
     "SEND_COMPLETE_GMAIL_END_IF_MISSING",
@@ -30,15 +48,23 @@
     "PERSIST_END_ACKNOWLEDGED_AND_CLOSED",
     "ONLY_THEN_REPLY_IN_CHAT_APP"
   ],
-  "chat_app_reply": "VA_SUR_GMAIL_PLUS_KINSHASA_DATE_TIME_PLUS_CHECKPOINT_ONLY",
+  "end_mail_required_fields": [
+    "TRANCHE_OR_MISSION_ID",
+    "ACTUAL_RESULT",
+    "EVIDENCE",
+    "BLOCKERS_OR_HUMAN_GATE",
+    "NEXT_UNCOMMITTED_ACTION",
+    "INSTALL_OR_USER_ACTION_ONLY_IF_ACTUALLY_READY"
+  ],
+  "chat_app_reply": "CONCISE_POINTER_TO_GMAIL_PLUS_LOCAL_DATE_TIME_AND_TRUE_GATE_OR_CHECKPOINT",
   "final_reply_gate": {
     "required_delivery_state": "END_ACKNOWLEDGED_OR_CLOSED",
-    "rule": "NO_FINAL_CHAT_APP_RESPONSE_BEFORE_GMAIL_END_PROVIDER_ACK_AND_DURABLE_LEDGER_RECEIPT"
+    "rule": "NO_FINAL_CHAT_APP_CLOSEOUT_BEFORE_GMAIL_END_PROVIDER_ACK_AND_DURABLE_LEDGER_RECEIPT"
   },
   "idempotency": "DELIVERY_KEY_PLUS_GMAIL_SEARCH_PLUS_PROVIDER_MESSAGE_ID",
-  "threading": "PREFER_END_REPLY_TO_START_THREAD; IF_REPLY_REJECTED, SEARCH_FOR_EXISTING_END_THEN_SEND_STANDALONE_FALLBACK",
+  "threading": "PREFER_END_REPLY_TO_START_THREAD; IF_REPLY_REJECTED, SEARCH_EXISTING_END THEN SEND STANDALONE FALLBACK",
   "network_interruption_policy": "PERSIST_CHECKPOINT_AND_RESUME_SAME_TRANCHE_NEVER_SILENTLY_ABANDON",
-  "no_app_reply_before_end_mail": true,
+  "no_app_closeout_before_end_mail": true,
   "end_mail_required_even_if_user_sends_intermediate_feedback": true,
   "backup_semantics": {
     "scheduled_jobs_are_normal_close_dependency": false,
@@ -49,7 +75,7 @@
     "must_not_preempt_healthy_foreground_tranche": true
   },
   "work_proof": {
-    "chatgpt_thinking_indicator": "VISIBLE_UI_SIGNAL_ONLY_NOT_TOTAL_TRANCHE_PROOF",
+    "chatgpt_thinking_indicator": "VISIBLE_UI_SIGNAL_ONLY_NOT_WORK_PROOF",
     "authoritative_evidence": [
       "git_commits",
       "ci_runs",
@@ -58,20 +84,17 @@
       "durable_receipts",
       "field_telemetry"
     ],
-    "rule": "TARGET_REAL_SUBSTANTIVE_WORK_WITH_DURABLE_EVIDENCE; NEVER_FAKE_UI_THINKING_DURATION",
-    "wall_clock_contract": "START_PROVIDER_ACK_TO_END_PROVIDER_ACK_TARGET_25_MINUTES",
-    "normal_minimum_substantive_minutes": 20,
-    "target_substantive_minutes": 23
+    "rule": "REAL_DURABLE_PROGRESS_NOT_ELAPSED_TIME_IS THE SUCCESS METRIC"
   },
-  "scheduled_backup_required": false,
-  "scheduled_backup_default_enabled": false,
+  "product_priority": "USABLE_PRODUCT_OVER_ARCHITECTURAL_EXPANSION_OR_TIME_SPENT",
   "normal_work_contract": {
-    "rule": "THE_SAME_FOREGROUND_ASSISTANT_TURN_OWNS_START_WORK_CLOSEOUT_END",
-    "start_ack_before_work": true,
-    "target_substantive_minutes": 23,
-    "close_reserve_minutes": 2,
-    "do_not_end_early_because_reasoning_ui_or_tool_phase_finished": true,
-    "early_end_only_for_true_human_gate_or_tool_safety_failure": true,
+    "same_foreground_turn_owns_start_work_closeout_end": true,
+    "start_ack_before_mutation": true,
+    "fixed_minimum_work_minutes": null,
+    "fixed_maximum_work_minutes": null,
+    "complete_when_real_checkpoint_reached": true,
+    "early_finish_allowed_when_objective_complete": true,
+    "overrun_allowed_when_machine_work_still_reduces_uncertainty": true,
     "automation_is_never_normal_owner": true
   }
 }
