@@ -5,9 +5,9 @@
   "delivery_key": "BCPADAPT-20260922-1321-R88",
   "scheduling_model": "ADAPTIVE_TASK_WINDOW",
   "fixed_cadence_minutes": null,
-  "work_state": "WORKING",
-  "delivery_state": "START_ACKNOWLEDGED",
-  "status": "WORKING",
+  "work_state": "CLOSED",
+  "delivery_state": "CLOSED",
+  "status": "CLOSED",
   "started_at_kinshasa": "2026-09-22T13:21:00+01:00",
   "estimated_end_window_local": {
     "earliest": "2026-09-22T13:32:00+01:00",
@@ -17,14 +17,14 @@
   },
   "gmail_start_message_id": "1a0c911086fff770",
   "gmail_start_thread_id": "1a0c911086fff770",
-  "gmail_end_message_id": null,
-  "gmail_end_thread_id": null,
-  "end_mail_verified": false,
+  "gmail_end_message_id": "1a0c91cbc4a16677",
+  "gmail_end_thread_id": "1a0c91cbc4a16677",
+  "end_mail_verified": true,
   "gmail_label": "BCP",
-  "close_intent_persisted": false,
+  "close_intent_persisted": true,
   "close_owner": "PRIMARY_ASSISTANT",
   "scheduled_backup_required": false,
-  "final_app_reply_gate": "END_ACK_REQUIRED",
+  "final_app_reply_gate": "OPEN_AFTER_END_ACK",
   "communication_guard": {
     "final_app_reply_requires_end_ack_persisted": true,
     "closed_tranche_reuse_forbidden": true,
@@ -57,7 +57,19 @@
     "status": "CLOSED"
   },
   "base_main_sha": "a6a3162b181f088598528eb2bba53b1966489ebd",
-  "no_more_product_mutations": false,
+  "no_more_product_mutations": true,
   "product_bytes_mutation_forbidden": true,
-  "product_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
+  "product_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL",
+  "closeout_truth": {
+    "exact_policy_head": "ce207d37ea09172edcb5728342d22e43d53f64fe",
+    "merged_main_sha": "067fed319a7f4dc95994fdbc9541875847ab7ab7",
+    "current_release_contract": "PASS_1526",
+    "nexus_one_shot": "PASS_445",
+    "coordinated_product": "PASS_1564",
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "fixed_25_minute_rule_superseded": true,
+    "product_bytes_changed": false,
+    "p0_human_gate": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
+  },
+  "closed_at_kinshasa": "2026-09-22T13:34:58+01:00"
 }
