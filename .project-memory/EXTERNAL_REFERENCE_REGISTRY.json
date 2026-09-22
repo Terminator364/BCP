@@ -1,0 +1,183 @@
+{
+  "schema": "bcp.external_reference_registry/1",
+  "status": "ACTIVE_R89",
+  "updated_at": "2026-09-22",
+  "default_code_reuse_status": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT",
+  "sources": [
+    {
+      "id": "REF-ANDROID-SETTINGS",
+      "family": "Android Developers",
+      "area": "SETTINGS_INFORMATION_ARCHITECTURE",
+      "url": "https://developer.android.com/design/ui/mobile/guides/patterns/settings",
+      "decision": "ADAPT",
+      "code_reuse": "NOT_APPLICABLE_DOC_GUIDANCE"
+    },
+    {
+      "id": "REF-ANDROID-PERMISSIONS",
+      "family": "Android Developers",
+      "area": "CONTEXTUAL_PERMISSION_ONBOARDING",
+      "url": "https://developer.android.com/training/permissions/requesting",
+      "decision": "ADAPT",
+      "code_reuse": "NOT_APPLICABLE_DOC_GUIDANCE"
+    },
+    {
+      "id": "REF-ANDROID-WORKMANAGER",
+      "family": "Android WorkManager",
+      "area": "PERSISTENT_BACKGROUND_WORK",
+      "url": "https://developer.android.com/develop/background-work/background-tasks/persistent",
+      "decision": "KEEP_ALIGN",
+      "code_reuse": "PLATFORM_API"
+    },
+    {
+      "id": "REF-HOMEASSISTANT-ONBOARDING",
+      "family": "Home Assistant Companion",
+      "area": "DISCOVERY_ONBOARDING_DASHBOARD",
+      "url": "https://companion.home-assistant.io/docs/getting_started/",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-HOMEASSISTANT-KIOSK",
+      "family": "Home Assistant Companion",
+      "area": "DEDICATED_ANDROID_NODE_KIOSK",
+      "url": "https://companion.home-assistant.io/docs/integrations/android-home-app-launcher/",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-KDECONNECT-PAIRING",
+      "family": "KDE Connect",
+      "area": "DEVICE_DISCOVERY_PAIRING",
+      "url": "https://userbase.kde.org/KDEConnect/en",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-SYNCTHING-IDENTITY",
+      "family": "Syncthing",
+      "area": "DEVICE_IDENTITY_TLS_DISCOVERY",
+      "url": "https://docs.syncthing.net/dev/device-ids.html",
+      "decision": "KEEP_ALIGN",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-LOCALSEND-PROTOCOL",
+      "family": "LocalSend",
+      "area": "LAN_DISCOVERY_HTTPS_FALLBACK",
+      "url": "https://github.com/localsend/protocol",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-TAILSCALE-CONNECTIVITY",
+      "family": "Tailscale",
+      "area": "DIRECT_FIRST_RELAY_FALLBACK",
+      "url": "https://tailscale.com/docs/reference/device-connectivity",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY"
+    },
+    {
+      "id": "REF-RUSTDESK-CONNECTIVITY",
+      "family": "RustDesk",
+      "area": "RENDEZVOUS_DIRECT_RELAY",
+      "url": "https://rustdesk.com/docs/en/self-host/",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-OBTAINIUM-UPDATER",
+      "family": "Obtainium",
+      "area": "ANDROID_SOURCE_ADAPTER_UPDATE_UX",
+      "url": "https://github.com/ImranR98/Obtainium",
+      "decision": "ADAPT",
+      "code_reuse": "DO_NOT_COPY_BY_DEFAULT_GPL_3_0_REFERENCE_ONLY"
+    },
+    {
+      "id": "REF-TEMPORAL-DURABILITY",
+      "family": "Temporal",
+      "area": "DURABLE_WORKFLOW_RESUME",
+      "url": "https://docs.temporal.io/",
+      "decision": "ADAPT_SEMANTICS",
+      "code_reuse": "NO_RUNTIME_DEPENDENCY_PLANNED"
+    },
+    {
+      "id": "REF-PREFECT-TASKS",
+      "family": "Prefect",
+      "area": "TASK_STATE_RETRY_CACHE_OBSERVABILITY",
+      "url": "https://docs.prefect.io/",
+      "decision": "ADAPT_SEMANTICS",
+      "code_reuse": "NO_RUNTIME_DEPENDENCY_PLANNED"
+    },
+    {
+      "id": "REF-LANGGRAPH-CHECKPOINTS",
+      "family": "LangGraph",
+      "area": "CHECKPOINT_PENDING_WRITES_THREAD_STATE",
+      "url": "https://reference.langchain.com/python/langgraph/checkpoints",
+      "decision": "ADAPT_SEMANTICS",
+      "code_reuse": "NO_RUNTIME_DEPENDENCY_PLANNED"
+    },
+    {
+      "id": "REF-STRIPE-IDEMPOTENCY",
+      "family": "Stripe",
+      "area": "IDEMPOTENT_MUTATION_RETRY",
+      "url": "https://docs.stripe.com/api/idempotent_requests",
+      "decision": "KEEP_ALIGN",
+      "code_reuse": "NOT_APPLICABLE_DOC_GUIDANCE"
+    },
+    {
+      "id": "REF-AWS-IDEMPOTENT",
+      "family": "AWS Builders Library",
+      "area": "IDEMPOTENT_CONTROL_PROCESS_RETRY",
+      "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+      "decision": "KEEP_ALIGN",
+      "code_reuse": "NOT_APPLICABLE_DOC_GUIDANCE"
+    },
+    {
+      "id": "REF-AWS-OUTBOX",
+      "family": "AWS Prescriptive Guidance",
+      "area": "TRANSACTIONAL_OUTBOX_DELIVERY",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html",
+      "decision": "ADAPT",
+      "code_reuse": "NOT_APPLICABLE_PATTERN_GUIDANCE"
+    },
+    {
+      "id": "REF-NODERED-FLOWLIB",
+      "family": "Node-RED",
+      "area": "REUSABLE_FLOW_EXAMPLES_IMPORT_EXPORT",
+      "url": "https://nodered.org/docs/user-guide/editor/workspace/import-export",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-OPENHANDS-RUNTIME",
+      "family": "OpenHands",
+      "area": "AGENT_UI_EXECUTION_BOUNDARY",
+      "url": "https://github.com/OpenHands/docs/blob/main/openhands/usage/architecture/runtime.mdx",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    },
+    {
+      "id": "REF-UPTIMEKUMA-STATUS",
+      "family": "Uptime Kuma",
+      "area": "STATUS_FIRST_OPERATOR_DASHBOARD",
+      "url": "https://github.com/louislam/uptime-kuma",
+      "decision": "ADAPT",
+      "code_reuse": "PATTERN_ONLY_UNTIL_LICENSE_AUDIT"
+    }
+  ],
+  "videos_and_tutorials": {
+    "allowed_role": "HUMAN_FLOW_OBSERVATION_ONLY",
+    "architecture_authority": false,
+    "security_authority": false,
+    "examples": [
+      {
+        "source": "Obtainium 101",
+        "url": "https://www.youtube.com/watch?v=0MF_v2OBncw"
+      },
+      {
+        "source": "Node-RED Essentials",
+        "url": "https://nodered.org/docs/user-guide/editor/"
+      }
+    ]
+  }
+}
