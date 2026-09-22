@@ -47,11 +47,16 @@ public final class EdgePresenceAdvertiser {
         this.context = context.getApplicationContext();
     }
 
-    public JSONObject start(int port, String version) {
+    public JSONObject start(int port, String version, String tlsCertificateSha256) {
         JSONObject out = new JSONObject();
-        try { out.put("nsd", startNsd(port, version)); } catch (Exception ignored) {}
+        try { out.put("nsd", startNsd(port, version, tlsCertificateSha256)); } catch (Exception ignored) {}
         try { out.put("ble", startBle(version)); } catch (Exception ignored) {}
-        try { out.put("wifi_direct", startWifiDirect(port, version)); } catch (Exception ignored) {}
+        try { out.put("wifi_direct", startWifiDirect(port, version, tlsCertificateSha256)); } catch (Exception ignored) {}
+        try {
+            out.put("api_scheme", "https");
+            out.put("api_port", port);
+            out.put("tls_cert_sha256", tlsCertificateSha256 == null ? "" : tlsCertificateSha256);
+        } catch (Exception ignored) {}
         return out;
     }
 
@@ -81,7 +86,7 @@ public final class EdgePresenceAdvertiser {
         } catch (Exception ignored) {}
     }
 
-    private String startNsd(int port, String version) {
+    private String startNsd(int port, String version, String tlsCertificateSha256) {
         nsd = context.getSystemService(NsdManager.class);
         if (nsd == null) return "UNAVAILABLE";
         NsdServiceInfo info = new NsdServiceInfo();
@@ -93,6 +98,10 @@ public final class EdgePresenceAdvertiser {
                 info.setAttribute("v", version);
                 info.setAttribute("role", "server");
                 info.setAttribute("api", "v1");
+                info.setAttribute("transport", "tls");
+                if (tlsCertificateSha256 != null && !tlsCertificateSha256.isEmpty()) {
+                    info.setAttribute("tlsfp", tlsCertificateSha256);
+                }
             } catch (Exception ignored) {}
         }
         nsdListener = new NsdManager.RegistrationListener() {
@@ -134,7 +143,7 @@ public final class EdgePresenceAdvertiser {
         return "ADVERTISING";
     }
 
-    private String startWifiDirect(int port, String version) {
+    private String startWifiDirect(int port, String version, String tlsCertificateSha256) {
         if (Build.VERSION.SDK_INT >= 33
                 && context.checkSelfPermission(Manifest.permission.NEARBY_WIFI_DEVICES)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -155,6 +164,10 @@ public final class EdgePresenceAdvertiser {
         record.put("port", String.valueOf(port));
         record.put("version", version);
         record.put("api", "v1");
+        record.put("transport", "tls");
+        if (tlsCertificateSha256 != null && !tlsCertificateSha256.isEmpty()) {
+            record.put("tlsfp", tlsCertificateSha256);
+        }
         p2pService = WifiP2pDnsSdServiceInfo.newInstance(
                 "BCP-EDGE", "_bcpedge._tcp", record);
         p2p.addLocalService(p2pChannel, p2pService, new WifiP2pManager.ActionListener() {
