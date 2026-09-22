@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R85_PR153_MERGED_POSTMERGE_GREEN_PROVIDER_CLOSEOUT",
-  "last_completed_atomic_action": "R85 diagnosed Android Human-Action TLS failures from CI artifacts, traced run #331 to AndroidKeyStore INCOMPATIBLE_PADDING_MODE, regenerated the TLS identity as bcp-edge-tls-v3 with PURPOSE_DECRYPT plus RSA NONE/PKCS1 encryption paddings, proved HTTPS 8877 and cold relaunch on emulator run #333, merged PR #153 at exact head d9d4ab7c4d1820ff1bb73dc93657f090e368c8b9 into main 15b7bca6ceac474c6f4454d3a37df363fa13d2d6, and then passed all 12 post-merge main workflows including Android Human-Action #334.",
-  "next_action": "After R85 Gmail END is provider-acknowledged and closeout state is reconciled, start R86 from main 15b7bca6ceac474c6f4454d3a37df363fa13d2d6. Encrypt and pin the B-EDGE -> PC control plane so LAN security becomes bidirectional. Preserve field B-EDGE 2.1.2 and do not authorize 2.2 installation until the coherent release gate says so.",
+  "status": "R85_CLOSED_PR153_MERGED_POSTMERGE_GREEN_CLOSEOUT_PR154_OPEN",
+  "last_completed_atomic_action": "R85 is provider-proof closed. PR #153 merged into main 15b7bca6ceac474c6f4454d3a37df363fa13d2d6 after exact-head TLS repair and all required pre-merge gates. All 12 post-merge main workflows passed, including Android Human-Action #334 proving HTTPS 8877 and cold relaunch. Gmail END 1a0c8672f6af7db0 was provider-acknowledged and read back from SENT.",
+  "next_action": "Reconcile PR #154 control-only closeout under writer fence and merge it only if its exact head is green and main remains compatible. Then start R86 from canonical main to encrypt and pin B-EDGE -> PC control traffic. Do not authorize B-EDGE 2.2 installation yet.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -50,7 +50,11 @@
     "r85_https_8877_runtime": true,
     "r85_cold_relaunch": true,
     "r85_all_postmerge_workflows_green": true,
-    "r85_security_state": "PARTIAL"
+    "r85_security_state": "PARTIAL",
+    "r85_end_gmail_message_id": "1a0c8672f6af7db0",
+    "r85_end_checkpoint": "BCP-R85-END-20260922-1016",
+    "r85_closeout_pr": 154,
+    "r85_provider_sent_readback": true
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
