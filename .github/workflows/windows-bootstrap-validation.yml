@@ -67,6 +67,8 @@ jobs:
           if ($ps -notmatch 'Tunnel_PC_G4') { throw 'ChatGPT-PC runtime reuse missing' }
           if ($ps -notmatch 'ChatGPT_ManagedApps') { throw 'Managed-app integration missing' }
           if ($ps -notmatch 'RemoteAddress LocalSubnet') { throw 'LAN firewall scope missing' }
+          if ($ps -notmatch 'BCP Secure LAN 8766 TLS') { throw 'TLS firewall rule missing' }
+          if ($ps -notmatch '\$TlsPort = 8766') { throw 'TLS listener port contract missing' }
           if ($ps -notmatch 'UTF8Encoding\(\$false\)') { throw 'UTF-8 no-BOM writer missing' }
 
       - name: Installer self-test under Windows PowerShell 5.1
@@ -78,6 +80,53 @@ jobs:
         shell: powershell
         run: |
           python '.\windows\bcp_server.py' --selftest
+
+      - name: Provision and handshake real PC TLS proxy
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sandbox = Join-Path $env:RUNNER_TEMP ('bcp-tls-' + [Guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          $oldLocal = $env:LOCALAPPDATA
+          try {
+            $env:LOCALAPPDATA = $sandbox
+            $probe = Join-Path $sandbox 'probe_tls.py'
+            @'
+import hashlib
+import importlib.util
+import pathlib
+import socket
+import ssl
+
+path = pathlib.Path("windows/bcp_server.py").resolve()
+spec = importlib.util.spec_from_file_location("bcp_server_tls_probe", path)
+m = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(m)
+m.ensure_state()
+st = m.ensure_pc_tls_proxy()
+assert st["ready"] is True
+assert st["port"] == 8766
+assert st["backend_port"] == 8767
+assert len(st["cert_sha256"]) == 64
+ctx = ssl._create_unverified_context()
+with socket.create_connection(("127.0.0.1", 8766), timeout=5) as raw:
+    with ctx.wrap_socket(raw, server_hostname="BCP-PC") as s:
+        der = s.getpeercert(binary_form=True)
+        assert der
+        assert hashlib.sha256(der).hexdigest() == st["cert_sha256"]
+print("BCP_PC_TLS_PROXY_HANDSHAKE=PASS")
+'@ | Set-Content -LiteralPath $probe -Encoding UTF8
+            python $probe
+            if ($LASTEXITCODE -ne 0) { throw "PC TLS proxy probe failed" }
+          }
+          finally {
+            Get-NetTCPConnection -LocalPort 8766 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+              try { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } catch {}
+            }
+            $env:LOCALAPPDATA = $oldLocal
+            Remove-Item -Recurse -Force -LiteralPath $sandbox -ErrorAction SilentlyContinue
+          }
 
       - name: Legacy migration bridge guards
         shell: powershell
