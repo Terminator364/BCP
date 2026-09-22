@@ -61,9 +61,9 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9,
-    "current_integration_branch": "work/bcp/r84-auth-encrypted-lan-20260922-0342",
-    "current_main_base_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
-    "current_integration_rule": "FIX_ANDROID_HUMAN_ACTION_326_ONLY_THEN_REQUALIFY_PR153",
+    "current_integration_branch": "work/bcp/r85-closeout-20260922-1013",
+    "current_main_base_sha": "15b7bca6ceac474c6f4454d3a37df363fa13d2d6",
+    "current_integration_rule": "FINISH_R85_PROVIDER_ACK_CLOSEOUT_THEN_R86_ENCRYPT_PIN_BEDGE_TO_PC",
     "current_secure_lan_state": "PARTIAL_PC_TO_EDGE_TLS_PINNED_RELAY_HMAC_EDGE_TO_PC_HTTP_REMAINS"
   },
   "updated_at": "2026-09-22",
@@ -78,7 +78,7 @@
   },
   "current_active_tranche": "BCP-R85-START-20260922-0951",
   "current_delivery_key": "BCP25-20260922-0951-R85",
-  "current_active_tranche_status": "WORKING",
+  "current_active_tranche_status": "CLOSEOUT",
   "current_end_checkpoint": null,
   "current_end_message_id": null
 }
