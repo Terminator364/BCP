@@ -4,6 +4,8 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -129,6 +131,102 @@ public final class PinnedTlsHttp {
             String text = new String(raw, StandardCharsets.UTF_8);
             if (status >= 400) throw new IOException("HTTP_" + status + ": " + text);
             return text.isEmpty() ? new JSONObject() : new JSONObject(text);
+        }
+    }
+
+    public static void download(
+            String url,
+            String bearer,
+            String expectedCertSha256,
+            String edgeVersion,
+            int connectMs,
+            int readMs,
+            File output,
+            long maxBytes) throws Exception {
+        URL u = new URL(url);
+        if (!"https".equalsIgnoreCase(u.getProtocol())) {
+            throw new IOException("PINNED_TLS_REQUIRES_HTTPS");
+        }
+        String host = u.getHost();
+        int port = u.getPort() > 0 ? u.getPort() : 443;
+        if (host == null || host.isEmpty()) throw new IOException("TLS_HOST_MISSING");
+        byte[] expected = decodeSha256(expectedCertSha256);
+
+        SSLContext ssl = SSLContext.getInstance("TLS");
+        ssl.init(null, new TrustManager[]{new ExactPinTrustManager(expected)}, null);
+
+        try (SSLSocket socket = (SSLSocket) ssl.getSocketFactory().createSocket()) {
+            socket.connect(new InetSocketAddress(host, port), connectMs);
+            socket.setSoTimeout(readMs);
+            socket.setEnabledProtocols(preferredProtocols(socket.getSupportedProtocols()));
+            socket.startHandshake();
+
+            String path = u.getFile();
+            if (path == null || path.isEmpty()) path = "/";
+            StringBuilder head = new StringBuilder();
+            head.append("GET ").append(path).append(" HTTP/1.1\r\n")
+                    .append("Host: ").append(host).append(port == 443 ? "" : ":" + port).append("\r\n")
+                    .append("Accept: application/vnd.android.package-archive\r\n")
+                    .append("Connection: close\r\n")
+                    .append("User-Agent: BCP-Edge/").append(edgeVersion == null ? "" : edgeVersion).append("\r\n")
+                    .append("X-BCP-Edge-Version: ").append(edgeVersion == null ? "" : edgeVersion).append("\r\n");
+            if (bearer != null && !bearer.isEmpty()) {
+                head.append("Authorization: Bearer ").append(bearer).append("\r\n");
+            }
+            head.append("\r\n");
+            OutputStream netOut = socket.getOutputStream();
+            netOut.write(head.toString().getBytes(StandardCharsets.US_ASCII));
+            netOut.flush();
+
+            InputStream in = socket.getInputStream();
+            String statusLine = readLine(in, 4096);
+            if (statusLine == null || !statusLine.startsWith("HTTP/")) {
+                throw new IOException("TLS_HTTP_STATUS_INVALID");
+            }
+            String[] parts = statusLine.split(" ", 3);
+            if (parts.length < 2) throw new IOException("TLS_HTTP_STATUS_INVALID");
+            int status = Integer.parseInt(parts[1]);
+
+            long contentLength = -1L;
+            while (true) {
+                String line = readLine(in, 8192);
+                if (line == null || line.isEmpty()) break;
+                int colon = line.indexOf(':');
+                if (colon <= 0) continue;
+                String name = line.substring(0, colon).trim().toLowerCase(Locale.ROOT);
+                String value = line.substring(colon + 1).trim();
+                if ("content-length".equals(name)) {
+                    contentLength = Long.parseLong(value);
+                    if (contentLength < 0 || contentLength > maxBytes) {
+                        throw new IOException("TLS_DOWNLOAD_TOO_LARGE");
+                    }
+                }
+                if ("transfer-encoding".equals(name)
+                        && value.toLowerCase(Locale.ROOT).contains("chunked")) {
+                    throw new IOException("TLS_HTTP_CHUNKED_UNSUPPORTED");
+                }
+            }
+            if (status >= 400) {
+                byte[] raw = readToEof(in, 64 * 1024);
+                throw new IOException("HTTP_" + status + ": "
+                        + new String(raw, StandardCharsets.UTF_8));
+            }
+
+            long total = 0L;
+            try (OutputStream fileOut = new FileOutputStream(output)) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) >= 0) {
+                    total += n;
+                    if (total > maxBytes) throw new IOException("TLS_DOWNLOAD_TOO_LARGE");
+                    fileOut.write(buf, 0, n);
+                }
+                fileOut.flush();
+            }
+            if (total <= 0) throw new IOException("TLS_DOWNLOAD_EMPTY");
+            if (contentLength >= 0 && total != contentLength) {
+                throw new IOException("TLS_DOWNLOAD_LENGTH_MISMATCH");
+            }
         }
     }
 
