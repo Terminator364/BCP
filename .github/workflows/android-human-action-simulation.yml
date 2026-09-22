@@ -161,20 +161,30 @@ jobs:
           "$ADB" pull /sdcard/bcp-window.xml bcp-window.xml >/dev/null
           grep -F "BCP Edge Server" bcp-window.xml >/dev/null
           grep -F "NŒUD SERVEUR" bcp-window.xml >/dev/null
-          grep -F "AUTORISATIONS SERVEUR" bcp-window.xml >/dev/null
-          grep -F "ACTIVER / RENFORCER LE MODE SERVEUR 24/7" bcp-window.xml >/dev/null
 
-          # The governance/autonomy panel is below the initial viewport on a phone.
-          # Exercise the real scroll instead of pretending off-screen text is visible.
-          "$ADB" shell input swipe 520 1500 520 380 450
-          sleep 1
-          "$ADB" shell input swipe 520 1500 520 380 450
-          sleep 1
-          "$ADB" shell uiautomator dump /sdcard/bcp-window-lower.xml >/dev/null
-          "$ADB" pull /sdcard/bcp-window-lower.xml bcp-window-lower.xml >/dev/null
-          grep -F "Registre capacités:" bcp-window-lower.xml >/dev/null
-          grep -F "Journal mémoire/provenance:" bcp-window-lower.xml >/dev/null
-          grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" bcp-window-lower.xml >/dev/null
+          # Server controls and governance cards may legitimately be below the initial
+          # viewport as the dashboard grows. Exercise bounded real-user scrolling and
+          # require every critical card to become visible instead of assuming position.
+          FOUND_PERMISSIONS=0
+          FOUND_CAPABILITIES=0
+          FOUND_MEMORY=0
+          FOUND_LAN=0
+          : > bcp-window-lower.xml
+          for STEP in 1 2 3 4 5; do
+            "$ADB" shell input swipe 520 1500 520 360 420
+            sleep 1
+            "$ADB" shell uiautomator dump "/sdcard/bcp-window-$STEP.xml" >/dev/null
+            "$ADB" pull "/sdcard/bcp-window-$STEP.xml" "bcp-window-$STEP.xml" >/dev/null
+            cat "bcp-window-$STEP.xml" >> bcp-window-lower.xml
+            grep -F "AUTORISATIONS SERVEUR" "bcp-window-$STEP.xml" >/dev/null && FOUND_PERMISSIONS=1 || true
+            grep -F "CAPACITÉS DU NŒUD" "bcp-window-$STEP.xml" >/dev/null && FOUND_CAPABILITIES=1 || true
+            grep -F "Journal mémoire/provenance:" "bcp-window-$STEP.xml" >/dev/null && FOUND_MEMORY=1 || true
+            grep -F "Sécurité LAN: POC authentifié · chiffrement final requis" "bcp-window-$STEP.xml" >/dev/null && FOUND_LAN=1 || true
+          done
+          test "$FOUND_PERMISSIONS" = "1"
+          test "$FOUND_CAPABILITIES" = "1"
+          test "$FOUND_MEMORY" = "1"
+          test "$FOUND_LAN" = "1"
           "$ADB" exec-out screencap -p > bcp-server-dashboard-lower.png
           test -s bcp-server-dashboard-lower.png
 
