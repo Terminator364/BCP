@@ -63,7 +63,7 @@
     "ucmf_current_postulate": 9,
     "current_integration_branch": "work/bcp/r87-closeout-20260922-1205",
     "current_main_base_sha": "e07f8f379533f74a2e9362fca5f95ad60f932bee",
-    "current_integration_rule": "R87_CLOSEOUT_THEN_ANDROID_IN_PLACE_INSTALL_FIELD_GATE",
+    "current_integration_rule": "R87_CLOSED_NEXT_ANDROID_IN_PLACE_INSTALL_FIELD_GATE",
     "current_secure_lan_state": "BIDIRECTIONAL_PINNED_TLS_CI_VERIFIED_BEDGE_2_2_CURRENT_FIELD_INSTALL_PENDING",
     "next_product_front": "ANDROID_IN_PLACE_INSTALL_THEN_FULL_NODE_REBOOT_COMMUNICATION_FIELD_PROOF"
   },
@@ -79,7 +79,7 @@
   },
   "current_active_tranche": "BCP-R87-START-20260922-1138",
   "current_delivery_key": "BCP25-20260922-1138-R87",
-  "current_active_tranche_status": "CLOSING",
-  "current_end_checkpoint": null,
-  "current_end_message_id": null
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R87-END-20260922-1207",
+  "current_end_message_id": "1a0c8ccca4a6d02e"
 }
