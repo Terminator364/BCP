@@ -105,6 +105,25 @@ Les améliorations réalistes retenues incluent :
 ### Android lifecycle
 Toujours-on signifie **toujours récupérable**, pas processus immortel. La correction dépend de Room/outbox/checkpoints, jamais d'un thread vivant pour toujours.
 
+## 3B. R89 — règle anti-réinvention avant productisation UI
+
+Avant toute nouvelle conception d'interface, onboarding, pairing, diagnostic, état, historique, réparation ou navigation, BCP doit d'abord comparer le besoin avec des solutions matures ayant déjà résolu le même problème humain.
+
+Références canoniques de benchmark :
+- `docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md`
+- `.project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json`
+
+Règles :
+- **ADOPT / ADAPT / KEEP / REJECT avant CREATE** ;
+- réutiliser l'architecture/backend BCP existants lorsque la lacune est seulement l'expérience utilisateur ;
+- ne pas importer une architecture étrangère entière pour copier un pattern d'interface ;
+- ne copier du code tiers qu'après vérification explicite de la licence et de l'adéquation technique ;
+- conserver la source/inspiration dans la documentation et, si utile, dans un commentaire local ;
+- une qualification émulateur de présence de texte ne vaut pas qualification d'ergonomie réelle ;
+- avant un nouveau clic humain d'installation, regrouper les corrections UI liées dans **un seul vertical slice cohérent A+B+C** afin d'éviter les micro-bêtas et réinstallations répétées.
+
+Le benchmark R89 identifie notamment Home Assistant, Syncthing, Tailscale, KDE Connect, LocalSend, Temporal UI, n8n, Node-RED et Cockpit comme références de patterns, pas comme nouvelles dépendances BCP.
+
 ## 4. C — exigences terrain cumulées
 
 Les retours utilisateur deviennent des exigences P0 :
