@@ -1,0 +1,21 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r85-closeout-20260922-1013",
+  "project_or_mission": "API/BCP R85 provider-proof closeout",
+  "base_main_sha": "15b7bca6ceac474c6f4454d3a37df363fa13d2d6",
+  "created_at": "2026-09-22T10:13:38+01:00",
+  "work_branch": "work/bcp/r85-closeout-20260922-1013",
+  "intended_file_scope": [
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Android Human-Action Simulation",
+    "BCP Field Ecosystem Preflight"
+  ],
+  "mutation_rule": "CONTROL_AND_CONTINUITY_ONLY_NO_PRODUCT_MUTATIONS"
+}
