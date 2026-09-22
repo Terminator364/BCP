@@ -152,6 +152,15 @@
       "id": "BCP-ERR-R87-TAKEOVER-ACTIVE-TRANCHE-SKEW",
       "status": "FIXED",
       "proof": "BCP Qualified CURRENT Release Contract #1507 and final #1519"
+    },
+    "r88_communication_policy": {
+      "status": "IMPLEMENTED_ON_WRITER_BRANCH",
+      "branch": "work/bcp/r88-adaptive-communication-window-20260922-1321",
+      "gmail_start_message_id": "1a0c911086fff770",
+      "delivery_key": "BCPADAPT-20260922-1321-R88",
+      "estimated_end_window_local": "13:32-13:38",
+      "product_bytes_changed": false,
+      "p0_human_gate_preserved": "ANDROID_IN_PLACE_INSTALL_NO_UNINSTALL"
     }
   },
   "field_gates": [
@@ -410,7 +419,8 @@
     "P0_phone_durable_mission_step_envelope": true,
     "P0_integral_abc_spec_denominator": true,
     "P1_local_ai_after_bedge_2_2_field": true,
-    "P0_bedge_2_2_field_promotion_before_local_ai_runtime": true
+    "P0_bedge_2_2_field_promotion_before_local_ai_runtime": true,
+    "P0_usable_product_over_fixed_work_duration": true
   },
   "conversation_dependency_policy": {
     "chat_is_not_canonical_state": true,
@@ -2903,5 +2913,19 @@
     "current_work_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
     "current_delivery_key": "BCP25-20260922-0102-R82",
     "product_scope": "A_PLUS_B_PLUS_C_INTEGRAL"
+  },
+  "communication_policy_current": {
+    "revision": "2026-09-22-R88",
+    "scheduling_model": "ADAPTIVE_TASK_WINDOW",
+    "fixed_cadence_minutes": null,
+    "start_mail_required": true,
+    "start_mail_estimated_end_window_required": true,
+    "estimate_update_mail": "OPTIONAL_IF_MATERIAL",
+    "end_mail_required": true,
+    "provider_ack_and_readback_required": true,
+    "completion_rule": "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER",
+    "success_metric": "USABLE_PRODUCT_AND_DURABLE_EVIDENCE_NOT_TIME_SPENT",
+    "protocol_ref": ".project-memory/COMMUNICATION_PROTOCOL.json",
+    "cadence_policy_ref": ".project-memory/INTERACTIVE_WORK_CADENCE_POLICY.json"
   }
 }
