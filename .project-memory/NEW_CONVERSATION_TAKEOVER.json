@@ -63,7 +63,7 @@
     "ucmf_current_postulate": 9,
     "current_integration_branch": "work/bcp/r86-edge-to-pc-secure-20260922-1024",
     "current_main_base_sha": "eec2b2ca41e1bc0b8593d049efd00b27814b4fe2",
-    "current_integration_rule": "RESUME_PR155_EXACT_HEAD_CI_AUTOFIX_THEN_WRITER_FENCED_MERGE",
+    "current_integration_rule": "RESUME_PR155_EXACT_HEAD_CI_AFTER_R86_CLOSE_THEN_AUTOFIX_OR_MERGE",
     "current_secure_lan_state": "CANDIDATE_2_2_BIDIRECTIONAL_PINNED_TLS_IMPLEMENTED_EXACT_HEAD_CI_PENDING",
     "next_product_front": "PR155_EXACT_HEAD_QUALIFICATION_THEN_FIELD_PROMOTION_GATES"
   },
@@ -79,7 +79,7 @@
   },
   "current_active_tranche": "BCP-R86-START-20260922-1024",
   "current_delivery_key": "BCP25-20260922-1024-R86",
-  "current_active_tranche_status": "CLOSEOUT",
-  "current_end_checkpoint": null,
-  "current_end_message_id": null
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R86-END-20260922-1047",
+  "current_end_message_id": "1a0c883c76f23039"
 }
