@@ -63,7 +63,8 @@
     "ucmf_current_postulate": 9,
     "current_integration_branch": "work/bcp/r84-auth-encrypted-lan-20260922-0342",
     "current_main_base_sha": "e28f47397ad1ff81e7906b6b6e9d6028fb566347",
-    "current_integration_rule": "ADD_PINNABLE_EDGE_TLS_AND_CREDENTIAL_SAFE_RELAY_THEN_EXACT_HEAD_CI"
+    "current_integration_rule": "RESUME_PR153_EXACT_HEAD_CI_AUTOFIX_THEN_WRITER_FENCED_INTEGRATION",
+    "current_secure_lan_state": "PARTIAL_PC_TO_EDGE_TLS_PINNED_RELAY_HMAC_EDGE_TO_PC_HTTP_REMAINS"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -77,7 +78,7 @@
   },
   "current_active_tranche": "BCP-R84-START-20260922-0342",
   "current_delivery_key": "BCP25-20260922-0342-R84",
-  "current_active_tranche_status": "WORKING",
-  "current_end_checkpoint": null,
-  "current_end_message_id": null
+  "current_active_tranche_status": "CLOSED",
+  "current_end_checkpoint": "BCP-R84-END-20260922-0407",
+  "current_end_message_id": "1a0c7153de3a8bf9"
 }
