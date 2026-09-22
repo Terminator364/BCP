@@ -63,7 +63,10 @@
     "ucmf_current_postulate": 9,
     "current_integration_branch": "work/bcp/r82-reconcile-r81-20260922-0102",
     "current_main_base_sha": "faecd48e7735be4e7577280a95ed3fddcb9f04e4",
-    "current_integration_rule": "PRESERVE_PR150_MEMORY_GOVERNANCE_PLUS_PR151_CAPABILITY_UI_RESEARCH_THEN_EXACT_HEAD_CI"
+    "current_integration_rule": "PRESERVE_PR150_MEMORY_GOVERNANCE_PLUS_PR151_CAPABILITY_UI_RESEARCH_THEN_EXACT_HEAD_CI",
+    "current_product_pr": 152,
+    "current_product_head": "7cb49d7c1aeca6f4ab574acb6d471301d225bdc8",
+    "next_uncommitted_action": "READ_PR152_EXACT_HEAD_CI; FIX_ONLY_REAL_FAILURES; REREAD_MAIN; MERGE_IF_GREEN; THEN_RECONCILE_CLOSEOUT_STATE"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -77,7 +80,8 @@
   },
   "current_active_tranche": "BCP-R82-START-20260922-0102",
   "current_delivery_key": "BCP25-20260922-0102-R82",
-  "current_active_tranche_status": "WORKING",
+  "current_active_tranche_status": "CLOSEOUT",
   "current_end_checkpoint": null,
-  "current_end_message_id": null
+  "current_end_message_id": null,
+  "current_closeout_branch": "work/bcp/r82-closeout-20260922-0123"
 }
