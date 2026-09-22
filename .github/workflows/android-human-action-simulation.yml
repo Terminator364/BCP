@@ -325,6 +325,16 @@ jobs:
           grep -F '"DEDICATED_EDGE_API_SERVER"' edge-health-relaunch.json >/dev/null
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
 
+      - name: Capture Android runtime diagnostics
+        if: always()
+        shell: bash
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          ADB="$SDK/platform-tools/adb"
+          "$ADB" logcat -d -v threadtime > bcp-logcat.txt 2>&1 || true
+          "$ADB" shell dumpsys activity services com.blessing.bcpedge.evergreen > bcp-service-dumpsys.txt 2>&1 || true
+          grep -E "TLS_API|SSLHandshake|KeyStore|AndroidKeyStore|B-EDGE|bcpedge" bcp-logcat.txt | tail -250 > bcp-tls-log-extract.txt || true
+
       - name: Upload representative simulation evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -352,6 +362,9 @@ jobs:
             edge-private-memory-claims.json
             edge-health-relaunch.json
             emulator.log
+            bcp-logcat.txt
+            bcp-service-dumpsys.txt
+            bcp-tls-log-extract.txt
             avd-list-created.txt
             avd-list-boot.txt
           if-no-files-found: ignore
