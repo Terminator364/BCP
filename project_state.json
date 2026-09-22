@@ -2,9 +2,9 @@
   "project": "BCP",
   "version": "POC_V0_3_CHATGPT_PC_INTEGRATED",
   "derived_from": "PRECONCEPTION_FINAL_CLOSED_SEALED_V0_7",
-  "status": "R84_SECURE_LAN_SLICE_IMPLEMENTED_EXACT_HEAD_CI_PENDING",
-  "last_completed_atomic_action": "R84 reconciled the already-closed/merged R83 state, then implemented a first authenticated+encrypted LAN slice without changing the field 2.1.2 release: B-EDGE now has a persistent AndroidKeyStore TLS identity and HTTPS API lane on 8877; the Telegram CONNECT lane remains restricted to api.telegram.org:443 but 2.2 registrations replace clear long-lived bearer proxy authentication with fresh HMAC-SHA256 timestamp+nonce proofs; the PC stores the Edge TLS certificate SHA-256 pin and has a pinned HTTPS client that verifies the peer certificate before sending its paired bearer. Overall LAN security remains PARTIAL because B-EDGE -> PC control payloads still use clear HTTP.",
-  "next_action": "Open/qualify the exact R84 head. Auto-fix any Android TLS/Keystore, relay-HMAC, Windows contract or emulator regression. Do not merge or install B-EDGE 2.2 until required gates are green. After this slice, encrypt and pin the B-EDGE -> PC control plane, then direct-boot/black-start and field Telegram relay proof.",
+  "status": "R84_CLOSED_PR153_EXACT_HEAD_CI_CONTINUATION_REQUIRED",
+  "last_completed_atomic_action": "R84 closed with provider-proven Gmail delivery after implementing the first secure LAN slice: B-EDGE HTTPS API on 8877 with AndroidKeyStore identity and paired SHA-256 pin, plus HMAC-SHA256 timestamp+nonce authentication for the 2.2 Telegram CONNECT relay. Windows candidate is 0.7.17 and Telegram companion candidate is 2026.09.22-secure-lan-v23. B-EDGE field release remains 2.1.2 and no 2.2 install is authorized.",
+  "next_action": "Resume PR #153 from its latest exact branch head after R84 close metadata. Read exact CI results, auto-fix regressions, and integrate only after required gates are green. Then encrypt and pin B-EDGE -> PC control traffic; overall LAN security remains PARTIAL until that is proven.",
   "evidence": {
     "windows_validation_run_id": 35399387370,
     "windows_validation_run_number": 2,
@@ -37,7 +37,11 @@
     "r84_tls_api_port": 8877,
     "r84_relay_port": 8876,
     "r84_transport_security_state": "PARTIAL",
-    "r84_field_release_unchanged": "2.1.2"
+    "r84_field_release_unchanged": "2.1.2",
+    "r84_end_gmail_message_id": "1a0c7153de3a8bf9",
+    "r84_end_checkpoint": "BCP-R84-END-20260922-0407",
+    "r84_pr": 153,
+    "r84_product_head_before_close_intent": "77e755db5d0f3cc62bd4f16252245320f1e4e7ec"
   },
   "field_gates": [
     "Evergreen PC installer passes on target Windows PC",
