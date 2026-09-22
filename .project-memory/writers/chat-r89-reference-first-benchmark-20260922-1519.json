@@ -1,0 +1,24 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r89-reference-first-benchmark-20260922-1519",
+  "project_or_mission": "BCP R89 reference-first benchmark and anti-reinvention gate",
+  "base_main_sha": "f40879b234ea619eff82445eedb5802796d1f9d8",
+  "created_at": "2026-09-22T15:19:00+01:00",
+  "work_branch": "work/bcp/r89-reference-first-benchmark-20260922-1519",
+  "intended_file_scope": [
+    "docs/BCP_REFERENCE_FIRST_BENCHMARK_R89.md",
+    ".project-memory/REFERENCE_FIRST_POLICY.json",
+    ".project-memory/EXTERNAL_REFERENCE_REGISTRY.json",
+    "docs/BCP_CANONICAL_SPEC_ABC.md",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json"
+  ],
+  "expected_ci_gates": [
+    "BCP Qualified CURRENT Release Contract",
+    "BCP Coordinated Product Qualification"
+  ],
+  "mutation_rule": "RESEARCH_AND_POLICY_ONLY_NO_PRODUCT_OR_RELEASE_BYTES"
+}
