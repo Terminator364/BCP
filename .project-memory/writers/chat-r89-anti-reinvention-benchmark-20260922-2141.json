@@ -1,0 +1,18 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r89-anti-reinvention-benchmark-20260922-2141",
+  "project_or_mission": "BCP R89 anti-reinvention benchmark and source-pattern audit",
+  "base_main_sha": "f40879b234ea619eff82445eedb5802796d1f9d8",
+  "created_at": "2026-09-22T21:41:00+01:00",
+  "work_branch": "work/bcp/r89-anti-reinvention-benchmark-20260922-2141",
+  "intended_file_scope": [
+    "docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md",
+    ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "mutation_rule": "RESEARCH_AND_SPEC_DELTA_ONLY_NO_RUNTIME_OR_RELEASE_BYTES_UNTIL_BENCHMARK_COMPLETE"
+}
