@@ -1,6 +1,6 @@
 {
   "schema": "bcp.human_action_qualification_matrix/1",
-  "revision": "2026-09-22-R81",
+  "revision": "2026-09-22-R90",
   "status": "CANONICAL_CANDIDATE",
   "rule": "A user-facing action may be requested only when its representative_preflight is PASS on the exact candidate head/package, unless the remaining uncertainty is explicitly an irreducible external/provider/physical field boundary.",
   "actions": [
@@ -91,12 +91,11 @@
     },
     {
       "action_id": "ANDROID_BEDGE_INSTALL_OR_OPEN",
-      "user_action": "Install/update BCP Edge Server in place, grant the dedicated-server Android permissions when prompted, and keep the app as the old-phone Edge/API node",
+      "user_action": "Update BCP Edge in place to the exact signed R90 product candidate, without uninstalling, then follow only contextual Android permission prompts",
       "entrypoints": [
-        "android-b-edge/build/outputs/apk/debug/android-b-edge-debug.apk",
         "com.blessing.bcpedge.evergreen/com.blessing.bcpedge.MainActivity",
-        "http://127.0.0.1:8876/health",
-        "http://127.0.0.1:8876/v1/node/capabilities"
+        "https://127.0.0.1:8877/health",
+        "https://127.0.0.1:8877/v1/node/capabilities"
       ],
       "representative_environment": [
         "android_emulator_api_35"
@@ -107,12 +106,19 @@
       ],
       "required_evidence": [
         "apk_build",
-        "apk_install",
+        "apk_install_r",
         "launcher_activity_start",
-        "ui_hierarchy_contains_BCP_Edge_Server",
-        "ui_hierarchy_contains_server_permission_control",
+        "home_screen_status_first",
+        "home_single_primary_action_when_blocked",
+        "bottom_navigation_home_activity_devices_system",
+        "activity_mission_lifecycle_and_chronicle_visible",
+        "devices_discovery_and_tls_trust_visible_without_manual_ip_token_primary_flow",
+        "system_repairs_and_permissions_visible",
+        "raw_json_hidden_by_default",
+        "android_back_secondary_screen_returns_home",
+        "selected_screen_survives_force_stop_relaunch",
         "no_immediate_process_crash",
-        "foreground_server_listener_port_8876",
+        "foreground_tls_api_listener_port_8877",
         "public_health_200_role_DEDICATED_EDGE_API_SERVER",
         "capabilities_store_and_forward_true",
         "private_node_status_rejects_unauthenticated_request_401",
@@ -121,23 +127,20 @@
         "cold_relaunch_restores_local_api",
         "capabilities_private_content_cache_true",
         "adaptive_network_state_exposed",
-        "local_context_builder_private_endpoint_declared",
-        "no_micro_beta_release_gate_satisfied_before_field_install",
         "room_v4_to_v5_migration_non_destructive",
         "capability_registry_contract",
         "memory_claim_admission_provenance_contract",
         "same_key_supersession_lineage_contract",
         "capability_and_memory_private_endpoints_401_without_auth",
-        "server_cockpit_displays_capability_and_memory_claim_counts",
-        "lan_cleartext_poc_gap_is_visible_not_misrepresented_as_production_ready"
+        "bidirectional_pinned_tls_candidate_truth_not_cleartext_poc"
       ],
       "remaining_field_boundary": [
         "actual old phone OEM/Android image and runtime permission dialogs",
         "actual battery-optimization vendor policy",
         "actual home Wi-Fi/mDNS/Wi-Fi Direct/Bluetooth radio behavior",
-        "real reboot persistence on the dedicated phone",
+        "real reboot/black-start persistence on the dedicated phone",
         "battery/power interruptions",
-        "real encrypted authenticated PC-to-phone production transport after R70 cleartext POC retirement"
+        "real Telegram/relay delivery truth after the R90 in-place update"
       ],
       "field_readback_required_before_completion": true
     }

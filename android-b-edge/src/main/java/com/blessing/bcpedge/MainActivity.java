@@ -10,11 +10,15 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import com.blessing.bcpedge.storage.EdgeDatabase;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +31,7 @@ import androidx.core.content.ContextCompat;
 public class MainActivity extends Activity {
     private static final String UI_PREFS = "bcp_edge_ui";
     private static final String ONBOARDING_KEY = "server_onboarding_220_shown";
+    private static final String LAST_SCREEN_KEY = "last_product_screen";
 
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
@@ -45,6 +50,31 @@ public class MainActivity extends Activity {
     private Button resume;
     private Button settings;
     private Button serverMode;
+    private FrameLayout screenHost;
+    private View homeScreen;
+    private View activityScreen;
+    private View devicesScreen;
+    private View systemScreen;
+    private TextView homeSummary;
+    private TextView homeAction;
+    private TextView homeRecent;
+    private TextView activitySummary;
+    private TextView activityList;
+    private TextView activityEvents;
+    private TextView devicesSummary;
+    private TextView devicesTrust;
+    private TextView repairsInfo;
+    private Button homeActionButton;
+    private Button navHome;
+    private Button navActivity;
+    private Button navDevices;
+    private Button navSystem;
+    private Button technicalToggle;
+    private String currentScreen = "HOME";
+    private boolean busy = false;
+    private int lastPendingJobs = 0;
+    private int lastMissionCount = 0;
+    private int lastEventCount = 0;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -59,103 +89,283 @@ public class MainActivity extends Activity {
         startEdgeServer();
         io.submit(() -> {
             try { client.refreshUiGovernanceCache(); } catch (Exception ignored) {}
-            runOnUiThread(this::refreshLocalPanels);
+            runOnUiThread(() -> {
+                refreshLocalPanels();
+                refreshHumanData();
+            });
         });
         autoConnect();
         refreshLocalPanels();
+        refreshHumanData();
 
         heartbeat.scheduleAtFixedRate(() -> {
             try {
                 client.heartbeat("FOREGROUND");
                 client.refreshUiGovernanceCache();
             } catch (Exception ignored) {}
-            runOnUiThread(this::refreshLocalPanels);
+            runOnUiThread(() -> {
+                refreshLocalPanels();
+                refreshHumanData();
+            });
         }, 60, 60, TimeUnit.SECONDS);
 
         getWindow().getDecorView().postDelayed(this::maybeOfferDedicatedServerSetup, 900);
     }
 
     private View buildUi() {
+        LinearLayout shell = new LinearLayout(this);
+        shell.setOrientation(LinearLayout.VERTICAL);
+        shell.setBackgroundColor(Color.rgb(246, 247, 249));
+
+        screenHost = new FrameLayout(this);
+        LinearLayout.LayoutParams hostLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+        shell.addView(screenHost, hostLp);
+
+        homeScreen = buildHomeScreen();
+        activityScreen = buildActivityScreen();
+        devicesScreen = buildDevicesScreen();
+        systemScreen = buildSystemScreen();
+
+        LinearLayout nav = new LinearLayout(this);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
+        nav.setPadding(dp(4), dp(4), dp(4), dp(4));
+        nav.setBackgroundColor(Color.WHITE);
+        navHome = navButton(nav, "Accueil", "HOME");
+        navActivity = navButton(nav, "Activité", "ACTIVITY");
+        navDevices = navButton(nav, "Appareils", "DEVICES");
+        navSystem = navButton(nav, "Système", "SYSTEM");
+        shell.addView(nav, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        String saved = getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+                .getString(LAST_SCREEN_KEY, "HOME");
+        if (!"HOME".equals(saved) && !"ACTIVITY".equals(saved)
+                && !"DEVICES".equals(saved) && !"SYSTEM".equals(saved)) {
+            saved = "HOME";
+        }
+        showScreen(saved);
+        return shell;
+    }
+
+    private View buildHomeScreen() {
         ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(16);
-        root.setPadding(pad, pad, pad, dp(28));
-        root.setBackgroundColor(Color.rgb(246, 247, 249));
-        scroll.addView(root);
-
-        TextView title = text("BCP Edge Server", 22, true);
-        root.addView(title);
-
-        TextView subtitle = text(
-                "Ancien téléphone dédié · serveur local · mémoire durable · relais · reprise autonome",
-                13, false);
-        subtitle.setTextColor(Color.rgb(80, 86, 94));
-        subtitle.setPadding(0, dp(4), 0, dp(12));
-        root.addView(subtitle);
+        LinearLayout root = screenBody(scroll, "BCP Edge Server",
+                "Votre nœud BCP · état utile, actions seulement si nécessaires");
 
         LinearLayout stateCard = card(root);
-        status = text("DÉMARRAGE", 20, true);
+        status = text("DÉMARRAGE", 22, true);
         stateCard.addView(status);
         detail = text("Initialisation du nœud Edge…", 13, false);
-        detail.setPadding(0, dp(4), 0, 0);
+        detail.setPadding(0, dp(5), 0, 0);
         stateCard.addView(detail);
+
+        LinearLayout summary = card(root);
+        summary.addView(label("EN UN COUP D’ŒIL"));
+        homeSummary = text("Lecture du téléphone, du PC et de la file…", 14, false);
+        homeSummary.setPadding(0, dp(5), 0, 0);
+        summary.addView(homeSummary);
+
+        LinearLayout action = card(root);
+        action.addView(label("ACTION REQUISE"));
+        homeAction = text("Vérification…", 14, false);
+        homeAction.setPadding(0, dp(5), 0, dp(6));
+        action.addView(homeAction);
+        homeActionButton = button(action, "RÉSOUDRE");
+
+        LinearLayout recent = card(root);
+        recent.addView(label("RÉCEMMENT"));
+        homeRecent = text("Aucun événement récent chargé.", 13, false);
+        homeRecent.setPadding(0, dp(5), 0, 0);
+        recent.addView(homeRecent);
+
+        TextView footer = text(
+                "BCP continue localement si le PC ou Internet disparaît. Les identifiants restent masqués.",
+                11, false);
+        footer.setTextColor(Color.rgb(90, 96, 104));
+        footer.setPadding(dp(3), dp(4), dp(3), dp(8));
+        root.addView(footer);
+        return scroll;
+    }
+
+    private View buildActivityScreen() {
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = screenBody(scroll, "Activité",
+                "Missions, traitements, reprises et preuves durables");
+
+        LinearLayout summary = card(root);
+        summary.addView(label("ÉTAT DES MISSIONS"));
+        activitySummary = text("Chargement…", 14, false);
+        activitySummary.setPadding(0, dp(5), 0, 0);
+        summary.addView(activitySummary);
+
+        LinearLayout missions = card(root);
+        missions.addView(label("MISSIONS RÉCENTES"));
+        activityList = text("Aucune mission chargée.", 13, false);
+        activityList.setPadding(0, dp(5), 0, 0);
+        missions.addView(activityList);
+
+        LinearLayout events = card(root);
+        events.addView(label("CHRONICLE"));
+        activityEvents = text("Aucun événement récent.", 13, false);
+        activityEvents.setPadding(0, dp(5), 0, 0);
+        events.addView(activityEvents);
+
+        LinearLayout actions = card(root);
+        actions.addView(label("REPRISE"));
+        checkpoint = button(actions, "ENREGISTRER UN CHECKPOINT");
+        resume = button(actions, "REPRENDRE LA MISSION");
+        Button refresh = button(actions, "ACTUALISER L’ACTIVITÉ");
+        checkpoint.setOnClickListener(v -> runAction("CHECKPOINT", () ->
+                client.checkpoint("B-EDGE user checkpoint",
+                        "Resume from durable phone state")));
+        resume.setOnClickListener(v -> runAction("REPRISE", () -> client.resume()));
+        refresh.setOnClickListener(v -> refreshHumanData());
+        return scroll;
+    }
+
+    private View buildDevicesScreen() {
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = screenBody(scroll, "Appareils",
+                "Découverte, confiance et connexion sans saisir d’adresse ni de token");
+
+        LinearLayout devices = card(root);
+        devices.addView(label("APPAREILS CONNUS"));
+        devicesSummary = text("Lecture des appareils…", 14, false);
+        devicesSummary.setPadding(0, dp(5), 0, 0);
+        devices.addView(devicesSummary);
+
+        LinearLayout trust = card(root);
+        trust.addView(label("CONFIANCE & TRANSPORT"));
+        devicesTrust = text("Vérification de la liaison sécurisée…", 13, false);
+        devicesTrust.setPadding(0, dp(5), 0, 0);
+        trust.addView(devicesTrust);
+
+        LinearLayout actions = card(root);
+        actions.addView(label("CONNEXION"));
+        connect = button(actions, "RECHERCHER / RECONNECTER LE PC");
+        Button trustDetail = button(actions, "DÉTAILS DE CONFIANCE");
+        connect.setOnClickListener(v -> autoConnect());
+        trustDetail.setOnClickListener(v -> showTrustDetails());
+        return scroll;
+    }
+
+    private View buildSystemScreen() {
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout root = screenBody(scroll, "Système",
+                "Santé, réparations, autonomie et diagnostics avancés");
+
+        LinearLayout repairs = card(root);
+        repairs.addView(label("REPAIRS"));
+        repairsInfo = text("Analyse de santé…", 14, false);
+        repairsInfo.setPadding(0, dp(5), 0, 0);
+        repairs.addView(repairsInfo);
+
+        LinearLayout permissionCard = card(root);
+        permissionCard.addView(label("AUTORISATIONS & 24/7"));
+        permissionsInfo = text("Vérification…", 14, false);
+        permissionsInfo.setPadding(0, dp(5), 0, dp(8));
+        permissionCard.addView(permissionsInfo);
+        serverMode = button(permissionCard, "RENFORCER LE MODE SERVEUR 24/7");
+        serverMode.setOnClickListener(v -> beginDedicatedServerSetup());
 
         LinearLayout nodeCard = card(root);
         nodeCard.addView(label("NŒUD SERVEUR"));
-        nodeInfo = text("Lecture de l’état local…", 14, false);
+        nodeInfo = text("Lecture de l’état local…", 13, false);
         nodeInfo.setPadding(0, dp(5), 0, 0);
         nodeCard.addView(nodeInfo);
 
         LinearLayout autonomyCard = card(root);
-        autonomyCard.addView(label("AUTONOMIE / TRANSPORTS"));
-        autonomyInfo = text("File durable · LAN/API · découverte locale", 14, false);
+        autonomyCard.addView(label("STOCKAGE, FILE & RÉSEAU"));
+        autonomyInfo = text("Lecture…", 13, false);
         autonomyInfo.setPadding(0, dp(5), 0, 0);
         autonomyCard.addView(autonomyInfo);
 
         LinearLayout capabilityCard = card(root);
-        capabilityCard.addView(label("CAPACITÉS DU NŒUD"));
-        capabilityInfo = text("Initialisation du registre local…", 14, false);
+        capabilityCard.addView(label("CAPACITÉS"));
+        capabilityInfo = text("Initialisation…", 13, false);
         capabilityInfo.setPadding(0, dp(5), 0, 0);
         capabilityCard.addView(capabilityInfo);
 
-        LinearLayout permissionCard = card(root);
-        permissionCard.addView(label("AUTORISATIONS SERVEUR"));
-        permissionsInfo = text("Vérification…", 14, false);
-        permissionsInfo.setPadding(0, dp(5), 0, dp(8));
-        permissionCard.addView(permissionsInfo);
-        serverMode = button(permissionCard, "ACTIVER / RENFORCER LE MODE SERVEUR 24/7");
-        serverMode.setOnClickListener(v -> beginDedicatedServerSetup());
-
-        LinearLayout actions = card(root);
-        actions.addView(label("ACTIONS"));
-        connect = button(actions, "RECONNECTER AU PC");
-        checkpoint = button(actions, "ENREGISTRER CHECKPOINT");
-        resume = button(actions, "REPRENDRE LE PROJET");
-        settings = button(actions, "PARAMÈTRES / DIAGNOSTIC");
-
-        output = text("", 12, false);
+        LinearLayout advanced = card(root);
+        advanced.addView(label("MISES À JOUR & DIAGNOSTIC"));
+        Button edgeUpdate = button(advanced, "VÉRIFIER LA MISE À JOUR BCP EDGE");
+        settings = button(advanced, "OUTILS AVANCÉS");
+        technicalToggle = button(advanced, "AFFICHER LE DERNIER DÉTAIL TECHNIQUE");
+        output = text("", 11, false);
         output.setTypeface(Typeface.MONOSPACE);
         output.setTextIsSelectable(true);
-        output.setPadding(dp(2), dp(10), dp(2), dp(8));
-        actions.addView(output);
-
-        connect.setOnClickListener(v -> autoConnect());
-        checkpoint.setOnClickListener(v -> runAction("CHECKPOINT", () ->
-                client.checkpoint("B-EDGE server node active",
-                        "Verify durable phone-first communication and resume")));
-        resume.setOnClickListener(v -> runAction("RESUME", () -> client.resume()));
+        output.setPadding(dp(2), dp(8), dp(2), dp(4));
+        output.setVisibility(View.GONE);
+        advanced.addView(output);
+        edgeUpdate.setOnClickListener(v -> updates.check(true));
         settings.setOnClickListener(v -> showSettings());
-
-        TextView footer = text(
-                "Les identifiants restent masqués. Les fonctions sensibles exigent l’appairage BCP.",
-                11, false);
-        footer.setTextColor(Color.rgb(90, 96, 104));
-        footer.setPadding(dp(3), dp(6), dp(3), 0);
-        root.addView(footer);
-
+        technicalToggle.setOnClickListener(v -> {
+            boolean show = output.getVisibility() != View.VISIBLE;
+            output.setVisibility(show ? View.VISIBLE : View.GONE);
+            technicalToggle.setText(show
+                    ? "MASQUER LE DÉTAIL TECHNIQUE"
+                    : "AFFICHER LE DERNIER DÉTAIL TECHNIQUE");
+        });
         return scroll;
+    }
+
+    private LinearLayout screenBody(ScrollView scroll, String titleValue, String subtitleValue) {
+        scroll.setFillViewport(true);
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(14);
+        root.setPadding(pad, pad, pad, dp(18));
+        root.setBackgroundColor(Color.rgb(246, 247, 249));
+        scroll.addView(root);
+
+        TextView title = text(titleValue, 22, true);
+        root.addView(title);
+        TextView subtitle = text(subtitleValue, 12, false);
+        subtitle.setTextColor(Color.rgb(80, 86, 94));
+        subtitle.setPadding(0, dp(3), 0, dp(10));
+        root.addView(subtitle);
+        return root;
+    }
+
+    private Button navButton(LinearLayout root, String title, String screen) {
+        Button b = new Button(this);
+        b.setText(title);
+        b.setAllCaps(false);
+        b.setTextSize(10);
+        b.setMinHeight(dp(48));
+        b.setPadding(dp(2), 0, dp(2), 0);
+        b.setOnClickListener(v -> showScreen(screen));
+        root.addView(b, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        return b;
+    }
+
+    private void showScreen(String screen) {
+        currentScreen = screen;
+        getSharedPreferences(UI_PREFS, MODE_PRIVATE)
+                .edit().putString(LAST_SCREEN_KEY, screen).apply();
+        View target = "ACTIVITY".equals(screen) ? activityScreen
+                : "DEVICES".equals(screen) ? devicesScreen
+                : "SYSTEM".equals(screen) ? systemScreen : homeScreen;
+        screenHost.removeAllViews();
+        screenHost.addView(target, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        styleNav(navHome, "HOME".equals(screen));
+        styleNav(navActivity, "ACTIVITY".equals(screen));
+        styleNav(navDevices, "DEVICES".equals(screen));
+        styleNav(navSystem, "SYSTEM".equals(screen));
+        if ("ACTIVITY".equals(screen) || "HOME".equals(screen)) refreshHumanData();
+        refreshLocalPanels();
+    }
+
+    private void styleNav(Button button, boolean selected) {
+        if (button == null) return;
+        button.setTypeface(selected ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+        button.setTextColor(selected ? Color.rgb(20, 73, 140) : Color.rgb(66, 72, 80));
+        button.setAlpha(selected ? 1f : 0.72f);
     }
 
     private void startEdgeServer() {
@@ -173,42 +383,57 @@ public class MainActivity extends Activity {
         try {
             SharedPreferences relay = getSharedPreferences("bcp_edge_relay_state", MODE_PRIVATE);
             String listener = relay.getString("state", "STARTING");
-            int port = relay.getInt("port", EdgeRelayPolicy.RELAY_PORT);
-            String mode = EdgePermissionManager.isServerModeEnabled(this) ? "ACTIF" : "PAUSE";
-            nodeInfo.setText(
-                    "Mode serveur: " + mode
-                            + "\nAPI locale: port " + port
-                            + "\nÉcoute: " + listener
-                            + "\nVersion: " + client.getEdgeVersion());
-
+            boolean serverEnabled = EdgePermissionManager.isServerModeEnabled(this);
+            String mode = serverEnabled ? "ACTIF" : "PAUSE";
             JSONObject ps = EdgePermissionManager.status(this);
             boolean runtime = ps.optBoolean("runtime_permissions_ready", false);
             boolean battery = ps.optBoolean("battery_unrestricted", false);
-            permissionsInfo.setText(
-                    "Appareils à proximité: " + (runtime ? "PRÊT" : "À AUTORISER")
-                            + "\nBatterie 24/7: " + (battery ? "SANS RESTRICTION" : "À RENFORCER")
-                            + "\nDémarrage après reboot: ACTIVÉ");
-
             JSONObject storage = client.contentStoreStatus();
             JSONObject net = EdgeNetworkState.snapshot(this);
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
             JSONObject capabilities = client.cachedCapabilities();
             JSONObject claims = client.cachedMemoryClaims();
+            JSONObject sentinel = client.sentinelStatus();
+
+            boolean paired = !client.getToken().isEmpty();
+            boolean tlsPinned = client.getServer().startsWith("https://")
+                    && client.getPcTlsCertSha256().matches("[0-9a-f]{64}");
+            String transport = net.optString("transport", "AUCUN");
+            boolean networkAvailable = !"AUCUN".equalsIgnoreCase(transport)
+                    && !"NONE".equalsIgnoreCase(transport)
+                    && !transport.isEmpty();
+            int failures = sentinel.optInt("consecutive_failures", 0);
+
+            nodeInfo.setText(
+                    "Mode serveur: " + mode
+                            + "\nAPI sécurisée: " + EdgeRelayPolicy.API_TLS_PORT
+                            + " · relais Telegram: " + EdgeRelayPolicy.RELAY_PORT
+                            + "\nService: " + listener
+                            + "\nVersion: " + client.getEdgeVersion());
+
+            permissionsInfo.setText(
+                    "Appareils à proximité: " + (runtime ? "PRÊT" : "À AUTORISER")
+                            + "\nBatterie 24/7: " + (battery ? "SANS RESTRICTION" : "À RENFORCER")
+                            + "\nDémarrage après reboot: ACTIVÉ");
+
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
+            JSONObject cd9 = Cd9EdgeAssist.status(this);
+            JSONObject updateProbe = EdgeBackgroundUpdateProbe.cachedStatus(this);
             autonomyInfo.setText(
-                    "File durable Room v5: active"
-                            + "\nRegistre capacités: " + capabilities.optInt("count", 0) + " observées"
-                            + "\nJournal mémoire/provenance: " + claims.optInt("count", 0) + " claims"
-                            + "\nCache privé téléphone: " + usedMiB + " MiB / " + quotaGiB + " GiB"
-                            + "\nRéseau: " + net.optString("transport", "AUCUN")
+                    "État durable: PRÊT"
+                            + "\nFile & reprise: ACTIVES"
+                            + "\nMémoire admise: " + claims.optInt("count", 0) + " éléments"
+                            + "\nStockage privé: " + usedMiB + " MiB / " + quotaGiB + " GiB"
+                            + "\nRéseau: " + transport
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
-                            + "\nLAN/API + NSD: actif"
-                            + "\nSécurité LAN 2.2: TLS pinné bidirectionnel · legacy 2.1.2 isolé"
-                            + "\nWi‑Fi Direct / BLE découverte: " + (runtime ? "prêt" : "autorisation requise")
-                            + "\nStore-and-forward: actif");
+                            + "\nStore-and-forward: ACTIF"
+                            + "\nCD9 Edge: " + ("EDGE_ASSIST_READY".equals(cd9.optString("route", ""))
+                                    ? "PRÊT · Drive reste l’autorité" : "SECOURS CLOUD · téléphone optionnel")
+                            + "\nMises à jour: " + (updateProbe.optBoolean("update_available", false)
+                                    ? "NOUVELLE VERSION DISPONIBLE" : "veille automatique"));
 
-            org.json.JSONArray capRows = capabilities.optJSONArray("capabilities");
+            JSONArray capRows = capabilities.optJSONArray("capabilities");
             int capCount = capRows == null ? 0 : capRows.length();
             int ready = 0, degraded = 0, permission = 0;
             StringBuilder keyStates = new StringBuilder();
@@ -216,26 +441,248 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < capRows.length(); i++) {
                     JSONObject row = capRows.optJSONObject(i);
                     if (row == null) continue;
-                    String state = row.optString("state", "UNKNOWN");
-                    if ("READY".equals(state) || "AVAILABLE".equals(state)) ready++;
-                    else if ("DEGRADED".equals(state) || "UNAVAILABLE".equals(state)
-                            || "POC_CLEAR_HTTP".equals(state)) degraded++;
-                    else if ("PERMISSION_REQUIRED".equals(state) || "WAITING_AUTH".equals(state)) permission++;
+                    String capState = row.optString("state", "UNKNOWN");
+                    if ("READY".equals(capState) || "AVAILABLE".equals(capState)
+                            || "TLS_PINNED".equals(capState)) ready++;
+                    else if ("DEGRADED".equals(capState) || "UNAVAILABLE".equals(capState)
+                            || "POC_CLEAR_HTTP".equals(capState) || "PENDING".equals(capState)) degraded++;
+                    else if ("PERMISSION_REQUIRED".equals(capState) || "WAITING_AUTH".equals(capState)) permission++;
                     if (i < 6) {
                         if (keyStates.length() > 0) keyStates.append("\n");
                         keyStates.append("• ")
-                                .append(row.optString("capability_id", row.optString("kind", "CAPABILITY")))
-                                .append(": ").append(state);
+                                .append(humanize(row.optString("capability_id",
+                                        row.optString("kind", "capacité"))))
+                                .append(": ").append(humanState(capState));
                     }
                 }
             }
             capabilityInfo.setText(
-                    "Registre local: " + capCount + " capacités"
-                            + "\nPrêtes: " + ready
-                            + " · Dégradées/gap: " + degraded
+                    "Disponibles: " + ready + " / " + capCount
+                            + "\nÀ surveiller: " + degraded
                             + " · Autorisation: " + permission
                             + (keyStates.length() == 0 ? "" : "\n" + keyStates));
+
+            devicesSummary.setText(
+                    "Ce téléphone · B-EDGE " + client.getEdgeVersion() + "\n"
+                            + (serverEnabled ? "Serveur local actif" : "Serveur en pause")
+                            + "\n\nPC BCP · " + (paired ? "APPAIRÉ" : "NON APPAIRÉ")
+                            + "\nDécouverte: automatique sur le réseau local");
+
+            devicesTrust.setText(
+                    "PC: " + (paired ? "confiance enregistrée" : "à confirmer lors du premier appairage")
+                            + "\nCanal téléphone ↔ PC: "
+                            + (tlsPinned ? "TLS PINNÉ" : paired ? "SÉCURISATION EN ATTENTE" : "NON ÉTABLI")
+                            + "\nIdentifiants: masqués"
+                            + "\nRelais: direct d’abord, fallback contrôlé si nécessaire");
+
+            StringBuilder repairs = new StringBuilder();
+            if (!runtime) repairs.append("• Autoriser la découverte des appareils.\n");
+            if (!battery) repairs.append("• Renforcer l’autonomie 24/7.\n");
+            if (!paired) repairs.append("• Appairer le PC BCP.\n");
+            if (paired && !tlsPinned) repairs.append("• Finaliser la liaison TLS pinnée.\n");
+            if (failures > 0) repairs.append("• Vérifier la reconnexion PC (")
+                    .append(failures).append(" échecs consécutifs).\n");
+            if (repairs.length() == 0) repairs.append("Aucune réparation requise.");
+            repairsInfo.setText(repairs.toString().trim());
+
+            homeSummary.setText(
+                    "Téléphone Edge: " + (serverEnabled ? "PRÊT" : "EN PAUSE")
+                            + "\nPC: " + (paired ? (tlsPinned ? "APPAIRÉ · SÉCURISÉ" : "APPAIRÉ") : "À CONNECTER")
+                            + "\nRéseau: " + (networkAvailable ? transport : "HORS-LIGNE · MODE LOCAL")
+                            + "\nEn attente: " + lastPendingJobs + " tâche(s)");
+
+            configurePrimaryAction(runtime, battery, paired, tlsPinned, networkAvailable, failures);
+
+            if (!busy) {
+                if (!runtime) {
+                    status.setText("ACTION REQUISE");
+                    detail.setText("Autorisez la découverte locale pour que BCP trouve les appareils.");
+                } else if (!paired) {
+                    status.setText("PRÊT LOCALEMENT");
+                    detail.setText("Le téléphone fonctionne déjà. Le PC peut être découvert et appairé automatiquement.");
+                } else if (!networkAvailable) {
+                    status.setText("HORS-LIGNE · CONTINUE");
+                    detail.setText("Le réseau est absent. La file et la mémoire restent sur ce téléphone.");
+                } else if (failures > 0) {
+                    status.setText("DÉGRADÉ · REPRISE AUTO");
+                    detail.setText("Le PC est temporairement indisponible; BCP conserve l’état et retente proprement.");
+                } else {
+                    status.setText("PRÊT");
+                    detail.setText("Téléphone Edge actif · PC sécurisé · reprise durable disponible.");
+                }
+            }
+
+            if (resources.optBoolean("low_memory", false)) {
+                repairsInfo.append("\n• Pression mémoire détectée : les tâches lourdes doivent attendre.");
+            }
         } catch (Exception ignored) {}
+    }
+
+    private void configurePrimaryAction(boolean runtime, boolean battery, boolean paired,
+                                        boolean tlsPinned, boolean networkAvailable, int failures) {
+        if (!runtime) {
+            homeAction.setText("BCP a besoin de l’autorisation de proximité pour découvrir les appareils.");
+            homeActionButton.setText("AUTORISER LA DÉCOUVERTE");
+            homeActionButton.setVisibility(View.VISIBLE);
+            homeActionButton.setOnClickListener(v -> beginDedicatedServerSetup());
+        } else if (!paired) {
+            homeAction.setText("Le téléphone est prêt localement. Connectez le PC sans saisir d’adresse ni de token.");
+            homeActionButton.setText("RECHERCHER LE PC");
+            homeActionButton.setVisibility(View.VISIBLE);
+            homeActionButton.setOnClickListener(v -> {
+                showScreen("DEVICES");
+                autoConnect();
+            });
+        } else if (!tlsPinned) {
+            homeAction.setText("La confiance PC existe mais le canal pinné doit être finalisé automatiquement.");
+            homeActionButton.setText("SÉCURISER LA CONNEXION");
+            homeActionButton.setVisibility(View.VISIBLE);
+            homeActionButton.setOnClickListener(v -> autoConnect());
+        } else if (failures > 0 && networkAvailable) {
+            homeAction.setText("La dernière liaison PC a rencontré des échecs; l’état local reste sûr.");
+            homeActionButton.setText("RECONNECTER");
+            homeActionButton.setVisibility(View.VISIBLE);
+            homeActionButton.setOnClickListener(v -> autoConnect());
+        } else if (!battery) {
+            homeAction.setText("BCP fonctionne, mais Android peut limiter le service écran éteint.");
+            homeActionButton.setText("RENFORCER LE MODE 24/7");
+            homeActionButton.setVisibility(View.VISIBLE);
+            homeActionButton.setOnClickListener(v -> beginDedicatedServerSetup());
+        } else {
+            homeAction.setText("Aucune action requise.");
+            homeActionButton.setVisibility(View.GONE);
+        }
+    }
+
+    private void refreshHumanData() {
+        if (client == null || io.isShutdown()) return;
+        io.submit(() -> {
+            try {
+                JSONObject missions = client.localMissionSteps(20, false);
+                JSONObject events = client.localEventTail(12);
+                int pending = EdgeDatabase.get(MainActivity.this).edgeDao().countPendingJobs();
+                runOnUiThread(() -> applyHumanData(missions, events, pending));
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void applyHumanData(JSONObject missions, JSONObject events, int pending) {
+        try {
+            lastPendingJobs = Math.max(0, pending);
+            JSONArray m = missions.optJSONArray("mission_steps");
+            JSONArray e = events.optJSONArray("events");
+            lastMissionCount = m == null ? 0 : m.length();
+            lastEventCount = e == null ? 0 : e.length();
+
+            int active = 0, done = 0, attention = 0;
+            StringBuilder missionText = new StringBuilder();
+            if (m != null) {
+                for (int i = 0; i < m.length(); i++) {
+                    JSONObject row = m.optJSONObject(i);
+                    if (row == null) continue;
+                    String provider = row.optString("provider_state", "NOT_DISPATCHED");
+                    if ("RESULT_COMMITTED".equals(provider) || "SUPERSEDED".equals(provider)) done++;
+                    else if ("OUTCOME_UNKNOWN".equals(provider) || "PLATFORM_HOLD".equals(provider)
+                            || "INTERRUPTED".equals(provider)) attention++;
+                    else active++;
+                    if (i < 8) {
+                        if (missionText.length() > 0) missionText.append("\n\n");
+                        missionText.append("• ")
+                                .append(humanize(row.optString("requested_operation", "Mission")))
+                                .append("\n  ").append(humanMissionState(provider));
+                        String next = row.optString("next_safe_action", "").trim();
+                        if (!next.isEmpty()) missionText.append(" · ").append(humanize(next));
+                    }
+                }
+            }
+            activitySummary.setText(
+                    "En cours: " + active
+                            + " · Action/attention: " + attention
+                            + " · Terminées: " + done
+                            + "\nFile durable: " + lastPendingJobs + " tâche(s)");
+            activityList.setText(missionText.length() == 0
+                    ? "Aucune mission récente sur ce téléphone."
+                    : missionText.toString());
+
+            StringBuilder eventText = new StringBuilder();
+            StringBuilder homeText = new StringBuilder();
+            if (e != null) {
+                for (int i = 0; i < e.length(); i++) {
+                    JSONObject row = e.optJSONObject(i);
+                    if (row == null) continue;
+                    String event = humanize(row.optString("event_type", "Événement"));
+                    String truth = row.optString("truth_status", "OBSERVED");
+                    if (i < 6) {
+                        if (eventText.length() > 0) eventText.append("\n");
+                        eventText.append("• ").append(event)
+                                .append(" · ").append(humanTruth(truth));
+                    }
+                    if (i < 3) {
+                        if (homeText.length() > 0) homeText.append("\n");
+                        homeText.append("• ").append(event);
+                    }
+                }
+            }
+            activityEvents.setText(eventText.length() == 0
+                    ? "Aucun événement Chronicle récent."
+                    : eventText.toString());
+            homeRecent.setText(homeText.length() == 0
+                    ? "Aucun événement récent."
+                    : homeText.toString());
+            refreshLocalPanels();
+        } catch (Exception ignored) {}
+    }
+
+    private String humanMissionState(String state) {
+        if ("RESULT_COMMITTED".equals(state)) return "Terminée";
+        if ("RESULT_OBSERVED".equals(state)) return "Résultat reçu · validation";
+        if ("STREAM_OBSERVED".equals(state)) return "Traitement en cours";
+        if ("PROVIDER_ACKED".equals(state)) return "Acceptée";
+        if ("DISPATCH_ATTEMPTED".equals(state)) return "Envoi en cours";
+        if ("PLATFORM_HOLD".equals(state)) return "Action requise / plateforme en attente";
+        if ("INTERRUPTED".equals(state)) return "Interrompue · reprise disponible";
+        if ("OUTCOME_UNKNOWN".equals(state)) return "Résultat à vérifier";
+        if ("RECONCILING".equals(state)) return "Réconciliation";
+        if ("SUPERSEDED".equals(state)) return "Remplacée";
+        return "Reçue";
+    }
+
+    private String humanTruth(String truth) {
+        if ("VERIFIED".equals(truth)) return "vérifié";
+        if ("REPORTED".equals(truth)) return "signalé";
+        if ("INFERRED".equals(truth)) return "déduit";
+        if ("MODEL_GENERATED".equals(truth)) return "proposé";
+        if ("UNKNOWN".equals(truth)) return "à vérifier";
+        return "observé";
+    }
+
+    private String humanState(String state) {
+        if ("READY".equals(state) || "AVAILABLE".equals(state) || "TLS_PINNED".equals(state)) return "prêt";
+        if ("PERMISSION_REQUIRED".equals(state) || "WAITING_AUTH".equals(state)) return "autorisation";
+        if ("DEGRADED".equals(state) || "PENDING".equals(state)) return "à surveiller";
+        if ("UNAVAILABLE".equals(state)) return "indisponible";
+        return humanize(state);
+    }
+
+    private String humanize(String value) {
+        String s = value == null ? "" : value.trim().replace('_', ' ');
+        if (s.isEmpty()) return "—";
+        s = s.toLowerCase(java.util.Locale.ROOT);
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    private void showTrustDetails() {
+        String server = client.getServer();
+        String pin = client.getPcTlsCertSha256();
+        String pinHint = pin.length() >= 16 ? pin.substring(0, 16) + "…" : (pin.isEmpty() ? "non établi" : pin);
+        new AlertDialog.Builder(this)
+                .setTitle("Confiance PC")
+                .setMessage("Canal: " + (server.startsWith("https://") ? "HTTPS / TLS pinné" : "non établi")
+                        + "\nEmpreinte certificat: " + pinHint
+                        + "\nAdresse technique: " + (server.isEmpty() ? "non enregistrée" : server)
+                        + "\n\nLe token d’appairage n’est jamais affiché.")
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private void maybeOfferDedicatedServerSetup() {
@@ -303,7 +750,10 @@ public class MainActivity extends Activity {
             refreshLocalPanels();
             io.submit(() -> {
                 try { client.refreshCapabilityRegistry(); } catch (Exception ignored) {}
-                runOnUiThread(this::refreshLocalPanels);
+                runOnUiThread(() -> {
+                    refreshLocalPanels();
+                    refreshHumanData();
+                });
             });
         }
     }
@@ -332,6 +782,7 @@ public class MainActivity extends Activity {
                                     + "\nIdentifiants: masqués");
                     setBusy(false);
                     refreshLocalPanels();
+                    refreshHumanData();
                     updates.check();
                 });
             } catch (Exception ex) {
@@ -349,6 +800,7 @@ public class MainActivity extends Activity {
                     output.setText("Le téléphone conserve la file, la mémoire et la télémétrie locales.");
                     setBusy(false);
                     refreshLocalPanels();
+                    refreshHumanData();
                 });
             }
         });
@@ -401,6 +853,7 @@ public class MainActivity extends Activity {
                                     + "\nIdentifiants: masqués");
                     setBusy(false);
                     refreshLocalPanels();
+                    refreshHumanData();
                     updates.check();
                 });
             } catch (Exception ex) {
@@ -494,6 +947,7 @@ public class MainActivity extends Activity {
                     output.setText(r.toString());
                     setBusy(false);
                     refreshLocalPanels();
+                    refreshHumanData();
                 });
             } catch (Exception ex) {
                 runOnUiThread(() -> {
@@ -514,11 +968,13 @@ public class MainActivity extends Activity {
     }
 
     private void setBusy(boolean busy) {
-        connect.setEnabled(!busy);
-        settings.setEnabled(!busy);
-        checkpoint.setEnabled(!busy);
-        resume.setEnabled(!busy);
-        serverMode.setEnabled(!busy);
+        this.busy = busy;
+        if (connect != null) connect.setEnabled(!busy);
+        if (settings != null) settings.setEnabled(!busy);
+        if (checkpoint != null) checkpoint.setEnabled(!busy);
+        if (resume != null) resume.setEnabled(!busy);
+        if (serverMode != null) serverMode.setEnabled(!busy);
+        if (homeActionButton != null) homeActionButton.setEnabled(!busy);
     }
 
     private LinearLayout card(LinearLayout root) {
@@ -567,6 +1023,15 @@ public class MainActivity extends Activity {
 
     private int dp(int v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!"HOME".equals(currentScreen)) {
+            showScreen("HOME");
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override protected void onDestroy() {

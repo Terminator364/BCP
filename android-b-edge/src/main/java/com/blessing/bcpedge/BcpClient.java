@@ -24,7 +24,7 @@ public final class BcpClient {
 
     private static final String PREFS = "bcp";
     private static final String DEFAULT_PROJECT = "buildhub";
-    private static final String EDGE_VERSION = "2.2.0-full-node";
+    private static final String EDGE_VERSION = "2.2.1-reference-ui";
     private final Context context;
     private final SharedPreferences prefs;
     private final TelemetryStore telemetry;
@@ -159,6 +159,15 @@ public final class BcpClient {
             orchestrator.putCapability(getProject(), "TELEGRAM_CONNECT_RELAY", "B-EDGE",
                     "B_EDGE", "COMMUNICATION_RELAY", "READY", "HTTPS_CONNECT", relay,
                     "SYSTEM_POLICY", now, expiry);
+
+            JSONObject cd9 = Cd9EdgeAssist.status(context);
+            orchestrator.putCapability(getProject(), "CD9_EDGE_ASSIST", "B-EDGE",
+                    "CD9", "FILE_TRANSPORT_ASSIST",
+                    cd9.optBoolean("ok", false)
+                            && "EDGE_ASSIST_READY".equals(cd9.optString("route", ""))
+                            ? "READY" : "DEGRADED",
+                    "DRIVE_PRIMARY_EDGE_OPPORTUNISTIC", cd9,
+                    "MACHINE_READBACK", now, expiry);
 
             JSONArray caps = orchestrator.capabilityRegistry(getProject(), 64);
             out.put("ok", true);

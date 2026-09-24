@@ -142,7 +142,26 @@ def main() -> int:
     require(edge_permissions, "requestCoreRuntimePermissions", "requestBatteryUnrestricted", "batteryUnrestricted")
     require(edge_presence, "NsdManager", "WifiP2pManager", "BluetoothLeAdvertiser", "ADVERTISE_MODE_LOW_POWER")
     require(edge_boot, "BOOT_OR_PACKAGE_REPLACED", "startForegroundService")
-    require(edge_main, "BCP Edge Server", "AUTORISATIONS SERVEUR", "ACTIVER / RENFORCER LE MODE SERVEUR 24/7")
+    require(
+        edge_main,
+        "BCP Edge Server",
+        "EN UN COUP D’ŒIL",
+        "ACTION REQUISE",
+        "Activité",
+        "APPAREILS CONNUS",
+        "CONFIANCE & TRANSPORT",
+        "REPAIRS",
+        "AUTORISATIONS & 24/7",
+        "OUTILS AVANCÉS",
+        "AFFICHER LE DERNIER DÉTAIL TECHNIQUE",
+        "localMissionSteps(20, false)",
+        "localEventTail(12)",
+        "countPendingJobs()",
+        "LAST_SCREEN_KEY",
+        "onBackPressed",
+    )
+    assert 'output.setVisibility(View.GONE)' in edge_main
+    assert '"PARAMÈTRES / DIAGNOSTIC"' not in edge_main
     require(
         edge_local_executor,
         "LOCAL_CONTEXT_SNAPSHOT", "LOCAL_HEALTH_SNAPSHOT",
@@ -436,10 +455,26 @@ def main() -> int:
     comm_protocol = load(".project-memory/COMMUNICATION_PROTOCOL.json")
     comm_state_machine = load(".project-memory/COMMUNICATION_STATE_MACHINE.json")
     takeover = load(".project-memory/NEW_CONVERSATION_TAKEOVER.json")
-    assert cadence_policy["acceptable_window_minutes"] == [23, 25]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [23, 25]
-    assert delivery_policy["cadence"]["work_slice_minutes"] == "25_TOTAL_23_WORK_2_CLOSEOUT"
-    assert delivery_policy["cadence"]["target_minutes"] == 25
+    # Cadence policy v11 is adaptive: progress/human-gate truth is authoritative, not a fixed timer.
+    # Preserve compatibility with older fixed-window records without forcing stale 23–25 minute semantics.
+    if cadence_policy.get("planning_model") == "ADAPTIVE_TASK_WINDOW":
+        assert cadence_policy.get("fixed_target_minutes") is None
+        assert cadence_policy.get("fixed_acceptable_window_minutes") is None
+        assert cadence_policy.get("completion_rule") == "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER"
+        assert cadence_policy["response_timing"]["start_email_includes_estimated_end_window"] is True
+        assert cadence_policy["response_timing"]["foreground_turn_owns_normal_end"] is True
+    else:
+        assert cadence_policy["acceptable_window_minutes"] == [23, 25]
+        assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [23, 25]
+    # R88+ communication contracts are adaptive rather than fixed 25-minute windows.
+    cadence = delivery_policy["cadence"]
+    assert cadence["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert cadence.get("fixed_minutes") is None
+    assert cadence["checkpoint_each_tranche"] is True
+    assert cadence["start_mail_includes_estimated_end_window"] is True
+    assert cadence["scheduled_close_guards_required"] is False
+    assert cadence["user_relaunch_must_never_be_required"] is True
+    assert cadence["success_metric"] == "DURABLE_PRODUCT_PROGRESS_NOT_ELAPSED_TIME"
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
     assert delivery_policy["channels"]["email"]["send_before_chat_pointer"] is True
     assert delivery_policy["channels"]["chatgpt"]["role"] == "POINTER_ONLY_AFTER_SUCCESSFUL_EMAIL_END_ACK"
@@ -449,9 +484,6 @@ def main() -> int:
     assert delivery_policy["channels"]["email"]["end_mail_retry_required"] is True
     assert delivery_policy["channels"]["email"]["end_mail_provider_ack_required"] is True
     assert delivery_policy["channels"]["email"]["chat_output_before_end_ack_forbidden"] is True
-    assert delivery_policy["cadence"]["normal_closeout_offset_minutes"] == 23
-    assert delivery_policy["cadence"]["scheduled_close_guards_required"] is False
-    assert delivery_policy["cadence"]["user_relaunch_must_never_be_required"] is True
     assert delivery_policy["checkpoint_delivery_order"] == [
         "EMAIL_START_NOTICE", "SUBSTANTIVE_WORK",
         "EMAIL_END_FULL_CHECKPOINT_RETRY_UNTIL_ACK",
@@ -465,33 +497,45 @@ def main() -> int:
     assert pre_human_policy["default_rule"] == "NO_HUMAN_ACTION_INSTRUCTION_BEFORE_REPRESENTATIVE_SIMULATION_WHEN_TECHNICALLY_FEASIBLE"
     assert "RUNTIME_PATH" in pre_human_policy["required_layers"]
     assert pre_human_policy["failure_behavior"].startswith("KEEP_WORKING_AUTOMATICALLY")
-    assert communication_policy["schema"] == "bcp.communication_survival_policy/5"
+
+    assert communication_policy["schema"] == "bcp.communication_survival_policy/6"
     assert "NO_SINGLE_COMMUNICATION_CHANNEL_IS_CANONICAL_STATE" in communication_policy["principles"]
+    assert "CLOSEOUT_IS_CHECKPOINT_DRIVEN_NOT_TIMER_OR_USER_MESSAGE_DRIVEN" in communication_policy["principles"]
     assert communication_policy["channels"]["gmail"]["end_retry_until_provider_ack"] is True
     assert communication_policy["channels"]["phone_edge"]["store_and_forward"] is True
     assert communication_policy["channels"]["telegram"]["fallback_path"] == "PC_TO_PHONE_EDGE_CONNECT_RELAY_TO_TELEGRAM"
     assert communication_policy["cold_recovery"]["code"] == "BCPGO BCP"
     assert communication_policy["cold_recovery"]["user_reexplanation_required"] is False
-    assert communication_policy["checkpoint_protocol"]["normal_closeout_offset_minutes"] == 23
-    assert communication_policy["checkpoint_protocol"]["normal_close_reserve_minutes"] == 2
+    assert communication_policy["checkpoint_protocol"]["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert communication_policy["checkpoint_protocol"]["estimated_end_window_required_at_start"] is True
+    assert communication_policy["checkpoint_protocol"].get("fixed_work_minutes") is None
+    assert communication_policy["checkpoint_protocol"].get("fixed_close_reserve_minutes") is None
     assert communication_policy["anti_false_success"]["duplicate_end_prevention"] in {"SEARCH_BY_CHECKPOINT_ID_BEFORE_SEND", "SEARCH_BY_DELIVERY_KEY_OR_CHECKPOINT_ID_BEFORE_SEND"}
     assert delivery_policy["channels"]["email"]["scheduler_completion_is_not_delivery_proof"] is True
     assert delivery_policy["channels"]["email"]["foreground_end_send_primary"] is True
     assert communication_policy["anti_false_success"]["scheduler_completed_is_not_delivery"] is True
-    assert comm_protocol["schema"] == "bcp.communication_protocol/3"
+
+    assert comm_protocol["schema"] == "bcp.communication_protocol/4"
+    assert comm_protocol["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert comm_protocol.get("fixed_cadence_minutes") is None
     assert comm_protocol["normal_close_owner"] == "PRIMARY_ASSISTANT"
-    assert comm_protocol["cadence_minutes"] == 25
-    assert comm_protocol["primary_work_budget_minutes"] == 23
-    assert comm_protocol["normal_close_reserve_minutes"] == 2
-    assert comm_protocol["scheduled_backup_required"] is False
+    assert comm_protocol["work_rule"].startswith("CONTINUE_UNTIL_REAL_CHECKPOINT_TRUE_HUMAN_GATE")
     assert comm_protocol["normal_work_contract"]["automation_is_never_normal_owner"] is True
+    assert comm_protocol["normal_work_contract"]["fixed_minimum_work_minutes"] is None
+    assert comm_protocol["normal_work_contract"]["fixed_maximum_work_minutes"] is None
     assert comm_protocol["backup_semantics"]["default_enabled"] is False
     assert comm_protocol["backup_semantics"]["must_not_preempt_healthy_foreground_tranche"] is True
-    assert comm_state_machine["schema"] == "bcp.communication_state_machine/3"
-    assert comm_state_machine["useful_work_minutes"] == 23
-    assert comm_state_machine["normal_close_reserve_minutes"] == 2
+
+    assert comm_state_machine["schema"] == "bcp.communication_state_machine/4"
+    assert comm_state_machine["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert comm_state_machine["timing"]["fixed_cadence_minutes"] is None
+    assert comm_state_machine["timing"]["fixed_close_reserve_minutes"] is None
     assert "END_SEND_PENDING->END_ACKNOWLEDGED" in comm_state_machine["normal_path"]
+    assert "completion occurs at real checkpoint, true human gate, or objective tool/safety failure" in comm_state_machine["invariants"]
+
     assert takeover["trigger_code"] == "BCPGO BCP"
+    assert takeover["communication_contract"]["scheduling_model"] == "ADAPTIVE_TASK_WINDOW"
+    assert takeover["communication_contract"].get("fixed_cadence_minutes") is None
     assert takeover["communication_contract"]["normal_close_owner"] == "PRIMARY_ASSISTANT"
 
     # Release coordination remains explicit.

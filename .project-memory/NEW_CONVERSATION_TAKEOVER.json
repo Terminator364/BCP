@@ -68,11 +68,11 @@
     "abc_coverage": ".project-memory/BCP_ABC_COVERAGE.json",
     "ucmf001_continuity": ".project-memory/UCMF001_CONTINUITY.json",
     "ucmf_current_postulate": 9,
-    "current_integration_branch": "work/bcp/r89-anti-reinvention-benchmark-20260922-2141",
-    "current_main_base_sha": "1f186d60d37b7a4d1d85b84d934aca4d88d96311",
-    "current_integration_rule": "R89_CLOSED_REFERENCE_FIRST_CANONICAL; NEXT_R90_UI_CONVERGENCE",
+    "current_integration_branch": "work/bcp/r90-reference-ui-convergence-20260922-2233",
+    "current_main_base_sha": "810f39a8fed579896efcce0c42e19b677bef4236",
+    "current_integration_rule": "R90_REFERENCE_FIRST_UI_CONVERGENCE_THEN_TASK_BASED_EMULATOR",
     "current_secure_lan_state": "BIDIRECTIONAL_PINNED_TLS_CI_VERIFIED_BEDGE_2_2_CURRENT_FIELD_INSTALL_PENDING",
-    "next_product_front": "R90_HOME_ACTIVITY_DEVICES_SYSTEM_THEN_TASK_BASED_EMULATOR"
+    "next_product_front": "R90_HOME_ACTIVITY_DEVICES_SYSTEM"
   },
   "updated_at": "2026-09-22",
   "continuation_code": "BCPGO BCP",
@@ -84,10 +84,10 @@
     "phone_role": "PRIMARY_DEDICATED_EDGE_API_SERVER_COORDINATOR",
     "pc_role": "HEAVY_WINDOWS_WORKER_NOT_SOLE_COMMS_CENTER"
   },
-  "current_active_tranche": "BCP-R89-START-20260922-2141",
-  "current_delivery_key": "BCPBENCH-20260922-2141-R89",
-  "current_active_tranche_status": "CLOSED",
-  "current_end_checkpoint": "BCP-R89-END-20260922-2230",
-  "current_end_message_id": "1a0cb06b97c77708",
-  "current_communication_branch": "work/bcp/r89-anti-reinvention-benchmark-20260922-2141"
+  "current_active_tranche": "BCP-R90-START-20260922-2233",
+  "current_delivery_key": "BCPUI-20260922-2233-R90",
+  "current_active_tranche_status": "WORKING",
+  "current_end_checkpoint": null,
+  "current_end_message_id": null,
+  "current_communication_branch": "work/bcp/r90-reference-ui-convergence-20260922-2233"
 }

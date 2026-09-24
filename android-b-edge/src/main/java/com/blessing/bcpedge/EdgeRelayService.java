@@ -326,6 +326,11 @@ public final class EdgeRelayService extends Service {
             caps.put("content_addressed_private_cache", true);
             caps.put("store_and_forward", true);
             caps.put("telegram_https_connect_relay", true);
+            caps.put("cd9_edge_assist", true);
+            caps.put("cd9_phone_required", false);
+            caps.put("cd9_pc_required", false);
+            caps.put("cd9_native_large_bot_api", false);
+            caps.put("cd9_logical_object_target_bytes", Cd9EdgeAssist.LOGICAL_OBJECT_TARGET_BYTES);
             caps.put("nsd_presence", true);
             caps.put("wifi_direct_presence", true);
             caps.put("ble_presence", true);
@@ -337,6 +342,12 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/status".equals(path)) {
             writeJson(out, 200, nodeStatus());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/cd9/status".equals(path)) {
+            JSONObject cd9 = Cd9EdgeAssist.status(this);
+            cd9.put("background_update_probe", EdgeBackgroundUpdateProbe.cachedStatus(this));
+            writeJson(out, 200, cd9);
             return;
         }
         if ("GET".equals(method) && "/v1/node/context".equals(path)) {
@@ -443,6 +454,8 @@ public final class EdgeRelayService extends Service {
             out.put("permissions", EdgePermissionManager.status(this));
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
+            out.put("cd9", Cd9EdgeAssist.status(this));
+            out.put("background_update_probe", EdgeBackgroundUpdateProbe.cachedStatus(this));
             out.put("mission_steps", client.localMissionSteps(8, true));
             JSONObject capRegistry = client.localCapabilities();
             out.put("capability_count", capRegistry.optInt("count", 0));

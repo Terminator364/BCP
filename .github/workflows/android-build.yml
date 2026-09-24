@@ -109,6 +109,20 @@ jobs:
           grep -F 'EdgeBootReceiver' "$MANIFEST" >/dev/null
           grep -F 'EdgePermissionManager' "$MAIN" >/dev/null
           grep -F 'BCP Edge Server' "$MAIN" >/dev/null
+          grep -F 'EN UN COUP D’ŒIL' "$MAIN" >/dev/null
+          grep -F 'ACTION REQUISE' "$MAIN" >/dev/null
+          grep -F 'MISSIONS RÉCENTES' "$MAIN" >/dev/null
+          grep -F 'APPAREILS CONNUS' "$MAIN" >/dev/null
+          grep -F 'CONFIANCE & TRANSPORT' "$MAIN" >/dev/null
+          grep -F 'REPAIRS' "$MAIN" >/dev/null
+          grep -F 'AUTORISATIONS & 24/7' "$MAIN" >/dev/null
+          grep -F 'output.setVisibility(View.GONE)' "$MAIN" >/dev/null
+          grep -F 'LAST_SCREEN_KEY' "$MAIN" >/dev/null
+          grep -F 'onBackPressed' "$MAIN" >/dev/null
+          if grep -F 'PARAMÈTRES / DIAGNOSTIC' "$MAIN"; then
+            echo "Operational actions regressed into Settings"
+            exit 1
+          fi
           grep -F 'DEDICATED_EDGE_API_SERVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayService.java >/dev/null
           grep -F '/v1/node/capabilities' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null
           grep -F '/v1/node/jobs' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeRelayPolicy.java >/dev/null

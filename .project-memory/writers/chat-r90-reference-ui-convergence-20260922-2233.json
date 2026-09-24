@@ -1,0 +1,34 @@
+{
+  "schema": "bcp.writer_session/1",
+  "writer_or_session_id": "chat-r90-reference-ui-convergence-20260922-2233",
+  "project_or_mission": "BCP R90 source-driven Android product UI convergence",
+  "base_main_sha": "810f39a8fed579896efcce0c42e19b677bef4236",
+  "created_at": "2026-09-22T22:33:31+01:00",
+  "work_branch": "work/bcp/r90-reference-ui-convergence-20260922-2233",
+  "intended_file_scope": [
+    "android-b-edge/**",
+    ".github/workflows/android-human-action-simulation.yml",
+    ".github/workflows/android-build.yml",
+    "tools/validate_field_ecosystem.py",
+    "release/android_candidate.json",
+    ".project-memory/HUMAN_ACTION_QUALIFICATION_MATRIX.json",
+    ".project-memory/ACTIVE_TRANCHE.json",
+    ".project-memory/COMMUNICATION_DELIVERY_LEDGER.jsonl",
+    ".project-memory/NEW_CONVERSATION_TAKEOVER.json",
+    ".project-memory/ERROR_LEDGER.jsonl",
+    "project_state.json",
+    "API_PROJECT_CONTINUITY.md"
+  ],
+  "reference_gate": {
+    "benchmark": "docs/BCP_R89_ANTI_REINVENTION_BENCHMARK.md",
+    "policy": ".project-memory/REFERENCE_FIRST_POLICY.json",
+    "matrix": ".project-memory/BCP_R89_SOURCE_ADOPTION_MATRIX.json"
+  },
+  "expected_ci_gates": [
+    "BCP Android Build",
+    "BCP Android Human-Action Simulation",
+    "BCP Coordinated Product Qualification",
+    "BCP Field Ecosystem Preflight",
+    "BCP Qualified CURRENT Release Contract"
+  ]
+}
