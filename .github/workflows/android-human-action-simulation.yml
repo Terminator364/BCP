@@ -229,7 +229,9 @@ jobs:
           sleep 1
           dump_ui "bcp-devices"
           grep -F "APPAREILS CONNUS" bcp-devices.xml >/dev/null
-          grep -F "CONFIANCE & TRANSPORT" bcp-devices.xml >/dev/null
+          # uiautomator XML escapes ampersands as &amp;; validate the two semantic labels independently.
+          grep -F "CONFIANCE" bcp-devices.xml >/dev/null
+          grep -F "TRANSPORT" bcp-devices.xml >/dev/null
           grep -F "RECHERCHER / RECONNECTER LE PC" bcp-devices.xml >/dev/null
           ! grep -E 'SAISIR.*IP|TOKEN MANUEL|ENTRER.*TOKEN' bcp-devices.xml >/dev/null
           "$ADB" exec-out screencap -p > bcp-devices.png
