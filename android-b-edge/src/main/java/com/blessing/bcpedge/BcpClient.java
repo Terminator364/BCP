@@ -160,6 +160,15 @@ public final class BcpClient {
                     "B_EDGE", "COMMUNICATION_RELAY", "READY", "HTTPS_CONNECT", relay,
                     "SYSTEM_POLICY", now, expiry);
 
+            JSONObject cd9 = Cd9EdgeAssist.status(context);
+            orchestrator.putCapability(getProject(), "CD9_EDGE_ASSIST", "B-EDGE",
+                    "CD9", "FILE_TRANSPORT_ASSIST",
+                    cd9.optBoolean("ok", false)
+                            && "EDGE_ASSIST_READY".equals(cd9.optString("route", ""))
+                            ? "READY" : "DEGRADED",
+                    "DRIVE_PRIMARY_EDGE_OPPORTUNISTIC", cd9,
+                    "MACHINE_READBACK", now, expiry);
+
             JSONArray caps = orchestrator.capabilityRegistry(getProject(), 64);
             out.put("ok", true);
             out.put("project", getProject());

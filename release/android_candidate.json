@@ -7,7 +7,7 @@
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-09-21-R74",
+  "requirements_revision": "2026-09-25-R90-CD9-EDGE",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -62,7 +62,12 @@
     "Activity projects durable mission-step lifecycle and Chronicle evidence into human-readable transaction-like states",
     "Devices exposes discovery, pairing and TLS trust without manual IP/token as the primary flow",
     "System/Repairs surfaces actionable permission, battery, pairing, TLS, memory and recovery issues with technical JSON hidden by default",
-    "all R90 UI data is projected from existing Room Chronicle/mission/capability/memory/queue and pairing/resource state; no new database or backend authority"
+    "all R90 UI data is projected from existing Room Chronicle/mission/capability/memory/queue and pairing/resource state; no new database or backend authority",
+    "CD9 Edge assist capability is explicitly opportunistic: cloud Drive remains durable authority and phone/PC are never correctness dependencies",
+    "authenticated /v1/node/cd9/status exposes network/storage/update truth without exposing arbitrary file or shell surfaces",
+    "background update metadata probe is bounded to 6h after success and 30m after failure, downloads no APK in background, and avoids repeated data use",
+    "Android notification is emitted once per newer version; verified APK download/signature/hash and final OS install confirmation remain in the existing Evergreen updater",
+    "System UI distinguishes CD9 Edge availability from cloud authority and corrects secure API port 8877 versus Telegram relay port 8876"
   ],
   "release_train": "BCP-0.7.18_EDGE-2.2.1-reference-ui_NEXUS-0.2.6",
   "signed_apk_sha256": "",
@@ -73,7 +78,7 @@
     "status": "NOT_RUN"
   },
   "exact_head_machine_qualification": {
-    "status": "PENDING_R90_EXACT_HEAD"
+    "status": "PENDING_R90_CD9_EDGE_EXACT_HEAD"
   },
-  "remaining_human_gate": "BLOCKED_UNTIL_R90_MACHINE_QUALIFICATION_SIGNING_DRIVE_CURRENT_AND_IN_PLACE_INSTALL_READINESS"
+  "remaining_human_gate": "BLOCKED_UNTIL_R90_CD9_EDGE_MACHINE_QUALIFICATION_SIGNING_DRIVE_CURRENT_AND_IN_PLACE_INSTALL_READINESS"
 }

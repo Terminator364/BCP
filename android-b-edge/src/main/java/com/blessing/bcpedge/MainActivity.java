@@ -418,6 +418,8 @@ public class MainActivity extends Activity {
 
             double quotaGiB = storage.optDouble("quota_gib", 0d);
             long usedMiB = storage.optLong("used_bytes", 0L) / (1024L * 1024L);
+            JSONObject cd9 = Cd9EdgeAssist.status(this);
+            JSONObject updateProbe = EdgeBackgroundUpdateProbe.cachedStatus(this);
             autonomyInfo.setText(
                     "État durable: PRÊT"
                             + "\nFile & reprise: ACTIVES"
@@ -425,7 +427,11 @@ public class MainActivity extends Activity {
                             + "\nStockage privé: " + usedMiB + " MiB / " + quotaGiB + " GiB"
                             + "\nRéseau: " + transport
                             + " · " + net.optString("routing_hint", "STORE_AND_FORWARD")
-                            + "\nStore-and-forward: ACTIF");
+                            + "\nStore-and-forward: ACTIF"
+                            + "\nCD9 Edge: " + ("EDGE_ASSIST_READY".equals(cd9.optString("route", ""))
+                                    ? "PRÊT · Drive reste l’autorité" : "SECOURS CLOUD · téléphone optionnel")
+                            + "\nMises à jour: " + (updateProbe.optBoolean("update_available", false)
+                                    ? "NOUVELLE VERSION DISPONIBLE" : "veille automatique"));
 
             JSONArray capRows = capabilities.optJSONArray("capabilities");
             int capCount = capRows == null ? 0 : capRows.length();
