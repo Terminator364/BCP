@@ -241,7 +241,9 @@ jobs:
           sleep 1
           dump_ui "bcp-system"
           grep -F "REPAIRS" bcp-system.xml >/dev/null
-          grep -F "AUTORISATIONS & 24/7" bcp-system.xml >/dev/null
+          # uiautomator XML escapes '&' in text attributes.
+          grep -F "AUTORISATIONS" bcp-system.xml >/dev/null
+          grep -F "24/7" bcp-system.xml >/dev/null
           ! grep -F "PARAMÈTRES / DIAGNOSTIC" bcp-system.xml >/dev/null
           if grep -F '{"' bcp-system.xml >/dev/null; then
             echo "Raw JSON unexpectedly visible in primary System UI"
