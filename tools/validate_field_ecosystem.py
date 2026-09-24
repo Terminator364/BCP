@@ -455,8 +455,17 @@ def main() -> int:
     comm_protocol = load(".project-memory/COMMUNICATION_PROTOCOL.json")
     comm_state_machine = load(".project-memory/COMMUNICATION_STATE_MACHINE.json")
     takeover = load(".project-memory/NEW_CONVERSATION_TAKEOVER.json")
-    assert cadence_policy["acceptable_window_minutes"] == [23, 25]
-    assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [23, 25]
+    # Cadence policy v11 is adaptive: progress/human-gate truth is authoritative, not a fixed timer.
+    # Preserve compatibility with older fixed-window records without forcing stale 23–25 minute semantics.
+    if cadence_policy.get("planning_model") == "ADAPTIVE_TASK_WINDOW":
+        assert cadence_policy.get("fixed_target_minutes") is None
+        assert cadence_policy.get("fixed_acceptable_window_minutes") is None
+        assert cadence_policy.get("completion_rule") == "REAL_CHECKPOINT_OR_TRUE_HUMAN_GATE_NOT_TIMER"
+        assert cadence_policy["response_timing"]["start_email_includes_estimated_end_window"] is True
+        assert cadence_policy["response_timing"]["foreground_turn_owns_normal_end"] is True
+    else:
+        assert cadence_policy["acceptable_window_minutes"] == [23, 25]
+        assert cadence_policy["response_timing"]["user_visible_target_minutes"] == [23, 25]
     assert delivery_policy["cadence"]["work_slice_minutes"] == "25_TOTAL_23_WORK_2_CLOSEOUT"
     assert delivery_policy["cadence"]["target_minutes"] == 25
     assert delivery_policy["channels"]["email"]["role"] == "SOLE_PRIMARY_DETAILED_HUMAN_CHECKPOINT_DELIVERY"
