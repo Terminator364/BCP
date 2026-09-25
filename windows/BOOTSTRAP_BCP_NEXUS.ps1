@@ -397,6 +397,69 @@ trap {
     exit 4
 }
 
+
+# R92 emergency project pause bridge.
+# This release uses the already-qualified Nexus human-gate watcher only as a
+# local delivery lane. It preserves every Telegram secret/config value while
+# making the resident Telegram worker non-runnable until an explicit resume.
+function Apply-TelegramProjectPause {
+    $pausedConfigPath = Join-Path $StateDir "telegram_observability.paused.json"
+    $pauseReceiptPath = Join-Path $StateDir "telegram_project_pause.json"
+    $configPreserved = $false
+
+    if (Test-Path -LiteralPath $TelegramConfigPath -PathType Leaf) {
+        Copy-Item -Force -LiteralPath $TelegramConfigPath -Destination $pausedConfigPath
+        if ((Get-FileSha256 $TelegramConfigPath) -ne (Get-FileSha256 $pausedConfigPath)) {
+            throw "TELEGRAM_PROJECT_PAUSE_CONFIG_READBACK_MISMATCH"
+        }
+        Protect-LocalFile $pausedConfigPath
+        Remove-Item -Force -LiteralPath $TelegramConfigPath
+        $configPreserved = $true
+    } elseif (Test-Path -LiteralPath $pausedConfigPath -PathType Leaf) {
+        $configPreserved = $true
+    }
+
+    if (Test-Path $RunKey) {
+        Remove-ItemProperty -Path $RunKey -Name $RunName -ErrorAction SilentlyContinue
+    }
+    Stop-ExistingTelegramWorker
+
+    $pauseReceipt = [ordered]@{
+        schema = "bcp.telegram_project_pause/1"
+        state = "PAUSED"
+        reason = "USER_REQUESTED_PROJECT_PAUSE"
+        config_preserved = $configPreserved
+        paused_config_file = "telegram_observability.paused.json"
+        token_preserved = (Test-Path -LiteralPath $TokenPath -PathType Leaf)
+        startup_disabled = $true
+        worker_stopped = $true
+        paused_at = UtcNow
+    }
+    Write-JsonAtomic $pauseReceipt $pauseReceiptPath
+    Protect-LocalFile $pauseReceiptPath
+
+    # Preserve the pre-existing Nexus human gate truth. The bootstrap monitor
+    # therefore records HUMAN_AUTH_REQUIRED rather than a false Nexus success.
+    $gateReceipt = [ordered]@{
+        schema = "bcp.nexus_bootstrap_receipt/1"
+        status = "HUMAN_AUTH_REQUIRED"
+        error_class = "CLOUDFLARE_DEVICE_AUTH_REQUIRED_OR_EXPIRED"
+        error_detail = "Telegram project pause applied; Nexus human authorization remains pending."
+        stage = "TELEGRAM_PROJECT_PAUSE"
+        telegram_project_pause = "APPLIED"
+        telegram_config_preserved = $configPreserved
+        failed_at = UtcNow
+        spend_policy = "ZERO_USD"
+        spend_usd = 0.0
+    }
+    Write-JsonAtomic $gateReceipt $ReceiptPath
+    Protect-LocalFile $ReceiptPath
+    Write-Host "BCP_TELEGRAM_PROJECT_PAUSE=APPLIED"
+    exit 4
+}
+
+Apply-TelegramProjectPause
+
 if (-not (Test-Path -LiteralPath $TokenPath -PathType Leaf)) { throw "LOCAL_TELEGRAM_TOKEN_NOT_FOUND_RUN_TELEGRAM_BOOTSTRAP_ONCE" }
 if (-not (Test-Path -LiteralPath $TelegramConfigPath -PathType Leaf)) { throw "LOCAL_TELEGRAM_CONFIG_NOT_FOUND_RUN_TELEGRAM_BOOTSTRAP_ONCE" }
 if (-not (Test-Path -LiteralPath $InstalledBot -PathType Leaf)) { throw "LOCAL_TELEGRAM_WORKER_NOT_FOUND_WAIT_FOR_BCP_0_6_2_COMPANION_DELIVERY" }
