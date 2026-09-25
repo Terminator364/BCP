@@ -1,13 +1,13 @@
 {
   "schema": "bcp.telegram_companion_release/1",
   "channel": "stable",
-  "version": "2026.09.22-secure-lan-v23",
+  "version": "2026.09.25-notifications-paused-v24",
   "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/bcp_telegram_observability.py",
-  "sha256": "b995cd1b297bc89eb47dd76f40ea564f124e3805d6ca4429278224c222655c09",
+  "sha256": "8c87b9ca0353f4909386f66ce8e4e48c4c2b261c872937d5306625d870fdde57",
   "minimum_server_version": "0.6.3",
   "auto_update": true,
   "rollback_on_launch_failure": true,
   "minimum_selftest": "BCP_TELEGRAM_OBSERVABILITY_SELFTEST=PASS",
-  "notes": "R84 companion adds pinned HTTPS access to the B-EDGE 8877 API and HMAC-SHA256 timestamp+nonce authentication for 2.2 Telegram CONNECT relay registrations while retaining explicit 2.1.2 legacy compatibility.",
+  "notes": "R91 project pause: keep the BCP Telegram companion responsive to explicit user commands while suppressing unsolicited presence, watchdog, attention, system-presence, startup, recovery and alive notifications. Reversible by a later qualified companion release.",
   "requirements_revision": "2026-09-21-R74"
 }
