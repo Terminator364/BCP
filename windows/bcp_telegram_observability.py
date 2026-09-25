@@ -57,6 +57,11 @@ TRANSPORT_ALIVE_NOTICE_INTERVAL_SECONDS = 90 * 60
 NEXUS_BOOTSTRAP_RECEIPT_PATH = STATE_DIR / "nexus_bootstrap_receipt.json"
 DIRECT_OUTAGE_FAILURE_THRESHOLD = 3
 
+# Project-level reversible pause requested on 2026-09-25.
+# The resident bot keeps accepting explicit user commands, but all unsolicited
+# Telegram/Nexus notifications are suppressed until this flag is reverted.
+PROJECT_NOTIFICATIONS_PAUSED = True
+
 CHAT_STATES = {
     "OBSERVED_CHAT_ACTION",
     "CHAT_WAITING",
@@ -2844,7 +2849,7 @@ class Telegram:
         self.http = http or Http()
         self.base = "https://api.telegram.org/bot" + token
         presence = service.cfg.get("presence") or {}
-        self.auto_push = bool(presence.get("auto_push", True))
+        self.auto_push = bool(presence.get("auto_push", True)) and not PROJECT_NOTIFICATIONS_PAUSED
         try:
             self.max_events_per_push = max(1, min(12, int(presence.get("max_events_per_push", 6))))
         except Exception:
@@ -3250,6 +3255,8 @@ class Telegram:
         })
 
     def _push_attention_transition(self) -> None:
+        if not self.auto_push:
+            return
         snap = self.service.presence_snapshot()
         state = snap.get("snapshot") or {}
         key, level, root = self.service._attention_key(state)
@@ -3381,7 +3388,8 @@ class Telegram:
                     transport_outage=False,
                     transport_outage_state="RECOVERED" if recovered_failures else "NONE",
                 )
-                self._push_transport_liveness(recovered_failures)
+                if not PROJECT_NOTIFICATIONS_PAUSED:
+                    self._push_transport_liveness(recovered_failures)
                 for upd in updates:
                     uid = int(upd.get("update_id") or 0)
                     offset = max(offset, uid + 1)
@@ -3505,7 +3513,7 @@ class Nexus:
         except Exception:
             self.poll_seconds = 15
         presence = service.cfg.get("presence") or {}
-        self.auto_push = bool(presence.get("auto_push", True))
+        self.auto_push = bool(presence.get("auto_push", True)) and not PROJECT_NOTIFICATIONS_PAUSED
         try:
             self.max_events_per_push = max(1, min(12, int(presence.get("max_events_per_push", 6))))
         except Exception:
@@ -3650,6 +3658,8 @@ class Nexus:
         })
 
     def _push_attention_transition(self) -> None:
+        if not self.auto_push:
+            return
         snap = self.service.presence_snapshot()
         state = snap.get("snapshot") or {}
         key, level, root = self.service._attention_key(state)
