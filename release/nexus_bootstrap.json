@@ -1,7 +1,7 @@
 {
   "schema": "bcp.nexus_bootstrap_release/1",
   "channel": "stable",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "minimum_server_version": "0.6.4",
   "auto_stage": true,
   "auto_launch_once": true,
@@ -11,7 +11,7 @@
     {
       "path": "windows/BOOTSTRAP_BCP_NEXUS.ps1",
       "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/windows/BOOTSTRAP_BCP_NEXUS.ps1",
-      "sha256": "6ab1b567a0948f1831146fd9f2b4a61e419bedcc0d7f7db529932119aca56697",
+      "sha256": "3c33417eb4fbb3a101531e86f881a91dd5bce837644293a752ee28815a0e4e77",
       "max_bytes": 300000
     },
     {
@@ -107,5 +107,5 @@
     "field_verified": false,
     "transport_parity": true
   },
-  "notes": "Nexus 0.2.6 reconciles Worker health version with the bundle, preserves device-flow-only Cloudflare auth, and aligns cached PDF delivery with R54 human presentation: readable hierarchy, WinAnsi French glyphs, page numbering and Kinshasa-time captions."
+  "notes": "Nexus 0.2.7 carries the user-requested R92 local Telegram project-pause bridge: preserve token/config, remove the active config, disable Telegram startup, stop the resident worker, and retain the existing Cloudflare HUMAN_AUTH_REQUIRED truth."
 }
