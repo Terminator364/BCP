@@ -41,7 +41,7 @@
       "notes": "B-EDGE 2.2 full-node is signed with the pinned Evergreen identity and v2/v3 verified. Exact source-head build + representative Android emulator full-node/API/relaunch qualification passed. Final stable Drive CURRENT byte replacement/readback and real-device in-place installation remain the only promotion/field gates."
     },
     "nexus": {
-      "version": "0.2.6",
+      "version": "0.2.7",
       "source_manifest": "release/nexus_bootstrap.json",
       "qualification": "CI_CANDIDATE_FIELD_UNVERIFIED",
       "distribution_ready": true,
@@ -50,9 +50,9 @@
       "artifact": {
         "transport": "HTTPS_HASH_PINNED_BUNDLE_MANIFEST",
         "url": "https://raw.githubusercontent.com/Terminator364/BCP/main/release/nexus_bootstrap.json",
-        "sha256": "251ce239b4edd58a7fc10ca831c6aea2db3588d69c945e1e2ba00cec2041225a"
+        "sha256": "ce95189762161f2a3a815812e24338f852db8b5e53021501613600989ecc4083"
       },
-      "notes": "Nexus 0.2.6 R54 remains device-flow-only, reconciles Worker health version, and mirrors the compact human cockpit plus WinAnsi/Bold/paginated PDF fallback with Kinshasa-time captions."
+      "notes": "Nexus 0.2.7 is a reversible control-plane bridge for the explicit BCP project pause: it preserves Telegram secrets/configuration while stopping and de-registering the resident Telegram worker; the prior Cloudflare human-auth gate remains truthful."
     }
   },
   "telegram_cockpit": {
