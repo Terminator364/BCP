@@ -283,14 +283,17 @@ public final class BcpClient {
         try {
             JSONObject capabilities = localCapabilities();
             JSONObject claims = localMemoryClaims(100);
+            JSONObject sentinel = sentinelStatus();
             prefs.edit()
                     .putString("ui_capabilities_cache", capabilities.toString())
                     .putString("ui_memory_claims_cache", claims.toString())
+                    .putString("ui_sentinel_cache", sentinel.toString())
                     .putLong("ui_governance_cache_at", System.currentTimeMillis())
                     .apply();
             out.put("ok", capabilities.optBoolean("ok", false) && claims.optBoolean("ok", false));
             out.put("capabilities", capabilities.optInt("count", 0));
             out.put("claims", claims.optInt("count", 0));
+            out.put("sentinel_cached", sentinel.length() > 0);
             out.put("cached_at_ms", System.currentTimeMillis());
         } catch (Exception e) {
             try {
@@ -307,6 +310,10 @@ public final class BcpClient {
 
     public JSONObject cachedMemoryClaims() {
         return cachedJson("ui_memory_claims_cache", "B_EDGE_MEMORY_ADMISSION_LEDGER_CACHE");
+    }
+
+    public JSONObject cachedSentinelStatus() {
+        return cachedJson("ui_sentinel_cache", "B_EDGE_SENTINEL_CACHE");
     }
 
     private JSONObject cachedJson(String key, String authority) {
