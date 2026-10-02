@@ -264,12 +264,24 @@ public final class ExcellentiaEdgeBridge {
             String path = cleanPath(p[1]);
             Map<String,String> headers = readHeaders(in);
 
+            if ("OPTIONS".equals(method) && "/health".equals(path)) {
+                Map<String,String> cors = new HashMap<>();
+                cors.put("Access-Control-Allow-Origin", "*");
+                cors.put("Access-Control-Allow-Methods", "GET, OPTIONS");
+                cors.put("Access-Control-Allow-Private-Network", "true");
+                writeJson(out, 200, json("ok", true), cors); return;
+            }
             if ("GET".equals(method) && "/health".equals(path)) {
-                writeJson(out, 200, status()); return;
+                Map<String,String> cors = new HashMap<>();
+                cors.put("Access-Control-Allow-Origin", "*");
+                cors.put("Access-Control-Allow-Private-Network", "true");
+                writeJson(out, 200, status(), cors); return;
             }
             if ("GET".equals(method) && "/pair".equals(path)) {
-                if (!passOfferAlive()) { writeText(out, 410, "text/html; charset=utf-8", expiredPage()); return; }
-                writeText(out, 200, "text/html; charset=utf-8", pairPage()); return;
+                Map<String,String> cache = new HashMap<>();
+                cache.put("Cache-Control", "private, max-age=28800, stale-if-error=86400");
+                if (!passOfferAlive()) { writeText(out, 410, "text/html; charset=utf-8", expiredPage(), cache); return; }
+                writeText(out, 200, "text/html; charset=utf-8", pairPage(), cache); return;
             }
             if ("POST".equals(method) && "/api/claim".equals(path)) {
                 JSONObject body = readJsonBody(in, headers, MAX_BROWSER_BODY);
@@ -285,7 +297,9 @@ public final class ExcellentiaEdgeBridge {
             }
 
             if ("GET".equals(method) && ("/".equals(path) || "/study".equals(path))) {
-                writeText(out, 200, "text/html; charset=utf-8", studyPage()); return;
+                Map<String,String> cache = new HashMap<>();
+                cache.put("Cache-Control", "private, max-age=28800, stale-if-error=86400");
+                writeText(out, 200, "text/html; charset=utf-8", studyPage(), cache); return;
             }
             if ("GET".equals(method) && "/api/status".equals(path)) {
                 writeJson(out, 200, status()); return;
@@ -830,20 +844,28 @@ h1,h2,h3{margin:.2em 0 .5em}
         writeBytes(out, status, type, body.getBytes(StandardCharsets.UTF_8));
     }
 
+    private static void writeText(OutputStream out, int status, String type, String body, Map<String,String> extra) throws Exception {
+        writeBytes(out, status, type, body.getBytes(StandardCharsets.UTF_8), extra);
+    }
+
     private static void writeBytes(OutputStream out, int status, String type, byte[] body) throws Exception {
         writeBytes(out, status, type, body, new HashMap<>());
     }
 
     private static void writeBytes(OutputStream out, int status, String type, byte[] body, Map<String,String> extra) throws Exception {
         String reason = status == 200 ? "OK" : status == 202 ? "Accepted" : status == 302 ? "Found" : status == 400 ? "Bad Request" : status == 401 ? "Unauthorized" : status == 403 ? "Forbidden" : status == 404 ? "Not Found" : status == 410 ? "Gone" : status == 503 ? "Unavailable" : "OK";
+        String cacheControl = extra.containsKey("Cache-Control") ? extra.get("Cache-Control") : "no-store";
         StringBuilder h = new StringBuilder("HTTP/1.1 ").append(status).append(' ').append(reason).append("\r\n")
                 .append("Content-Type: ").append(type).append("\r\n")
                 .append("Content-Length: ").append(body.length).append("\r\n")
-                .append("Cache-Control: no-store\r\n")
+                .append("Cache-Control: ").append(cacheControl).append("\r\n")
                 .append("X-Content-Type-Options: nosniff\r\n")
                 .append("Referrer-Policy: no-referrer\r\n")
                 .append("Connection: close\r\n");
-        for (Map.Entry<String,String> e : extra.entrySet()) h.append(e.getKey()).append(": ").append(e.getValue()).append("\r\n");
+        for (Map.Entry<String,String> e : extra.entrySet()) {
+            if ("Cache-Control".equalsIgnoreCase(e.getKey())) continue;
+            h.append(e.getKey()).append(": ").append(e.getValue()).append("\r\n");
+        }
         h.append("\r\n");
         out.write(h.toString().getBytes(StandardCharsets.US_ASCII));
         out.write(body);
