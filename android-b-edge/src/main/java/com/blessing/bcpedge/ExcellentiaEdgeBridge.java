@@ -598,6 +598,53 @@ h1,h2,h3{margin:.2em 0 .5em}
     .replaceAll('<','&lt;')
     .replaceAll('>','&gt;');
 
+  let recovering=false;
+  function routePrefix(){
+    const raw=localStorage.getItem('exc_edge_last_ip')||location.hostname||'';
+    const p=raw.split('.');
+    if(p.length!==4)return null;
+    const n=p.map(Number);
+    if(n.some(x=>!Number.isInteger(x)||x<0||x>255))return null;
+    const priv=n[0]===10||n[0]===192&&n[1]===168||n[0]===172&&n[1]>=16&&n[1]<=31;
+    return priv?p.slice(0,3).join('.')+'.':null;
+  }
+  function encodeRouteState(){
+    try{
+      const x={run:localStorage.getItem('exc_edge_run')||'',outbox:localStorage.getItem('exc_edge_outbox')||'[]'};
+      return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }catch{return ''}
+  }
+  async function probeRoute(ip,expected){
+    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),450);
+    try{
+      const r=await fetch('http://'+ip+':8878/health',{cache:'no-store',mode:'cors',signal:ctl.signal});
+      if(!r.ok)return null;
+      const j=await r.json();
+      if(j?.mode!=='EXCELLENTIA_EDGE_CONTINUITY')return null;
+      if(expected&&Number(j.pass_offer_created_at||0)!==Number(expected))return null;
+      return ip;
+    }catch{return null}finally{clearTimeout(t)}
+  }
+  async function recoverRoute(){
+    if(recovering)return true;
+    const token=localStorage.getItem('exc_edge_rebind_token')||'',prefix=routePrefix();
+    if(!token||!prefix)return false;
+    recovering=true;document.getElementById('net').textContent='recherche du nœud…';
+    const expected=localStorage.getItem('exc_edge_offer_created_at')||'';
+    let next=1,found=null;
+    async function worker(){
+      while(!found&&next<255){
+        const i=next++,ip=prefix+i;if(ip===location.hostname)continue;
+        const hit=await probeRoute(ip,expected);if(hit){found=hit;break}
+      }
+    }
+    await Promise.all(Array.from({length:20},()=>worker()));
+    if(!found){recovering=false;document.getElementById('net').textContent='hors ligne · progression locale';return false}
+    const state=encodeRouteState();
+    location.replace('http://'+found+':8878/pair#t='+encodeURIComponent(token)+(state?'&state='+encodeURIComponent(state):''));
+    return true;
+  }
+
   function outbox(){
     try{return JSON.parse(localStorage.getItem('exc_edge_outbox')||'[]')}
     catch{return []}
@@ -630,8 +677,15 @@ h1,h2,h3{margin:.2em 0 .5em}
   }
 
   async function load(){
-    const r=await fetch('/api/offline-pack',{cache:'no-store'});
-    if(!r.ok)throw new Error('snapshot indisponible');
+    let r;
+    try{
+      r=await fetch('/api/offline-pack',{cache:'no-store'});
+      if(!r.ok)throw new Error('snapshot indisponible');
+    }catch(e){
+      if(await recoverRoute())return;
+      throw e;
+    }
+    localStorage.setItem('exc_edge_last_ip',location.hostname);
     pack=await r.json();
     const mods=pack.modules||[];
     M.innerHTML='<option value="0">Grand Mix</option>'+
@@ -641,6 +695,7 @@ h1,h2,h3{margin:.2em 0 .5em}
     const saved=localStorage.getItem('exc_edge_run');
     if(saved){try{run=JSON.parse(saved)}catch{}}
     await flushOutbox();
+    document.getElementById('net').textContent='nœud local · connecté';
     render();
   }
 
@@ -715,6 +770,15 @@ h1,h2,h3{margin:.2em 0 .5em}
 
   document.getElementById('start').onclick=pick;
   document.getElementById('resume').onclick=render;
+  setInterval(async()=>{
+    if(recovering)return;
+    try{
+      const r=await fetch('/api/status',{cache:'no-store',signal:AbortSignal.timeout(1800)});
+      if(!r.ok)throw new Error('status');
+      document.getElementById('net').textContent='nœud local · connecté';
+      void flushOutbox();
+    }catch{void recoverRoute()}
+  },12000);
   await load();
 })().catch(e=>{
   document.getElementById('host').innerHTML='<div class="card"><h3>Snapshot indisponible</h3><p>'+String(e.message||e)+'</p></div>';
