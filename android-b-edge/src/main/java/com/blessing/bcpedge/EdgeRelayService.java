@@ -9,6 +9,8 @@ import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.net.wifi.WifiManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ServiceCompat;
@@ -64,6 +66,8 @@ public final class EdgeRelayService extends Service {
     private volatile JSONObject presenceState = new JSONObject();
     private volatile String tlsCertificateSha256 = "";
     private ExcellentiaEdgeBridge excellentia;
+    private PowerManager.WakeLock cpuWakeLock;
+    private WifiManager.WifiLock wifiLock;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -81,6 +85,24 @@ public final class EdgeRelayService extends Service {
             tlsCertificateSha256 = EdgeTlsIdentity.certificateSha256(this);
         } catch (Throwable e) {
             mark("TLS_IDENTITY_FAILED", e.getClass().getSimpleName());
+        }
+
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null) {
+                cpuWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BCP:EdgeServer");
+                cpuWakeLock.setReferenceCounted(false);
+                cpuWakeLock.acquire();
+            }
+            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+            if (wm != null) {
+                wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "BCP:EdgeWifi");
+                wifiLock.setReferenceCounted(false);
+                wifiLock.acquire();
+            }
+            mark("EDGE_POWER_LOCKS_ACTIVE", "cpu=" + (cpuWakeLock != null) + ",wifi=" + (wifiLock != null));
+        } catch (Throwable e) {
+            mark("EDGE_POWER_LOCKS_FAILED", e.getClass().getSimpleName());
         }
 
         presence = new EdgePresenceAdvertiser(this);
@@ -122,6 +144,8 @@ public final class EdgeRelayService extends Service {
         try { if (tlsApiServerSocket != null) tlsApiServerSocket.close(); } catch (Exception ignored) {}
         try { if (presence != null) presence.stop(); } catch (Exception ignored) {}
         try { if (excellentia != null) excellentia.stop(); } catch (Exception ignored) {}
+        try { if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); } catch (Exception ignored) {}
+        try { if (cpuWakeLock != null && cpuWakeLock.isHeld()) cpuWakeLock.release(); } catch (Exception ignored) {}
         registration.shutdownNow();
         io.shutdownNow();
         mark("STOPPED", "");
@@ -322,6 +346,8 @@ public final class EdgeRelayService extends Service {
             caps.put("excellentia_edge_continuity", true);
             caps.put("excellentia_http_port", EdgeRelayPolicy.EXCELLENTIA_HTTP_PORT);
             caps.put("excellentia_pc_offline_capable", true);
+            caps.put("edge_cpu_wake_lock", cpuWakeLock != null && cpuWakeLock.isHeld());
+            caps.put("edge_wifi_lock", wifiLock != null && wifiLock.isHeld());
             caps.put("room_schema_version", 5);
             caps.put("mission_authority", "DURABLE_BCP_STATE_NOT_CHAT_UI");
             caps.put("local_allowlisted_executor", true);
