@@ -166,6 +166,43 @@ public final class ExcellentiaEdgeBridge {
         return json("ok", true, "revoked", true, "snapshot_retained", new File(context.getFilesDir(), PACK_FILE).exists());
     }
 
+    public JSONObject acknowledgeProgress(JSONObject body) {
+        JSONArray ids = body == null ? null : body.optJSONArray("ids");
+        if (ids == null || ids.length() == 0) return json("ok", true, "removed", 0);
+        java.util.HashSet<String> acked = new java.util.HashSet<>();
+        for (int i = 0; i < ids.length(); i++) {
+            String id = ids.optString(i, "").trim();
+            if (!id.isEmpty()) acked.add(id);
+        }
+        File src = new File(context.getFilesDir(), PROGRESS_FILE);
+        if (!src.exists() || acked.isEmpty()) return json("ok", true, "removed", 0);
+        File tmp = new File(context.getFilesDir(), PROGRESS_FILE + ".tmp");
+        int removed = 0;
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(src), StandardCharsets.UTF_8));
+             FileOutputStream out = new FileOutputStream(tmp, false)) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                boolean drop = false;
+                try { drop = acked.contains(new JSONObject(line).optString("id", "")); }
+                catch (Exception ignored) {}
+                if (drop) { removed++; continue; }
+                out.write((line + "\n").getBytes(StandardCharsets.UTF_8));
+            }
+            out.getFD().sync();
+        } catch (Exception e) {
+            try { tmp.delete(); } catch (Exception ignored) {}
+            return json("ok", false, "error", "progress_ack_failed");
+        }
+        try {
+            if (src.exists() && !src.delete()) throw new IllegalStateException("progress_replace_delete_failed");
+            if (!tmp.renameTo(src)) throw new IllegalStateException("progress_replace_rename_failed");
+        } catch (Exception e) {
+            return json("ok", false, "error", "progress_ack_replace_failed");
+        }
+        return json("ok", true, "removed", removed, "remaining", countProgressLines());
+    }
+
     public JSONObject revoke(String reason) {
         long now = System.currentTimeMillis();
         prefs.edit()
