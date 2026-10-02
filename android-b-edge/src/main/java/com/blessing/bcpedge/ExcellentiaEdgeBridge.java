@@ -466,7 +466,11 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
 (function(){
   const f=document.getElementById('f'),c=document.getElementById('c'),s=document.getElementById('s');
   const decodeState=v=>{
-    try{return JSON.parse(decodeURIComponent(escape(atob(v.replace(/-/g,'+').replace(/_/g,'/')))))}catch{return null}
+    try{
+      let b=v.replaceAll('-','+').replaceAll('_','/');
+      while(b.length%4)b+='=';
+      return JSON.parse(decodeURIComponent(escape(atob(b))))
+    }catch{return null}
   };
   const privatePrefix=()=>{
     const h=location.hostname||'';
@@ -489,6 +493,8 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
     }catch{return null}finally{clearTimeout(t)}
   }
   async function recover(token,state){
+    const exp=Number(localStorage.getItem('exc_edge_pass_expires_at')||0);
+    if(exp&&Date.now()>=exp){localStorage.removeItem('exc_edge_rebind_token');return false}
     const prefix=privatePrefix();if(!prefix||!token)return false;
     s.className='m';s.textContent='Recherche du nœud Excellentia sur le Wi‑Fi…';
     const expected=localStorage.getItem('exc_edge_offer_created_at')||'';
@@ -611,7 +617,7 @@ h1,h2,h3{margin:.2em 0 .5em}
   function encodeRouteState(){
     try{
       const x={run:localStorage.getItem('exc_edge_run')||'',outbox:localStorage.getItem('exc_edge_outbox')||'[]'};
-      return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
     }catch{return ''}
   }
   async function probeRoute(ip,expected){
