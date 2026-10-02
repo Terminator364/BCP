@@ -577,7 +577,7 @@ h1,h2,h3{margin:.2em 0 .5em}
 """;
     }
 
-    private static int normalizeMinutes(int n) {
+    static int normalizeMinutes(int n) {
         int[] allowed = new int[]{30,60,90,120,180,240,360,480};
         for (int x : allowed) if (n == x) return x;
         return 30;
