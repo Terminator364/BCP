@@ -393,7 +393,7 @@ public class MainActivity extends Activity {
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
             JSONObject capabilities = client.cachedCapabilities();
             JSONObject claims = client.cachedMemoryClaims();
-            JSONObject sentinel = client.sentinelStatus();
+            JSONObject sentinel = client.cachedSentinelStatus();
 
             boolean paired = !client.getToken().isEmpty();
             boolean tlsPinned = client.getServer().startsWith("https://")
