@@ -423,7 +423,7 @@ public final class ExcellentiaEdgeBridge {
                 + "body{font-family:system-ui;background:#091522;color:#eef6ff;margin:0;min-height:100vh;display:grid;place-items:center;padding:20px}.b{max-width:430px;background:#10263f;border:1px solid #284d73;border-radius:22px;padding:24px}button,input{width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #365778;background:#0b1b2d;color:#fff}button{margin-top:10px;background:#1684f8;border:0;font-weight:800}.m{color:#a8bdd2}.ok{color:#63e6a3}.bad{color:#ff8390}</style></head><body><div class=b>"
                 + "<h2>📚 Excellentia · Continuité Edge</h2><p class=m>Ce pass fonctionne sur le même Wi‑Fi même si le PC est ensuite éteint.</p>"
                 + "<form id=f><input id=c placeholder='Code/jeton'><button>Se connecter</button></form><p id=s class=m>Connexion au nœud B‑EDGE…</p>"
-                + "<script>(function(){const f=document.getElementById('f'),c=document.getElementById('c'),s=document.getElementById('s');async function go(t){s.textContent='Vérification…';try{const r=await fetch('/api/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:t})}),j=await r.json();if(!r.ok)throw new Error(j.error||'REFUSED');history.replaceState(null,'','/pair');s.className='ok';s.textContent='Connecté. Ouverture…';setTimeout(()=>location.replace('/'),250)}catch(e){s.className='bad';s.textContent='Connexion refusée : '+e.message}}const h=location.hash||'';if(h.startsWith('#t=')){const t=decodeURIComponent(h.slice(3));location.hash='';go(t)}f.onsubmit=e=>{e.preventDefault();if(c.value.trim())go(c.value.trim())}})();</script></div></body></html>";
+                + "<script>(function(){const f=document.getElementById('f'),c=document.getElementById('c'),s=document.getElementById('s');async function go(t){s.textContent='Vérification…';let last=null;for(let a=1;a<=3;a++){try{const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t})}),j=await r.json();if(!r.ok){const e=new Error(j.error||'REFUSED');e.http=true;throw e}history.replaceState(null,'','/pair');s.className='ok';s.textContent='Connecté. Ouverture…';setTimeout(()=>location.replace('/'),250);return}catch(e){last=e;if(e.http)break;if(a<3){s.className='m';s.textContent='Connexion instable · nouvelle tentative…';await new Promise(r=>setTimeout(r,450*a))}}}s.className='bad';s.textContent='Connexion refusée : '+(last&&last.message?last.message:'REFUSED')}const h=location.hash||'';if(h.startsWith('#t=')){const t=decodeURIComponent(h.slice(3));location.hash='';go(t)}f.onsubmit=e=>{e.preventDefault();if(c.value.trim())go(c.value.trim())}})();</script></div></body></html>";
     }
 
     private String expiredPage() {
@@ -481,6 +481,37 @@ h1,h2,h3{margin:.2em 0 .5em}
     .replaceAll('<','&lt;')
     .replaceAll('>','&gt;');
 
+  function outbox(){
+    try{return JSON.parse(localStorage.getItem('exc_edge_outbox')||'[]')}
+    catch{return []}
+  }
+  function saveOutbox(items){
+    localStorage.setItem('exc_edge_outbox',JSON.stringify(items.slice(-500)));
+  }
+  async function flushOutbox(){
+    const pending=outbox();
+    if(!pending.length)return true;
+    const keep=[];
+    for(const item of pending){
+      try{
+        const r=await fetch('/api/progress',{
+          method:'POST',cache:'no-store',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify(item)
+        });
+        if(!r.ok)throw new Error('HTTP_'+r.status);
+      }catch{keep.push(item)}
+    }
+    saveOutbox(keep);
+    return keep.length===0;
+  }
+  function queueProgress(item){
+    const pending=outbox();
+    if(!pending.some(x=>x.id===item.id))pending.push(item);
+    saveOutbox(pending);
+    void flushOutbox();
+  }
+
   async function load(){
     const r=await fetch('/api/offline-pack',{cache:'no-store'});
     if(!r.ok)throw new Error('snapshot indisponible');
@@ -492,6 +523,7 @@ h1,h2,h3{margin:.2em 0 .5em}
         .join('');
     const saved=localStorage.getItem('exc_edge_run');
     if(saved){try{run=JSON.parse(saved)}catch{}}
+    await flushOutbox();
     render();
   }
 
@@ -523,18 +555,17 @@ h1,h2,h3{margin:.2em 0 .5em}
     run.answers[x.id]=i;
     if(ok)run.score++;
     save();
-    await fetch('/api/progress',{
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body:JSON.stringify({
-        question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,
-        selected:i,correct:ok,mode:'EDGE_OFFLINE'
-      })
-    }).catch(()=>{});
+    queueProgress({
+      id:run.id+'-'+(run.i+1)+'-'+x.id,
+      run_id:run.id,run_total:run.ids.length,run_position:run.i+1,
+      question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,
+      selected:i,correct:ok,mode:'EDGE_OFFLINE'
+    });
     render();
   }
 
   function next(){
+    void flushOutbox();
     if(run.i<run.ids.length-1){run.i++;save();render();return}
     H.innerHTML='<div class="card"><h2>Terminé · '+run.score+'/'+run.ids.length+
       '</h2><p class="muted">Résultat conservé sur B‑EDGE.</p>'+
