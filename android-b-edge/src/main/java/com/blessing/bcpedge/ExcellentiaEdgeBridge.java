@@ -422,12 +422,108 @@ public final class ExcellentiaEdgeBridge {
     }
 
     private String pairPage() {
-        return "<!doctype html><html lang=fr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-                + "<meta name=referrer content=no-referrer><title>Excellentia · Connexion Edge</title><style>"
-                + "body{font-family:system-ui;background:#091522;color:#eef6ff;margin:0;min-height:100vh;display:grid;place-items:center;padding:20px}.b{max-width:430px;background:#10263f;border:1px solid #284d73;border-radius:22px;padding:24px}button,input{width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #365778;background:#0b1b2d;color:#fff}button{margin-top:10px;background:#1684f8;border:0;font-weight:800}.m{color:#a8bdd2}.ok{color:#63e6a3}.bad{color:#ff8390}</style></head><body><div class=b>"
-                + "<h2>📚 Excellentia · Continuité Edge</h2><p class=m>Ce pass fonctionne sur le même Wi‑Fi même si le PC est ensuite éteint.</p>"
-                + "<form id=f><input id=c placeholder='Code/jeton'><button>Se connecter</button></form><p id=s class=m>Connexion au nœud B‑EDGE…</p>"
-                + "<script>(function(){const f=document.getElementById('f'),c=document.getElementById('c'),s=document.getElementById('s');async function go(t){s.textContent='Vérification…';let last=null;for(let a=1;a<=3;a++){try{const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t})}),j=await r.json();if(!r.ok){const e=new Error(j.error||'REFUSED');e.http=true;throw e}history.replaceState(null,'','/pair');s.className='ok';s.textContent='Connecté. Ouverture…';setTimeout(()=>location.replace('/'),250);return}catch(e){last=e;if(e.http)break;if(a<3){s.className='m';s.textContent='Connexion instable · nouvelle tentative…';await new Promise(r=>setTimeout(r,450*a))}}}s.className='bad';s.textContent='Connexion refusée : '+(last&&last.message?last.message:'REFUSED')}const h=location.hash||'';if(h.startsWith('#t=')){const t=decodeURIComponent(h.slice(3));location.hash='';go(t)}f.onsubmit=e=>{e.preventDefault();if(c.value.trim())go(c.value.trim())}})();</script></div></body></html>";
+        return """
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Excellentia · Connexion Edge</title>
+<style>
+body{font-family:system-ui;background:#091522;color:#eef6ff;margin:0;min-height:100vh;display:grid;place-items:center;padding:20px}
+.b{max-width:430px;background:#10263f;border:1px solid #284d73;border-radius:22px;padding:24px}
+button,input{width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #365778;background:#0b1b2d;color:#fff}
+button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
+.m{color:#a8bdd2}.ok{color:#63e6a3}.bad{color:#ff8390}
+</style>
+</head>
+<body>
+<div class="b">
+<h2>📚 Excellentia · Continuité Edge</h2>
+<p class="m">Un seul pass, avec reprise locale même après microcoupure Wi‑Fi.</p>
+<form id="f"><input id="c" placeholder="Code/jeton"><button>Se connecter</button></form>
+<p id="s" class="m">Connexion au nœud B‑EDGE…</p>
+</div>
+<script>
+(function(){
+  const f=document.getElementById('f'),c=document.getElementById('c'),s=document.getElementById('s');
+  const decodeState=v=>{
+    try{return JSON.parse(decodeURIComponent(escape(atob(v.replace(/-/g,'+').replace(/_/g,'/')))))}catch{return null}
+  };
+  const privatePrefix=()=>{
+    const h=location.hostname||'';
+    const p=h.split('.');
+    if(p.length!==4)return null;
+    const n=p.map(Number);
+    if(n.some(x=>!Number.isInteger(x)||x<0||x>255))return null;
+    const priv=n[0]===10||n[0]===192&&n[1]===168||n[0]===172&&n[1]>=16&&n[1]<=31;
+    return priv?p.slice(0,3).join('.')+'.':null;
+  };
+  async function probe(ip,expected){
+    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),450);
+    try{
+      const r=await fetch('http://'+ip+':8878/health',{cache:'no-store',mode:'cors',signal:ctl.signal});
+      if(!r.ok)return null;
+      const j=await r.json();
+      if(j?.mode!=='EXCELLENTIA_EDGE_CONTINUITY')return null;
+      if(expected&&Number(j.pass_offer_created_at||0)!==Number(expected))return null;
+      return ip;
+    }catch{return null}finally{clearTimeout(t)}
+  }
+  async function recover(token,state){
+    const prefix=privatePrefix();if(!prefix||!token)return false;
+    s.className='m';s.textContent='Recherche du nœud Excellentia sur le Wi‑Fi…';
+    const expected=localStorage.getItem('exc_edge_offer_created_at')||'';
+    let next=1,found=null;
+    async function worker(){
+      while(!found&&next<255){
+        const i=next++,ip=prefix+i;if(ip===location.hostname)continue;
+        const hit=await probe(ip,expected);if(hit){found=hit;break}
+      }
+    }
+    await Promise.all(Array.from({length:20},()=>worker()));
+    if(!found)return false;
+    const payload=state?('&state='+encodeURIComponent(state)):'';
+    location.replace('http://'+found+':8878/pair#t='+encodeURIComponent(token)+payload);
+    return true;
+  }
+  async function go(t,state){
+    if(!t)return;
+    localStorage.setItem('exc_edge_rebind_token',t);
+    s.textContent='Vérification…';let last=null;
+    for(let a=1;a<=3;a++){
+      try{
+        const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t})});
+        const j=await r.json();
+        if(!r.ok){const e=new Error(j.error||'REFUSED');e.http=true;throw e}
+        if(j.offer_created_at)localStorage.setItem('exc_edge_offer_created_at',String(j.offer_created_at));
+        history.replaceState(null,'','/pair');
+        s.className='ok';s.textContent='Connecté. Ouverture…';
+        setTimeout(()=>location.replace('/'),250);return;
+      }catch(e){
+        last=e;if(e.http)break;
+        if(a<3){s.className='m';s.textContent='Connexion instable · nouvelle tentative…';await new Promise(r=>setTimeout(r,450*a))}
+      }
+    }
+    if(await recover(t,state))return;
+    s.className='bad';s.textContent='Connexion refusée : '+(last&&last.message?last.message:'REFUSED');
+  }
+  const q=new URLSearchParams((location.hash||'').replace(/^#/,''));
+  const state=q.get('state')||'';
+  const restored=state?decodeState(state):null;
+  if(restored){
+    if(typeof restored.run==='string'&&restored.run)localStorage.setItem('exc_edge_run',restored.run);
+    if(typeof restored.outbox==='string'&&restored.outbox)localStorage.setItem('exc_edge_outbox',restored.outbox);
+  }
+  const token=q.get('t')||localStorage.getItem('exc_edge_rebind_token')||'';
+  if(token){location.hash='';go(token,state)}
+  f.onsubmit=e=>{e.preventDefault();const t=c.value.trim();if(t)go(t,'')};
+})();
+</script>
+</body>
+</html>
+""";
     }
 
     private String expiredPage() {
