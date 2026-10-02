@@ -337,7 +337,10 @@ public final class ExcellentiaEdgeBridge {
         saveSessions(cleanSessions(sessions, now));
         Map<String,String> extra = new HashMap<>();
         extra.put("Set-Cookie", COOKIE + "=" + raw + "; HttpOnly; SameSite=Lax; Path=/; Max-Age=" + Math.max(1L, (expires - now) / 1000L));
-        writeJson(out, 200, json("ok", true, "expires_at", expires, "remaining_seconds", Math.max(0L, (expires - now) / 1000L)), extra);
+        writeJson(out, 200, json("ok", true,
+                "offer_created_at", prefs.getLong("pass_offer_created_at", 0L),
+                "expires_at", expires,
+                "remaining_seconds", Math.max(0L, (expires - now) / 1000L)), extra);
     }
 
     private boolean passOfferAlive() {
