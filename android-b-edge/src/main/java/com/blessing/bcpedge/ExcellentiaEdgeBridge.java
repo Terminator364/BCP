@@ -166,6 +166,17 @@ public final class ExcellentiaEdgeBridge {
         return json("ok", true, "revoked", true, "snapshot_retained", new File(context.getFilesDir(), PACK_FILE).exists());
     }
 
+    public JSONObject revoke(String reason) {
+        long now = System.currentTimeMillis();
+        prefs.edit()
+                .remove("pass_hash")
+                .putLong("pass_offer_expires_at", now - 1L)
+                .putLong("pass_expires_at", now - 1L)
+                .putString("sessions_json", "[]")
+                .apply();
+        return json("ok", true, "revoked", true, "reason", reason == null ? "" : reason, "at", now);
+    }
+
     public JSONObject progressTail(int max) {
         JSONArray items = new JSONArray();
         File f = new File(context.getFilesDir(), PROGRESS_FILE);
@@ -338,6 +349,9 @@ public final class ExcellentiaEdgeBridge {
             row.put("id", body.optString("id", "edge-" + System.currentTimeMillis() + "-" + random.nextInt(1_000_000)));
             row.put("at", System.currentTimeMillis());
             row.put("build", prefs.getString("build", ""));
+            row.put("run_id", body.optString("run_id", ""));
+            row.put("run_total", body.optInt("run_total", 0));
+            row.put("run_position", body.optInt("run_position", 0));
             row.put("question_id", body.optString("question_id", ""));
             row.put("knowledge_id", body.optString("knowledge_id", ""));
             row.put("selected", body.has("selected") ? body.optInt("selected", -1) : -1);
@@ -456,7 +470,7 @@ h1,h2,h3{margin:.2em 0 .5em}
       const j=Math.floor(Math.random()*(i+1));
       [a[i],a[j]]=[a[j],a[i]];
     }
-    run={ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},started:Date.now()};
+    run={id:'edge-run-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},started:Date.now()};
     save();render();
   }
 
