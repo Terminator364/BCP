@@ -514,7 +514,7 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
         const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t})});
         const j=await r.json();
         if(!r.ok){const e=new Error(j.error||'REFUSED');e.http=true;throw e}
-        if(j.offer_created_at)localStorage.setItem('exc_edge_offer_created_at',String(j.offer_created_at));
+        if(j.offer_created_at)localStorage.setItem('exc_edge_offer_created_at',String(j.offer_created_at));if(j.expires_at)localStorage.setItem('exc_edge_pass_expires_at',String(j.expires_at));localStorage.setItem('exc_edge_last_ip',location.hostname);
         history.replaceState(null,'','/pair');
         s.className='ok';s.textContent='Connecté. Ouverture…';
         setTimeout(()=>location.replace('/'),250);return;
@@ -627,6 +627,8 @@ h1,h2,h3{margin:.2em 0 .5em}
   }
   async function recoverRoute(){
     if(recovering)return true;
+    const exp=Number(localStorage.getItem('exc_edge_pass_expires_at')||0);
+    if(exp&&Date.now()>=exp){localStorage.removeItem('exc_edge_rebind_token');return false}
     const token=localStorage.getItem('exc_edge_rebind_token')||'',prefix=routePrefix();
     if(!token||!prefix)return false;
     recovering=true;document.getElementById('net').textContent='recherche du nœud…';
