@@ -380,10 +380,150 @@ public final class ExcellentiaEdgeBridge {
     }
 
     private String studyPage() {
-        return "<!doctype html><html lang=fr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=theme-color content='#0d1117'><title>Excellentia · Edge</title><style>"
-                + "*{box-sizing:border-box}body{font-family:system-ui;background:#0b1119;color:#edf4ff;margin:0}.top{position:sticky;top:0;background:#101a27;border-bottom:1px solid #25364d;padding:14px 16px;z-index:2}.wrap{max-width:900px;margin:auto;padding:16px}.card{background:#111d2b;border:1px solid #263a53;border-radius:16px;padding:16px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}button,select{padding:11px;border-radius:10px;border:1px solid #34506f;background:#14263a;color:#fff}.primary{background:#147be0;font-weight:800}.ans{display:block;width:100%;text-align:left;margin:8px 0}.good{border-color:#35c88a;background:#103125}.bad{border-color:#ef6672;background:#35151a}.muted{color:#9fb2c7;font-size:13px}.pill{font-size:12px;padding:5px 8px;border:1px solid #35506d;border-radius:999px}.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}h1,h2,h3{margin:.2em 0 .5em}</style></head><body>"
-                + "<div class=top><div class='row'><b>Excellentia Study Hub · EDGE</b><span class=pill id=net>nœud local</span></div></div><main class=wrap><div class=card><h2>Continuité locale</h2><p class=muted>Le contenu vient du dernier snapshot validé du PC. Tes réponses sont mises en file sur l’ancien téléphone et pourront être réconciliées au retour du PC.</p><div class=grid><select id=mod></select><button class=primary id=start>Lancer 10 questions</button><button id=resume>Reprendre</button></div></div><div id=host></div></main>"
-                + "<script>(async()=>{const H=document.getElementById('host'),M=document.getElementById('mod');let pack=null,run=null;const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));async function load(){const r=await fetch('/api/offline-pack',{cache:'no-store'});pack=await r.json();const mods=pack.modules||[];M.innerHTML='<option value=0>Grand Mix</option>'+mods.filter(x=>Number(x.id)<=7).map(x=>'<option value="'+x.id+'">'+esc(x.short||x.title)+'</option>').join('');const saved=localStorage.getItem('exc_edge_run');if(saved){try{run=JSON.parse(saved)}catch{}}render()}function pick(){const m=Number(M.value||0),all=(pack.questions||[]).filter(q=>!m||Number(q.module)===m),a=[...all];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}run={ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},started:Date.now()};save();render()}function save(){if(run)localStorage.setItem('exc_edge_run',JSON.stringify(run))}function q(){if(!run)return null;return (pack.questions||[]).find(x=>x.id===run.ids[run.i])}async function answer(i){const x=q();if(!x||run.answers[x.id]!=null)return;const ok=Number(i)===Number(x.answer);run.answers[x.id]=i;if(ok)run.score++;save();await fetch('/api/progress',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,selected:i,correct:ok,mode:'EDGE_OFFLINE'})}).catch(()=>{});render()}function next(){if(run.i<run.ids.length-1){run.i++;save();render()}else{H.innerHTML='<div class=card><h2>Terminé · '+run.score+'/'+run.ids.length+'</h2><p class=muted>Résultat conservé sur B‑EDGE.</p><button class=primary onclick="localStorage.removeItem(\\'exc_edge_run\\');location.reload()">Nouvelle série</button></div>'}}function render(){if(!run){H.innerHTML='<div class=card><h3>Prêt</h3><p class=muted>Choisis un module puis lance une série. Le PC n’est pas requis pour cette continuité.</p></div>';return}const x=q();if(!x){H.innerHTML='<div class=card>Session locale invalide.</div>';return}const selected=run.answers[x.id];H.innerHTML='<div class=card><div class=row><span class=pill>Question '+(run.i+1)+' / '+run.ids.length+'</span><b>'+run.score+' pts</b></div><h2>'+esc(x.prompt)+'</h2>'+(x.choices||[]).map((c,i)=>'<button class="ans '+(selected!=null?(i===Number(x.answer)?'good':i===Number(selected)?'bad':''):'')+'" data-a="'+i+'">'+esc(c)+'</button>').join('')+(selected!=null?'<p class=muted>'+esc(x.explanation||'')+'</p><button class=primary id=next>Suivant</button>':'')+'</div>';document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.a)));const n=document.getElementById('next');if(n)n.onclick=next}document.getElementById('start').onclick=pick;document.getElementById('resume').onclick=render;await load()})().catch(e=>{document.getElementById('host').innerHTML='<div class=card><h3>Snapshot indisponible</h3><p>'+e.message+'</p></div>'});</script></body></html>";
+        return """
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1117">
+<title>Excellentia · Edge</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui;background:#0b1119;color:#edf4ff;margin:0}
+.top{position:sticky;top:0;background:#101a27;border-bottom:1px solid #25364d;padding:14px 16px;z-index:2}
+.wrap{max-width:900px;margin:auto;padding:16px}
+.card{background:#111d2b;border:1px solid #263a53;border-radius:16px;padding:16px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+button,select{padding:11px;border-radius:10px;border:1px solid #34506f;background:#14263a;color:#fff}
+.primary{background:#147be0;font-weight:800}
+.ans{display:block;width:100%;text-align:left;margin:8px 0}
+.good{border-color:#35c88a;background:#103125}
+.bad{border-color:#ef6672;background:#35151a}
+.muted{color:#9fb2c7;font-size:13px}
+.pill{font-size:12px;padding:5px 8px;border:1px solid #35506d;border-radius:999px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1,h2,h3{margin:.2em 0 .5em}
+</style>
+</head>
+<body>
+<div class="top"><div class="row"><b>Excellentia Study Hub · EDGE</b><span class="pill" id="net">nœud local</span></div></div>
+<main class="wrap">
+  <div class="card">
+    <h2>Continuité locale</h2>
+    <p class="muted">Le contenu vient du dernier snapshot validé du PC. Tes réponses sont conservées sur l’ancien téléphone puis réconciliées au retour du PC.</p>
+    <div class="grid">
+      <select id="mod"></select>
+      <button class="primary" id="start">Lancer 10 questions</button>
+      <button id="resume">Reprendre</button>
+    </div>
+  </div>
+  <div id="host"></div>
+</main>
+<script>
+(async()=>{
+  const H=document.getElementById('host');
+  const M=document.getElementById('mod');
+  let pack=null,run=null;
+  const esc=v=>String(v??'')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;');
+
+  async function load(){
+    const r=await fetch('/api/offline-pack',{cache:'no-store'});
+    if(!r.ok)throw new Error('snapshot indisponible');
+    pack=await r.json();
+    const mods=pack.modules||[];
+    M.innerHTML='<option value="0">Grand Mix</option>'+
+      mods.filter(x=>Number(x.id)<=7)
+        .map(x=>'<option value="'+Number(x.id)+'">'+esc(x.short||x.title)+'</option>')
+        .join('');
+    const saved=localStorage.getItem('exc_edge_run');
+    if(saved){try{run=JSON.parse(saved)}catch{}}
+    render();
+  }
+
+  function save(){
+    if(run)localStorage.setItem('exc_edge_run',JSON.stringify(run));
+  }
+
+  function pick(){
+    const m=Number(M.value||0);
+    const all=(pack.questions||[]).filter(q=>!m||Number(q.module)===m);
+    const a=[...all];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    run={ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},started:Date.now()};
+    save();render();
+  }
+
+  function current(){
+    if(!run)return null;
+    return (pack.questions||[]).find(x=>x.id===run.ids[run.i])||null;
+  }
+
+  async function answer(i){
+    const x=current();
+    if(!x||run.answers[x.id]!=null)return;
+    const ok=Number(i)===Number(x.answer);
+    run.answers[x.id]=i;
+    if(ok)run.score++;
+    save();
+    await fetch('/api/progress',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,
+        selected:i,correct:ok,mode:'EDGE_OFFLINE'
+      })
+    }).catch(()=>{});
+    render();
+  }
+
+  function next(){
+    if(run.i<run.ids.length-1){run.i++;save();render();return}
+    H.innerHTML='<div class="card"><h2>Terminé · '+run.score+'/'+run.ids.length+
+      '</h2><p class="muted">Résultat conservé sur B‑EDGE.</p>'+
+      '<button class="primary" id="reset">Nouvelle série</button></div>';
+    document.getElementById('reset').onclick=()=>{
+      localStorage.removeItem('exc_edge_run');
+      run=null;
+      render();
+    };
+  }
+
+  function render(){
+    if(!run){
+      H.innerHTML='<div class="card"><h3>Prêt</h3><p class="muted">Choisis un module puis lance une série. Le PC n’est pas requis pour cette continuité.</p></div>';
+      return;
+    }
+    const x=current();
+    if(!x){H.innerHTML='<div class="card">Session locale invalide.</div>';return}
+    const selected=run.answers[x.id];
+    H.innerHTML='<div class="card"><div class="row"><span class="pill">Question '+(run.i+1)+' / '+run.ids.length+
+      '</span><b>'+run.score+' pts</b></div><h2>'+esc(x.prompt)+'</h2>'+
+      (x.choices||[]).map((c,i)=>'<button class="ans '+(selected!=null?(i===Number(x.answer)?'good':i===Number(selected)?'bad':''):'')+
+        '" data-a="'+i+'">'+esc(c)+'</button>').join('')+
+      (selected!=null?'<p class="muted">'+esc(x.explanation||'')+'</p><button class="primary" id="next">Suivant</button>':'')+
+      '</div>';
+    document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.a)));
+    const n=document.getElementById('next');
+    if(n)n.onclick=next;
+  }
+
+  document.getElementById('start').onclick=pick;
+  document.getElementById('resume').onclick=render;
+  await load();
+})().catch(e=>{
+  document.getElementById('host').innerHTML='<div class="card"><h3>Snapshot indisponible</h3><p>'+String(e.message||e)+'</p></div>';
+});
+</script>
+</body>
+</html>
+""";
     }
 
     private static int normalizeMinutes(int n) {
