@@ -420,6 +420,14 @@ public final class EdgeRelayService extends Service {
             return;
         }
         if ("POST".equals(method) && "/v1/node/excellentia/revoke".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = excellentia == null
+                    ? json("ok", false, "error", "excellentia_bridge_unavailable")
+                    : excellentia.revoke(body.optString("reason", "PC_ADMIN_REVOKE"));
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/excellentia/revoke".equals(path)) {
             JSONObject receipt = excellentia == null
                     ? json("ok", false, "error", "excellentia_bridge_unavailable")
                     : excellentia.revoke();
