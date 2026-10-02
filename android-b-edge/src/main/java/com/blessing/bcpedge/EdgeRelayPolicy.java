@@ -83,6 +83,7 @@ public final class EdgeRelayPolicy {
         if ("GET".equalsIgnoreCase(method) && "/v1/node/excellentia/status".equals(path)) return true;
         if ("GET".equalsIgnoreCase(method) && "/v1/node/excellentia/progress".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/excellentia/snapshot".equals(path)) return true;
+        if ("POST".equalsIgnoreCase(method) && "/v1/node/excellentia/revoke".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/events".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/mission-steps".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/mission-steps/state".equals(path)) return true;
