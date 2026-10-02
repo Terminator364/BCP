@@ -154,6 +154,18 @@ public final class ExcellentiaEdgeBridge {
         return out;
     }
 
+    public JSONObject revoke() {
+        prefs.edit()
+                .remove("pass_hash")
+                .remove("pass_minutes")
+                .remove("pass_offer_expires_at")
+                .remove("pass_activated_at")
+                .remove("pass_expires_at")
+                .putString("sessions_json", "[]")
+                .apply();
+        return json("ok", true, "revoked", true, "snapshot_retained", new File(context.getFilesDir(), PACK_FILE).exists());
+    }
+
     public JSONObject progressTail(int max) {
         JSONArray items = new JSONArray();
         File f = new File(context.getFilesDir(), PROGRESS_FILE);
