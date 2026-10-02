@@ -49,6 +49,14 @@ public class EdgeRelayPolicyTest {
         assertTrue(EdgeRelayPolicy.isAllowedApiPath("GET", "/v1/node/status"));
         assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/sync"));
         assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/jobs"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("GET", "/v1/node/excellentia/status"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("GET", "/v1/node/excellentia/progress"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/excellentia/snapshot"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/excellentia/progress/ack"));
+        assertTrue(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/excellentia/revoke"));
+        assertFalse(EdgeRelayPolicy.isPublicApiPath("GET", "/v1/node/excellentia/status"));
+        assertEquals(8878, EdgeRelayPolicy.EXCELLENTIA_HTTP_PORT);
+        assertTrue(EdgeRelayPolicy.EXCELLENTIA_SNAPSHOT_MAX_BYTES >= 8 * 1024 * 1024);
         assertFalse(EdgeRelayPolicy.isAllowedApiPath("POST", "/v1/node/shell"));
         assertFalse(EdgeRelayPolicy.isAllowedApiPath("GET", "/etc/passwd"));
     }
