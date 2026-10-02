@@ -115,6 +115,10 @@ public final class EdgeRelayService extends Service {
 
         excellentia = new ExcellentiaEdgeBridge(this);
         excellentia.start();
+        io.submit(() -> {
+            try { new BcpClient(EdgeRelayService.this).refreshUiGovernanceCache(); }
+            catch (Throwable ignored) {}
+        });
         io.submit(this::serveRelayLoop);
         io.submit(this::serveTlsApiLoop);
         registration.scheduleWithFixedDelay(() -> {
@@ -522,16 +526,16 @@ public final class EdgeRelayService extends Service {
             out.put("ok", true);
             out.put("project", client.getProject());
             out.put("paired", !client.getToken().isEmpty());
-            out.put("sentinel", client.sentinelStatus());
+            out.put("sentinel", client.cachedSentinelStatus());
             out.put("permissions", EdgePermissionManager.status(this));
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
             out.put("cd9", Cd9EdgeAssist.status(this));
             out.put("background_update_probe", EdgeBackgroundUpdateProbe.cachedStatus(this));
             out.put("mission_steps", client.localMissionSteps(8, true));
-            JSONObject capRegistry = client.localCapabilities();
+            JSONObject capRegistry = client.cachedCapabilities();
             out.put("capability_count", capRegistry.optInt("count", 0));
-            JSONObject memoryClaims = client.localMemoryClaims(32);
+            JSONObject memoryClaims = client.cachedMemoryClaims();
             out.put("memory_claim_count", memoryClaims.optInt("count", 0));
             out.put("excellentia", excellentia == null ? json("ok", false, "error", "bridge_unavailable") : excellentia.status());
             out.put("resources", EdgeResourceGovernor.snapshot(this));
