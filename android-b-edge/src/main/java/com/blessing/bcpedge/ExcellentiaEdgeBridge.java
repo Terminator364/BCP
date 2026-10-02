@@ -104,6 +104,7 @@ public final class ExcellentiaEdgeBridge {
             if (secret.length() < 24) return json("ok", false, "error", "pass_secret_invalid");
 
             long now = System.currentTimeMillis();
+            long offerCreatedAt = pass.optLong("offer_created_at_ms", now);
             long offerExpiresAt = pass.optLong("offer_expires_at_ms", now + Math.max(30, minutes) * 60_000L);
             prefs.edit()
                     .putString("build", build)
@@ -112,6 +113,7 @@ public final class ExcellentiaEdgeBridge {
                     .putInt("questions", pack.optJSONArray("questions") == null ? 0 : pack.optJSONArray("questions").length())
                     .putString("pass_hash", sha256(secret.getBytes(StandardCharsets.UTF_8)))
                     .putInt("pass_minutes", minutes)
+                    .putLong("pass_offer_created_at", offerCreatedAt)
                     .putLong("pass_offer_expires_at", offerExpiresAt)
                     .putLong("pass_activated_at", 0L)
                     .putLong("pass_expires_at", 0L)
@@ -146,6 +148,8 @@ public final class ExcellentiaEdgeBridge {
                 "snapshot_sha256", prefs.getString("snapshot_sha256", ""),
                 "questions", prefs.getInt("questions", 0),
                 "pass_minutes", prefs.getInt("pass_minutes", 0),
+                "pass_offer_created_at", prefs.getLong("pass_offer_created_at", 0L),
+                "pass_offer_expires_at", prefs.getLong("pass_offer_expires_at", 0L),
                 "pass_activated", activated > 0L,
                 "pass_expires_at", expires,
                 "pass_remaining_seconds", expires > now ? Math.max(0L, (expires - now) / 1000L) : 0L,
