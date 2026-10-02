@@ -393,6 +393,13 @@ public final class EdgeRelayService extends Service {
             writeJson(out, receipt.optBoolean("ok", false) ? 202 : 400, receipt);
             return;
         }
+        if ("POST".equals(method) && "/v1/node/excellentia/revoke".equals(path)) {
+            JSONObject receipt = excellentia == null
+                    ? json("ok", false, "error", "excellentia_bridge_unavailable")
+                    : excellentia.revoke();
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 400, receipt);
+            return;
+        }
         if ("POST".equals(method) && "/v1/node/events".equals(path)) {
             JSONObject body = readJsonBody(in, headers);
             String eventType = body.optString("event_type", "");
