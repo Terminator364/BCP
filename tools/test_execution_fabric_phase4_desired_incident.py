@@ -106,7 +106,7 @@ class Phase4Tests(unittest.TestCase):
 
     def test_permission_resource_and_capability_blockers(self):
         self.seed_desired(perm="P0_READ",ceiling="R3_HEAVY")
-        self.seed_recipe(perm="P1_SAFE_WRITE")
+        self.seed_recipe(perm="P1_SAFE_WRITE",resource="R2_MEDIUM")
         out=self.engine.reconcile(project_id="BCP_CORE",resource_id="demo-resource",observed={"enabled":False,"version":"1"},capability_states={"demo.repair":"AVAILABLE"},resource_mode="GREEN",owner_id="p")
         self.assertEqual(out["status"],"WAITING_APPROVAL")
 
