@@ -4,7 +4,7 @@
   "revision": "R3.1-ABC",
   "created_at": "2026-10-05",
   "route": "SIM_FIRST",
-  "vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE",
+  "vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE_EVIDENCE_ONLY",
   "phase_0a": {
     "status": "COMPLETE",
     "source_preflight": {
@@ -57,8 +57,8 @@
     },
     "anti_false_pass": {
       "field_certified": false,
-      "pc_probe_run": false,
-      "desktop_commander_used": false,
+      "pc_probe_run": true,
+      "desktop_commander_used": true,
       "ci_is_not_field_proof": true
     },
     "completed_evidence": {
@@ -74,53 +74,44 @@
       "r3_ci_run": 37361105748,
       "r3_ci_status": "IN_PROGRESS",
       "superseded_pr": 27
-    }
+    },
+    "note": "Historical first vertical evidence only. MED-REBUILD is not the primary construction target."
   },
   "implementation": {
-    "repo": "Terminator364/ChatGPT-PC",
-    "release_candidate": {
-      "version": "1.9.3",
-      "app_commit": "41e16008dbb682ead2b1490cfd5f7e81aea22148",
-      "release_branch": "hotfix/med-rebuild-v193-r3-final",
-      "release_pr": 32,
-      "manifest_exact": "47/47",
-      "release_base": "feat/med-rebuild-study-engine-v1-5"
-    },
-    "r3_validation": {
-      "pr": 29,
-      "head": "e688894f6ab8a25260ae3033416444c4e70545e9",
-      "workflow_run": 37368643600,
-      "status": "QUEUED",
-      "expected_version": "1.9.3"
-    },
-    "changes": [
-      "preserve V1.9.2 UI/curriculum and all 156 fiches",
-      "bump reliability release to V1.9.3",
-      "Git-blob SHA payload transport",
-      "bounded child process output",
-      "deterministic GitHub CLI path with override",
-      "30-second auth check",
-      "canonical rollback LKG 1.4.0",
-      "canonical runtime port 8805 / preflight 8806"
-    ]
+    "repo": "Terminator364/BCP",
+    "design_pr": 168,
+    "phase1_pr": 169,
+    "phase2a_pr": 170,
+    "phase2b_pr": 171,
+    "model": "STACKED_PRS_SIM_FIRST",
+    "med_rebuild": "HISTORICAL_VERTICAL_EVIDENCE_ONLY"
   },
   "exact_field_probe": {
-    "status": "TO_BUILD",
-    "expected_path": "chatgpt-pc/vnext/windows/med-rebuild/MED_REBUILD_READONLY_FIELD_PROBE_R3.ps1",
+    "status": "PHASE2C_TO_BUILD",
+    "expected_path": "windows/BCP_R3_PHASE2_FIELD_PROBE.ps1",
+    "batch_scope": [
+      "actual BCP startup mechanisms",
+      "installed/running BCP variants",
+      "ports/process command lines",
+      "local roots and hashes",
+      "resource snapshot",
+      "Windows Job Object capability and bounded test",
+      "single-primary-trigger feasibility"
+    ],
     "claims_allowed": [
       "inventory",
       "resource snapshot",
       "runtime/startup observation",
-      "tool availability",
-      "hash receipt"
+      "hash receipt",
+      "bounded Job Object field evidence"
     ],
     "claims_forbidden": [
-      "installed_from_file_existence",
-      "healthy_from_http_only",
-      "field_certified_from_ci"
+      "field_certified_from_ci",
+      "delete_legacy_startup_before_readback",
+      "invent_local_bindings"
     ]
   },
-  "next_atomic_work_unit": "WHEN_EXISTING_RUN_37368643600_EXECUTES: REQUIRE_GREEN -> PROMOTE_PR32 -> FIELD_193_COMPOSITE_READBACK; OTHERWISE NO_MUTATION",
+  "next_atomic_work_unit": "PHASE_2C_REPOSITORY_STARTUP_INVENTORY_AND_READ_ONLY_FIELD_PROBE_PACKAGE_THEN_PHASE2_TARGETED_CI_READBACK",
   "phase_0b": {
     "status": "FIELD_ACTIVE_V192_CANDIDATE_V193_PENDING_CI",
     "device": "MBMPC",
@@ -161,12 +152,144 @@
     }
   },
   "external_blocker": {
-    "detected_at": "2026-10-05T20:20Z",
     "provider": "GITHUB_ACTIONS",
-    "status": "DEGRADED_PER_GITHUB_STATUS",
-    "symptom": "GitHub-hosted runner assignment delay; R3 run 37368643600 remains queued with a single queued job",
-    "affected_candidate": "MED_REBUILD_1.9.3",
-    "policy": "DO_NOT_MERGE_OR_FIELD_ACTIVATE_WITHOUT_TEST_GATE",
-    "fallback_decision": "No BuildHub executor found; PC local heavy testing forbidden while Resource Governor is STUDENT_ACTIVE/INTERACTION_PRIORITY."
-  }
+    "status": "QUEUED_NOT_GLOBAL_BLOCKER",
+    "affected_work": [
+      "PHASE1_CI_PROOF",
+      "PHASE2A_CI_PROOF",
+      "PHASE2B_CI_PROOF"
+    ],
+    "independent_repository_work_continues": true,
+    "policy": "NO_DUPLICATE_RERUN; NO_FIELD_PROMOTION_WITHOUT_REQUIRED_GATES"
+  },
+  "vertical_evidence_only": true,
+  "primary_build_target": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "phase_1": {
+    "status": "IMPLEMENTED_PENDING_CI",
+    "objective": "CONTRACT_CONVERGENCE",
+    "repo": "Terminator364/BCP",
+    "branch": "build/execution-fabric-r3-phase1-contracts-20261005",
+    "pr": 169,
+    "head": "e981364e9e33269c9258d2829c8d2689ed714d99",
+    "base": "design/unified-execution-fabric-2026-10-05",
+    "deliverables": [
+      "schemas/bcp_project_record_v1.schema.json",
+      "schemas/bcp_action_receipt_v1.schema.json",
+      "schemas/bcp_mission_ingress_v1.schema.json",
+      "schemas/bcp_capability_observation_v1.schema.json",
+      "docs/BCP_EXECUTION_FABRIC_CONTRACT_CONVERGENCE_R3_PHASE1_2026-10-05.md",
+      "tools/test_execution_fabric_phase1_contracts.py"
+    ],
+    "reused": [
+      "bcp.mission_envelope/2",
+      "bcp.capability_manifest/1",
+      "bcp.capability_grant/1",
+      "bcp.desired_state_resource/1",
+      "B-EDGE Project/Receipt/Capability entities",
+      "ChatGPT-PC Project Capsule",
+      "G6 mission/journal contracts",
+      "vNext fencing/revision/hash/outbox semantics"
+    ],
+    "targeted_ci": {
+      "run_id": 37372708453,
+      "status": "QUEUED"
+    },
+    "accidental_global_ci": {
+      "run_id": 37372708339,
+      "status": "QUEUED",
+      "classification": "ROUTING_DEFECT"
+    },
+    "field_certified": false
+  },
+  "phase_2": {
+    "status": "IN_PROGRESS",
+    "objective": "ONE_LIGHTWEIGHT_RESIDENT_PC_MICROKERNEL",
+    "architectural_decision": {
+      "target": "windows/bcp_server_v2.py",
+      "compatibility_monolith": "windows/bcp_server.py",
+      "no_third_server": true,
+      "shared_local_db": "bcp.sqlite3",
+      "provider_specific_logic_outside_core": true
+    },
+    "phase_2a": {
+      "status": "IMPLEMENTED_PENDING_CI",
+      "branch": "build/execution-fabric-r3-phase2-microkernel-20261005",
+      "pr": 170,
+      "head": "1e2787821ac3bc9846f89352a066143fb584a9d8",
+      "reused_source_commit": "6bf6e32b36008957dda014542742657af6b9e017",
+      "reused": [
+        "CriticalStore",
+        "local_path_policy"
+      ],
+      "features": [
+        "writer fencing",
+        "revision compare-and-swap",
+        "hash chain",
+        "transactional state+outbox",
+        "idempotent exact replay",
+        "outbox claim leases/backoff",
+        "local-only SQLite authority"
+      ],
+      "targeted_ci": {
+        "run_id": 37373207503,
+        "status": "QUEUED"
+      },
+      "field_certified": false
+    },
+    "phase_2b": {
+      "status": "IMPLEMENTED_PENDING_CI",
+      "branch": "build/execution-fabric-r3-phase2b-workers-20261005",
+      "pr": 171,
+      "head": "743b90e274c64eae8a640fef641020c362f0d135",
+      "reused_source_commit": "6bf6e32b36008957dda014542742657af6b9e017",
+      "reused": [
+        "WorkerSupervisor",
+        "worker_bootstrap",
+        "Windows Job Object design"
+      ],
+      "added": [
+        "resource_admission"
+      ],
+      "invariants": [
+        "no arbitrary shell/argv HTTP endpoint",
+        "typed worker primitive only",
+        "bounded stdout/stderr",
+        "bounded inline input",
+        "process/job memory caps",
+        "timeout tree termination",
+        "GREEN/AMBER/RED/CRITICAL admission",
+        "R4 local AI remains policy gated"
+      ],
+      "targeted_ci": {
+        "run_id": 37373732966,
+        "status": "QUEUED"
+      },
+      "field_certified": false
+    },
+    "phase_2c": {
+      "status": "NEXT_REPOSITORY_WORK",
+      "objective": "STARTUP_CONSOLIDATION_AND_ONE_BATCHED_FIELD_PROBE",
+      "field_batch": 1
+    }
+  },
+  "routing_incidents": [
+    {
+      "id": "CI_OVERTRIGGER_PR169",
+      "provider": "GITHUB_ACTIONS",
+      "symptom": "BCP Coordinated Product Qualification queued in addition to targeted Phase 1 gate",
+      "policy_effect": "DO_NOT_RERUN_DUPLICATES; continue repository work"
+    },
+    {
+      "id": "CI_OVERTRIGGER_PR170_PR171",
+      "provider": "GITHUB_ACTIONS",
+      "symptom": "Global Product Qualification and Field Ecosystem Preflight also queue on stacked R3 PRs",
+      "policy_effect": "TREAT_AS_ROUTING_DEFECT; targeted gates remain authoritative for tranche proof"
+    },
+    {
+      "id": "GITHUB_RUNNER_QUEUE",
+      "provider": "GITHUB_ACTIONS",
+      "symptom": "targeted R3 gates remain queued",
+      "policy_effect": "WAITING_PROVIDER only for dependent CI proof; independent construction continues"
+    }
+  ]
 }
