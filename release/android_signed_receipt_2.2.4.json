@@ -1,0 +1,26 @@
+{
+  "schema": "bcp.android_signed_distribution_receipt/1",
+  "version_code": 224,
+  "version_name": "2.2.4-excellentia-edge-evergreen",
+  "package_id": "com.blessing.bcpedge.evergreen",
+  "qualified_source_commit": "025c62606f0874e8d5dd810fab1bd9981d4baaad",
+  "signed_apk_sha256": "bd2b2e1a159f4c46c9baf085c94650a9df0bda72671c777443814f559ce75f26",
+  "signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "signature_schemes_verified": [
+    "v2",
+    "v3"
+  ],
+  "exact_source_gates": {
+    "android_build": 37327708383,
+    "android_human_action": 37327708106,
+    "coordinated_product": 37327708391,
+    "field_ecosystem": 37327708401,
+    "qualified_current": 37327708104,
+    "final_acceptance": 37327708089,
+    "managed_server": 37327708085,
+    "coordinated_pc": 37327708059,
+    "nexus_human_action": 37327708440
+  },
+  "distribution_state": "SIGNED_BYTES_READY; DRIVE_CURRENT_PROMOTION_PENDING",
+  "human_gate": "ANDROID_OS_IN_PLACE_UPDATE_CONFIRMATION_THEN_LIVE_PC_NETWORK_CHANGE_FAILOVER_TEST"
+}
