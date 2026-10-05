@@ -285,7 +285,7 @@ public final class ExcellentiaEdgeBridge {
             }
             if ("POST".equals(method) && "/api/claim".equals(path)) {
                 JSONObject body = readJsonBody(in, headers, MAX_BROWSER_BODY);
-                writeClaim(out, body.optString("token", "")); return;
+                writeClaim(out, body.optString("token", ""), body.optLong("expires_at_ms", 0L)); return;
             }
 
             boolean auth = browserAuthorized(headers.get("cookie"));
@@ -323,7 +323,7 @@ public final class ExcellentiaEdgeBridge {
         }
     }
 
-    private void writeClaim(OutputStream out, String token) throws Exception {
+    private void writeClaim(OutputStream out, String token, long requestedExpiresAt) throws Exception {
         long now = System.currentTimeMillis();
         if (!passOfferAlive()) { writeJson(out, 410, json("ok", false, "error", "pass_expired")); return; }
         String supplied = sha256(token.getBytes(StandardCharsets.UTF_8));
@@ -336,11 +336,20 @@ public final class ExcellentiaEdgeBridge {
         int minutes = normalizeMinutes(prefs.getInt("pass_minutes", 30));
         long activated = prefs.getLong("pass_activated_at", 0L);
         long expires = prefs.getLong("pass_expires_at", 0L);
-        if (activated <= 0L || expires <= now) {
-            activated = now;
-            expires = now + minutes * 60_000L;
-            prefs.edit().putLong("pass_activated_at", activated).putLong("pass_expires_at", expires).apply();
+        long maxSessionExpiry = now + minutes * 60_000L;
+        long authoritativeExpiry = requestedExpiresAt > now ? Math.min(requestedExpiresAt, maxSessionExpiry) : 0L;
+        if (activated > 0L && expires <= now) {
+            writeJson(out, 410, json("ok", false, "error", "pass_expired")); return;
         }
+        if (activated <= 0L) {
+            activated = now;
+            expires = authoritativeExpiry > 0L ? authoritativeExpiry : maxSessionExpiry;
+            prefs.edit().putLong("pass_activated_at", activated).putLong("pass_expires_at", expires).apply();
+        } else if (authoritativeExpiry > 0L && authoritativeExpiry < expires) {
+            expires = authoritativeExpiry;
+            prefs.edit().putLong("pass_expires_at", expires).apply();
+        }
+        if (expires <= now) { writeJson(out, 410, json("ok", false, "error", "pass_expired")); return; }
         String raw = randomToken();
         JSONArray sessions = sessions();
         JSONObject session = new JSONObject();
@@ -520,7 +529,8 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
     s.textContent='Vérification…';let last=null;
     for(let a=1;a<=3;a++){
       try{
-        const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t})});
+        const authoritativeExpiry=Number(localStorage.getItem('exc_edge_authoritative_expires_at')||0);
+        const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t,expires_at_ms:authoritativeExpiry})});
         const j=await r.json();
         if(!r.ok){const e=new Error(j.error||'REFUSED');e.http=true;throw e}
         if(j.offer_created_at)localStorage.setItem('exc_edge_offer_created_at',String(j.offer_created_at));if(j.expires_at)localStorage.setItem('exc_edge_pass_expires_at',String(j.expires_at));localStorage.setItem('exc_edge_last_ip',location.hostname);
@@ -541,6 +551,7 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
   if(restored){
     if(typeof restored.run==='string'&&restored.run)localStorage.setItem('exc_edge_run',restored.run);
     if(typeof restored.outbox==='string'&&restored.outbox)localStorage.setItem('exc_edge_outbox',restored.outbox);
+    if(Number(restored.pass_expires_at_ms)>0)localStorage.setItem('exc_edge_authoritative_expires_at',String(Number(restored.pass_expires_at_ms)));
   }
   const token=q.get('t')||localStorage.getItem('exc_edge_rebind_token')||'';
   if(token){location.hash='';go(token,state)}
@@ -621,7 +632,7 @@ h1,h2,h3{margin:.2em 0 .5em}
   }
   function encodeRouteState(){
     try{
-      const x={run:localStorage.getItem('exc_edge_run')||'',outbox:localStorage.getItem('exc_edge_outbox')||'[]'};
+      const x={run:localStorage.getItem('exc_edge_run')||'',outbox:localStorage.getItem('exc_edge_outbox')||'[]',pass_expires_at_ms:Number(localStorage.getItem('exc_edge_pass_expires_at')||0)};
       return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
     }catch{return ''}
   }
