@@ -1,7 +1,7 @@
 {
-  "schema": "bcp.construction_bootstrap/1",
+  "schema": "bcp.construction_bootstrap/2",
   "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
-  "revision": "R3_ABC_2026-10-05",
+  "revision": "R3_1_AUTO_ROUTING_2026-10-05",
   "canonical_repo": "Terminator364/BCP",
   "design_branch": "design/unified-execution-fabric-2026-10-05",
   "draft_pr": 168,
@@ -31,5 +31,26 @@
   "long_horizon_required": true,
   "user_mechanics_target": "ZERO_AVOIDABLE",
   "main_merge_authorized": false,
-  "p4_authorized": false
+  "p4_authorized": false,
+  "construction_routing": {
+    "mode": "AUTOMATIC_SIMULATION_FIRST",
+    "policy": "docs/BCP_CONSTRUCTION_EXECUTION_ROUTING_R3_1_2026-10-05.md",
+    "provider_order": [
+      "GITHUB_REPO_STATIC",
+      "GITHUB_ACTIONS_OR_BUILDHUB_IF_BUDGET",
+      "BCP_NATIVE_PC_FIELD",
+      "DESKTOP_COMMANDER_METERED_SPECIALIST"
+    ],
+    "github_actions_quota_aware": true,
+    "desktop_commander": {
+      "required": false,
+      "usage": "LAST_MILE_SPECIFIC_ONLY",
+      "budget_class": "EXTERNAL_METERED",
+      "unknown_budget_semantics": "TREAT_AS_LOW",
+      "batch_field_campaigns": true
+    },
+    "auto_continue": true,
+    "ask_continue_between_tranches": false,
+    "field_validation_batching": true
+  }
 }
