@@ -636,6 +636,7 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
     s.className='bad';s.textContent='Connexion refusée : '+(last&&last.message?last.message:'REFUSED');
   }
   const q=new URLSearchParams((location.hash||'').replace(/^#/,''));
+  const minutes=Math.max(30,Math.min(480,Number(q.get('m')||480)));
   const state=q.get('state')||'';
   const restored=state?decodeState(state):null;
   if(restored){
