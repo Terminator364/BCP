@@ -91,3 +91,25 @@ The first cycle ends only when:
 - next atomic work unit is persisted.
 
 Then continue automatically into Phase 1/vertical-slice work if no gate blocks it.
+
+
+## Construction routing amendment R3.1 — AUTOMATIC / SIMULATION-FIRST
+
+Canonical routing policy:
+`docs/BCP_CONSTRUCTION_EXECUTION_ROUTING_R3_1_2026-10-05.md`.
+
+Construction is automatic and provider-aware.
+
+Default order:
+1. repository analysis/static/unit;
+2. GitHub/BuildHub reproducible simulation/build when budget permits;
+3. native BCP local PC validation only for reality-dependent gates;
+4. Desktop Commander only as bounded metered specialist assist.
+
+Desktop Commander is never the default coding/test loop.
+
+All external providers, including GitHub Actions, are quota-aware. Quota exhaustion must trigger provider migration or WAITING_PROVIDER for the exact dependent work unit, never a global construction failure.
+
+Field validation should be **batched** after multiple changes pass non-field gates, minimizing both Desktop Commander quota and PC interventions.
+
+The construction controller continues tranche-to-tranche automatically without asking the user to say "continue", until an irreducible human/safety/provider boundary is reached.
