@@ -1,7 +1,7 @@
 {
-  "schema": "bcp.execution_fabric_policy/3",
+  "schema": "bcp.execution_fabric_policy/4",
   "status": "AUTONOMIC_ZERO_TOUCH_R2",
-  "revision": "2026-10-05-R2",
+  "revision": "2026-10-05-R2-FINAL-VERIFY",
   "authority": {
     "mission": "BCP",
     "policy": "BCP",
@@ -48,7 +48,17 @@
     "LEGACY_WORKERS_ARE_INVENTORIED_BEFORE_NEW_WORKER_IMPLEMENTATION",
     "CHATGPT_PC_RFC0001_IS_PC_NODE_VNEXT_BASELINE",
     "ONE_RESIDENT_PC_CONTROL_PROCESS_TARGET",
-    "BCP_WINDOWS_AND_G6_AGENTCORE_MUST_CONVERGE_NOT_COEXIST_AS_FULL_CONTROL_PLANES"
+    "BCP_WINDOWS_AND_G6_AGENTCORE_MUST_CONVERGE_NOT_COEXIST_AS_FULL_CONTROL_PLANES",
+    "NO_EXTERNAL_METERED_PROVIDER_AS_CORRECTNESS_DEPENDENCY",
+    "DESKTOP_COMMANDER_OPTIONAL_METERED_ACCELERATOR_ONLY",
+    "CORE_MUST_BOOT_AND_OPERATE_WITHOUT_DESKTOP_COMMANDER",
+    "LONG_MISSIONS_ARE_DURABLE_CHECKPOINTABLE_DAGS",
+    "MISSION_LIFETIME_EXCEEDS_CHAT_CONVERSATION_LIFETIME",
+    "NO_PROGRESS_FROM_ELAPSED_TIME_OR_HEARTBEAT",
+    "QUOTA_EXHAUSTION_BLOCKS_ONLY_DEPENDENT_BRANCHES",
+    "PROVIDER_LOW_QUOTA_STOPS_NEW_OPTIONAL_ASSIGNMENTS",
+    "CHATGPT_TURN_END_DOES_NOT_ERASE_OR_FINISH_MISSION",
+    "NEEDS_REASONING_IS_HONEST_PAUSE_STATE"
   ],
   "pc_resource_modes": [
     "SURVIVAL",
@@ -276,5 +286,49 @@
     "status": "DESIGN_TARGET_FIELD_BENCHMARK_REQUIRED",
     "runtime_convergence": "ONE_RESIDENT_PC_CONTROL_PROCESS_TARGET",
     "no_dual_full_control_planes": true
+  },
+  "provider_budget_policy": {
+    "classes": [
+      "LOCAL_UNMETERED",
+      "LOCAL_BOUNDED_RESOURCE",
+      "EXTERNAL_METERED",
+      "EXTERNAL_UNMETERED_OR_ACCOUNT",
+      "UNKNOWN_BUDGET"
+    ],
+    "desktop_commander": {
+      "class": "EXTERNAL_METERED",
+      "role": "OPTIONAL_ACCELERATOR_COMPATIBILITY",
+      "correctness_dependency": false,
+      "required_for_boot": false,
+      "required_for_recovery": false
+    },
+    "exhausted_semantics": "BLOCK_ONLY_PROVIDER_EXCLUSIVE_DEPENDENT_BRANCHES",
+    "low_semantics": "DRAIN_SAFE_ATOMIC_UNIT_THEN_MIGRATE_NEW_WORK",
+    "retry_storm_forbidden": true,
+    "auto_purchase_or_upgrade": false
+  },
+  "long_horizon": {
+    "supported_duration": "MINUTES_TO_WEEKS",
+    "durable_dag": true,
+    "work_unit_protocol": [
+      "OPEN",
+      "EXECUTE",
+      "OBSERVE",
+      "VERIFY",
+      "COMMIT"
+    ],
+    "required_resume_classes": [
+      "RESUME_NATIVE",
+      "REPLAY_IDEMPOTENT",
+      "OBSERVE_BEFORE_RETRY",
+      "NONRESUMABLE_ATOMIC",
+      "EXTERNAL_JOB_HANDLE",
+      "NEEDS_REASONING"
+    ],
+    "pc_off_state": "WAITING_NODE",
+    "network_loss_state": "WAITING_NETWORK_FOR_DEPENDENT_BRANCHES",
+    "chat_end_semantics": "AUTHORIZED_DETERMINISTIC_BRANCHES_CONTINUE_NOVEL_REASONING_NEEDS_REASONING",
+    "no_wall_clock_progress": true,
+    "final_rules_doc": "docs/BCP_FINAL_VERIFICATION_RULES_QUOTA_LONG_HORIZON_R2_2026-10-05.md"
   }
 }
