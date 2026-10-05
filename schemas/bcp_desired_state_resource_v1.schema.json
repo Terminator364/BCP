@@ -36,12 +36,14 @@
         "resource_id": {
           "type": "string",
           "minLength": 3,
-          "maxLength": 160
+          "maxLength": 160,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,159}$"
         },
         "project_id": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 128
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
         },
         "generation": {
           "type": "integer",
@@ -128,7 +130,8 @@
           "items": {
             "type": "string",
             "maxLength": 128
-          }
+          },
+          "uniqueItems": true
         },
         "dependencies": {
           "type": "array",
@@ -138,7 +141,8 @@
           },
           "uniqueItems": true
         }
-      }
+      },
+      "additionalProperties": false
     },
     "status": {
       "type": "object",
@@ -209,10 +213,12 @@
                 ],
                 "maxLength": 512
               }
-            }
+            },
+            "additionalProperties": false
           }
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

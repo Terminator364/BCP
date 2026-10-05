@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_repair_recipe_v1.schema.json",
+  "title": "BCP Repair Recipe V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "recipe_id",
+    "signature",
+    "status",
+    "project_scopes",
+    "max_permission_class",
+    "max_resource_class",
+    "steps",
+    "validation",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.repair_recipe/1"
+    },
+    "recipe_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "status": {
+      "enum": [
+        "CANDIDATE",
+        "VALIDATED",
+        "SUSPENDED",
+        "RETIRED"
+      ]
+    },
+    "project_scopes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "maxLength": 128,
+        "minLength": 1
+      }
+    },
+    "max_permission_class": {
+      "enum": [
+        "P0_READ",
+        "P1_SAFE_WRITE",
+        "P2_PROJECT_MUTATION",
+        "P3_BOUNDED_SYSTEM_CHANGE"
+      ]
+    },
+    "max_resource_class": {
+      "enum": [
+        "R0_TINY",
+        "R1_LIGHT",
+        "R2_MEDIUM",
+        "R3_HEAVY"
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "step_id",
+          "capability_id",
+          "permission_class",
+          "resource_class",
+          "input_template",
+          "evidence_contract"
+        ],
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+          },
+          "permission_class": {
+            "enum": [
+              "P0_READ",
+              "P1_SAFE_WRITE",
+              "P2_PROJECT_MUTATION",
+              "P3_BOUNDED_SYSTEM_CHANGE"
+            ]
+          },
+          "resource_class": {
+            "enum": [
+              "R0_TINY",
+              "R1_LIGHT",
+              "R2_MEDIUM",
+              "R3_HEAVY"
+            ]
+          },
+          "input_template": {
+            "type": "object"
+          },
+          "evidence_contract": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "successful_receipt_refs",
+        "regression_refs",
+        "field_evidence_required"
+      ],
+      "properties": {
+        "successful_receipt_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "regression_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "field_evidence_required": {
+          "type": "boolean"
+        },
+        "field_evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "promoted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "VALIDATED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "validation": {
+            "properties": {
+              "successful_receipt_refs": {
+                "minItems": 1
+              },
+              "regression_refs": {
+                "minItems": 1
+              }
+            }
+          },
+          "promoted_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "promoted_at"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "VALIDATED"
+          },
+          "validation": {
+            "properties": {
+              "field_evidence_required": {
+                "const": true
+              }
+            },
+            "required": [
+              "field_evidence_required"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "validation"
+        ]
+      },
+      "then": {
+        "properties": {
+          "validation": {
+            "properties": {
+              "field_evidence_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

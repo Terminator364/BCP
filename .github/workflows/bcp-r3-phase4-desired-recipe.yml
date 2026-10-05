@@ -1,0 +1,64 @@
+name: BCP R3 Phase 4 Desired State Recipe Engine
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_action_receipt_v1.schema.json"
+      - "schemas/bcp_desired_state_resource_v1.schema.json"
+      - "schemas/bcp_incident_v1.schema.json"
+      - "schemas/bcp_repair_recipe_v1.schema.json"
+      - "schemas/bcp_reconcile_plan_v1.schema.json"
+      - "docs/BCP_DESIRED_STATE_RECIPE_ENGINE_R3_PHASE4_2026-10-05.md"
+      - "docs/examples/execution-fabric/bcp-runtime.desired-state.example.json"
+      - "docs/examples/execution-fabric/bcp-runtime.restart-recipe-candidate.example.json"
+      - "tools/test_execution_fabric_phase4_*.py"
+      - "windows/bcp_server_v2.py"
+      - "windows/execution_fabric/action_receipt_registry.py"
+      - "windows/execution_fabric/desired_state_registry.py"
+      - "windows/execution_fabric/incident_recipe.py"
+      - "windows/execution_fabric/legacy_error_ledger.py"
+      - ".github/workflows/bcp-r3-phase4-desired-recipe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-phase4-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desired-recipe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 4
+        run: |
+          python -m compileall -q \
+            windows/bcp_server_v2.py \
+            windows/execution_fabric/action_receipt_registry.py \
+            windows/execution_fabric/desired_state_registry.py \
+            windows/execution_fabric/incident_recipe.py \
+            windows/execution_fabric/legacy_error_ledger.py \
+            tools/test_execution_fabric_phase4_action_receipts.py \
+            tools/test_execution_fabric_phase4_desired_state.py \
+            tools/test_execution_fabric_phase4_incident_recipe.py \
+            tools/test_execution_fabric_phase4_error_ledger_projection.py \
+            tools/test_execution_fabric_phase4_contracts.py
+
+      - name: Immutable Action Receipt proof tests
+        run: python tools/test_execution_fabric_phase4_action_receipts.py
+
+      - name: Desired State generation tests
+        run: python tools/test_execution_fabric_phase4_desired_state.py
+
+      - name: Incident Recipe failure injection
+        run: python tools/test_execution_fabric_phase4_incident_recipe.py
+
+      - name: Historical Error Ledger projection
+        run: python tools/test_execution_fabric_phase4_error_ledger_projection.py
+
+      - name: Phase 4 execution boundary guard
+        run: python tools/test_execution_fabric_phase4_contracts.py
