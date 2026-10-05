@@ -78,23 +78,31 @@
   },
   "implementation": {
     "repo": "Terminator364/ChatGPT-PC",
-    "branch": "build/med-rebuild-zero-touch-r3-v191-20261005",
-    "base_sha": "f6bdeb10f87582d80c82e8a34f0a4033f779b38a",
-    "pr": 29,
-    "app_commit": "dce63ebcd0443fb22bf860dfdd6d7f91f078cbb0",
-    "release_commit": "46dc57676b21b504effa12f7d780d425fef20393",
-    "target_release": "1.9.1",
-    "exact_release_blobs": "47/47",
-    "repairs": [
-      "Git blob API by immutable blob SHA for payloads",
-      "8 MiB bounded child-process buffer",
-      "bounded GitHub error payloads",
-      "channel-behind-active downgrade guard",
-      "canonical rollback repair to 1.4.0 when slot exists",
-      "correct V1.9.1 runtime/test identity"
-    ],
-    "ci_run": 37363243133,
-    "ci_status": "QUEUED"
+    "release_candidate": {
+      "version": "1.9.3",
+      "app_commit": "41e16008dbb682ead2b1490cfd5f7e81aea22148",
+      "release_branch": "hotfix/med-rebuild-v193-r3-final",
+      "release_pr": 32,
+      "manifest_exact": "47/47",
+      "release_base": "feat/med-rebuild-study-engine-v1-5"
+    },
+    "r3_validation": {
+      "pr": 29,
+      "head": "e688894f6ab8a25260ae3033416444c4e70545e9",
+      "workflow_run": 37368643600,
+      "status": "QUEUED",
+      "expected_version": "1.9.3"
+    },
+    "changes": [
+      "preserve V1.9.2 UI/curriculum and all 156 fiches",
+      "bump reliability release to V1.9.3",
+      "Git-blob SHA payload transport",
+      "bounded child process output",
+      "deterministic GitHub CLI path with override",
+      "30-second auth check",
+      "canonical rollback LKG 1.4.0",
+      "canonical runtime port 8805 / preflight 8806"
+    ]
   },
   "exact_field_probe": {
     "status": "TO_BUILD",
@@ -112,42 +120,34 @@
       "field_certified_from_ci"
     ]
   },
-  "next_atomic_work_unit": "WAIT_PR29_TARGETED_CI_THEN_ONE_BOUNDED_V191_FIELD_ACTIVATION",
+  "next_atomic_work_unit": "WAIT_ONLY_EXISTING_R3_RUN_37368643600_THEN_PROMOTE_PR32_AND_FIELD_READBACK",
   "phase_0b": {
-    "status": "FIELD_DISCOVERY_UPDATED_V190_CANDIDATE_UNHEALTHY",
+    "status": "FIELD_ACTIVE_V192_CANDIDATE_V193_PENDING_CI",
     "device": "MBMPC",
-    "probe_date": "2026-10-05",
+    "latest_readback_at": "2026-10-05T20:03Z",
     "transport": "DESKTOP_COMMANDER_LAST_MILE",
-    "remote_calls_left_pct_at_campaign_start": 82,
     "observed": {
-      "os": "Windows 11 Professionnel 10.0.22621",
-      "node_present": true,
-      "git_present": true,
-      "python_present": true,
-      "gh_present": true,
-      "med_rebuild_study_root_exists": true,
-      "med_rebuild_updater_root_exists": true,
-      "active_version": "1.9.0",
-      "source_ref": "feat/med-rebuild-study-engine-v1-5",
-      "source_commit": "39c730f6eb0b91f5f5e95473839b60443b646f6b",
+      "active_version": "1.9.2",
+      "active_source_commit": "85dfad454b7c05fbea5974cd01675e27bba16ef6",
+      "active_health_port_8805": "PASS",
+      "active_build": "2026.10.05-v1.9.2-no-blank-views",
+      "legacy_port_8798": "RESPONDS_V1_9_1_RUNTIME_HARDENING",
       "rollback_version": "1.5.0",
-      "updater_phase": "FAILED",
-      "updater_error": "GH_AUTH_REQUIRED",
-      "gh_auth_followup": "CURRENTLY_VALID_INTERACTIVE_STATUS",
-      "target_version": "1.8.1",
-      "active_source_commit": "c937d1c77dbe523edada9cedfb45ad387b96d4f6",
-      "runtime_8798_health": "DOWN_AT_PROBE",
-      "local_slot_embedded_agent_version": "1.5.0",
-      "provenance_consistency": "FAIL",
-      "canonical_lkg_slot_1_4_0_present": true,
-      "updater_transport_failure": "GITHUB_CONTENTS_BASE64_CHILD_BUFFER_OVERFLOW_ON_812585_BYTE_CURRICULUM",
-      "field_certified": false
+      "expected_rollback_lkg": "1.4.0",
+      "updater_agent_version": "1.9.1",
+      "updater_last_result": "AUTH_REQUIRED",
+      "ram_load_pct": 88.1
     },
+    "defects_open": [
+      "ROLLBACK_POINTER_NOT_CANONICAL_LKG_1_4_0",
+      "LEGACY_RUNTIME_8798_STILL_RESPONDING",
+      "SCHEDULED_UPDATER_AUTH_FALSE_NEGATIVE_OR_PATH_CONTEXT",
+      "V1_9_2_UPDATER_USES_GITHUB_CONTENTS_FOR_PAYLOAD"
+    ],
     "safety": {
-      "no_install_or_activation_yet": true,
-      "no_downgrade": true,
-      "no_secret_extracted": true,
-      "desktop_commander_is_not_normal_dependency": true
+      "no_downgrade_attempted": true,
+      "no_heavy_local_test_due_ram": true,
+      "no_secret_extracted": true
     }
   }
 }
