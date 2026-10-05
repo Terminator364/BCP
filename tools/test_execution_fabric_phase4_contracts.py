@@ -57,3 +57,11 @@ assert desired["spec"]["reconcile_policy"]["mode"]=="AUTO_BOUNDED_SYSTEM"
 print("BCP_R3_PHASE4_CONTRACT_GUARD=PASS")
 print("recipe_auto_eligible=false")
 print("field_certified=false")
+
+SERVER=(ROOT/"windows"/"bcp_server_v2.py").read_text(encoding="utf-8")
+for route in ["/v2/desired","/v2/recipes","/v2/incidents"]:
+    assert f'if path == "{route}":' in SERVER, route
+post=SERVER.split("def do_POST(self):",1)[1]
+for forbidden in ["/v2/desired","/v2/recipes","/v2/incidents","/v2/reconcile"]:
+    assert forbidden not in post, forbidden
+print("PHASE4_READONLY_HTTP_BOUNDARY=PASS")
