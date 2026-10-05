@@ -1,0 +1,82 @@
+{
+  "schema": "bcp.capability_manifest/1",
+  "capability_id": "desktop_commander.remote.ensure_available",
+  "provider_id": "bcp.windows.desktop_commander",
+  "version": "1.0.0-design",
+  "description": "Ensure the existing Desktop Commander Remote capability is available without destructive reinstall or identity reset.",
+  "project_scopes": [
+    "*"
+  ],
+  "availability": "STALE",
+  "effect_class": "SAFE_WRITE",
+  "permission_class": "P1_SAFE_WRITE",
+  "resource_class": "R1_LIGHT",
+  "requires_network": true,
+  "requires_pc": true,
+  "requires_bedge": false,
+  "requires_admin": false,
+  "preemptible": true,
+  "timeout_seconds": 240,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "repair_mode": {
+        "enum": [
+          "observe_only",
+          "in_place"
+        ]
+      },
+      "preserve_identity": {
+        "const": true
+      }
+    },
+    "required": [
+      "repair_mode",
+      "preserve_identity"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "enum": [
+          "AVAILABLE",
+          "AUTH_REQUIRED",
+          "NETWORK_HOLD",
+          "PROCESS_FAILED",
+          "PACKAGE_MISSING",
+          "DEGRADED"
+        ]
+      },
+      "evidence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "additionalProperties": false
+  },
+  "preconditions": [
+    "Preserve existing device/session identity",
+    "Do not use an unqualified @latest package",
+    "Do not reinstall for a transient network/presence error"
+  ],
+  "rollback": {
+    "required": false,
+    "strategy": "No destructive mutation in normal in-place recovery."
+  },
+  "evidence_contract": [
+    "PROCESS_HEALTH",
+    "CUSTOM_VALIDATOR"
+  ],
+  "executor": {
+    "kind": "POWERSHELL",
+    "entrypoint": "adapter://desktop-commander/ensure-available",
+    "pinned_version": "QUALIFIED_AT_INSTALL"
+  }
+}
