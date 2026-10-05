@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_incident_v1.schema.json",
+  "title": "BCP Incident V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "incident_id", "project_id", "incident_class", "fingerprint",
+    "status", "occurrence_count", "first_seen_at", "last_seen_at",
+    "reason", "evidence", "repair"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.incident/1"},
+    "incident_id": {"type": "string", "minLength": 8, "maxLength": 200},
+    "project_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "resource_id": {"type": ["string", "null"], "maxLength": 160},
+    "incident_class": {"enum": ["DRIFT", "FRICTION", "CAPABILITY", "RESOURCE", "PROVIDER", "AUTH", "UPDATE", "UNKNOWN"]},
+    "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["OPEN", "MATCHED_RECIPE", "WAITING_RESOURCE", "WAITING_CAPABILITY", "WAITING_APPROVAL", "RECONCILING", "RECOVERED", "FAILED_SAFE", "NEEDS_REASONING"]},
+    "occurrence_count": {"type": "integer", "minimum": 1},
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "last_seen_at": {"type": "string", "format": "date-time"},
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "summary"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1, "maxLength": 160},
+        "summary": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "drift_paths": {"type": "array", "uniqueItems": true, "items": {"type": "string", "maxLength": 512}}
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "status"],
+        "properties": {
+          "kind": {"type": "string", "minLength": 1, "maxLength": 128},
+          "status": {"enum": ["PASS", "FAIL", "OBSERVED", "UNKNOWN"]},
+          "ref": {"type": ["string", "null"], "maxLength": 512},
+          "value": {}
+        }
+      }
+    },
+    "repair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recipe_id", "attempt_count", "max_attempts", "planned_steps", "receipt_ids"],
+      "properties": {
+        "recipe_id": {"type": ["string", "null"], "maxLength": 160},
+        "attempt_count": {"type": "integer", "minimum": 0},
+        "max_attempts": {"type": "integer", "minimum": 0, "maximum": 20},
+        "next_retry_at": {"type": ["string", "null"], "format": "date-time"},
+        "planned_steps": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["step_id", "capability_id", "state"],
+            "properties": {
+              "step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+              "capability_id": {"type": "string", "minLength": 1, "maxLength": 160},
+              "state": {"enum": ["PENDING", "READY", "BLOCKED", "DONE", "FAILED", "ROLLED_BACK"]},
+              "block_reason": {"type": ["string", "null"], "maxLength": 256}
+            }
+          }
+        },
+        "receipt_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 200}}
+      }
+    },
+    "friction": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "category": {"type": "string", "maxLength": 128},
+        "source": {"type": "string", "maxLength": 128},
+        "avoidable": {"type": "boolean"},
+        "user_action_required": {"type": "boolean"},
+        "detail": {"type": "string", "maxLength": 2000}
+      }
+    }
+  }
+}
