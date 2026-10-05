@@ -524,3 +524,55 @@ Its intelligence is the combination of:
 
 It is not "an AI that can do everything".
 It is an execution substrate that can safely acquire new capabilities without rebuilding its core.
+
+
+## 24. 2026-10-05 external technical counter-audit
+
+The current external references reinforce, rather than overturn, the architecture:
+
+### Windows process containment
+Microsoft Job Objects provide process-tree management and enforceable limits including job/process memory, scheduling/priority and whole-job termination. This validates Job Objects as the containment primitive for bounded PC workers rather than relying only on cooperative scripts.
+
+Reference:
+- https://learn.microsoft.com/windows/win32/procthread/job-objects
+
+### MCP direction
+MCP specification 2026-07-28 keeps a stateless core and defines optional extensions. The Tasks extension gives long-running requests durable task handles with get/update/cancel semantics. BCP should design mission handles and typed tools to map cleanly to this pattern, but MUST NOT depend on a specific ChatGPT surface exposing writable custom MCP before that path is actually field-qualified.
+
+References:
+- https://modelcontextprotocol.io/
+- https://tasks.extensions.modelcontextprotocol.io/specification/2026-07-28/tasks
+- https://blog.modelcontextprotocol.io/posts/2026-07-28/
+
+### FunctionGemma
+Google describes FunctionGemma as a lightweight Gemma-3-270M-derived model trained specifically for function calling and explicitly intended to be fine-tuned for the application's function-calling task. This supports its role as a future specialized BCP tool router, not as a general chatbot or mission authority.
+
+Reference:
+- https://ai.google.dev/gemma/docs/functiongemma/model_card
+
+### Qwen2.5-Coder-0.5B
+The official Qwen repository provides a 0.5B instruction-tuned code model; the unquantized safetensors file is about 988 MB. This supports evaluation as a cold micro-code worker, but makes permanent residency on a 4 GB Windows machine unjustified without field measurement.
+
+Reference:
+- https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct
+
+### llama.cpp
+llama.cpp provides a lightweight local HTTP server, quantized CPU inference, OpenAI-compatible endpoints, schema-constrained JSON and tool/function calling. It is a suitable replaceable inference runtime. It is not the BCP control plane and should be started/stopped by the Resource Governor.
+
+Reference:
+- https://github.com/ggml-org/llama.cpp/tree/master/tools/server
+
+## 25. Final counter-audit corrections to earlier concepts
+
+The following earlier ideas are explicitly superseded:
+
+1. **"Put the AI on the PC and let it execute"** -> wrong center of gravity. Execution Fabric first; AI is optional.
+2. **"Drive is the runtime truth"** -> too network-dependent. Local transactional truth first; Drive is replica/transport/recovery.
+3. **"One more daemon for each project"** -> rejected. Shared capability bus and project adapters.
+4. **"Local 1.5B coder as the main worker"** -> rejected for the 4 GB PC baseline. It may be an opportunistic node elsewhere.
+5. **"RAM percentage alone controls work"** -> rejected. Admission uses memory headroom, commit/paging, foreground load, worker RSS and workload class.
+6. **"Administrator once means unrestricted permanent admin"** -> rejected. Install a narrow privileged broker, not a generic privileged shell.
+7. **"ChatGPT must stay connected until completion"** -> rejected. ChatGPT plans/escalates; BCP owns durable continuation.
+8. **"Every project needs its own recovery/updater/Telegram/worker stack"** -> rejected. These are shared platform capabilities.
+9. **"A successful command means DONE"** -> rejected. DONE requires the declared evidence contract, readback and committed receipt.
+10. **"More agents means more intelligence"** -> rejected on this hardware. Prefer one deterministic scheduler, ephemeral roles, one heavy worker and explicit escalation.
