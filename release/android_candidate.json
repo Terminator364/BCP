@@ -1,16 +1,16 @@
 {
   "schema": "bcp.android_source_candidate/1",
   "channel": "ci-candidate",
-  "version_code": 223,
-  "version_name": "2.2.3-excellentia-edge-evergreen",
+  "version_code": 224,
+  "version_name": "2.2.4-excellentia-edge-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-10-02-EXCELLENTIA-EDGE-UI-NONBLOCKING",
+  "requirements_revision": "2026-10-05-EXCELLENTIA-AUTO-FAILOVER-40S",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
-  "distribution_status": "SIGNED_LOCAL_CANDIDATE_AWAITING_IN_PLACE_INSTALL",
+  "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
   "publication_allowed": false,
   "publication_requirements": [
     "R90_REFERENCE_FIRST_UI_TASK_SIMULATION_GREEN",
@@ -79,26 +79,24 @@
     "private Excellentia snapshot/status/progress endpoints remain protected by the paired BCP credential",
     "no arbitrary shell or arbitrary proxy capability added by Excellentia continuity",
     "nonblocking local UI reads cached governance/sentinel state instead of querying Room on the main thread",
-    "authenticated /v1/node/status uses cached local snapshots so PC latency cannot stall the dashboard"
+    "authenticated /v1/node/status uses cached local snapshots so PC latency cannot stall the dashboard",
+    "automatic Excellentia browser failover target accepts live PC-session handoff state from a previously PC-hosted QR",
+    "Excellentia Edge preserves origin session id, question order, position and already-recorded answers across PC network loss",
+    "Excellentia Edge enforces 40 seconds per unanswered question and records timeout as selected=-1 before immediate advance",
+    "training feedback remains immediate with correct answer green, wrong choice red and explanation visible",
+    "mock/exam mode preserves answers locally without revealing correctness before completion",
+    "Edge progress receipts include origin_session_id elapsed_ms and timed_out so PC reconciliation merges back into the canonical session"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.2-excellentia-edge_NEXUS-0.2.6",
-  "signed_apk_sha256": "c3718a43672600783f67adb564b08ad24aa4f1752a08ad31b528a36c1aa86a62",
-  "signature_schemes_verified": [
-    "v2",
-    "v3"
-  ],
-  "signed_source_commit": "65b9d8aa37fc8785b8ada9b629d962ba235ce9aa",
-  "signing_cert_sha256_verified": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
+  "release_train": "BCP-0.7.18_EDGE-2.2.4-excellentia-failover_NEXUS-0.2.6",
+  "signed_apk_sha256": "",
+  "signature_schemes_verified": [],
+  "signed_source_commit": "",
+  "signing_cert_sha256_verified": "",
   "drive_staging_readback": {
     "status": "NOT_RUN"
   },
   "exact_head_machine_qualification": {
-    "status": "GREEN",
-    "android_build_run": 37011245572,
-    "coordinated_product_run": 37011245590,
-    "field_ecosystem_run": 37011245602,
-    "qualified_head": "65b9d8aa37fc8785b8ada9b629d962ba235ce9aa",
-    "windows_bootstrap_baseline_failure_ignored_for_android": true
+    "status": "PENDING_2_2_4_EXACT_HEAD"
   },
-  "remaining_human_gate": "ANDROID_OS_IN_PLACE_UPDATE_CONFIRMATION_ON_REAL_PHONE_THEN_UI_AND_PORT_8878_FIELD_CHECK"
+  "remaining_human_gate": "BLOCKED_UNTIL_2_2_4_EXACT_HEAD_GREEN_SIGNING_AND_IN_PLACE_INSTALL"
 }
