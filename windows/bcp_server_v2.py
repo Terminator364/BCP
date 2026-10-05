@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from execution_fabric.critical_store import CriticalStore
 from execution_fabric.resource_admission import snapshot as resource_snapshot
+from execution_fabric.project_registry import ProjectAliasAmbiguous, ProjectNotFound, ProjectRegistry
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -193,6 +194,10 @@ def connect_db():
 def critical_store() -> CriticalStore:
     """Return the canonical local durable authority store on the shared BCP SQLite DB."""
     return CriticalStore(DB_PATH)
+
+
+def project_registry() -> ProjectRegistry:
+    return ProjectRegistry(critical_store())
 
 
 def get_head(project_id: str):
@@ -404,6 +409,38 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/v2/resources":
             self.send_json(200, resource_snapshot(APP_ROOT))
+            return
+
+        if path == "/v2/projects":
+            items = project_registry().list(limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.project_registry_view/1",
+                    "projects": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/projects/resolve":
+            identifier = str((query.get("identifier") or [""])[0])
+            try:
+                item = project_registry().resolve(identifier)
+                self.send_json(
+                    200,
+                    {
+                        "schema": "bcp.project_resolution/1",
+                        "identifier": identifier,
+                        "project": item,
+                        "field_certified": False,
+                    },
+                )
+            except ProjectNotFound:
+                self.send_json(404, {"error": "project_not_found", "identifier": identifier})
+            except ProjectAliasAmbiguous:
+                self.send_json(409, {"error": "project_alias_ambiguous", "identifier": identifier})
             return
 
         if path == "/v2/authority/state":

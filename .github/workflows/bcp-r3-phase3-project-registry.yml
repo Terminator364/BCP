@@ -1,0 +1,46 @@
+name: BCP R3 Phase 3 Project Registry
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_project_record_v1.schema.json"
+      - "schemas/bcp_project_adapter_v1.schema.json"
+      - "docs/BCP_PROJECT_REGISTRY_TYPED_ADAPTER_R3_PHASE3_2026-10-05.md"
+      - "docs/examples/execution-fabric/med-rebuild.project-record.example.json"
+      - "docs/examples/execution-fabric/med-rebuild.project-adapter.example.json"
+      - "tools/test_execution_fabric_phase3_project_registry.py"
+      - "tools/test_execution_fabric_phase3_project_adapter.py"
+      - "windows/bcp_server_v2.py"
+      - "windows/execution_fabric/critical_store.py"
+      - "windows/execution_fabric/project_registry.py"
+      - ".github/workflows/bcp-r3-phase3-project-registry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-phase3-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  project-registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 3 modules
+        run: |
+          python -m compileall -q             windows/bcp_server_v2.py             windows/execution_fabric/project_registry.py             tools/test_execution_fabric_phase3_project_registry.py             tools/test_execution_fabric_phase3_project_adapter.py
+
+      - name: Durable Project Registry tests
+        run: python tools/test_execution_fabric_phase3_project_registry.py
+
+      - name: Typed project adapter guard
+        run: python tools/test_execution_fabric_phase3_project_adapter.py
+
+      - name: Microkernel regression guard
+        run: |
+          python windows/bcp_server_v2.py --selftest
+          python tools/test_execution_fabric_phase2_microkernel.py

@@ -620,6 +620,36 @@ class CriticalStore:
         with self._connect() as con:
             return str(con.execute("PRAGMA quick_check").fetchone()[0])
 
+    def list_states(self, prefix: str = "", *, limit: int = 512) -> list[dict[str, Any]]:
+        """List durable authority states by stream prefix for registry projections."""
+        pfx = str(prefix)
+        if len(pfx) > 160:
+            raise ValueError("invalid prefix")
+        n = max(1, min(int(limit), 4096))
+        with self._connect() as con:
+            if pfx:
+                rows = con.execute(
+                    "SELECT * FROM authority_state WHERE stream_id LIKE ? ORDER BY stream_id LIMIT ?",
+                    (pfx + "%", n),
+                ).fetchall()
+            else:
+                rows = con.execute(
+                    "SELECT * FROM authority_state ORDER BY stream_id LIMIT ?",
+                    (n,),
+                ).fetchall()
+        return [
+            {
+                "stream_id": row["stream_id"],
+                "revision": int(row["revision"]),
+                "fencing_token": int(row["fencing_token"]),
+                "content_hash": row["content_hash"],
+                "predecessor_hash": row["predecessor_hash"],
+                "payload": json.loads(bytes(row["payload_json"]).decode("utf-8")),
+                "committed_epoch": float(row["committed_epoch"]),
+            }
+            for row in rows
+        ]
+
     def history(self, stream_id: str) -> list[dict[str, Any]]:
         stream = _valid_stream(stream_id)
         with self._connect() as con:

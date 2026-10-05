@@ -1,0 +1,59 @@
+{
+  "schema": "bcp.project_record/1",
+  "project_id": "MED_REBUILD",
+  "display_name": "MED-REBUILD Study Hub",
+  "aliases": ["Med Rebuild", "Main Reboot", "MEDREBUILD"],
+  "profile": "SOFTWARE_ENGINEERING",
+  "status": "BINDING_INCOMPLETE",
+  "authority": {
+    "engineering": "GITHUB",
+    "runtime": "PC",
+    "artifacts": "UNRESOLVED",
+    "conversation": "NON_AUTHORITATIVE"
+  },
+  "origins": {
+    "local_roots": [
+      {
+        "status": "UNRESOLVED",
+        "path": null,
+        "authority": "UNRESOLVED"
+      }
+    ],
+    "repos": [
+      {
+        "status": "BOUND",
+        "repository": "Terminator364/ChatGPT-PC",
+        "branch": "feat/med-rebuild-study-engine-v1-5",
+        "path": "med-rebuild-study-hub/v1.5-prototype",
+        "authority": "ENGINEERING"
+      }
+    ],
+    "drive_refs": []
+  },
+  "adapters": ["BCP_NATIVE_PC", "GITHUB_REPOSITORY"],
+  "resource_profile": {
+    "resource_class": "R2_MEDIUM",
+    "heavy_work": false,
+    "offline_capable": true,
+    "background_policy": "GREEN_ONLY"
+  },
+  "permission_profile": {
+    "max_permission_class": "P2_PROJECT_MUTATION",
+    "read_allowed": true,
+    "project_write_policy": "POLICY",
+    "system_modify_policy": "GATED"
+  },
+  "update_profile": {
+    "mode": "PROJECT_DEFINED",
+    "rollback_required": true,
+    "channel": "med-rebuild-study-hub/release/v1.5-current.json"
+  },
+  "head_revision": null,
+  "coordinator_epoch": null,
+  "source_revision": "BCP_R3_PHASE3_CANDIDATE",
+  "compatibility": {
+    "legacy_authority_present": true,
+    "migration_rule": "BCP owns mission/routing/evidence; MED-REBUILD keeps project-specific study data and updater semantics until migrated through typed capabilities."
+  },
+  "updated_at": "2026-10-05T21:20:00Z"
+}
