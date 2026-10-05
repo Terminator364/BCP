@@ -1,0 +1,59 @@
+{
+  "schema": "bcp.action_receipt/1",
+  "receipt_id": "rcpt-phase1-contract-0001",
+  "mission_id": "mission-phase1-contract-0001",
+  "project_id": "BCP_CORE",
+  "action_id": "phase1-contract-static-check",
+  "job_id": "job-phase1-contract-0001",
+  "step_id": "contract-compatibility",
+  "capability_id": "repository.contract.verify",
+  "provider_id": "GITHUB_REPOSITORY",
+  "node_id": null,
+  "idempotency_key": "phase1-contract-static-check-2026-10-05",
+  "status": "SUCCEEDED",
+  "result": "PASS",
+  "proof_scope": "REPOSITORY",
+  "field_certified": false,
+  "durability": "DURABLE_LOCAL",
+  "committed_revision": 1,
+  "fencing_token": 1,
+  "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "predecessor_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "output_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "source_revision": "PR168_PHASE1_CONTRACT_CANDIDATE",
+  "environment_fingerprint": "repository-static",
+  "outbox_message_id": "outbox-phase1-contract-0001",
+  "idempotent_replay": false,
+  "evidence": [
+    {
+      "evidence_id": "schema-json-parse",
+      "kind": "TEST_RESULT",
+      "status": "PASS",
+      "value": {
+        "schemas": 8,
+        "mode": "repository"
+      },
+      "sha256": null,
+      "source": "tools/test_execution_fabric_phase1_contracts.py",
+      "observed_at": "2026-10-05T20:30:00Z"
+    },
+    {
+      "evidence_id": "source-revision",
+      "kind": "GIT_REVISION",
+      "status": "OBSERVED",
+      "value": "PR168_PHASE1_CONTRACT_CANDIDATE",
+      "sha256": null,
+      "source": "github",
+      "observed_at": "2026-10-05T20:30:00Z"
+    }
+  ],
+  "readback": {
+    "status": "PASS",
+    "summary": "Contract files parsed and convergence invariants held. This is repository proof only.",
+    "observed_revision": "PR168_PHASE1_CONTRACT_CANDIDATE"
+  },
+  "side_effects": [],
+  "error": null,
+  "created_at": "2026-10-05T20:30:00Z",
+  "committed_at": "2026-10-05T20:30:00Z"
+}

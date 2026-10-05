@@ -1,0 +1,49 @@
+{
+  "schema": "bcp.mission_ingress/1",
+  "ingress_id": "ingress-chatgpt-phase1-0001",
+  "transport": "CHATGPT",
+  "transport_event_id": "conversation-event-phase1-0001",
+  "conversation_id": "conversation-phase1",
+  "dedupe_key": "phase1-ingress-dedupe-0001",
+  "source_trust": "AUTHENTICATED_USER",
+  "status": "ACCEPTED",
+  "received_at": "2026-10-05T20:30:00Z",
+  "normalized_mission_hash": null,
+  "mission": {
+    "schema": "bcp.mission_envelope/2",
+    "mission_id": "mission-phase1-contract-0001",
+    "project_id": "BCP_CORE",
+    "goal": "Verify Phase 1 contract convergence.",
+    "source": {
+      "kind": "CHATGPT",
+      "conversation_id": "conversation-phase1",
+      "transport_event_id": "conversation-event-phase1-0001"
+    },
+    "project_revision": null,
+    "policy_revision": "R3.1-ABC",
+    "coordinator_epoch": 0,
+    "priority": "NORMAL_PROJECT",
+    "execution_profile": "AUDIT",
+    "approval_policy": {
+      "max_permission_class": "P0_READ",
+      "fresh_human_approval_for_p4": true
+    },
+    "resource_policy": {
+      "max_resource_class": "R1_LIGHT",
+      "foreground_priority": false,
+      "preemptible": true,
+      "network_optional": true
+    },
+    "allowed_capabilities": ["repository.contract.verify"],
+    "denied_capabilities": [],
+    "tasks": [],
+    "idempotency_key": "phase1-mission-dedupe-0001",
+    "evidence_contract": ["TEST_RESULT", "GIT_REVISION"],
+    "rollback_contract": null,
+    "created_at": "2026-10-05T20:30:00Z",
+    "deadline": null,
+    "last_committed_step": null,
+    "next_safe_step": null
+  },
+  "rejection": null
+}

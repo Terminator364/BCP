@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_project_record_v1.schema.json",
+  "title": "BCP Project Record V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "project_id",
+    "display_name",
+    "status",
+    "profile",
+    "authority",
+    "origins",
+    "resource_profile",
+    "permission_profile",
+    "updated_at"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.project_record/1"},
+    "project_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
+    },
+    "display_name": {"type": "string", "minLength": 1, "maxLength": 160},
+    "aliases": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 160}
+    },
+    "profile": {
+      "enum": [
+        "SOFTWARE_ENGINEERING",
+        "KNOWLEDGE_CORPUS",
+        "ANALYTICAL_PIPELINE",
+        "EDITORIAL_MEDIA",
+        "CONTROL_PLANE",
+        "DELIVERY_PROVIDER",
+        "SPECIALIZED_EXECUTOR",
+        "GENERAL",
+        "ARCHIVE_CLOSED"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ACTIVE",
+        "PAUSED",
+        "FROZEN",
+        "ARCHIVED",
+        "BINDING_INCOMPLETE",
+        "DEGRADED",
+        "UNKNOWN"
+      ]
+    },
+    "continuation_codes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 160}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engineering", "runtime", "artifacts", "conversation"],
+      "properties": {
+        "engineering": {
+          "enum": ["GITHUB", "DRIVE", "LOCAL", "MIXED", "NONE", "UNRESOLVED"]
+        },
+        "runtime": {
+          "enum": ["PC", "B_EDGE", "NEXUS", "DRIVE", "PC_DRIVE", "REMOTE_PROVIDER", "NONE", "UNRESOLVED"]
+        },
+        "artifacts": {
+          "enum": ["DRIVE", "GITHUB_RELEASES", "LOCAL_DRIVE", "BUILDHUB", "MIXED", "NONE", "UNRESOLVED"]
+        },
+        "conversation": {"const": "NON_AUTHORITATIVE"}
+      }
+    },
+    "origins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_roots", "repos", "drive_refs"],
+      "properties": {
+        "local_roots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "path", "authority"],
+            "properties": {
+              "status": {"enum": ["BOUND", "CANDIDATE", "UNRESOLVED", "NOT_REQUIRED"]},
+              "path": {"type": ["string", "null"], "maxLength": 1024},
+              "authority": {"enum": ["CANONICAL", "COMPATIBILITY", "RUNTIME", "CANDIDATE", "UNRESOLVED"]}
+            }
+          }
+        },
+        "repos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "repository", "authority"],
+            "properties": {
+              "status": {"enum": ["BOUND", "CANDIDATE", "UNRESOLVED", "NOT_REQUIRED"]},
+              "repository": {"type": ["string", "null"], "maxLength": 300},
+              "branch": {"type": ["string", "null"], "maxLength": 300},
+              "path": {"type": ["string", "null"], "maxLength": 1024},
+              "authority": {"enum": ["CANONICAL", "ENGINEERING", "COMPATIBILITY", "CANDIDATE", "UNRESOLVED"]}
+            }
+          }
+        },
+        "drive_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "id", "role", "authority"],
+            "properties": {
+              "status": {"enum": ["BOUND", "PARTIAL", "UNRESOLVED", "NOT_REQUIRED"]},
+              "id": {"type": ["string", "null"], "maxLength": 512},
+              "title": {"type": ["string", "null"], "maxLength": 300},
+              "role": {"type": "string", "minLength": 1, "maxLength": 160},
+              "authority": {"enum": ["CANONICAL", "COMPATIBILITY", "ARTIFACT", "CANDIDATE", "UNRESOLVED"]}
+            }
+          }
+        }
+      }
+    },
+    "adapters": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 500}
+    },
+    "resource_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_class", "heavy_work", "offline_capable", "background_policy"],
+      "properties": {
+        "resource_class": {"enum": ["R0_TINY", "R1_LIGHT", "R2_MEDIUM", "R3_HEAVY", "R4_LOCAL_AI"]},
+        "heavy_work": {"type": "boolean"},
+        "offline_capable": {"type": "boolean"},
+        "background_policy": {"enum": ["NEVER", "GREEN_ONLY", "GREEN_OR_AMBER_LIGHT", "USER_EXPLICIT"]}
+      }
+    },
+    "permission_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_permission_class", "read_allowed"],
+      "properties": {
+        "max_permission_class": {
+          "enum": [
+            "P0_READ",
+            "P1_SAFE_WRITE",
+            "P2_PROJECT_MUTATION",
+            "P3_BOUNDED_SYSTEM_CHANGE",
+            "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE"
+          ]
+        },
+        "read_allowed": {"type": "boolean"},
+        "project_write_policy": {"enum": ["DENY", "POLICY", "ALLOW"]},
+        "system_modify_policy": {"enum": ["DENY", "GATED", "POLICY", "ALLOW"]}
+      }
+    },
+    "update_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"enum": ["PROJECT_DEFINED", "BCP_MANAGED", "EXTERNAL_PROVIDER", "NONE", "UNRESOLVED"]},
+        "rollback_required": {"type": "boolean"},
+        "channel": {"type": ["string", "null"], "maxLength": 160}
+      }
+    },
+    "head_revision": {"type": ["integer", "null"], "minimum": 0},
+    "coordinator_epoch": {"type": ["integer", "null"], "minimum": 0},
+    "source_revision": {"type": ["string", "null"], "maxLength": 256},
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "legacy_authority_present": {"type": "boolean"},
+        "migration_rule": {"type": "string", "maxLength": 2000}
+      }
+    },
+    "updated_at": {"type": "string", "format": "date-time"}
+  }
+}
