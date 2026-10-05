@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_project_adapter_v1.schema.json",
+  "title": "BCP Project Adapter V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "adapter_id",
+    "project_id",
+    "version",
+    "bindings",
+    "source_revision"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.project_adapter/1"},
+    "adapter_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
+    },
+    "version": {"type": "string", "minLength": 1, "maxLength": 64},
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation",
+          "capability_id",
+          "provider_id",
+          "state",
+          "permission_class",
+          "resource_class",
+          "evidence_contract"
+        ],
+        "properties": {
+          "operation": {
+            "enum": [
+              "INSPECT",
+              "BUILD",
+              "TEST",
+              "LINT",
+              "INSTALL_TEST",
+              "HEALTHCHECK",
+              "RELEASE_VERIFY",
+              "START",
+              "STOP",
+              "UPDATE_STAGE",
+              "UPDATE_ACTIVATE",
+              "ROLLBACK"
+            ]
+          },
+          "capability_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+          },
+          "provider_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "state": {
+            "enum": [
+              "BOUND",
+              "WAITING_BINDING",
+              "TEMP_UNAVAILABLE",
+              "UNSUPPORTED"
+            ]
+          },
+          "permission_class": {
+            "enum": [
+              "P0_READ",
+              "P1_SAFE_WRITE",
+              "P2_PROJECT_MUTATION",
+              "P3_BOUNDED_SYSTEM_CHANGE",
+              "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE"
+            ]
+          },
+          "resource_class": {
+            "enum": [
+              "R0_TINY",
+              "R1_LIGHT",
+              "R2_MEDIUM",
+              "R3_HEAVY",
+              "R4_LOCAL_AI"
+            ]
+          },
+          "evidence_contract": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "EXIT_CODE",
+                "FILE_READBACK",
+                "HASH",
+                "PROCESS_HEALTH",
+                "HTTP_HEALTH",
+                "SERVICE_STATE",
+                "GIT_REVISION",
+                "TEST_RESULT",
+                "ARTIFACT_SIGNATURE",
+                "PROVIDER_ACK",
+                "DESTINATION_READBACK",
+                "CUSTOM_VALIDATOR"
+              ]
+            }
+          },
+          "input_defaults": {"type": "object"},
+          "binding_reason": {"type": ["string", "null"], "maxLength": 1000}
+        }
+      }
+    },
+    "source_revision": {"type": "string", "minLength": 1, "maxLength": 256},
+    "notes": {
+      "type": "array",
+      "items": {"type": "string", "maxLength": 1000}
+    }
+  }
+}
