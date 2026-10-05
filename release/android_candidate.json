@@ -10,7 +10,7 @@
   "requirements_revision": "2026-10-05-EXCELLENTIA-AUTO-FAILOVER-40S",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
-  "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
+  "distribution_status": "SIGNED_EXACT_SOURCE_CANDIDATE_AWAITING_IN_PLACE_INSTALL",
   "publication_allowed": false,
   "publication_requirements": [
     "R90_REFERENCE_FIRST_UI_TASK_SIMULATION_GREEN",
@@ -88,15 +88,28 @@
     "Edge progress receipts include origin_session_id elapsed_ms and timed_out so PC reconciliation merges back into the canonical session"
   ],
   "release_train": "BCP-0.7.18_EDGE-2.2.4-excellentia-failover_NEXUS-0.2.6",
-  "signed_apk_sha256": "",
-  "signature_schemes_verified": [],
-  "signed_source_commit": "",
-  "signing_cert_sha256_verified": "",
+  "signed_apk_sha256": "bd2b2e1a159f4c46c9baf085c94650a9df0bda72671c777443814f559ce75f26",
+  "signature_schemes_verified": [
+    "v2",
+    "v3"
+  ],
+  "signed_source_commit": "025c62606f0874e8d5dd810fab1bd9981d4baaad",
+  "signing_cert_sha256_verified": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "drive_staging_readback": {
     "status": "NOT_RUN"
   },
   "exact_head_machine_qualification": {
-    "status": "PENDING_2_2_4_EXACT_HEAD"
+    "status": "GREEN",
+    "qualified_source_commit": "025c62606f0874e8d5dd810fab1bd9981d4baaad",
+    "android_build_run": 37327708383,
+    "android_human_action_run": 37327708106,
+    "coordinated_product_run": 37327708391,
+    "field_ecosystem_run": 37327708401,
+    "managed_server_run": 37327708085,
+    "coordinated_pc_run": 37327708059,
+    "final_acceptance_run": 37327708089,
+    "qualified_current_run": 37327708104,
+    "nexus_human_action_run": 37327708440
   },
-  "remaining_human_gate": "BLOCKED_UNTIL_2_2_4_EXACT_HEAD_GREEN_SIGNING_AND_IN_PLACE_INSTALL"
+  "remaining_human_gate": "ANDROID_OS_IN_PLACE_UPDATE_CONFIRMATION_ON_REAL_PHONE_THEN LIVE PC_NETWORK_CHANGE_TO_BEDGE_8878_FIELD_CHECK"
 }
