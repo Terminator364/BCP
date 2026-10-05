@@ -141,15 +141,24 @@ PowerShell/CMD/Win32 remain implementation details behind typed handlers.
 
 ## 6. Windows execution plane
 
-Future production core target: small compiled executable (Go is a strong candidate) + SQLite.
+Do **not** rewrite the existing BCP Windows runtime merely because a compiled core might be smaller.
 
-Requirements:
+Current BCP already has a Python Windows server and an installer manifest that declares a LOW_RAM_COMPAT profile with a 96 MB resource target. No field evidence found in this audit proves that a rewrite would deliver enough benefit to justify migration risk.
+
+Baseline:
+- keep the existing BCP Windows runtime for Phase 0/1;
+- instrument its real idle working set, commit, paging and wakeups on MBMPC;
+- refactor/split only measured hot or resident paths;
+- consider a small compiled supervisor/core (Go or native) only if the existing runtime fails the field resource gate or startup/recovery requirements.
+
+Requirements independent of implementation language:
 - one instance;
 - event-driven;
 - no embedded browser;
-- no permanent Python/Node/PowerShell runtime;
+- no permanent Node/PowerShell worker;
+- Python may remain resident only if its measured footprint passes the field budget;
 - bounded local IPC;
-- terminate workers after bounded tasks.
+- terminate task workers after bounded work.
 
 Workers may invoke:
 - PowerShell with `-NoLogo -NoProfile -NonInteractive`;
