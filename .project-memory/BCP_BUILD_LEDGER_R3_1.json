@@ -6,7 +6,7 @@
   "route": "SIM_FIRST",
   "vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE",
   "phase_0a": {
-    "status": "IN_PROGRESS",
+    "status": "COMPLETE",
     "source_preflight": {
       "bcp_main": "accaa6a2ea7169f57d3574e8d202112665de53b2",
       "bcp_design": "9bc771d9577617ac458e0bfe213d24eb59565b1a",
@@ -60,19 +60,35 @@
       "pc_probe_run": false,
       "desktop_commander_used": false,
       "ci_is_not_field_proof": true
+    },
+    "completed_evidence": {
+      "bcp_pr168_head": "9bc771d9577617ac458e0bfe213d24eb59565b1a",
+      "chatgpt_pc_main_at_v181_convergence": "f6bdeb10f87582d80c82e8a34f0a4033f779b38a",
+      "med_rebuild_release_branch": "feat/med-rebuild-study-engine-v1-5",
+      "med_rebuild_release_source_commit": "3b70c8bf9074077fbbad4873aa05ae7e1141cac2",
+      "med_rebuild_target_version": "1.8.1",
+      "exact_release_blobs": "47/47",
+      "curriculum": "3 tomes / 60 modules / 156 fiches",
+      "r3_candidate_pr": 28,
+      "r3_candidate_head": "840ec2a6dbb6a0800ea75091df1fc067c701325f",
+      "r3_ci_run": 37361105748,
+      "r3_ci_status": "IN_PROGRESS",
+      "superseded_pr": 27
     }
   },
   "implementation": {
     "repo": "Terminator364/ChatGPT-PC",
-    "branch": "build/med-rebuild-zero-touch-native-r3-20261005",
-    "base_sha": "eb1b293fed51063abe81dacd096e75dc9cbc97b6",
+    "branch": "build/med-rebuild-zero-touch-r3-v181-20261005",
+    "base_sha": "f6bdeb10f87582d80c82e8a34f0a4033f779b38a",
+    "pr": 28,
+    "target_release": "1.8.1",
     "plan": [
-      "preserve PR20 Med Rebuild source on current main-derived branch",
-      "add MED_REBUILD project capsule",
-      "add zero-touch vertical adapter using CriticalStore and WorkerSupervisor",
-      "add interruption/resume and Desktop Commander absence tests",
-      "add read-only Windows field probe",
-      "run one targeted CI gate only"
+      "run one targeted SIM_FIRST CI gate",
+      "if green, run one bounded updater activation on MBMPC",
+      "composite readback: pointer + health + diagnostics + 60/156 curriculum + rollback",
+      "record exact field receipt",
+      "close superseded PR27",
+      "do not promote main without separate authorization"
     ]
   },
   "exact_field_probe": {
@@ -91,5 +107,35 @@
       "field_certified_from_ci"
     ]
   },
-  "next_atomic_work_unit": "CREATE_CURRENT_MAIN_DERIVED_MED_REBUILD_IMPLEMENTATION_BRANCH_AND_REUSE_PR20"
+  "next_atomic_work_unit": "WAIT_PR28_TARGETED_CI_THEN_BOUNDED_FIELD_ACTIVATION",
+  "phase_0b": {
+    "status": "READ_ONLY_FIELD_PROBE_COMPLETE_ACTIVATION_PENDING",
+    "device": "MBMPC",
+    "probe_date": "2026-10-05",
+    "transport": "DESKTOP_COMMANDER_LAST_MILE",
+    "remote_calls_left_pct_at_campaign_start": 82,
+    "observed": {
+      "os": "Windows 11 Professionnel 10.0.22621",
+      "node_present": true,
+      "git_present": true,
+      "python_present": true,
+      "gh_present": true,
+      "med_rebuild_study_root_exists": true,
+      "med_rebuild_updater_root_exists": true,
+      "active_version": "1.5.0",
+      "source_ref": "feat/med-rebuild-study-engine-v1-5",
+      "source_commit": "39c730f6eb0b91f5f5e95473839b60443b646f6b",
+      "rollback_version": "1.4.0",
+      "updater_phase": "FAILED",
+      "updater_error": "GH_AUTH_REQUIRED",
+      "gh_auth_followup": "CURRENTLY_VALID_INTERACTIVE_STATUS",
+      "target_version": "1.8.1"
+    },
+    "safety": {
+      "no_install_or_activation_yet": true,
+      "no_downgrade": true,
+      "no_secret_extracted": true,
+      "desktop_commander_is_not_normal_dependency": true
+    }
+  }
 }
