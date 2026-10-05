@@ -88,7 +88,7 @@ print("BCP_R3_PHASE2_WORKER_BOUNDARY=PASS")
 
 # Startup consolidation candidate: one lightweight per-user trigger only.
 assert "BlessingControlPlane" in SERVER
-assert "CurrentVersion\\\\Run" in SERVER
+assert r"CurrentVersion\Run" in SERVER
 assert "ensure_lifecycle_registration" in SERVER
 for forbidden in ["schtasks", "bcp_supervisor.ps1", "BCP Resident Agent", "Tunnel_PC_G4"]:
     assert forbidden not in SERVER, forbidden
