@@ -1,0 +1,37 @@
+name: BCP R3 Phase 2B Typed Workers
+
+on:
+  pull_request:
+    paths:
+      - "windows/execution_fabric/worker_bootstrap.py"
+      - "windows/execution_fabric/worker_supervisor.py"
+      - "windows/execution_fabric/resource_admission.py"
+      - "tools/test_execution_fabric_phase2b_worker_supervisor.py"
+      - "tools/test_execution_fabric_phase2b_resource_admission.py"
+      - "tools/test_execution_fabric_phase2b_worker_boundary.py"
+      - "docs/BCP_TYPED_WORKER_RESOURCE_ADMISSION_R3_PHASE2B_2026-10-05.md"
+      - ".github/workflows/bcp-r3-phase2b-workers.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  typed-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile worker tranche
+        run: |
+          python -m compileall -q             windows/execution_fabric/worker_bootstrap.py             windows/execution_fabric/worker_supervisor.py             windows/execution_fabric/resource_admission.py             tools/test_execution_fabric_phase2b_worker_supervisor.py             tools/test_execution_fabric_phase2b_resource_admission.py             tools/test_execution_fabric_phase2b_worker_boundary.py
+
+      - name: Worker supervisor simulation tests
+        run: python tools/test_execution_fabric_phase2b_worker_supervisor.py
+
+      - name: Resource admission tests
+        run: python tools/test_execution_fabric_phase2b_resource_admission.py
+
+      - name: No-free-shell and containment guard
+        run: python tools/test_execution_fabric_phase2b_worker_boundary.py
