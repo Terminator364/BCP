@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_capability_grant_v1.schema.json",
+  "title": "BCP Capability Grant V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "grant_id",
+    "capability_pattern",
+    "max_permission_class",
+    "scope",
+    "issued_at",
+    "status"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.capability_grant/1"
+    },
+    "grant_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 160
+    },
+    "capability_pattern": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "max_permission_class": {
+      "enum": [
+        "P0_READ",
+        "P1_SAFE_WRITE",
+        "P2_PROJECT_MUTATION",
+        "P3_BOUNDED_SYSTEM_CHANGE"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "project_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "uniqueItems": true
+        },
+        "path_roots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "uniqueItems": true
+        },
+        "service_names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "uniqueItems": true
+        },
+        "package_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "revocable": {
+      "const": true
+    },
+    "status": {
+      "enum": [
+        "ACTIVE",
+        "REVOKED",
+        "EXPIRED",
+        "SUSPENDED"
+      ]
+    },
+    "fresh_approval_required_for_p4": {
+      "const": true
+    }
+  }
+}
