@@ -106,7 +106,12 @@ public final class ExcellentiaEdgeBridge {
             long now = System.currentTimeMillis();
             long offerCreatedAt = pass.optLong("offer_created_at_ms", now);
             long offerExpiresAt = pass.optLong("offer_expires_at_ms", now + Math.max(30, minutes) * 60_000L);
-            prefs.edit()
+            long previousOfferCreatedAt = prefs.getLong("pass_offer_created_at", 0L);
+            long previousActivatedAt = prefs.getLong("pass_activated_at", 0L);
+            long previousExpiresAt = prefs.getLong("pass_expires_at", 0L);
+            boolean samePass = previousOfferCreatedAt > 0L && previousOfferCreatedAt == offerCreatedAt;
+
+            SharedPreferences.Editor editor = prefs.edit()
                     .putString("build", build)
                     .putLong("snapshot_at", now)
                     .putString("snapshot_sha256", sha256(plain))
@@ -114,11 +119,16 @@ public final class ExcellentiaEdgeBridge {
                     .putString("pass_hash", sha256(secret.getBytes(StandardCharsets.UTF_8)))
                     .putInt("pass_minutes", minutes)
                     .putLong("pass_offer_created_at", offerCreatedAt)
-                    .putLong("pass_offer_expires_at", offerExpiresAt)
-                    .putLong("pass_activated_at", 0L)
-                    .putLong("pass_expires_at", 0L)
-                    .putString("sessions_json", "[]")
-                    .apply();
+                    .putLong("pass_offer_expires_at", Math.max(offerExpiresAt, prefs.getLong("pass_offer_expires_at", 0L)));
+            if (samePass) {
+                editor.putLong("pass_activated_at", previousActivatedAt)
+                        .putLong("pass_expires_at", previousExpiresAt);
+            } else {
+                editor.putLong("pass_activated_at", 0L)
+                        .putLong("pass_expires_at", 0L)
+                        .putString("sessions_json", "[]");
+            }
+            editor.apply();
 
             out.put("ok", true);
             out.put("build", build);
