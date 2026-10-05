@@ -664,283 +664,260 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0d1117">
-<title>Excellentia · Edge</title>
+<meta name="theme-color" content="#0b1119">
+<title>Excellentia Study Hub · Edge</title>
 <style>
-*{box-sizing:border-box}
-body{font-family:system-ui;background:#0b1119;color:#edf4ff;margin:0}
-.top{position:sticky;top:0;background:#101a27;border-bottom:1px solid #25364d;padding:14px 16px;z-index:2}
-.wrap{max-width:900px;margin:auto;padding:16px}
-.card{background:#111d2b;border:1px solid #263a53;border-radius:16px;padding:16px;margin:12px 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-button,select{padding:11px;border-radius:10px;border:1px solid #34506f;background:#14263a;color:#fff}
-.primary{background:#147be0;font-weight:800}
-.ans{display:block;width:100%;text-align:left;margin:8px 0}
-.good{border-color:#35c88a;background:#103125}
-.bad{border-color:#ef6672;background:#35151a}
-.timer-hot{border-color:#ef6672!important;color:#ff98a0!important}
-.muted{color:#9fb2c7;font-size:13px}
-.pill{font-size:12px;padding:5px 8px;border:1px solid #35506d;border-radius:999px}
-.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-h1,h2,h3{margin:.2em 0 .5em}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#09111b;color:#edf4ff}
+body{padding-bottom:72px}.top{position:sticky;top:0;z-index:20;background:rgba(11,17,25,.96);backdrop-filter:blur(12px);border-bottom:1px solid #22364d;padding:12px 14px}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:980px;margin:auto}.brand{font-weight:850;letter-spacing:-.2px}.sub{font-size:12px;color:#9fb2c7}
+.pills{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.pill{font-size:12px;padding:5px 9px;border:1px solid #35506d;border-radius:999px;background:#102030}
+.wrap{max-width:980px;margin:auto;padding:16px}.hero{background:linear-gradient(135deg,#11283c,#102036);border:1px solid #294865;border-radius:20px;padding:18px;margin-bottom:14px}
+.hero h1{font-size:24px;margin:0 0 8px}.hero p{margin:0;color:#abc0d6;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px}.card{background:#101c29;border:1px solid #263b53;border-radius:16px;padding:15px}
+.action{cursor:pointer;text-align:left;min-height:116px}.action b{display:block;font-size:17px;margin:8px 0 5px}.icon{font-size:23px}.muted{color:#9fb2c7;font-size:13px;line-height:1.5}
+h2,h3{margin:.15em 0 .6em}button,select{font:inherit;color:#fff;background:#14263a;border:1px solid #34506f;border-radius:11px;padding:11px 13px}
+button{cursor:pointer}.primary{background:#1284ee;border-color:#1284ee;font-weight:800}.ghost{background:#0d1926}.full{width:100%}.row{display:flex;align-items:center;gap:9px;justify-content:space-between;flex-wrap:wrap}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 14px}.toolbar>*{flex:1 1 150px}
+.nav{position:fixed;z-index:30;bottom:0;left:0;right:0;background:#0d1723;border-top:1px solid #263b53;display:flex;justify-content:center;overflow-x:auto}
+.nav button{border:0;border-radius:0;background:transparent;color:#8fa6bd;min-width:86px;padding:11px 9px 10px;font-size:12px}.nav button.active{color:#fff;background:#132337}
+.view{display:none}.view.active{display:block}.lesson{margin:10px 0}.lesson summary{cursor:pointer;font-weight:800}.lesson ul{padding-left:19px}.lesson li{margin:7px 0;line-height:1.45}
+.kcard{padding:15px;border-radius:14px;border:1px solid #2c4560;background:#0e1a27;margin:10px 0}.kanswer{display:none;margin-top:9px;color:#7fe0ad}.kcard.revealed .kanswer{display:block}
+.ans{display:block;width:100%;text-align:left;margin:9px 0;padding:13px}.good{border-color:#35c88a;background:#103125}.bad{border-color:#ef6672;background:#35151a}
+.timer-hot{border-color:#ef6672!important;color:#ff98a0!important}.quizbox{max-width:760px;margin:auto}.question{font-size:clamp(20px,5vw,30px);line-height:1.25;margin:18px 0}
+.empty{text-align:center;padding:28px 10px}.stat{font-size:28px;font-weight:850}.mini{font-size:11px;color:#8399b0}.danger{color:#ff8791}
+@media(min-width:760px){body{padding-bottom:0}.nav{position:sticky;top:58px;bottom:auto;border-top:0;border-bottom:1px solid #263b53}.nav button{min-width:120px}.wrap{padding-top:20px}}
 </style>
 </head>
 <body>
-<div class="top"><div class="row"><b>Excellentia Study Hub · EDGE</b><div class="row"><span class="pill" id="timer">00:40</span><span class="pill" id="net">nœud local</span></div></div></div>
-<main class="wrap">
-  <div class="card">
-    <h2>Continuité locale</h2>
-    <p class="muted">Le contenu vient du dernier snapshot validé du PC. Tes réponses sont conservées sur l’ancien téléphone puis réconciliées au retour du PC.</p>
-    <div class="grid">
-      <select id="mod"></select>
-      <button class="primary" id="start">Lancer 10 questions</button>
-      <button id="resume">Reprendre</button>
-    </div>
+<header class="top">
+  <div class="topline">
+    <div><div class="brand">Excellentia Study Hub · EDGE</div><div class="sub">Mode élève · essai libre · continuité locale</div></div>
+    <div class="pills"><span class="pill" id="timer">Essai libre</span><span class="pill" id="net">nœud local</span></div>
   </div>
-  <div id="host"></div>
+</header>
+<nav class="nav" id="nav">
+  <button data-view="home" class="active">Accueil</button>
+  <button data-view="learn">Apprendre</button>
+  <button data-view="train">S'entraîner</button>
+  <button data-view="review">Réviser</button>
+  <button data-view="exam">Examens</button>
+  <button data-view="progress">Progression</button>
+</nav>
+<main class="wrap">
+  <section id="v-home" class="view active"></section>
+  <section id="v-learn" class="view"></section>
+  <section id="v-train" class="view"></section>
+  <section id="v-review" class="view"></section>
+  <section id="v-exam" class="view"></section>
+  <section id="v-progress" class="view"></section>
+  <section id="v-quiz" class="view"></section>
 </main>
 <script>
 (async()=>{
-  const H=document.getElementById('host');
-  const M=document.getElementById('mod');
   const QUESTION_LIMIT_MS=40000;
-  let pack=null,run=null,timingBusy=false;
-  const esc=v=>String(v??'')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;');
-
+  let pack=null,run=null,timingBusy=false,currentView='home',reviewCards=[];
+  const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
   let recovering=false;
+
   function routePrefix(){
-    const raw=localStorage.getItem('exc_edge_last_ip')||location.hostname||'';
-    const p=raw.split('.');
-    if(p.length!==4)return null;
-    const n=p.map(Number);
+    const raw=localStorage.getItem('exc_edge_last_ip')||location.hostname||'',p=raw.split('.');
+    if(p.length!==4)return null;const n=p.map(Number);
     if(n.some(x=>!Number.isInteger(x)||x<0||x>255))return null;
     const priv=n[0]===10||n[0]===192&&n[1]===168||n[0]===172&&n[1]>=16&&n[1]<=31;
-    return priv?p.slice(0,3).join('.')+'.':null;
+    return priv?p.slice(0,3).join('.')+'.':null
   }
   function encodeRouteState(){
     try{
       const x={run:localStorage.getItem('exc_edge_run')||'',outbox:localStorage.getItem('exc_edge_outbox')||'[]',pass_expires_at_ms:Number(localStorage.getItem('exc_edge_pass_expires_at')||0)};
-      return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
+      return btoa(unescape(encodeURIComponent(JSON.stringify(x)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')
     }catch{return ''}
   }
   async function probeRoute(ip,expected){
-    const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),450);
+    const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),450);
     try{
-      const r=await fetch('http://'+ip+':8878/health',{cache:'no-store',mode:'cors',signal:ctl.signal});
-      if(!r.ok)return null;
-      const j=await r.json();
-      if(j?.mode!=='EXCELLENTIA_EDGE_CONTINUITY')return null;
-      if(expected&&Number(j.pass_offer_created_at||0)!==Number(expected))return null;
-      return ip;
+      const r=await fetch('http://'+ip+':8878/health',{cache:'no-store',mode:'cors',signal:ctl.signal});if(!r.ok)return null;
+      const j=await r.json();if(j?.mode!=='EXCELLENTIA_EDGE_CONTINUITY')return null;
+      if(expected&&Number(j.pass_offer_created_at||0)!==Number(expected))return null;return ip
     }catch{return null}finally{clearTimeout(t)}
   }
   async function recoverRoute(){
     if(recovering)return true;
-    const exp=Number(localStorage.getItem('exc_edge_pass_expires_at')||0);
-    if(exp&&Date.now()>=exp){localStorage.removeItem('exc_edge_rebind_token');return false}
-    const token=localStorage.getItem('exc_edge_rebind_token')||'',prefix=routePrefix();
-    if(!token||!prefix)return false;
-    recovering=true;document.getElementById('net').textContent='recherche du nœud…';
-    const expected=localStorage.getItem('exc_edge_offer_created_at')||'';
-    let next=1,found=null;
-    async function worker(){
-      while(!found&&next<255){
-        const i=next++,ip=prefix+i;if(ip===location.hostname)continue;
-        const hit=await probeRoute(ip,expected);if(hit){found=hit;break}
-      }
-    }
+    const exp=Number(localStorage.getItem('exc_edge_pass_expires_at')||0);if(exp&&Date.now()>=exp){localStorage.removeItem('exc_edge_rebind_token');return false}
+    const token=localStorage.getItem('exc_edge_rebind_token')||'',prefix=routePrefix();if(!token||!prefix)return false;
+    recovering=true;q('#net').textContent='recherche du nœud…';
+    const expected=localStorage.getItem('exc_edge_offer_created_at')||'';let next=1,found=null;
+    async function worker(){while(!found&&next<255){const ip=prefix+(next++);if(ip===location.hostname)continue;const hit=await probeRoute(ip,expected);if(hit){found=hit;break}}}
     await Promise.all(Array.from({length:20},()=>worker()));
-    if(!found){recovering=false;document.getElementById('net').textContent='hors ligne · progression locale';return false}
-    const state=encodeRouteState();
-    location.replace('http://'+found+':8878/pair#t='+encodeURIComponent(token)+(state?'&state='+encodeURIComponent(state):''));
-    return true;
+    if(!found){recovering=false;q('#net').textContent='hors ligne · local';return false}
+    const state=encodeRouteState();location.replace('http://'+found+':8878/pair#t='+encodeURIComponent(token)+(state?'&state='+encodeURIComponent(state):''));return true
   }
 
-  function outbox(){
-    try{return JSON.parse(localStorage.getItem('exc_edge_outbox')||'[]')}
-    catch{return []}
-  }
-  function saveOutbox(items){
-    localStorage.setItem('exc_edge_outbox',JSON.stringify(items.slice(-500)));
-  }
+  function outbox(){try{return JSON.parse(localStorage.getItem('exc_edge_outbox')||'[]')}catch{return []}}
+  function saveOutbox(items){localStorage.setItem('exc_edge_outbox',JSON.stringify(items.slice(-500)))}
   async function flushOutbox(){
-    const pending=outbox();
-    if(!pending.length)return true;
-    const keep=[];
-    for(const item of pending){
-      try{
-        const r=await fetch('/api/progress',{
-          method:'POST',cache:'no-store',
-          headers:{'content-type':'application/json'},
-          body:JSON.stringify(item)
-        });
-        if(!r.ok)throw new Error('HTTP_'+r.status);
-      }catch{keep.push(item)}
+    const pending=outbox();if(!pending.length)return true;const keep=[];
+    for(const item of pending){try{const r=await fetch('/api/progress',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify(item)});if(!r.ok)throw new Error()}catch{keep.push(item)}}
+    saveOutbox(keep);return keep.length===0
+  }
+  function queueProgress(item){const p=outbox();if(!p.some(x=>x.id===item.id))p.push(item);saveOutbox(p);void flushOutbox()}
+
+  function modules(){
+    const mods=Array.isArray(pack?.modules)?pack.modules:[];
+    return mods.filter(x=>Number(x.id)<=8)
+  }
+  function moduleOptions(all=true){
+    return (all?'<option value="0">Grand Mix</option>':'')+modules().map(x=>'<option value="'+Number(x.id)+'">'+esc(x.short||x.title||('Module '+x.id))+'</option>').join('')
+  }
+  function questions(module=0){return (pack?.questions||[]).filter(x=>!module||Number(x.module)===Number(module))}
+  function lessonCount(){return Object.values(pack?.lessons||{}).reduce((n,a)=>n+(Array.isArray(a)?a.length:0),0)}
+
+  function setView(v){
+    currentView=v;
+    qa('.view').forEach(x=>x.classList.remove('active'));q('#v-'+v)?.classList.add('active');
+    qa('#nav [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===v));
+    if(v!=='quiz'&&(!run||current()?.id==null))q('#timer').textContent='Essai libre';
+    renderView(v);window.scrollTo({top:0,behavior:'instant'})
+  }
+  function renderView(v){
+    if(v==='home')renderHome();else if(v==='learn')renderLearn();else if(v==='train')renderTrain();
+    else if(v==='review')renderReview();else if(v==='exam')renderExam();else if(v==='progress')renderProgress();else if(v==='quiz')renderQuiz()
+  }
+
+  function renderHome(){
+    const active=run&&current();
+    q('#v-home').innerHTML=
+      '<div class="hero"><h1>Bienvenue dans ton espace Excellentia</h1><p>Le QR ouvre maintenant la plateforme en <b>essai libre</b>. Choisis ce que tu veux faire ; aucun test ne démarre automatiquement.</p></div>'+
+      '<div class="grid">'+
+      card('📘','Apprendre',lessonCount()+' fiches disponibles','learn')+
+      card('🎯',"S'entraîner",'Séries chronométrées · 40 s/question','train')+
+      card('🔁','Réviser','Rappel actif et micro-fiches','review')+
+      card('🧪','Examens','Simulation avec correction masquée','exam')+
+      card('📈','Progression','État local, reprise et synchronisation','progress')+
+      '</div>'+
+      (active?'<div class="card"><div class="row"><div><b>Session en cours</b><div class="muted">Question '+(Number(run.i)+1)+' / '+run.ids.length+'</div></div><button class="primary" id="resumeRun">Reprendre</button></div></div>':'');
+    q('#resumeRun')?.addEventListener('click',()=>setView('quiz'))
+  }
+  function card(icon,title,desc,view){return '<button class="card action" data-go="'+view+'"><span class="icon">'+icon+'</span><b>'+esc(title)+'</b><span class="muted">'+esc(desc)+'</span></button>'}
+
+  function renderLearn(){
+    q('#v-learn').innerHTML='<div class="hero"><h1>Apprendre</h1><p>Choisis un module puis ouvre une fiche. Le contenu vient du dernier snapshot validé du PC.</p></div>'+
+      '<div class="toolbar"><select id="learnMod">'+moduleOptions(false)+'</select></div><div id="lessonHost"></div>';
+    const sel=q('#learnMod');sel.onchange=renderLessonList;renderLessonList()
+  }
+  function renderLessonList(){
+    const m=Number(q('#learnMod')?.value||modules()[0]?.id||1),list=pack?.lessons?.[String(m)]||[];
+    q('#lessonHost').innerHTML=list.length?list.map((l,i)=>'<details class="card lesson"><summary>'+esc(l.title||('Fiche '+(i+1)))+' <span class="mini">· '+Number(l.minutes||0)+' min</span></summary>'+
+      '<p class="muted">'+esc(l.summary||'')+'</p>'+
+      ((l.objectives||[]).length?'<h3>Objectifs</h3><ul>'+(l.objectives||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+      ((l.points||[]).length?'<h3>Points clés</h3><ul>'+(l.points||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+      ((l.recall_prompts||[]).length?'<h3>Rappel actif</h3><ul>'+(l.recall_prompts||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'')+
+      '</details>').join(''):'<div class="card empty">Aucune fiche dans ce module.</div>'
+  }
+
+  function renderTrain(){
+    q('#v-train').innerHTML='<div class="hero"><h1>S\'entraîner</h1><p>Tu choisis quand commencer. Une fois la série lancée : 40 secondes maximum par question.</p></div>'+
+      '<div class="card"><div class="toolbar"><select id="trainMod">'+moduleOptions(true)+'</select><select id="trainCount"><option>10</option><option>20</option><option>30</option></select><button class="primary" id="trainStart">Lancer la série</button></div></div>';
+    q('#trainStart').onclick=()=>startRun(Number(q('#trainMod').value||0),Number(q('#trainCount').value||10),'module')
+  }
+
+  function renderExam(){
+    q('#v-exam').innerHTML='<div class="hero"><h1>Examens</h1><p>40 secondes par question. Les réponses sont enregistrées, mais la correction reste masquée jusqu\'à la fin.</p></div>'+
+      '<div class="card"><div class="toolbar"><select id="examMod">'+moduleOptions(true)+'</select><select id="examCount"><option value="10">Mini blanc · 10</option><option value="20">Blanc · 20</option><option value="30">Blanc · 30</option></select><button class="primary" id="examStart">Commencer</button></div></div>';
+    q('#examStart').onclick=()=>startRun(Number(q('#examMod').value||0),Number(q('#examCount').value||10),'mock')
+  }
+
+  function renderReview(){
+    if(!reviewCards.length){
+      const all=[...questions(0)];for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}reviewCards=all.slice(0,12)
     }
-    saveOutbox(keep);
-    return keep.length===0;
-  }
-  function queueProgress(item){
-    const pending=outbox();
-    if(!pending.some(x=>x.id===item.id))pending.push(item);
-    saveOutbox(pending);
-    void flushOutbox();
+    q('#v-review').innerHTML='<div class="hero"><h1>Réviser</h1><p>Essaie de répondre mentalement, puis touche la carte pour révéler la réponse.</p></div>'+
+      reviewCards.map((x,i)=>'<div class="kcard" data-card="'+i+'"><b>'+esc(x.prompt)+'</b><div class="kanswer"><b>'+esc((x.choices||[])[Number(x.answer)]||'')+'</b><div class="muted">'+esc(x.explanation||'')+'</div></div></div>').join('')+
+      '<button class="full ghost" id="newReview">Nouvelles cartes</button>';
+    qa('[data-card]').forEach(x=>x.onclick=()=>x.classList.toggle('revealed'));
+    q('#newReview').onclick=()=>{reviewCards=[];renderReview()}
   }
 
-  async function load(){
-    let r;
-    try{
-      r=await fetch('/api/offline-pack',{cache:'no-store'});
-      if(!r.ok)throw new Error('snapshot indisponible');
-    }catch(e){
-      if(await recoverRoute())return;
-      throw e;
-    }
-    localStorage.setItem('exc_edge_last_ip',location.hostname);
-    pack=await r.json();
-    const mods=pack.modules||[];
-    M.innerHTML='<option value="0">Grand Mix</option>'+
-      mods.filter(x=>Number(x.id)<=7)
-        .map(x=>'<option value="'+Number(x.id)+'">'+esc(x.short||x.title)+'</option>')
-        .join('');
-    const saved=localStorage.getItem('exc_edge_run');
-    if(saved){try{run=JSON.parse(saved)}catch{}}
-    await flushOutbox();
-    document.getElementById('net').textContent='nœud local · connecté';
-    render();
+  function renderProgress(){
+    const answered=run?Object.keys(run.answers||{}).length:0;
+    q('#v-progress').innerHTML='<div class="hero"><h1>Progression locale</h1><p>Cette vue couvre ce qui est disponible sur B-EDGE pendant que le PC est absent.</p></div>'+
+      '<div class="grid">'+
+      '<div class="card"><div class="stat">'+Number(pack?.questions?.length||0)+'</div><div class="muted">questions disponibles</div></div>'+
+      '<div class="card"><div class="stat">'+lessonCount()+'</div><div class="muted">fiches disponibles</div></div>'+
+      '<div class="card"><div class="stat">'+outbox().length+'</div><div class="muted">réponses en attente de synchro</div></div>'+
+      '<div class="card"><div class="stat">'+answered+'</div><div class="muted">réponses dans la session locale</div></div>'+
+      '</div><div class="card"><b>Snapshot</b><div class="muted">'+esc(pack?.build||'inconnu')+' · synchronisation automatique au retour du PC</div></div>'
   }
 
-  function save(){
-    if(run)localStorage.setItem('exc_edge_run',JSON.stringify(run));
+  function save(){if(run)localStorage.setItem('exc_edge_run',JSON.stringify(run))}
+  function current(){if(!run)return null;return questions(0).find(x=>x.id===run.ids[run.i])||null}
+  function startRun(module,count,mode){
+    const all=[...questions(module)];for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}
+    const now=Date.now();run={id:'edge-run-'+now+'-'+Math.random().toString(36).slice(2,8),origin_session_id:'',ids:all.slice(0,Math.max(1,Math.min(count,all.length))).map(x=>x.id),i:0,score:0,answers:{},mode,module,started:now,question_started_at:now,deadlineAt:now+QUESTION_LIMIT_MS,question_limit_ms:QUESTION_LIMIT_MS};
+    save();setView('quiz')
   }
-
-  function pick(){
-    const m=Number(M.value||0);
-    const all=(pack.questions||[]).filter(q=>!m||Number(q.module)===m);
-    const a=[...all];
-    for(let i=a.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [a[i],a[j]]=[a[j],a[i]];
-    }
-    const now=Date.now();
-    run={id:'edge-run-'+now+'-'+Math.random().toString(36).slice(2,8),origin_session_id:'',ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},mode:'EDGE_OFFLINE',module:m,started:now,question_started_at:now,deadlineAt:now+QUESTION_LIMIT_MS,question_limit_ms:QUESTION_LIMIT_MS};
-    save();render();
-  }
-
-  function current(){
-    if(!run)return null;
-    return (pack.questions||[]).find(x=>x.id===run.ids[run.i])||null;
-  }
-
   function ensureQuestionClock(){
-    if(!run)return;
-    const x=current();if(!x||run.answers[x.id]!=null)return;
-    const now=Date.now(),limit=Number(run.question_limit_ms||QUESTION_LIMIT_MS);
-    if(!Number(run.question_started_at||0))run.question_started_at=now;
-    if(!Number(run.deadlineAt||0))run.deadlineAt=now+Math.max(1,Math.min(QUESTION_LIMIT_MS,limit));
-    save();
+    if(!run)return;const x=current();if(!x||run.answers[x.id]!=null)return;
+    const now=Date.now();if(!Number(run.question_started_at||0))run.question_started_at=now;
+    if(!Number(run.deadlineAt||0))run.deadlineAt=now+QUESTION_LIMIT_MS;save()
   }
-  function questionMsLeft(){
-    if(!run)return QUESTION_LIMIT_MS;const x=current();if(!x||run.answers[x.id]!=null)return 0;
-    ensureQuestionClock();return Math.max(0,Number(run.deadlineAt||0)-Date.now())
-  }
+  function questionMsLeft(){if(!run)return QUESTION_LIMIT_MS;const x=current();if(!x||run.answers[x.id]!=null)return 0;ensureQuestionClock();return Math.max(0,Number(run.deadlineAt||0)-Date.now())}
   function paintTimer(){
-    const el=document.getElementById('timer');if(!el)return;
-    const x=current(),answered=x&&run?.answers?.[x.id]!=null,ms=answered?0:questionMsLeft(),sec=Math.max(0,Math.ceil(ms/1000));
-    el.textContent=answered?'Répondu':'00:'+String(sec).padStart(2,'0');
-    el.classList.toggle('timer-hot',!answered&&sec<=10)
+    const el=q('#timer');if(!el)return;
+    if(currentView!=='quiz'||!run||!current()){el.textContent='Essai libre';el.classList.remove('timer-hot');return}
+    const x=current(),answered=run.answers[x.id]!=null,sec=Math.max(0,Math.ceil(questionMsLeft()/1000));
+    el.textContent=answered?'Répondu':'00:'+String(sec).padStart(2,'0');el.classList.toggle('timer-hot',!answered&&sec<=10)
   }
   async function answer(i,timedOut=false){
-    const x=current();
-    if(!x||run.answers[x.id]!=null||timingBusy)return;
-    timingBusy=true;
+    const x=current();if(!x||run.answers[x.id]!=null||timingBusy)return;timingBusy=true;
     try{
-      const selected=timedOut?-1:Number(i),ok=!timedOut&&selected===Number(x.answer);
-      const started=Number(run.question_started_at||Date.now()),elapsed=timedOut?QUESTION_LIMIT_MS:Math.max(0,Math.min(QUESTION_LIMIT_MS,Date.now()-started));
-      run.answers[x.id]=selected;
-      if(ok)run.score++;
-      run.deadlineAt=0;save();
-      queueProgress({
-        id:run.id+'-'+(run.i+1)+'-'+x.id,
-        run_id:run.id,run_total:run.ids.length,run_position:run.i+1,
-        origin_session_id:String(run.origin_session_id||''),
-        question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,
-        selected,correct:ok,mode:String(run.mode||'EDGE_OFFLINE'),elapsed_ms:elapsed,timed_out:timedOut
-      });
-      if(timedOut){next(true);return}
-      render();
+      const selected=timedOut?-1:Number(i),ok=!timedOut&&selected===Number(x.answer),started=Number(run.question_started_at||Date.now()),elapsed=timedOut?QUESTION_LIMIT_MS:Math.max(0,Math.min(QUESTION_LIMIT_MS,Date.now()-started));
+      run.answers[x.id]=selected;if(ok)run.score++;run.deadlineAt=0;save();
+      queueProgress({id:run.id+'-'+(run.i+1)+'-'+x.id,run_id:run.id,run_total:run.ids.length,run_position:run.i+1,origin_session_id:String(run.origin_session_id||''),question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,selected,correct:ok,mode:String(run.mode||'EDGE_OFFLINE'),elapsed_ms:elapsed,timed_out:timedOut});
+      if(timedOut){nextQuestion();return}renderQuiz()
     }finally{timingBusy=false}
   }
-
-  function next(fromTimeout=false){
+  function nextQuestion(){
     void flushOutbox();
-    if(run.i<run.ids.length-1){
-      run.i++;const now=Date.now();run.question_started_at=now;run.deadlineAt=now+QUESTION_LIMIT_MS;run.question_limit_ms=QUESTION_LIMIT_MS;save();render();return
-    }
-    const mock=String(run.mode||'').toLowerCase()==='mock';
-    H.innerHTML='<div class="card"><h2>Terminé'+(mock?'':' · '+run.score+'/'+run.ids.length)+
-      '</h2><p class="muted">Résultat conservé sur B‑EDGE'+(mock?' ; correction au retour du PC.':'.')+'</p>'+
-      '<button class="primary" id="reset">Nouvelle série</button></div>';
-    document.getElementById('timer').textContent='Terminé';
-    document.getElementById('reset').onclick=()=>{
-      localStorage.removeItem('exc_edge_run');
-      run=null;
-      render();
-    };
+    if(run.i<run.ids.length-1){run.i++;const now=Date.now();run.question_started_at=now;run.deadlineAt=now+QUESTION_LIMIT_MS;save();renderQuiz();return}
+    finishRun()
   }
-
-  function render(){
-    if(!run){
-      document.getElementById('timer').textContent='00:40';
-      H.innerHTML='<div class="card"><h3>Prêt</h3><p class="muted">Choisis un module puis lance une série. Le PC n’est pas requis pour cette continuité.</p></div>';
-      return;
-    }
-    const x=current();
-    if(!x){H.innerHTML='<div class="card">Session locale invalide.</div>';return}
+  function finishRun(){
+    const mock=String(run.mode||'').toLowerCase()==='mock';
+    q('#v-quiz').innerHTML='<div class="quizbox card empty"><h2>Terminé'+(mock?'':' · '+run.score+'/'+run.ids.length)+'</h2><p class="muted">'+(mock?'Les réponses sont enregistrées. La correction complète sera consolidée au retour du PC.':'Résultat conservé sur B-EDGE et synchronisé automatiquement.')+'</p><button class="primary" id="backHome">Retour à l\'accueil</button></div>';
+    q('#timer').textContent='Terminé';q('#backHome').onclick=()=>{localStorage.removeItem('exc_edge_run');run=null;setView('home')}
+  }
+  function renderQuiz(){
+    const x=current();if(!run||!x){setView('home');return}currentView='quiz';
+    qa('.view').forEach(v=>v.classList.remove('active'));q('#v-quiz').classList.add('active');qa('#nav button').forEach(b=>b.classList.remove('active'));
     ensureQuestionClock();paintTimer();
     const selected=run.answers[x.id],answered=selected!=null,mock=String(run.mode||'').toLowerCase()==='mock';
-    H.innerHTML='<div class="card"><div class="row"><span class="pill">Question '+(run.i+1)+' / '+run.ids.length+
-      '</span><b>'+(mock?'Examen':run.score+' pts')+'</b></div><h2>'+esc(x.prompt)+'</h2>'+
-      (x.choices||[]).map((c,i)=>'<button class="ans '+(answered&&!mock?(i===Number(x.answer)?'good':i===Number(selected)?'bad':''):'')+
-        '" '+(answered?'disabled ':'')+'data-a="'+i+'">'+esc(c)+'</button>').join('')+
-      (answered?(mock?'<p class="muted">Réponse enregistrée. La correction reste masquée jusqu’à la fin.</p>':'<p class="muted">'+esc(x.explanation||'')+'</p>')+'<button class="primary" id="next">Suivant</button>':'')+
-      '</div>';
-    if(!answered)document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.a),false));
-    const n=document.getElementById('next');if(n)n.onclick=()=>next(false);
+    q('#v-quiz').innerHTML='<div class="quizbox"><div class="card"><div class="row"><span class="pill">Question '+(run.i+1)+' / '+run.ids.length+'</span><b>'+(mock?'Examen':run.score+' pts')+'</b></div><div class="question">'+esc(x.prompt)+'</div>'+
+      (x.choices||[]).map((c,i)=>'<button class="ans '+(answered&&!mock?(i===Number(x.answer)?'good':i===Number(selected)?'bad':''):'')+'" '+(answered?'disabled ':'')+'data-a="'+i+'">'+esc(c)+'</button>').join('')+
+      (answered?(mock?'<p class="muted">Réponse enregistrée. Correction masquée jusqu\'à la fin.</p>':'<p class="muted">'+esc(x.explanation||'')+'</p>')+'<button class="primary full" id="next">'+(run.i<run.ids.length-1?'Question suivante':'Terminer')+'</button>':'')+
+      '</div><button class="ghost full" id="leaveQuiz">← Retour à la plateforme</button></div>';
+    if(!answered)qa('[data-a]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.a),false));
+    q('#next')?.addEventListener('click',nextQuestion);q('#leaveQuiz').onclick=()=>setView('home')
   }
 
-  document.getElementById('start').onclick=pick;
-  document.getElementById('resume').onclick=render;
-  setInterval(()=>{
-    if(!run||timingBusy)return;const x=current();if(!x||run.answers[x.id]!=null){paintTimer();return}
-    paintTimer();if(questionMsLeft()<=0)void answer(-1,true)
-  },250);
-  setInterval(async()=>{
-    if(recovering)return;
-    try{
-      const r=await fetch('/api/status',{cache:'no-store',signal:AbortSignal.timeout(1800)});
-      if(!r.ok)throw new Error('status');
-      document.getElementById('net').textContent='nœud local · connecté';
-      void flushOutbox();
-    }catch{void recoverRoute()}
-  },12000);
-  await load();
+  qa('#nav [data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)setView(b.dataset.go)});
+  setInterval(()=>{if(currentView!=='quiz'||!run||timingBusy)return;const x=current();if(!x||run.answers[x.id]!=null){paintTimer();return}paintTimer();if(questionMsLeft()<=0)void answer(-1,true)},250);
+  setInterval(async()=>{if(recovering)return;try{const r=await fetch('/api/status',{cache:'no-store',signal:AbortSignal.timeout(1800)});if(!r.ok)throw new Error();q('#net').textContent='nœud local · connecté';void flushOutbox()}catch{void recoverRoute()}},12000);
+
+  try{
+    const r=await fetch('/api/offline-pack',{cache:'no-store'});if(!r.ok)throw new Error('snapshot indisponible');pack=await r.json();
+  }catch(e){if(await recoverRoute())return;throw e}
+  localStorage.setItem('exc_edge_last_ip',location.hostname);
+  const saved=localStorage.getItem('exc_edge_run');if(saved){try{run=JSON.parse(saved)}catch{}}
+  await flushOutbox();q('#net').textContent='nœud local · connecté';setView('home')
 })().catch(e=>{
-  document.getElementById('host').innerHTML='<div class="card"><h3>Snapshot indisponible</h3><p>'+String(e.message||e)+'</p></div>';
+  document.querySelector('.wrap').innerHTML='<div class="card"><h2>Continuité locale indisponible</h2><p class="muted">'+String(e&&e.message||e)+'</p></div>'
 });
 </script>
 </body>
 </html>
 """;
-    }
-
-    static int normalizeMinutes(int n) {
-        int[] allowed = new int[]{30,60,90,120,180,240,360,480};
-        for (int x : allowed) if (n == x) return x;
-        return 30;
     }
 
     private static String cookieValue(String header, String name) {
