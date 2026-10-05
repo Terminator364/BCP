@@ -120,7 +120,7 @@
       "field_certified_from_ci"
     ]
   },
-  "next_atomic_work_unit": "WAIT_ONLY_EXISTING_R3_RUN_37368643600_THEN_PROMOTE_PR32_AND_FIELD_READBACK",
+  "next_atomic_work_unit": "WHEN_EXISTING_RUN_37368643600_EXECUTES: REQUIRE_GREEN -> PROMOTE_PR32 -> FIELD_193_COMPOSITE_READBACK; OTHERWISE NO_MUTATION",
   "phase_0b": {
     "status": "FIELD_ACTIVE_V192_CANDIDATE_V193_PENDING_CI",
     "device": "MBMPC",
@@ -136,7 +136,17 @@
       "expected_rollback_lkg": "1.4.0",
       "updater_agent_version": "1.9.1",
       "updater_last_result": "AUTH_REQUIRED",
-      "ram_load_pct": 88.1
+      "ram_load_pct": 88.1,
+      "resource_governor": {
+        "mode": "STUDENT_ACTIVE",
+        "reason": "INTERACTION_PRIORITY",
+        "rss_mb": 63,
+        "free_ram_mb": 426,
+        "update_check": false,
+        "content_scan": false,
+        "safe_to_activate": true,
+        "active_mission_persisted": true
+      }
     },
     "defects_open": [
       "ROLLBACK_POINTER_NOT_CANONICAL_LKG_1_4_0",
@@ -149,5 +159,14 @@
       "no_heavy_local_test_due_ram": true,
       "no_secret_extracted": true
     }
+  },
+  "external_blocker": {
+    "detected_at": "2026-10-05T20:20Z",
+    "provider": "GITHUB_ACTIONS",
+    "status": "DEGRADED_PER_GITHUB_STATUS",
+    "symptom": "GitHub-hosted runner assignment delay; R3 run 37368643600 remains queued with a single queued job",
+    "affected_candidate": "MED_REBUILD_1.9.3",
+    "policy": "DO_NOT_MERGE_OR_FIELD_ACTIVATE_WITHOUT_TEST_GATE",
+    "fallback_decision": "No BuildHub executor found; PC local heavy testing forbidden while Resource Governor is STUDENT_ACTIVE/INTERACTION_PRIORITY."
   }
 }
