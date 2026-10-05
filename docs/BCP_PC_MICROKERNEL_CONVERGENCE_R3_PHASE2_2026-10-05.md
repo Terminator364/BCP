@@ -74,14 +74,12 @@ Preserved invariants:
 - V1 telemetry;
 - V1 project event/head/resume endpoints.
 
-Added Phase 2 authority endpoints:
+Added Phase 2 authority **read-only diagnostic** endpoints:
 - `GET /v2/authority/state?stream=...`
 - `GET /v2/authority/history?stream=...`
 - `GET /v2/outbox/due`
-- `POST /v2/authority/fence`
-- `POST /v2/authority/transition`
 
-These are candidate interfaces only. They do not certify field installation.
+Writer fencing and `commit_transition` remain internal Python primitives. The counter-audit explicitly removed raw HTTP `/v2/authority/fence` and `/v2/authority/transition` because generic remote state mutation would bypass typed Project/Desired/Recipe validation and future capability grants.
 
 ## Database convergence
 
@@ -104,10 +102,9 @@ The exact field trigger is selected only after the read-only Phase 2 startup inv
 
 ## Security boundary
 
-Phase 2 does not add arbitrary command execution.
+Phase 2 does not add arbitrary command execution **or generic remote authority mutation**.
 
-The V2 authority endpoints mutate only the local durable state machine.
-Typed capability execution and Windows Job Object containment are the next Phase 2 tranche.
+CriticalStore writes are internal primitives. Network mutation must arrive through typed domain/capability handlers that apply project scope, permission, resource and evidence contracts before committing authority state.
 
 ## Acceptance for tranche A
 
@@ -205,3 +202,18 @@ Phase 2 candidate decision:
 - **FALLBACK:** `UNRESOLVED_FIELD` until the read-only PC startup inventory proves what is installed and which one bounded stale-health mechanism is safe.
 
 This choice preserves the goal of one lightweight resident BCP process and avoids replacing one dependency loop with another.
+
+
+## Counter-audit hardening after first CI
+
+The first targeted Phase 2 run proved:
+- compile PASS;
+- CriticalStore durability/failure tests PASS;
+- integrated server selftest PASS;
+- resource admission / WorkerSupervisor simulation PASS.
+
+The only initial failure was a static-test escaping bug for the Windows Run-key string, not a runtime failure.
+
+Before accepting that green path, a second security counter-audit found the raw CriticalStore POST endpoints too broad. They were removed before promotion.
+
+CI routing was also hardened with workflow concurrency/cancel-in-progress so superseded Phase 2 runs do not consume targeted runner budget unnecessarily.

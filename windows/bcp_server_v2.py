@@ -486,57 +486,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(401, {"error": "unauthorized"})
             return
 
-        if path == "/v2/authority/fence":
-            try:
-                body = self.read_json()
-                token = critical_store().acquire_writer_fence(
-                    str(body.get("stream_id") or ""),
-                    str(body.get("owner_id") or ""),
-                )
-                self.send_json(
-                    200,
-                    {
-                        "schema": "bcp.writer_fence_receipt/1",
-                        "status": "ACQUIRED",
-                        "stream_id": str(body.get("stream_id") or ""),
-                        "fencing_token": token,
-                        "field_certified": False,
-                    },
-                )
-            except Exception as e:
-                self.send_json(409, {"error": "fence_failed", "detail": str(e)})
-            return
-
-        if path == "/v2/authority/transition":
-            try:
-                body = self.read_json()
-                receipt = critical_store().commit_transition(
-                    stream_id=str(body.get("stream_id") or ""),
-                    expected_revision=int(body.get("expected_revision")),
-                    new_revision=int(body.get("new_revision")),
-                    fencing_token=int(body.get("fencing_token")),
-                    payload=body.get("payload"),
-                    destination=str(body.get("destination") or "BCP_RUNTIME"),
-                )
-                self.send_json(
-                    200,
-                    {
-                        "schema": "bcp.durable_commit_receipt/1",
-                        "status": receipt.status,
-                        "stream_id": receipt.stream_id,
-                        "revision": receipt.revision,
-                        "fencing_token": receipt.fencing_token,
-                        "content_hash": receipt.content_hash,
-                        "predecessor_hash": receipt.predecessor_hash,
-                        "outbox_message_id": receipt.outbox_message_id,
-                        "idempotent_replay": receipt.idempotent_replay,
-                        "proof_scope": "FIELD" if os.name == "nt" else "SIMULATION",
-                        "field_certified": False,
-                    },
-                )
-            except Exception as e:
-                self.send_json(409, {"error": "transition_failed", "detail": str(e)})
-            return
+        # CriticalStore mutation is intentionally internal-only.
+        # Network callers must use typed domain/capability surfaces once admitted.
 
         if path == "/v1/telemetry":
             try:

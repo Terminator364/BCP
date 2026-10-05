@@ -17,16 +17,21 @@ for forbidden in [
 ]:
     assert forbidden not in SERVER, forbidden
 
-# Phase 2 durable-authority endpoints.
+# Phase 2 durable-authority read-only diagnostics.
 for route in [
     "/v2/authority/state",
     "/v2/authority/history",
     "/v2/outbox/due",
-    "/v2/authority/fence",
-    "/v2/authority/transition",
     "/v2/resources",
 ]:
     assert route in SERVER, route
+
+# Raw CriticalStore mutation is an internal primitive, never a network API.
+for forbidden_route in [
+    'if path == "/v2/authority/fence"',
+    'if path == "/v2/authority/transition"',
+]:
+    assert forbidden_route not in SERVER, forbidden_route
 
 # Core invariants reused from vNext.
 for token in [
@@ -59,7 +64,7 @@ for token in [
 
 # No field PASS from repository code.
 assert '"field_certified": False' in SERVER
-assert '"proof_scope": "FIELD" if os.name == "nt" else "SIMULATION"' in SERVER
+assert '"proof_scope": "FIELD"' not in SERVER
 
 print("BCP_R3_PHASE2_MICROKERNEL_STATIC_GUARD=PASS")
 print("candidate=bcp_server_v2.py")
