@@ -678,3 +678,50 @@ It is judged by:
 
 "Tout faire" therefore means:
 **Any legitimate authorized task is either already executable, can be acquired as a capability, or is escalated with a precise irreducible reason — without making the user the integration layer.**
+
+
+## 32. Logical controller set
+
+Controllers are logical modules, NOT separate resident daemons.
+
+- MissionController — finite durable work/DAG.
+- DesiredStateController — current vs desired reconciliation.
+- ResourceController — PC/phone resource admission and preemption.
+- CapabilityController — capability availability/health/TTL.
+- CapabilityFactoryController — capability gap pipeline.
+- ReleaseController — project/component update promotion/rollback.
+- TransportController — Drive/Telegram/Nexus/direct path health and outbox.
+- ArtifactController — generated files, hashes, retention, delivery.
+- ContextController — Digital Twin projections/context packs.
+- FrictionController — converts avoidable user mechanics into automation debt.
+- IncidentController — Error Ledger, recipes, regressions.
+- PortfolioController — priorities/WIP/background work.
+
+All share the same event bus/Chronicle/SQLite state and resource governor.
+
+## 33. Privileged provider decision
+
+Before implementing a custom privileged Windows service, Phase 0/2 must benchmark and prototype **PowerShell Just Enough Administration (JEA)** as a native least-privilege provider.
+
+JEA can expose only selected cmdlets/functions/external commands and can use temporary virtual accounts for privileged actions.
+
+Decision tree:
+- if JEA can meet local-only, bounded-action, latency/resource and reliability requirements, reuse it for suitable P3 operations;
+- if not, implement a tiny restricted BCP privileged helper with service SID + explicit ACL;
+- both remain behind the same typed Capability contract.
+
+No mission depends on a specific privilege implementation.
+
+## 34. Candidate adapter sandboxing
+
+Capability Factory candidate code should run in the smallest practical isolation boundary.
+
+Order:
+1. static/schema validation;
+2. temporary worktree/root;
+3. normal-user process with Job Object;
+4. network-denied process when network is unnecessary;
+5. Windows restricted/AppContainer sandbox API when supported and compatible;
+6. privileged canary only after previous gates pass.
+
+The 4 GB PC must not require a heavyweight VM/container simply to test every adapter.
