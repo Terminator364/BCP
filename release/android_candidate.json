@@ -7,7 +7,7 @@
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-10-05-EXCELLENTIA-PERMANENT-EDGE-AUTHORITY",
+  "requirements_revision": "2026-10-05-EXCELLENTIA-AUTO-SERVER-RESTORE",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -101,9 +101,11 @@
     "expired browser sessions do not invalidate the permanent Edge pass; a new QR/session can be created locally without the PC",
     "Home exposes EXCELLENTIA · ACCÈS PERMANENT with a local QR duration picker and explicitly allows the PC to change network or power off after sync",
     "snapshot refresh updates corpus/content while preserving the phone-resident permanent pass authority and active browser sessions",
-    "no silent QR fallback to PC LAN is part of the permanent Excellentia continuity design"
+    "no silent QR fallback to PC LAN is part of the permanent Excellentia continuity design",
+    "MY_PACKAGE_REPLACED always restores dedicated server mode and restarts EdgeRelayService",
+    "BOOT_COMPLETED restores dedicated server mode and restarts EdgeRelayService even if legacy flag was lost"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.6-permanent-excellentia-authority_NEXUS-0.2.6",
+  "release_train": "BCP-0.7.18_EDGE-2.2.6-auto-server-restore_NEXUS-0.2.6",
   "signed_apk_sha256": "",
   "signature_schemes_verified": [],
   "signed_source_commit": "",
@@ -114,5 +116,5 @@
   "exact_head_machine_qualification": {
     "status": "PENDING_2_2_6_EXACT_HEAD"
   },
-  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_AND_SINGLE_IN_PLACE_INSTALL"
+  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_AND_IN_PLACE_INSTALL"
 }
