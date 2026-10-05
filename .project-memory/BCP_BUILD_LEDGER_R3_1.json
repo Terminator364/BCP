@@ -1,0 +1,95 @@
+{
+  "schema": "bcp.build_ledger/1",
+  "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "revision": "R3.1-ABC",
+  "created_at": "2026-10-05",
+  "route": "SIM_FIRST",
+  "vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE",
+  "phase_0a": {
+    "status": "IN_PROGRESS",
+    "source_preflight": {
+      "bcp_main": "accaa6a2ea7169f57d3574e8d202112665de53b2",
+      "bcp_design": "9bc771d9577617ac458e0bfe213d24eb59565b1a",
+      "chatgpt_pc_main": "eb1b293fed51063abe81dacd096e75dc9cbc97b6",
+      "buildhub_main": "18ac5c048acfa6f190713239cd1611952d9ca24c",
+      "pc_command_state_main": "f10913f1fecc678a1c6ccc31758eb753cdb20924",
+      "med_rebuild_pr20_head": "5577e34fe2d138b1df6354c39acf25351809431c",
+      "med_rebuild_pr20_divergence": {
+        "ahead_by": 101,
+        "behind_by": 74,
+        "status": "diverged"
+      },
+      "rfc0001_repo": "Terminator364/ChatGPT-PC",
+      "rfc0001_sha": "a92a79ad6d2918b1c1285425d1d5104c832ce507"
+    },
+    "routing": {
+      "github_repo_static": "PRIMARY",
+      "github_actions": "TARGETED_ONLY_QUOTA_AWARE",
+      "buildhub": "ENABLED_FALLBACK",
+      "pc_native": "FIELD_ONLY",
+      "desktop_commander": "LAST_MILE_METERED_UNKNOWN_TREATED_LOW"
+    },
+    "reuse_map": {
+      "KEEP": [
+        "BCP durable mission/policy/memory authority",
+        "ChatGPT-PC vNext CriticalStore transactional outbox",
+        "ChatGPT-PC WorkerSupervisor + Windows Job Object",
+        "ChatGPT-PC Project Capsule registry",
+        "G6 canonical receipts/readback semantics",
+        "Med Rebuild V1.4 application/updater from PR20",
+        "BuildHub generic build/test/package provider"
+      ],
+      "ADAPT": [
+        "Project Capsule: register MED_REBUILD without inventing PC root",
+        "vNext vertical adapter: durable mission -> bounded native worker -> receipt",
+        "Med Rebuild audit/health operations as typed project capabilities",
+        "field probe: read-only Windows/Med Rebuild inventory"
+      ],
+      "MERGE": [
+        "PR20 Med Rebuild source files onto current ChatGPT-PC main-derived implementation branch",
+        "R3.1 routing policy with existing vNext runtime primitives"
+      ],
+      "RETIRE": [
+        "Desktop Commander as routine Med Rebuild coding/test/update loop",
+        "manual CMD/PowerShell relay as normal recovery path",
+        "parallel project-specific mission kernel"
+      ]
+    },
+    "anti_false_pass": {
+      "field_certified": false,
+      "pc_probe_run": false,
+      "desktop_commander_used": false,
+      "ci_is_not_field_proof": true
+    }
+  },
+  "implementation": {
+    "repo": "Terminator364/ChatGPT-PC",
+    "branch": "build/med-rebuild-zero-touch-native-r3-20261005",
+    "base_sha": "eb1b293fed51063abe81dacd096e75dc9cbc97b6",
+    "plan": [
+      "preserve PR20 Med Rebuild source on current main-derived branch",
+      "add MED_REBUILD project capsule",
+      "add zero-touch vertical adapter using CriticalStore and WorkerSupervisor",
+      "add interruption/resume and Desktop Commander absence tests",
+      "add read-only Windows field probe",
+      "run one targeted CI gate only"
+    ]
+  },
+  "exact_field_probe": {
+    "status": "TO_BUILD",
+    "expected_path": "chatgpt-pc/vnext/windows/med-rebuild/MED_REBUILD_READONLY_FIELD_PROBE_R3.ps1",
+    "claims_allowed": [
+      "inventory",
+      "resource snapshot",
+      "runtime/startup observation",
+      "tool availability",
+      "hash receipt"
+    ],
+    "claims_forbidden": [
+      "installed_from_file_existence",
+      "healthy_from_http_only",
+      "field_certified_from_ci"
+    ]
+  },
+  "next_atomic_work_unit": "CREATE_CURRENT_MAIN_DERIVED_MED_REBUILD_IMPLEMENTATION_BRANCH_AND_REUSE_PR20"
+}
