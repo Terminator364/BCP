@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_mission_ingress_v1.schema.json",
+  "title": "BCP Mission Ingress V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ingress_id",
+    "transport",
+    "dedupe_key",
+    "source_trust",
+    "status",
+    "received_at",
+    "mission"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.mission_ingress/1"},
+    "ingress_id": {"type": "string", "minLength": 8, "maxLength": 200},
+    "transport": {
+      "enum": [
+        "CHATGPT",
+        "TELEGRAM",
+        "LOCAL_UI",
+        "DRIVE_MAILBOX",
+        "NEXUS",
+        "API",
+        "RECOVERY"
+      ]
+    },
+    "transport_event_id": {"type": ["string", "null"], "maxLength": 256},
+    "conversation_id": {"type": ["string", "null"], "maxLength": 256},
+    "dedupe_key": {"type": "string", "minLength": 8, "maxLength": 240},
+    "source_trust": {
+      "enum": [
+        "AUTHENTICATED_USER",
+        "AUTHENTICATED_PROVIDER",
+        "LOCAL_TRUSTED",
+        "RECOVERY_INTERNAL",
+        "UNVERIFIED"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ACCEPTED",
+        "DUPLICATE",
+        "REJECTED_POLICY",
+        "MALFORMED",
+        "WAITING_PROJECT_BINDING"
+      ]
+    },
+    "received_at": {"type": "string", "format": "date-time"},
+    "normalized_mission_hash": {
+      "type": ["string", "null"],
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "mission": {
+      "$ref": "./bcp_mission_envelope_v2.schema.json"
+    },
+    "rejection": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {"type": "string", "maxLength": 160},
+        "detail": {"type": ["string", "null"], "maxLength": 2000}
+      }
+    }
+  }
+}
