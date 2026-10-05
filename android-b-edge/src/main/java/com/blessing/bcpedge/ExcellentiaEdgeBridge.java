@@ -17,6 +17,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.Inet4Address;
+import java.net.NetworkInterface;
+import java.net.URLEncoder;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +31,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Excellentia continuity node hosted by the dedicated B-EDGE phone.
@@ -59,11 +65,73 @@ public final class ExcellentiaEdgeBridge {
     public ExcellentiaEdgeBridge(Context context) {
         this.context = context.getApplicationContext();
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        ensurePermanentPass();
     }
 
     public void start() {
+        ensurePermanentPass();
         stopping = false;
         io.submit(this::serveLoop);
+    }
+
+    private static String permanentPassSecret(Context context) {
+        try {
+            String token = new CredentialStore(context.getApplicationContext()).getToken();
+            if (token == null || token.isEmpty()) return "";
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(token.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] out = mac.doFinal("excellentia-edge-permanent-v1".getBytes(StandardCharsets.UTF_8));
+            return Base64.encodeToString(out, Base64.NO_WRAP | Base64.URL_SAFE | Base64.NO_PADDING);
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    private boolean ensurePermanentPass() {
+        String secret = permanentPassSecret(context);
+        if (secret.length() < 24) return false;
+        long created = prefs.getLong("permanent_pass_created_at", 0L);
+        if (created <= 0L) created = System.currentTimeMillis();
+        prefs.edit()
+                .putBoolean("permanent_pass", true)
+                .putLong("permanent_pass_created_at", created)
+                .putString("pass_hash", sha256(secret.getBytes(StandardCharsets.UTF_8)))
+                .putInt("pass_minutes", 480)
+                .putLong("pass_offer_created_at", created)
+                .putLong("pass_offer_expires_at", Long.MAX_VALUE / 4L)
+                .apply();
+        return true;
+    }
+
+    public static String permanentPairUrl(Context context, int minutes) {
+        try {
+            String secret = permanentPassSecret(context);
+            String ip = localIpv4();
+            if (secret.length() < 24 || ip.isEmpty()) return "";
+            int m = normalizeMinutes(minutes);
+            return "http://" + ip + ":" + HTTP_PORT + "/pair#t="
+                    + URLEncoder.encode(secret, "UTF-8") + "&m=" + m;
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    private static String localIpv4() {
+        try {
+            java.util.Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+            while (ifaces != null && ifaces.hasMoreElements()) {
+                NetworkInterface ni = ifaces.nextElement();
+                if (!ni.isUp() || ni.isLoopback()) continue;
+                java.util.Enumeration<java.net.InetAddress> addrs = ni.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    java.net.InetAddress a = addrs.nextElement();
+                    if (!(a instanceof Inet4Address) || a.isLoopbackAddress()) continue;
+                    String ip = a.getHostAddress();
+                    if (ip.startsWith("10.") || ip.startsWith("192.168.") || ip.matches("^172\\.(1[6-9]|2[0-9]|3[01])\\..*")) return ip;
+                }
+            }
+        } catch (Exception ignored) {}
+        return "";
     }
 
     public void stop() {
@@ -99,44 +167,48 @@ public final class ExcellentiaEdgeBridge {
             }
             atomicWrite(new File(context.getFilesDir(), PACK_FILE), plain);
 
+            boolean permanentPass = ensurePermanentPass();
             String secret = pass.optString("secret", "");
             int minutes = normalizeMinutes(pass.optInt("minutes", 30));
-            if (secret.length() < 24) return json("ok", false, "error", "pass_secret_invalid");
+            if (!permanentPass && secret.length() < 24) return json("ok", false, "error", "pass_secret_invalid");
 
             long now = System.currentTimeMillis();
-            long offerCreatedAt = pass.optLong("offer_created_at_ms", now);
-            long offerExpiresAt = pass.optLong("offer_expires_at_ms", now + Math.max(30, minutes) * 60_000L);
-            long previousOfferCreatedAt = prefs.getLong("pass_offer_created_at", 0L);
-            long previousActivatedAt = prefs.getLong("pass_activated_at", 0L);
-            long previousExpiresAt = prefs.getLong("pass_expires_at", 0L);
-            boolean samePass = previousOfferCreatedAt > 0L && previousOfferCreatedAt == offerCreatedAt;
-
             SharedPreferences.Editor editor = prefs.edit()
                     .putString("build", build)
                     .putLong("snapshot_at", now)
                     .putString("snapshot_sha256", sha256(plain))
-                    .putInt("questions", pack.optJSONArray("questions") == null ? 0 : pack.optJSONArray("questions").length())
-                    .putString("pass_hash", sha256(secret.getBytes(StandardCharsets.UTF_8)))
-                    .putInt("pass_minutes", minutes)
-                    .putLong("pass_offer_created_at", offerCreatedAt)
-                    .putLong("pass_offer_expires_at", Math.max(offerExpiresAt, prefs.getLong("pass_offer_expires_at", 0L)));
-            if (samePass) {
-                editor.putLong("pass_activated_at", previousActivatedAt)
-                        .putLong("pass_expires_at", previousExpiresAt);
-            } else {
-                editor.putLong("pass_activated_at", 0L)
-                        .putLong("pass_expires_at", 0L)
-                        .putString("sessions_json", "[]");
+                    .putInt("questions", pack.optJSONArray("questions") == null ? 0 : pack.optJSONArray("questions").length());
+            if (!permanentPass) {
+                long offerCreatedAt = pass.optLong("offer_created_at_ms", now);
+                long offerExpiresAt = pass.optLong("offer_expires_at_ms", now + Math.max(30, minutes) * 60_000L);
+                long previousOfferCreatedAt = prefs.getLong("pass_offer_created_at", 0L);
+                long previousActivatedAt = prefs.getLong("pass_activated_at", 0L);
+                long previousExpiresAt = prefs.getLong("pass_expires_at", 0L);
+                boolean samePass = previousOfferCreatedAt > 0L && previousOfferCreatedAt == offerCreatedAt;
+                editor.putString("pass_hash", sha256(secret.getBytes(StandardCharsets.UTF_8)))
+                        .putInt("pass_minutes", minutes)
+                        .putLong("pass_offer_created_at", offerCreatedAt)
+                        .putLong("pass_offer_expires_at", Math.max(offerExpiresAt, prefs.getLong("pass_offer_expires_at", 0L)));
+                if (samePass) {
+                    editor.putLong("pass_activated_at", previousActivatedAt)
+                            .putLong("pass_expires_at", previousExpiresAt);
+                } else {
+                    editor.putLong("pass_activated_at", 0L)
+                            .putLong("pass_expires_at", 0L)
+                            .putString("sessions_json", "[]");
+                }
             }
             editor.apply();
+            if (permanentPass) ensurePermanentPass();
 
             out.put("ok", true);
             out.put("build", build);
             out.put("questions", prefs.getInt("questions", 0));
             out.put("http_port", HTTP_PORT);
             out.put("snapshot_sha256", prefs.getString("snapshot_sha256", ""));
-            out.put("pass_minutes", minutes);
+            out.put("pass_minutes", prefs.getInt("pass_minutes", minutes));
             out.put("pass_activated", false);
+            out.put("permanent_pass", prefs.getBoolean("permanent_pass", false));
             return out;
         } catch (Exception e) {
             return json("ok", false, "error", "snapshot_install_failed", "detail", e.getClass().getSimpleName());
@@ -163,6 +235,8 @@ public final class ExcellentiaEdgeBridge {
                 "pass_activated", activated > 0L,
                 "pass_expires_at", expires,
                 "pass_remaining_seconds", expires > now ? Math.max(0L, (expires - now) / 1000L) : 0L,
+                "permanent_pass", prefs.getBoolean("permanent_pass", false),
+                "pair_url_ready", !permanentPairUrl(context, 480).isEmpty(),
                 "progress_events", countProgressLines()
         );
         return out;
@@ -295,7 +369,7 @@ public final class ExcellentiaEdgeBridge {
             }
             if ("POST".equals(method) && "/api/claim".equals(path)) {
                 JSONObject body = readJsonBody(in, headers, MAX_BROWSER_BODY);
-                writeClaim(out, body.optString("token", ""), body.optLong("expires_at_ms", 0L)); return;
+                writeClaim(out, body.optString("token", ""), body.optLong("expires_at_ms", 0L), body.optInt("minutes", 0)); return;
             }
 
             boolean auth = browserAuthorized(headers.get("cookie"));
@@ -333,8 +407,9 @@ public final class ExcellentiaEdgeBridge {
         }
     }
 
-    private void writeClaim(OutputStream out, String token, long requestedExpiresAt) throws Exception {
+    private void writeClaim(OutputStream out, String token, long requestedExpiresAt, int requestedMinutes) throws Exception {
         long now = System.currentTimeMillis();
+        ensurePermanentPass();
         if (!passOfferAlive()) { writeJson(out, 410, json("ok", false, "error", "pass_expired")); return; }
         String supplied = sha256(token.getBytes(StandardCharsets.UTF_8));
         String expected = prefs.getString("pass_hash", "");
@@ -343,21 +418,24 @@ public final class ExcellentiaEdgeBridge {
                 expected.getBytes(StandardCharsets.US_ASCII))) {
             writeJson(out, 403, json("ok", false, "error", "pass_invalid")); return;
         }
-        int minutes = normalizeMinutes(prefs.getInt("pass_minutes", 30));
-        long activated = prefs.getLong("pass_activated_at", 0L);
-        long expires = prefs.getLong("pass_expires_at", 0L);
+        boolean permanent = prefs.getBoolean("permanent_pass", false);
+        int minutes = normalizeMinutes(requestedMinutes > 0 ? requestedMinutes : prefs.getInt("pass_minutes", 480));
         long maxSessionExpiry = now + minutes * 60_000L;
         long authoritativeExpiry = requestedExpiresAt > now ? Math.min(requestedExpiresAt, maxSessionExpiry) : 0L;
-        if (activated > 0L && expires <= now) {
-            writeJson(out, 410, json("ok", false, "error", "pass_expired")); return;
-        }
-        if (activated <= 0L) {
-            activated = now;
-            expires = authoritativeExpiry > 0L ? authoritativeExpiry : maxSessionExpiry;
-            prefs.edit().putLong("pass_activated_at", activated).putLong("pass_expires_at", expires).apply();
-        } else if (authoritativeExpiry > 0L && authoritativeExpiry < expires) {
-            expires = authoritativeExpiry;
-            prefs.edit().putLong("pass_expires_at", expires).apply();
+        long expires = authoritativeExpiry > 0L ? authoritativeExpiry : maxSessionExpiry;
+        if (!permanent) {
+            long activated = prefs.getLong("pass_activated_at", 0L);
+            long globalExpires = prefs.getLong("pass_expires_at", 0L);
+            if (activated > 0L && globalExpires <= now) {
+                writeJson(out, 410, json("ok", false, "error", "pass_expired")); return;
+            }
+            if (activated <= 0L) {
+                prefs.edit().putLong("pass_activated_at", now).putLong("pass_expires_at", expires).apply();
+            } else {
+                expires = Math.min(expires, globalExpires);
+            }
+        } else {
+            prefs.edit().putLong("pass_activated_at", now).putLong("pass_expires_at", expires).apply();
         }
         if (expires <= now) { writeJson(out, 410, json("ok", false, "error", "pass_expired")); return; }
         String raw = randomToken();
@@ -377,6 +455,8 @@ public final class ExcellentiaEdgeBridge {
     }
 
     private boolean passOfferAlive() {
+        ensurePermanentPass();
+        if (prefs.getBoolean("permanent_pass", false) && !prefs.getString("pass_hash", "").isEmpty()) return true;
         long now = System.currentTimeMillis();
         long activated = prefs.getLong("pass_activated_at", 0L);
         long expires = prefs.getLong("pass_expires_at", 0L);
@@ -540,7 +620,7 @@ button{margin-top:10px;background:#1684f8;border:0;font-weight:800}
     for(let a=1;a<=3;a++){
       try{
         const authoritativeExpiry=Number(localStorage.getItem('exc_edge_authoritative_expires_at')||0);
-        const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t,expires_at_ms:authoritativeExpiry})});
+        const r=await fetch('/api/claim',{method:'POST',cache:'no-store',headers:{'content-type':'application/json'},body:JSON.stringify({token:t,expires_at_ms:authoritativeExpiry,minutes})});
         const j=await r.json();
         if(!r.ok){const e=new Error(j.error||'REFUSED');e.http=true;throw e}
         if(j.offer_created_at)localStorage.setItem('exc_edge_offer_created_at',String(j.offer_created_at));if(j.expires_at)localStorage.setItem('exc_edge_pass_expires_at',String(j.expires_at));localStorage.setItem('exc_edge_last_ip',location.hostname);
