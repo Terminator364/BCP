@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -19,6 +21,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.blessing.bcpedge.storage.EdgeDatabase;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -173,6 +178,16 @@ public class MainActivity extends Activity {
         homeAction.setPadding(0, dp(5), 0, dp(6));
         action.addView(homeAction);
         homeActionButton = button(action, "RÉSOUDRE");
+
+        LinearLayout excellentia = card(root);
+        excellentia.addView(label("EXCELLENTIA · ACCÈS PERMANENT"));
+        TextView excellentiaInfo = text(
+                "Le QR est servi par ce téléphone. Le PC peut changer de réseau ou s’éteindre après synchronisation.",
+                13, false);
+        excellentiaInfo.setPadding(0, dp(5), 0, dp(6));
+        excellentia.addView(excellentiaInfo);
+        Button excellentiaQr = button(excellentia, "AFFICHER LE QR EXCELLENTIA");
+        excellentiaQr.setOnClickListener(v -> showExcellentiaDurationPicker());
 
         LinearLayout recent = card(root);
         recent.addView(label("RÉCEMMENT"));
