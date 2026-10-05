@@ -78,18 +78,23 @@
   },
   "implementation": {
     "repo": "Terminator364/ChatGPT-PC",
-    "branch": "build/med-rebuild-zero-touch-r3-v181-20261005",
+    "branch": "build/med-rebuild-zero-touch-r3-v191-20261005",
     "base_sha": "f6bdeb10f87582d80c82e8a34f0a4033f779b38a",
-    "pr": 28,
-    "target_release": "1.8.1",
-    "plan": [
-      "run one targeted SIM_FIRST CI gate",
-      "if green, run one bounded updater activation on MBMPC",
-      "composite readback: pointer + health + diagnostics + 60/156 curriculum + rollback",
-      "record exact field receipt",
-      "close superseded PR27",
-      "do not promote main without separate authorization"
-    ]
+    "pr": 29,
+    "app_commit": "dce63ebcd0443fb22bf860dfdd6d7f91f078cbb0",
+    "release_commit": "46dc57676b21b504effa12f7d780d425fef20393",
+    "target_release": "1.9.1",
+    "exact_release_blobs": "47/47",
+    "repairs": [
+      "Git blob API by immutable blob SHA for payloads",
+      "8 MiB bounded child-process buffer",
+      "bounded GitHub error payloads",
+      "channel-behind-active downgrade guard",
+      "canonical rollback repair to 1.4.0 when slot exists",
+      "correct V1.9.1 runtime/test identity"
+    ],
+    "ci_run": 37363243133,
+    "ci_status": "QUEUED"
   },
   "exact_field_probe": {
     "status": "TO_BUILD",
@@ -107,9 +112,9 @@
       "field_certified_from_ci"
     ]
   },
-  "next_atomic_work_unit": "WAIT_PR28_TARGETED_CI_THEN_BOUNDED_FIELD_ACTIVATION",
+  "next_atomic_work_unit": "WAIT_PR29_TARGETED_CI_THEN_ONE_BOUNDED_V191_FIELD_ACTIVATION",
   "phase_0b": {
-    "status": "READ_ONLY_FIELD_PROBE_COMPLETE_ACTIVATION_PENDING",
+    "status": "FIELD_DISCOVERY_UPDATED_V190_CANDIDATE_UNHEALTHY",
     "device": "MBMPC",
     "probe_date": "2026-10-05",
     "transport": "DESKTOP_COMMANDER_LAST_MILE",
@@ -122,14 +127,21 @@
       "gh_present": true,
       "med_rebuild_study_root_exists": true,
       "med_rebuild_updater_root_exists": true,
-      "active_version": "1.5.0",
+      "active_version": "1.9.0",
       "source_ref": "feat/med-rebuild-study-engine-v1-5",
       "source_commit": "39c730f6eb0b91f5f5e95473839b60443b646f6b",
-      "rollback_version": "1.4.0",
+      "rollback_version": "1.5.0",
       "updater_phase": "FAILED",
       "updater_error": "GH_AUTH_REQUIRED",
       "gh_auth_followup": "CURRENTLY_VALID_INTERACTIVE_STATUS",
-      "target_version": "1.8.1"
+      "target_version": "1.8.1",
+      "active_source_commit": "c937d1c77dbe523edada9cedfb45ad387b96d4f6",
+      "runtime_8798_health": "DOWN_AT_PROBE",
+      "local_slot_embedded_agent_version": "1.5.0",
+      "provenance_consistency": "FAIL",
+      "canonical_lkg_slot_1_4_0_present": true,
+      "updater_transport_failure": "GITHUB_CONTENTS_BASE64_CHILD_BUFFER_OVERFLOW_ON_812585_BYTE_CURRICULUM",
+      "field_certified": false
     },
     "safety": {
       "no_install_or_activation_yet": true,
