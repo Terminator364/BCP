@@ -7,7 +7,7 @@
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-10-05-EXCELLENTIA-AUTO-FAILOVER-40S",
+  "requirements_revision": "2026-10-05-EXCELLENTIA-AUTO-FAILOVER-40S-EXPIRY-CONTINUITY",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -96,12 +96,7 @@
     "status": "NOT_RUN"
   },
   "exact_head_machine_qualification": {
-    "status": "GREEN_SOURCE_COMMIT_QUALIFIED",
-    "qualified_source_commit": "025c62606f0874e8d5dd810fab1bd9981d4baaad",
-    "android_build_run": 37327708383,
-    "android_human_action_run": 37327708106,
-    "coordinated_product_run": 37327708391,
-    "field_ecosystem_run": 37327708401
+    "status": "PENDING_FINAL_EXPIRY_FIX_HEAD"
   },
-  "remaining_human_gate": "SIGNED_DISTRIBUTION_RECEIPT_SEPARATE; ANDROID_OS_CONFIRMATION + LIVE FAILOVER FIELD CHECK"
+  "remaining_human_gate": "BLOCKED_UNTIL_FINAL_2_2_4_HEAD_GREEN_SIGNING_AND_IN_PLACE_INSTALL"
 }
