@@ -45,8 +45,9 @@ def load_error_ledger_candidates(path: str | Path) -> list[dict[str, Any]]:
             regression = row.get("regression")
             prevention = row.get("prevention")
             repair = row.get("repair")
+            closed_for_learning = status.startswith("FIXED") or status == "CORRECTED"
             candidate_ready = bool(
-                status.startswith("FIXED")
+                closed_for_learning
                 and regression
                 and (prevention or repair)
             )
