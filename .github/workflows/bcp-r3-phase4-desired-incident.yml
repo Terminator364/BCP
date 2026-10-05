@@ -1,0 +1,50 @@
+name: BCP R3 Phase 4 Desired State Incident
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_desired_state_resource_v1.schema.json"
+      - "schemas/bcp_repair_recipe_v1.schema.json"
+      - "schemas/bcp_incident_v1.schema.json"
+      - "windows/bcp_server_v2.py"
+      - "windows/execution_fabric/desired_state.py"
+      - "windows/execution_fabric/repair_recipes.py"
+      - "windows/execution_fabric/incident_engine.py"
+      - "tools/test_execution_fabric_phase4_desired_incident.py"
+      - "tools/test_execution_fabric_phase4_contracts.py"
+      - "docs/BCP_DESIRED_STATE_RECIPE_INCIDENT_R3_PHASE4_2026-10-05.md"
+      - "docs/examples/execution-fabric/bcp-microkernel-startup.desired-state.example.json"
+      - "docs/examples/execution-fabric/bcp-startup.repair-recipe.example.json"
+      - ".github/workflows/bcp-r3-phase4-desired-incident.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desired-incident:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 4 modules
+        run: |
+          python -m compileall -q             windows/bcp_server_v2.py             windows/execution_fabric/desired_state.py             windows/execution_fabric/repair_recipes.py             windows/execution_fabric/incident_engine.py             tools/test_execution_fabric_phase4_desired_incident.py             tools/test_execution_fabric_phase4_contracts.py
+
+      - name: Phase 4 contract guard
+        run: python tools/test_execution_fabric_phase4_contracts.py
+
+      - name: Desired state incident reconciliation tests
+        run: python tools/test_execution_fabric_phase4_desired_incident.py
+
+      - name: Microkernel integrated selftest
+        run: python windows/bcp_server_v2.py --selftest
+
+      - name: Phase 3 registry regression
+        run: |
+          python tools/test_execution_fabric_phase3_project_registry.py
+          python tools/test_execution_fabric_phase3_project_adapter.py
+
+      - name: Phase 2 boundary regression
+        run: python tools/test_execution_fabric_phase2_microkernel.py
