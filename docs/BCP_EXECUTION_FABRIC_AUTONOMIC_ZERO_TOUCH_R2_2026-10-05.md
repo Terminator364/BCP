@@ -725,3 +725,80 @@ Order:
 6. privileged canary only after previous gates pass.
 
 The 4 GB PC must not require a heavyweight VM/container simply to test every adapter.
+
+
+## 35. Compute Placement Controller
+
+The weak PC must not be the default place for every expensive step.
+
+For each task, placement considers:
+- data sensitivity/privacy;
+- required local device access;
+- resource class;
+- PC memory/CPU/disk pressure;
+- phone capability/thermal state;
+- BuildHub availability;
+- GitHub/public CI eligibility and quota policy;
+- network quality/cost;
+- latency;
+- artifact size;
+- required proof.
+
+Candidate placements:
+- CHATGPT: planning, architecture, high-value reasoning, code proposal.
+- PC_LIGHT: files/Git/health/readback/small transforms.
+- PC_HEAVY: only device-bound heavy work or local private build when admitted.
+- BEDGE_PHONE: continuity, store-forward, optional qualified inference.
+- ANDROID_8GB_AI: optional local semantic/coding inference.
+- BUILDHUB: reproducible build/test/package.
+- GITHUB_CI: generic/public engine qualification or approved CI acceleration.
+- PROVIDER_API: service-native operation.
+
+Rule:
+**bring computation to the cheapest safe node; bring only the minimum artifact/result back to the 4 GB PC.**
+
+## 36. Credential Broker
+
+Secrets are references, not mission payloads.
+
+Credential storage:
+- Windows DPAPI/Credential Manager or equivalent protected local store;
+- Android Keystore on B-EDGE;
+- provider-native secret store where appropriate.
+
+Capability manifests refer to `credential_ref`; ChatGPT/model context receives only capability availability, never secret value.
+
+Capability Factory candidates do not automatically inherit credential access.
+
+## 37. Migration safety
+
+Automatic update is incomplete without data migration safety.
+
+For persistent state:
+- versioned schema;
+- backup/snapshot before incompatible migration;
+- migration in staging/copy where practical;
+- validate migrated DB/state before switch;
+- expand/contract migration when rollback across versions must remain possible;
+- never roll back executable bytes into a state schema they cannot read;
+- mark `ROLLBACK_NOT_SAFE` rather than pretending otherwise.
+
+SQLite/Room/Drive state migrations require explicit migration tests before autonomous promotion.
+
+## 38. Lightweight observability
+
+Do not deploy a heavy telemetry stack.
+
+Every mission/action uses compact:
+- mission_id;
+- action_id;
+- trace_id;
+- parent_action_id;
+- node/provider;
+- start/end;
+- resource sample;
+- result/evidence refs.
+
+Store recent/hot telemetry in SQLite/JSONL and compact/archive older data.
+
+Human UI shows outcome and blocker; technical details remain queryable.
