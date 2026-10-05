@@ -802,3 +802,21 @@ Every mission/action uses compact:
 Store recent/hot telemetry in SQLite/JSONL and compact/archive older data.
 
 Human UI shows outcome and blocker; technical details remain queryable.
+
+
+## 39. Final quota-independence and long-horizon law
+
+Canonical addendum:
+`docs/BCP_FINAL_VERIFICATION_RULES_QUOTA_LONG_HORIZON_R2_2026-10-05.md`.
+
+Non-negotiable:
+- no external metered provider is a correctness dependency;
+- Desktop Commander is an optional metered accelerator/compatibility provider;
+- the PC Local-First Microkernel is the native execution baseline;
+- provider quota exhaustion blocks only provider-exclusive dependent branches;
+- long missions are durable DAGs of bounded checkpointable work units;
+- missions may span hours/days/weeks and survive chat closure, reboot, sleep, network loss, quota exhaustion and provider switching;
+- ChatGPT itself does not reason after the turn ends: deterministic authorized branches continue in resident components, while novel reasoning branches enter NEEDS_REASONING honestly;
+- no progress may be inferred from elapsed wall-clock time, heartbeat or merely having a process alive.
+
+ZERO_TOUCH_FIELD_READY is forbidden until the explicit quota-loss and long-horizon tests in the final verification addendum pass on field-relevant paths.
