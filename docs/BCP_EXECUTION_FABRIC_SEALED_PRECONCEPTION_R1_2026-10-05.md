@@ -684,13 +684,18 @@ Read-only inventory:
 - existing model files;
 - current Desktop Commander identity/runtime and duplicate startup hooks.
 
-### Phase 1: Mission Kernel + Project Registry
-- one durable queue;
-- Chronicle;
-- receipts;
-- backlog;
-- project adapters;
-- exact recovery after restart.
+### Phase 1: Consolidate the existing Mission Kernel + Project Registry
+Do not rebuild BCP mission primitives already present in Windows/B-EDGE.
+
+Observed existing building blocks include Windows SQLite jobs/dependencies/mission_events/memory/resource status/resume requests and B-EDGE Room projects/jobs/dependencies/receipts/events/mission-steps/capability registry.
+
+Phase 1 work is therefore:
+- define one provider-neutral mission/receipt/capability contract;
+- expose existing queues and Chronicle through that contract;
+- generalize the project registry beyond legacy/default projects;
+- normalize Windows receipts/evidence with B-EDGE receipts;
+- add project adapters;
+- prove exact recovery after restart.
 
 ### Phase 2: Native Windows Capability Pack
 - files/Git/process/service/eventlog;
@@ -780,3 +785,45 @@ Do not install a local model merely to make the system feel "AI".
 The AI value comes first from ChatGPT planning, BCP memory/recipes, exact project state and safe tool execution. Local inference is promoted later only if measured evidence shows that it creates more verified useful work than the RAM/latency/reliability cost it adds.
 
 This architecture is considered SEALED_PRECONCEPTION_R1 until field evidence contradicts an assumption.
+
+
+## 26. Repository tri-audit correction
+
+A final repository pass confirmed that this is **not a greenfield mission engine**.
+
+Already present:
+- Windows SQLite jobs and dependencies;
+- Windows mission_events and memory records;
+- Windows mission resume requests and resource status;
+- B-EDGE durable project registry;
+- B-EDGE jobs/dependencies;
+- B-EDGE receipts and idempotency;
+- B-EDGE capability registry;
+- Chronicle/events and mission-step state.
+
+Therefore the implementation center shifts again:
+
+```
+NOT:
+new orchestrator -> migrate everything
+
+BUT:
+existing BCP primitives
+ -> unify contracts
+ -> add missing Windows capability/evidence layer
+ -> register projects
+ -> migrate duplicate project-local infrastructure
+```
+
+This materially reduces implementation risk and RAM cost.
+
+The detailed existing-vs-gap inventory is canonical companion:
+`docs/BCP_EXECUTION_FABRIC_EXISTING_VS_GAP_MAP_R1_2026-10-05.md`.
+
+Machine contracts added by this preconception:
+- `schemas/bcp_capability_manifest_v1.schema.json`;
+- `schemas/bcp_mission_envelope_v2.schema.json`.
+
+Reference case:
+- `docs/examples/execution-fabric/med-rebuild-commander-mission.example.json`;
+- `docs/examples/execution-fabric/desktop-commander.ensure_available.capability.example.json`.
