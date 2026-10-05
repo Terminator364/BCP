@@ -1,7 +1,7 @@
 {
-  "schema": "bcp.execution_fabric_policy/1",
-  "status": "PRECONCEPTION",
-  "revision": "2026-10-05",
+  "schema": "bcp.execution_fabric_policy/2",
+  "status": "SEALED_PRECONCEPTION_R1",
+  "revision": "2026-10-05-R1",
   "authority": {
     "mission": "BCP",
     "policy": "BCP",
@@ -22,7 +22,17 @@
     "MODEL_OUTPUT_IS_PROPOSAL_NOT_AUTHORITY",
     "NO_SUCCESS_WITHOUT_RECEIPT_AND_READBACK",
     "DRIVE_IS_NOT_HOT_RUNTIME_DB",
-    "GITHUB_IS_NOT_RUNTIME_TRUTH"
+    "GITHUB_IS_NOT_RUNTIME_TRUTH",
+    "CAPABILITY_LOSS_BLOCKS_ONLY_DEPENDENT_BRANCHES",
+    "DESKTOP_COMMANDER_IS_BREAK_GLASS_NOT_AUTHORITY",
+    "LOCAL_AI_NOT_INSTALLED_BY_DEFAULT",
+    "ONE_PRIMARY_STARTUP_PATH_PER_COMPONENT",
+    "NO_REINSTALL_AS_TRANSIENT_REPAIR",
+    "NO_AT_LATEST_IN_CRITICAL_RUNTIME_PATHS",
+    "BACKGROUND_WORK_IS_PREEMPTIBLE",
+    "NO_AUTOMATIC_KILL_OF_UNRELATED_USER_PROCESSES",
+    "BCP_MISSION_STATE_IS_TRANSPORT_INDEPENDENT",
+    "COORDINATOR_CHANGES_REQUIRE_EPOCH_FENCING"
   ],
   "pc_resource_modes": [
     "SURVIVAL",
@@ -38,7 +48,7 @@
     "P4_DESTRUCTIVE_SECURITY": "fresh_human_approval_required"
   },
   "local_ai": {
-    "default_state": "COLD",
+    "default_state": "NOT_INSTALLED_V1",
     "pc_candidates": [
       {
         "id": "FUNCTIONGEMMA_270M",
@@ -56,7 +66,9 @@
       "model_class": "QWEN3_1_7B_Q4",
       "authority": false
     },
-    "promotion_metric": "VERIFIED_USEFUL_WORK_PER_TOTAL_RESOURCE_COST"
+    "promotion_metric": "VERIFIED_USEFUL_WORK_PER_TOTAL_RESOURCE_COST",
+    "install_policy": "FIELD_BENCHMARK_GATED_OPTIONAL",
+    "correctness_dependency": false
   },
   "project_registry": {
     "one_project_one_repo_assumption": false,
@@ -92,5 +104,46 @@
     "LOCAL_AI_QUALIFICATION",
     "CONVERGENCE",
     "FIELD_CERTIFICATION"
-  ]
+  ],
+  "resource_policy": {
+    "user_foreground_priority": true,
+    "global_heavy_pc_workers": 1,
+    "modes": [
+      "SURVIVAL",
+      "PRESSURE",
+      "NORMAL",
+      "RELAXED"
+    ],
+    "preferred_idle_incremental_mb": 60,
+    "preconception_max_target_mb": 96,
+    "thresholds": "MEASURED_NOT_FIXED_PERCENT_ONLY",
+    "preemption": "SAFE_CHECKPOINT_BOUNDARIES"
+  },
+  "startup_policy": {
+    "primary": "EVENT_OR_LOGON_TRIGGER",
+    "fallback": "BOUNDED_RECONCILIATION",
+    "forbid_redundant_normal_startup": [
+      "HKCU_RUN_PLUS_STARTUP_PLUS_LOGON_TASK_PLUS_FREQUENT_WATCHDOG"
+    ],
+    "watchdog": "STALE_HEALTH_ONLY_WITH_COOLDOWN"
+  },
+  "capability_failure": {
+    "branch_semantics": "WAITING_CAPABILITY",
+    "independent_branches_continue": true,
+    "no_single_adapter_required": true
+  },
+  "coordinator": {
+    "target": "BEDGE_WHEN_FIELD_QUALIFIED",
+    "compatibility": "PC_EXPLICIT_STANDALONE_OR_CURRENT_AUTHORITY_DURING_MIGRATION",
+    "split_brain": "FORBIDDEN",
+    "transition": "EXPLICIT_EPOCH_FENCING"
+  },
+  "privilege": {
+    "standard_core": "NORMAL_USER",
+    "least_privilege_service": "LOCALSERVICE_WHERE_SUFFICIENT",
+    "privileged_capsules": "TYPED_ALLOWLISTED_ON_DEMAND",
+    "arbitrary_admin_shell": false,
+    "p4_requires_fresh_human_approval": true,
+    "local_ipc_acl": "EXPLICIT"
+  }
 }
