@@ -249,3 +249,53 @@ Do NOT claim ZERO_TOUCH_FIELD_READY until:
 - one missing capability is acquired and reused;
 - PC is proven usable under its normal high-RAM-pressure baseline;
 - user performs no technical mechanics except a classified irreducible human gate.
+
+
+## ZT-21 — Desktop Commander quota exhaustion
+
+Inject:
+Desktop Commander becomes EXHAUSTED / rate-limited during active work.
+
+Expected:
+- no global mission failure;
+- no retry storm;
+- native/local equivalent selected where qualified;
+- unrelated branches continue;
+- exact dependent branch may WAITING_PROVIDER only if no equivalent exists;
+- no automatic purchase/upgrade;
+- state survives until quota/provider returns.
+
+## ZT-22 — Desktop Commander completely absent
+
+Expected:
+BCP boots, repairs, builds, verifies and performs its core PC functions through the local microkernel/native/G6 capability plane.
+
+## ZT-23 — Six-hour software build
+
+Expected:
+- durable DAG;
+- incremental commits/checkpoints;
+- kill/restart at multiple boundaries;
+- exact source/test/artifact provenance preserved;
+- no manual reconstruction.
+
+## ZT-24 — Seven-day project mission
+
+Expected:
+- PC may turn off overnight;
+- Internet/provider availability may change;
+- new ChatGPT conversations may be used;
+- one canonical mission/task graph survives;
+- completed immutable stages are reused;
+- stale assumptions are revalidated;
+- no calendar-time-based fake progress.
+
+## ZT-25 — All optional accelerators unavailable
+
+Disable Desktop Commander, optional local AI, CI accelerators and nonessential remote providers.
+
+Expected:
+minimum local survival plane remains usable:
+local microkernel + durable state + installed native capabilities + local recovery/LKG + queued mission/desired state.
+
+Canonical detailed cases: `BCP_FINAL_VERIFICATION_RULES_QUOTA_LONG_HORIZON_R2_2026-10-05.md`.
