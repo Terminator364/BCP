@@ -7,7 +7,7 @@
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-10-05-EXCELLENTIA-PERMANENT-EDGE-QR",
+  "requirements_revision": "2026-10-05-EXCELLENTIA-PERMANENT-EDGE-AUTHORITY",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -94,9 +94,16 @@
     "the QR remains reusable while each browser claim gets its own bounded 30/60/90/120/180/240/360/480 minute session",
     "session duration starts only after the successful claim",
     "PC network changes no longer invalidate the student entry point because the QR endpoint is B-EDGE port 8878",
-    "no PC port 8788 fallback is required for the permanent student route"
+    "no PC port 8788 fallback is required for the permanent student route",
+    "Excellentia QR authority is phone-resident: B-EDGE generates the student QR locally on port 8878 without a PC-hosted fallback",
+    "permanent Excellentia pass secret is derived locally from the paired BCP credential and never requires the PC to mint a student pass",
+    "each permanent Edge QR supports exact 30/60/90/120/180/240/360/480 minute sessions starting at first successful claim",
+    "expired browser sessions do not invalidate the permanent Edge pass; a new QR/session can be created locally without the PC",
+    "Home exposes EXCELLENTIA · ACCÈS PERMANENT with a local QR duration picker and explicitly allows the PC to change network or power off after sync",
+    "snapshot refresh updates corpus/content while preserving the phone-resident permanent pass authority and active browser sessions",
+    "no silent QR fallback to PC LAN is part of the permanent Excellentia continuity design"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.6-permanent-excellentia-qr_NEXUS-0.2.6",
+  "release_train": "BCP-0.7.18_EDGE-2.2.6-permanent-excellentia-authority_NEXUS-0.2.6",
   "signed_apk_sha256": "",
   "signature_schemes_verified": [],
   "signed_source_commit": "",
@@ -107,5 +114,5 @@
   "exact_head_machine_qualification": {
     "status": "PENDING_2_2_6_EXACT_HEAD"
   },
-  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_THEN_SINGLE_ANDROID_IN_PLACE_CONFIRMATION"
+  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_AND_SINGLE_IN_PLACE_INSTALL"
 }
