@@ -1,0 +1,35 @@
+{
+  "schema": "bcp.construction_bootstrap/1",
+  "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "revision": "R3_ABC_2026-10-05",
+  "canonical_repo": "Terminator364/BCP",
+  "design_branch": "design/unified-execution-fabric-2026-10-05",
+  "draft_pr": 168,
+  "entrypoint": "docs/BCP_BUILD_CONTRACT_ABC_R3_2026-10-05.md",
+  "audit": "docs/BCP_PRECONSTRUCTION_AUDIT_ABC_R3_2026-10-05.md",
+  "start_mode": "EXECUTE",
+  "first_phase": "PHASE_0A_SOURCE_PREFLIGHT",
+  "pc_phase": "PHASE_0B_READ_ONLY_CAPABILITY_PROBE_IF_REACHABLE",
+  "first_vertical_slice": "MED_REBUILD_ZERO_TOUCH_NATIVE_NO_DESKTOP_COMMANDER",
+  "doctrine": [
+    "REUSE",
+    "ADAPT",
+    "BUILD_ONLY_IF_GAP"
+  ],
+  "verification": [
+    "IMPLEMENT",
+    "TEST",
+    "AUDIT",
+    "COUNTER_AUDIT",
+    "FAILURE_INJECT",
+    "READBACK",
+    "RECEIPT"
+  ],
+  "no_reinvent": true,
+  "no_local_llm_initially": true,
+  "desktop_commander_required": false,
+  "long_horizon_required": true,
+  "user_mechanics_target": "ZERO_AVOIDABLE",
+  "main_merge_authorized": false,
+  "p4_authorized": false
+}
