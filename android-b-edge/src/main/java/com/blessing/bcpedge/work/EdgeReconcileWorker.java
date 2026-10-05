@@ -9,6 +9,10 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.blessing.bcpedge.BcpClient;
+import com.blessing.bcpedge.EdgeRelayService;
+import com.blessing.bcpedge.EdgePermissionManager;
+import android.content.Intent;
+import androidx.core.content.ContextCompat;
 import com.blessing.bcpedge.EdgeBackgroundUpdateProbe;
 import com.blessing.bcpedge.storage.EdgeDatabase;
 
@@ -27,6 +31,13 @@ public final class EdgeReconcileWorker extends Worker {
 
     public static ListenableWorker.Result execute(Context context, int runAttemptCount, String triggerReason) {
         try {
+            if (EdgePermissionManager.isServerModeEnabled(context)) {
+                try {
+                    Intent service = new Intent(context, EdgeRelayService.class);
+                    service.putExtra("boot_reason", triggerReason == null ? "WORK_RECONCILE" : triggerReason);
+                    ContextCompat.startForegroundService(context, service);
+                } catch (Throwable ignored) {}
+            }
             BcpClient client = new BcpClient(context);
             client.recordEvent("EDGE_RECONCILE_START", triggerReason == null ? "UNSPECIFIED" : triggerReason);
             JSONObject sync = client.syncOrchestrationState();

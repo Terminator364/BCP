@@ -68,6 +68,7 @@ jobs:
           GRADLE="android-b-edge/build.gradle"
           PATHS="android-b-edge/src/main/res/xml/file_paths.xml"
           PINNED="android-b-edge/src/main/java/com/blessing/bcpedge/PinnedTlsHttp.java"
+          EXCELLENTIA="android-b-edge/src/main/java/com/blessing/bcpedge/ExcellentiaEdgeBridge.java"
 
           grep -F 'applicationId "com.blessing.bcpedge.evergreen"' "$GRADLE" >/dev/null
           python - <<'PY'
@@ -140,6 +141,15 @@ jobs:
           grep -F 'PC_TLS_PIN_MISMATCH' "$PINNED" >/dev/null
           grep -F 'MessageDigest.isEqual' "$PINNED" >/dev/null
           grep -F 'X-BCP-Edge-Version' "$PINNED" >/dev/null
+          grep -F 'EXCELLENTIA_EDGE_CONTINUITY' "$EXCELLENTIA" >/dev/null
+          grep -F 'exc_edge_rebind_token' "$EXCELLENTIA" >/dev/null
+          grep -F 'exc_edge_outbox' "$EXCELLENTIA" >/dev/null
+          grep -F 'Access-Control-Allow-Private-Network' "$EXCELLENTIA" >/dev/null
+          grep -F 'private, max-age=28800, stale-if-error=86400' "$EXCELLENTIA" >/dev/null
+          grep -F 'recoverRoute()' "$EXCELLENTIA" >/dev/null
+          grep -F 'Array.from({length:20}' "$EXCELLENTIA" >/dev/null
+          grep -F 'pass_offer_created_at' "$EXCELLENTIA" >/dev/null
+          grep -F 'offer_created_at' "$EXCELLENTIA" >/dev/null
           if grep -F 'setRequestProperty("Authorization"' "$CLIENT" "$UPDATE"; then
             echo "Direct HttpURLConnection bearer path reintroduced"
             exit 1
@@ -148,6 +158,7 @@ jobs:
           grep -F 'DATA_SAVER' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
           grep -F 'STORE_AND_FORWARD' android-b-edge/src/main/java/com/blessing/bcpedge/EdgeNetworkState.java >/dev/null
           echo "EDGE_FULL_NODE_STATIC_GUARDS=PASS"
+          echo "EXCELLENTIA_EDGE_ROUTE_RECOVERY_GUARDS=PASS"
 
           if grep -E 'output\.setText\([^)]*token|detail\.setText\([^)]*token' "$MAIN"; then
             echo "Credential rendering regression detected"

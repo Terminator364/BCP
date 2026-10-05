@@ -9,6 +9,8 @@ import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.net.wifi.WifiManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ServiceCompat;
@@ -63,6 +65,9 @@ public final class EdgeRelayService extends Service {
     private EdgePresenceAdvertiser presence;
     private volatile JSONObject presenceState = new JSONObject();
     private volatile String tlsCertificateSha256 = "";
+    private ExcellentiaEdgeBridge excellentia;
+    private PowerManager.WakeLock cpuWakeLock;
+    private WifiManager.WifiLock wifiLock;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -82,6 +87,24 @@ public final class EdgeRelayService extends Service {
             mark("TLS_IDENTITY_FAILED", e.getClass().getSimpleName());
         }
 
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm != null) {
+                cpuWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BCP:EdgeServer");
+                cpuWakeLock.setReferenceCounted(false);
+                cpuWakeLock.acquire();
+            }
+            WifiManager wm = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+            if (wm != null) {
+                wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "BCP:EdgeWifi");
+                wifiLock.setReferenceCounted(false);
+                wifiLock.acquire();
+            }
+            mark("EDGE_POWER_LOCKS_ACTIVE", "cpu=" + (cpuWakeLock != null) + ",wifi=" + (wifiLock != null));
+        } catch (Throwable e) {
+            mark("EDGE_POWER_LOCKS_FAILED", e.getClass().getSimpleName());
+        }
+
         presence = new EdgePresenceAdvertiser(this);
         try {
             presenceState = presence.start(
@@ -90,6 +113,12 @@ public final class EdgeRelayService extends Service {
                     tlsCertificateSha256);
         } catch (Throwable ignored) {}
 
+        excellentia = new ExcellentiaEdgeBridge(this);
+        excellentia.start();
+        io.submit(() -> {
+            try { new BcpClient(EdgeRelayService.this).refreshUiGovernanceCache(); }
+            catch (Throwable ignored) {}
+        });
         io.submit(this::serveRelayLoop);
         io.submit(this::serveTlsApiLoop);
         registration.scheduleWithFixedDelay(() -> {
@@ -118,6 +147,9 @@ public final class EdgeRelayService extends Service {
         try { if (relayServerSocket != null) relayServerSocket.close(); } catch (Exception ignored) {}
         try { if (tlsApiServerSocket != null) tlsApiServerSocket.close(); } catch (Exception ignored) {}
         try { if (presence != null) presence.stop(); } catch (Exception ignored) {}
+        try { if (excellentia != null) excellentia.stop(); } catch (Exception ignored) {}
+        try { if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); } catch (Exception ignored) {}
+        try { if (cpuWakeLock != null && cpuWakeLock.isHeld()) cpuWakeLock.release(); } catch (Exception ignored) {}
         registration.shutdownNow();
         io.shutdownNow();
         mark("STOPPED", "");
@@ -315,6 +347,11 @@ public final class EdgeRelayService extends Service {
             caps.put("provider_degraded_resume", true);
             caps.put("capability_registry", true);
             caps.put("memory_admission_ledger", true);
+            caps.put("excellentia_edge_continuity", true);
+            caps.put("excellentia_http_port", EdgeRelayPolicy.EXCELLENTIA_HTTP_PORT);
+            caps.put("excellentia_pc_offline_capable", true);
+            caps.put("edge_cpu_wake_lock", cpuWakeLock != null && cpuWakeLock.isHeld());
+            caps.put("edge_wifi_lock", wifiLock != null && wifiLock.isHeld());
             caps.put("room_schema_version", 5);
             caps.put("mission_authority", "DURABLE_BCP_STATE_NOT_CHAT_UI");
             caps.put("local_allowlisted_executor", true);
@@ -368,6 +405,45 @@ public final class EdgeRelayService extends Service {
         }
         if ("GET".equals(method) && "/v1/node/memory-claims".equals(path)) {
             writeJson(out, 200, new BcpClient(this).localMemoryClaims(100));
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/excellentia/status".equals(path)) {
+            writeJson(out, 200, excellentia == null ? json("ok", false, "error", "excellentia_bridge_unavailable") : excellentia.status());
+            return;
+        }
+        if ("GET".equals(method) && "/v1/node/excellentia/progress".equals(path)) {
+            writeJson(out, 200, excellentia == null ? json("ok", false, "error", "excellentia_bridge_unavailable") : excellentia.progressTail(500));
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/excellentia/snapshot".equals(path)) {
+            JSONObject body = readJsonBody(in, headers, EdgeRelayPolicy.EXCELLENTIA_SNAPSHOT_MAX_BYTES);
+            JSONObject receipt = excellentia == null
+                    ? json("ok", false, "error", "excellentia_bridge_unavailable")
+                    : excellentia.installSnapshot(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 202 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/excellentia/revoke".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = excellentia == null
+                    ? json("ok", false, "error", "excellentia_bridge_unavailable")
+                    : excellentia.revoke(body.optString("reason", "PC_ADMIN_REVOKE"));
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/excellentia/progress/ack".equals(path)) {
+            JSONObject body = readJsonBody(in, headers);
+            JSONObject receipt = excellentia == null
+                    ? json("ok", false, "error", "excellentia_bridge_unavailable")
+                    : excellentia.acknowledgeProgress(body);
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 400, receipt);
+            return;
+        }
+        if ("POST".equals(method) && "/v1/node/excellentia/revoke".equals(path)) {
+            JSONObject receipt = excellentia == null
+                    ? json("ok", false, "error", "excellentia_bridge_unavailable")
+                    : excellentia.revoke();
+            writeJson(out, receipt.optBoolean("ok", false) ? 200 : 400, receipt);
             return;
         }
         if ("POST".equals(method) && "/v1/node/events".equals(path)) {
@@ -450,17 +526,18 @@ public final class EdgeRelayService extends Service {
             out.put("ok", true);
             out.put("project", client.getProject());
             out.put("paired", !client.getToken().isEmpty());
-            out.put("sentinel", client.sentinelStatus());
+            out.put("sentinel", client.cachedSentinelStatus());
             out.put("permissions", EdgePermissionManager.status(this));
             out.put("content_store", client.contentStoreStatus());
             out.put("network", EdgeNetworkState.snapshot(this));
             out.put("cd9", Cd9EdgeAssist.status(this));
             out.put("background_update_probe", EdgeBackgroundUpdateProbe.cachedStatus(this));
             out.put("mission_steps", client.localMissionSteps(8, true));
-            JSONObject capRegistry = client.localCapabilities();
+            JSONObject capRegistry = client.cachedCapabilities();
             out.put("capability_count", capRegistry.optInt("count", 0));
-            JSONObject memoryClaims = client.localMemoryClaims(32);
+            JSONObject memoryClaims = client.cachedMemoryClaims();
             out.put("memory_claim_count", memoryClaims.optInt("count", 0));
+            out.put("excellentia", excellentia == null ? json("ok", false, "error", "bridge_unavailable") : excellentia.status());
             out.put("resources", EdgeResourceGovernor.snapshot(this));
             out.put("pending_jobs",
                     EdgeDatabase.get(this).edgeDao().countPendingJobs());
@@ -487,6 +564,8 @@ public final class EdgeRelayService extends Service {
             out.put("api_tls_cert_sha256", tlsCertificateSha256);
             out.put("relay_port", EdgeRelayPolicy.RELAY_PORT);
             out.put("relay_auth", "BCP_HMAC_SHA256");
+            out.put("excellentia_http_port", EdgeRelayPolicy.EXCELLENTIA_HTTP_PORT);
+            out.put("excellentia_edge_continuity", true);
             out.put("server_mode_enabled", EdgePermissionManager.isServerModeEnabled(this));
             out.put("timestamp_ms", System.currentTimeMillis());
         } catch (Exception ignored) {}
@@ -515,10 +594,14 @@ public final class EdgeRelayService extends Service {
     }
 
     private static JSONObject readJsonBody(InputStream in, Map<String,String> headers) throws Exception {
+        return readJsonBody(in, headers, EdgeRelayPolicy.API_BODY_MAX_BYTES);
+    }
+
+    private static JSONObject readJsonBody(InputStream in, Map<String,String> headers, int maxBytes) throws Exception {
         int len = 0;
         try { len = Integer.parseInt(headers.getOrDefault("content-length", "0")); }
         catch (Exception ignored) {}
-        if (len < 0 || len > EdgeRelayPolicy.API_BODY_MAX_BYTES) {
+        if (len < 0 || len > Math.max(1, maxBytes)) {
             throw new IllegalArgumentException("body_too_large");
         }
         if (len == 0) return new JSONObject();

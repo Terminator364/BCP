@@ -126,6 +126,14 @@ def pc_tls_status(token: str = "") -> dict:
 def ensure_pc_tls_proxy(*, provision_only: bool = False) -> dict:
     if os.name != "nt":
         return {"ready": False, "supported": False, "reason": "non_windows"}
+    existing = pc_tls_status(ensure_state())
+    if existing.get("ready") and not provision_only:
+        try:
+            probe = socket.create_connection(("127.0.0.1", PC_TLS_PORT), timeout=0.5)
+            probe.close()
+            return existing
+        except OSError:
+            pass
     import base64
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     script_bytes = base64.b64decode(PC_TLS_PROXY_PS1_B64.encode("ascii"))

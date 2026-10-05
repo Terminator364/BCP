@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -19,6 +21,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.blessing.bcpedge.storage.EdgeDatabase;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -174,6 +179,16 @@ public class MainActivity extends Activity {
         action.addView(homeAction);
         homeActionButton = button(action, "RÉSOUDRE");
 
+        LinearLayout excellentia = card(root);
+        excellentia.addView(label("EXCELLENTIA · ACCÈS PERMANENT"));
+        TextView excellentiaInfo = text(
+                "Le QR est servi par ce téléphone. Le PC peut changer de réseau ou s’éteindre après synchronisation.",
+                13, false);
+        excellentiaInfo.setPadding(0, dp(5), 0, dp(6));
+        excellentia.addView(excellentiaInfo);
+        Button excellentiaQr = button(excellentia, "AFFICHER LE QR EXCELLENTIA");
+        excellentiaQr.setOnClickListener(v -> showExcellentiaDurationPicker());
+
         LinearLayout recent = card(root);
         recent.addView(label("RÉCEMMENT"));
         homeRecent = text("Aucun événement récent chargé.", 13, false);
@@ -187,6 +202,61 @@ public class MainActivity extends Activity {
         footer.setPadding(dp(3), dp(4), dp(3), dp(8));
         root.addView(footer);
         return scroll;
+    }
+
+    private void showExcellentiaDurationPicker() {
+        final String[] labels = new String[]{"30 min","1 h","1 h 30","2 h","3 h","4 h","6 h","8 h"};
+        final int[] values = new int[]{30,60,90,120,180,240,360,480};
+        new AlertDialog.Builder(this)
+                .setTitle("Excellentia · durée d’accès")
+                .setItems(labels, (d, which) -> showExcellentiaQr(values[which], labels[which]))
+                .setNegativeButton("Annuler", null)
+                .show();
+    }
+
+    private void showExcellentiaQr(int minutes, String label) {
+        try {
+            String url = ExcellentiaEdgeBridge.permanentPairUrl(this, minutes);
+            if (url == null || url.isEmpty()) {
+                new AlertDialog.Builder(this)
+                        .setTitle("QR Excellentia indisponible")
+                        .setMessage("Le téléphone doit être appairé BCP et connecté au Wi‑Fi. Aucun QR PC de secours n’est utilisé.")
+                        .setPositiveButton("OK", null)
+                        .show();
+                return;
+            }
+            int size = Math.max(dp(260), 640);
+            BitMatrix bits = new MultiFormatWriter().encode(url, BarcodeFormat.QR_CODE, size, size);
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565);
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    bitmap.setPixel(x, y, bits.get(x, y) ? Color.BLACK : Color.WHITE);
+                }
+            }
+            LinearLayout box = new LinearLayout(this);
+            box.setOrientation(LinearLayout.VERTICAL);
+            box.setPadding(dp(18), dp(10), dp(18), dp(8));
+            ImageView image = new ImageView(this);
+            image.setImageBitmap(bitmap);
+            image.setAdjustViewBounds(true);
+            box.addView(image, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+            TextView note = text("Session " + label + " · le délai commence au scan réussi · même Wi‑Fi que ce téléphone", 12, false);
+            note.setPadding(0, dp(8), 0, 0);
+            box.addView(note);
+            new AlertDialog.Builder(this)
+                    .setTitle("Excellentia · QR B‑EDGE")
+                    .setView(box)
+                    .setPositiveButton("Fermer", null)
+                    .show();
+        } catch (Exception e) {
+            new AlertDialog.Builder(this)
+                    .setTitle("QR Excellentia indisponible")
+                    .setMessage(e.getClass().getSimpleName())
+                    .setPositiveButton("OK", null)
+                    .show();
+        }
     }
 
     private View buildActivityScreen() {
@@ -393,7 +463,7 @@ public class MainActivity extends Activity {
             JSONObject resources = EdgeResourceGovernor.snapshot(this);
             JSONObject capabilities = client.cachedCapabilities();
             JSONObject claims = client.cachedMemoryClaims();
-            JSONObject sentinel = client.sentinelStatus();
+            JSONObject sentinel = client.cachedSentinelStatus();
 
             boolean paired = !client.getToken().isEmpty();
             boolean tlsPinned = client.getServer().startsWith("https://")

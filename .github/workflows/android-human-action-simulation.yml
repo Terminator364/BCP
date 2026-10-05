@@ -278,6 +278,7 @@ jobs:
           ADB="$SDK/platform-tools/adb"
           "$ADB" forward --remove-all || true
           "$ADB" forward tcp:18877 tcp:8877
+          "$ADB" forward tcp:18879 tcp:8878
           CODE=""
           for i in $(seq 1 20); do
             CODE="$(curl -ksS -o edge-health.json -w '%{http_code}' https://127.0.0.1:18877/health || true)"
@@ -322,6 +323,22 @@ jobs:
             test "$CODE" = "401"
             grep -F '"unauthorized"' "edge-private-${PATHNAME##*/}.json" >/dev/null
           done
+          EXC_CODE=""
+          for i in $(seq 1 20); do
+            EXC_CODE="$(curl -sS -o excellentia-edge-health.json -w '%{http_code}' http://127.0.0.1:18879/health || true)"
+            if [ "$EXC_CODE" = "200" ]; then break; fi
+            sleep 1
+          done
+          test "$EXC_CODE" = "200"
+          python - <<'PY'
+          import json
+          obj=json.load(open("excellentia-edge-health.json", encoding="utf-8"))
+          assert obj["ok"] is True
+          assert obj["mode"] == "EXCELLENTIA_EDGE_CONTINUITY"
+          assert obj["http_port"] == 8878
+          assert obj["pass_remaining_seconds"] >= 0
+          PY
+          echo "BCP_ANDROID_EXCELLENTIA_EDGE_SERVER=PASS"
           echo "BCP_ANDROID_LOCAL_API_SERVER=PASS"
 
       - name: Cold relaunch idempotence smoke
@@ -351,9 +368,14 @@ jobs:
           "$ADB" pull /sdcard/bcp-window-relaunch-home.xml bcp-window-relaunch-home.xml >/dev/null
           grep -F "EN UN COUP D’ŒIL" bcp-window-relaunch-home.xml >/dev/null
           "$ADB" forward tcp:18878 tcp:8877
+          "$ADB" forward tcp:18880 tcp:8878
           CODE="$(curl -ksS -o edge-health-relaunch.json -w '%{http_code}' https://127.0.0.1:18878/health || true)"
           test "$CODE" = "200"
           grep -F '"DEDICATED_EDGE_API_SERVER"' edge-health-relaunch.json >/dev/null
+          EXC_CODE="$(curl -sS -o excellentia-edge-health-relaunch.json -w '%{http_code}' http://127.0.0.1:18880/health || true)"
+          test "$EXC_CODE" = "200"
+          grep -F '"EXCELLENTIA_EDGE_CONTINUITY"' excellentia-edge-health-relaunch.json >/dev/null
+          echo "BCP_ANDROID_EXCELLENTIA_EDGE_COLD_RELAUNCH=PASS"
           echo "BCP_ANDROID_COLD_RELAUNCH=PASS"
 
       - name: Capture Android runtime diagnostics
@@ -398,6 +420,8 @@ jobs:
             edge-private-capability-registry.json
             edge-private-memory-claims.json
             edge-health-relaunch.json
+            excellentia-edge-health.json
+            excellentia-edge-health-relaunch.json
             emulator.log
             bcp-logcat.txt
             bcp-service-dumpsys.txt

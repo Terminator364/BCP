@@ -17,8 +17,15 @@ import com.blessing.bcpedge.work.EdgeWorkScheduler;
 public final class EdgeBootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (context == null || !EdgePermissionManager.isServerModeEnabled(context)) return;
+        if (context == null) return;
         String action = intent == null ? "" : String.valueOf(intent.getAction());
+        boolean packageReplaced = Intent.ACTION_MY_PACKAGE_REPLACED.equals(action);
+        boolean bootCompleted = Intent.ACTION_BOOT_COMPLETED.equals(action);
+        if (packageReplaced || bootCompleted) {
+            EdgePermissionManager.setServerModeEnabled(context, true);
+        } else if (!EdgePermissionManager.isServerModeEnabled(context)) {
+            return;
+        }
         try {
             Intent service = new Intent(context, EdgeRelayService.class);
             service.putExtra("boot_reason", action);

@@ -10,6 +10,8 @@ public final class EdgeRelayPolicy {
     public static final int REGISTRATION_TTL_SECONDS = 300;
     public static final int HEADER_MAX_BYTES = 16_384;
     public static final int API_BODY_MAX_BYTES = 64 * 1024;
+    public static final int EXCELLENTIA_HTTP_PORT = 8878;
+    public static final int EXCELLENTIA_SNAPSHOT_MAX_BYTES = 12 * 1024 * 1024;
 
     private EdgeRelayPolicy() {}
 
@@ -78,6 +80,12 @@ public final class EdgeRelayPolicy {
         if ("GET".equalsIgnoreCase(method) && "/v1/node/mission-steps".equals(path)) return true;
         if ("GET".equalsIgnoreCase(method) && "/v1/node/capability-registry".equals(path)) return true;
         if ("GET".equalsIgnoreCase(method) && "/v1/node/memory-claims".equals(path)) return true;
+        if ("GET".equalsIgnoreCase(method) && "/v1/node/excellentia/status".equals(path)) return true;
+        if ("GET".equalsIgnoreCase(method) && "/v1/node/excellentia/progress".equals(path)) return true;
+        if ("POST".equalsIgnoreCase(method) && "/v1/node/excellentia/snapshot".equals(path)) return true;
+        if ("POST".equalsIgnoreCase(method) && "/v1/node/excellentia/revoke".equals(path)) return true;
+        if ("POST".equalsIgnoreCase(method) && "/v1/node/excellentia/progress/ack".equals(path)) return true;
+        if ("POST".equalsIgnoreCase(method) && "/v1/node/excellentia/revoke".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/events".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/mission-steps".equals(path)) return true;
         if ("POST".equalsIgnoreCase(method) && "/v1/node/mission-steps/state".equals(path)) return true;
