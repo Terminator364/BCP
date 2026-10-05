@@ -416,6 +416,9 @@ public final class ExcellentiaEdgeBridge {
             row.put("correct", body.optBoolean("correct", false));
             row.put("module", body.optInt("module", 0));
             row.put("mode", body.optString("mode", "EDGE_OFFLINE"));
+            row.put("origin_session_id", body.optString("origin_session_id", ""));
+            row.put("elapsed_ms", Math.max(0, Math.min(40_000, body.optInt("elapsed_ms", 0))));
+            row.put("timed_out", body.optBoolean("timed_out", false));
             synchronized (this) {
                 try (FileOutputStream fos = new FileOutputStream(new File(context.getFilesDir(), PROGRESS_FILE), true)) {
                     fos.write((row.toString() + "\n").getBytes(StandardCharsets.UTF_8));
@@ -574,6 +577,7 @@ button,select{padding:11px;border-radius:10px;border:1px solid #34506f;backgroun
 .ans{display:block;width:100%;text-align:left;margin:8px 0}
 .good{border-color:#35c88a;background:#103125}
 .bad{border-color:#ef6672;background:#35151a}
+.timer-hot{border-color:#ef6672!important;color:#ff98a0!important}
 .muted{color:#9fb2c7;font-size:13px}
 .pill{font-size:12px;padding:5px 8px;border:1px solid #35506d;border-radius:999px}
 .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -581,7 +585,7 @@ h1,h2,h3{margin:.2em 0 .5em}
 </style>
 </head>
 <body>
-<div class="top"><div class="row"><b>Excellentia Study Hub · EDGE</b><span class="pill" id="net">nœud local</span></div></div>
+<div class="top"><div class="row"><b>Excellentia Study Hub · EDGE</b><div class="row"><span class="pill" id="timer">00:40</span><span class="pill" id="net">nœud local</span></div></div></div>
 <main class="wrap">
   <div class="card">
     <h2>Continuité locale</h2>
@@ -598,7 +602,8 @@ h1,h2,h3{margin:.2em 0 .5em}
 (async()=>{
   const H=document.getElementById('host');
   const M=document.getElementById('mod');
-  let pack=null,run=null;
+  const QUESTION_LIMIT_MS=40000;
+  let pack=null,run=null,timingBusy=false;
   const esc=v=>String(v??'')
     .replaceAll('&','&amp;')
     .replaceAll('<','&lt;')
@@ -719,7 +724,8 @@ h1,h2,h3{margin:.2em 0 .5em}
       const j=Math.floor(Math.random()*(i+1));
       [a[i],a[j]]=[a[j],a[i]];
     }
-    run={id:'edge-run-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},started:Date.now()};
+    const now=Date.now();
+    run={id:'edge-run-'+now+'-'+Math.random().toString(36).slice(2,8),origin_session_id:'',ids:a.slice(0,10).map(q=>q.id),i:0,score:0,answers:{},mode:'EDGE_OFFLINE',module:m,started:now,question_started_at:now,deadlineAt:now+QUESTION_LIMIT_MS,question_limit_ms:QUESTION_LIMIT_MS};
     save();render();
   }
 
@@ -728,28 +734,56 @@ h1,h2,h3{margin:.2em 0 .5em}
     return (pack.questions||[]).find(x=>x.id===run.ids[run.i])||null;
   }
 
-  async function answer(i){
-    const x=current();
-    if(!x||run.answers[x.id]!=null)return;
-    const ok=Number(i)===Number(x.answer);
-    run.answers[x.id]=i;
-    if(ok)run.score++;
+  function ensureQuestionClock(){
+    if(!run)return;
+    const x=current();if(!x||run.answers[x.id]!=null)return;
+    const now=Date.now(),limit=Number(run.question_limit_ms||QUESTION_LIMIT_MS);
+    if(!Number(run.question_started_at||0))run.question_started_at=now;
+    if(!Number(run.deadlineAt||0))run.deadlineAt=now+Math.max(1,Math.min(QUESTION_LIMIT_MS,limit));
     save();
-    queueProgress({
-      id:run.id+'-'+(run.i+1)+'-'+x.id,
-      run_id:run.id,run_total:run.ids.length,run_position:run.i+1,
-      question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,
-      selected:i,correct:ok,mode:'EDGE_OFFLINE'
-    });
-    render();
+  }
+  function questionMsLeft(){
+    if(!run)return QUESTION_LIMIT_MS;const x=current();if(!x||run.answers[x.id]!=null)return 0;
+    ensureQuestionClock();return Math.max(0,Number(run.deadlineAt||0)-Date.now())
+  }
+  function paintTimer(){
+    const el=document.getElementById('timer');if(!el)return;
+    const x=current(),answered=x&&run?.answers?.[x.id]!=null,ms=answered?0:questionMsLeft(),sec=Math.max(0,Math.ceil(ms/1000));
+    el.textContent=answered?'Répondu':'00:'+String(sec).padStart(2,'0');
+    el.classList.toggle('timer-hot',!answered&&sec<=10)
+  }
+  async function answer(i,timedOut=false){
+    const x=current();
+    if(!x||run.answers[x.id]!=null||timingBusy)return;
+    timingBusy=true;
+    try{
+      const selected=timedOut?-1:Number(i),ok=!timedOut&&selected===Number(x.answer);
+      const started=Number(run.question_started_at||Date.now()),elapsed=timedOut?QUESTION_LIMIT_MS:Math.max(0,Math.min(QUESTION_LIMIT_MS,Date.now()-started));
+      run.answers[x.id]=selected;
+      if(ok)run.score++;
+      run.deadlineAt=0;save();
+      queueProgress({
+        id:run.id+'-'+(run.i+1)+'-'+x.id,
+        run_id:run.id,run_total:run.ids.length,run_position:run.i+1,
+        origin_session_id:String(run.origin_session_id||''),
+        question_id:x.id,knowledge_id:x.knowledge_id,module:x.module,
+        selected,correct:ok,mode:String(run.mode||'EDGE_OFFLINE'),elapsed_ms:elapsed,timed_out:timedOut
+      });
+      if(timedOut){next(true);return}
+      render();
+    }finally{timingBusy=false}
   }
 
-  function next(){
+  function next(fromTimeout=false){
     void flushOutbox();
-    if(run.i<run.ids.length-1){run.i++;save();render();return}
-    H.innerHTML='<div class="card"><h2>Terminé · '+run.score+'/'+run.ids.length+
-      '</h2><p class="muted">Résultat conservé sur B‑EDGE.</p>'+
+    if(run.i<run.ids.length-1){
+      run.i++;const now=Date.now();run.question_started_at=now;run.deadlineAt=now+QUESTION_LIMIT_MS;run.question_limit_ms=QUESTION_LIMIT_MS;save();render();return
+    }
+    const mock=String(run.mode||'').toLowerCase()==='mock';
+    H.innerHTML='<div class="card"><h2>Terminé'+(mock?'':' · '+run.score+'/'+run.ids.length)+
+      '</h2><p class="muted">Résultat conservé sur B‑EDGE'+(mock?' ; correction au retour du PC.':'.')+'</p>'+
       '<button class="primary" id="reset">Nouvelle série</button></div>';
+    document.getElementById('timer').textContent='Terminé';
     document.getElementById('reset').onclick=()=>{
       localStorage.removeItem('exc_edge_run');
       run=null;
@@ -759,25 +793,30 @@ h1,h2,h3{margin:.2em 0 .5em}
 
   function render(){
     if(!run){
+      document.getElementById('timer').textContent='00:40';
       H.innerHTML='<div class="card"><h3>Prêt</h3><p class="muted">Choisis un module puis lance une série. Le PC n’est pas requis pour cette continuité.</p></div>';
       return;
     }
     const x=current();
     if(!x){H.innerHTML='<div class="card">Session locale invalide.</div>';return}
-    const selected=run.answers[x.id];
+    ensureQuestionClock();paintTimer();
+    const selected=run.answers[x.id],answered=selected!=null,mock=String(run.mode||'').toLowerCase()==='mock';
     H.innerHTML='<div class="card"><div class="row"><span class="pill">Question '+(run.i+1)+' / '+run.ids.length+
-      '</span><b>'+run.score+' pts</b></div><h2>'+esc(x.prompt)+'</h2>'+
-      (x.choices||[]).map((c,i)=>'<button class="ans '+(selected!=null?(i===Number(x.answer)?'good':i===Number(selected)?'bad':''):'')+
-        '" data-a="'+i+'">'+esc(c)+'</button>').join('')+
-      (selected!=null?'<p class="muted">'+esc(x.explanation||'')+'</p><button class="primary" id="next">Suivant</button>':'')+
+      '</span><b>'+(mock?'Examen':run.score+' pts')+'</b></div><h2>'+esc(x.prompt)+'</h2>'+
+      (x.choices||[]).map((c,i)=>'<button class="ans '+(answered&&!mock?(i===Number(x.answer)?'good':i===Number(selected)?'bad':''):'')+
+        '" '+(answered?'disabled ':'')+'data-a="'+i+'">'+esc(c)+'</button>').join('')+
+      (answered?(mock?'<p class="muted">Réponse enregistrée. La correction reste masquée jusqu’à la fin.</p>':'<p class="muted">'+esc(x.explanation||'')+'</p>')+'<button class="primary" id="next">Suivant</button>':'')+
       '</div>';
-    document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.a)));
-    const n=document.getElementById('next');
-    if(n)n.onclick=next;
+    if(!answered)document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.a),false));
+    const n=document.getElementById('next');if(n)n.onclick=()=>next(false);
   }
 
   document.getElementById('start').onclick=pick;
   document.getElementById('resume').onclick=render;
+  setInterval(()=>{
+    if(!run||timingBusy)return;const x=current();if(!x||run.answers[x.id]!=null){paintTimer();return}
+    paintTimer();if(questionMsLeft()<=0)void answer(-1,true)
+  },250);
   setInterval(async()=>{
     if(recovering)return;
     try{
