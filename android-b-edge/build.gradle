@@ -10,8 +10,8 @@ android {
         applicationId "com.blessing.bcpedge.evergreen"
         minSdk 26
         targetSdk 35
-        versionCode 223
-        versionName "2.2.3-excellentia-edge-evergreen"
+        versionCode 224
+        versionName "2.2.4-excellentia-edge-evergreen"
     }
 
     buildTypes {
