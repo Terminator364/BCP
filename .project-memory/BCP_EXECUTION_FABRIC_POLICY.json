@@ -1,0 +1,96 @@
+{
+  "schema": "bcp.execution_fabric_policy/1",
+  "status": "PRECONCEPTION",
+  "revision": "2026-10-05",
+  "authority": {
+    "mission": "BCP",
+    "policy": "BCP",
+    "canonical_memory": "BCP",
+    "validation": "BCP",
+    "primary_human_interface": "ChatGPT",
+    "secondary_human_interface": "Telegram"
+  },
+  "invariants": [
+    "NO_SECOND_MODEL_BROKER",
+    "NO_SECOND_RESOURCE_GOVERNOR",
+    "NO_SECOND_CONTEXT_PACK",
+    "NO_SECOND_CANONICAL_MISSION_DB",
+    "NO_LOCAL_LLM_REQUIRED_FOR_CORRECTNESS",
+    "ONE_HEAVY_PC_WORKER",
+    "USER_FOREGROUND_PRIORITY",
+    "NO_ARBITRARY_ADMIN_SHELL_FOR_LLM",
+    "MODEL_OUTPUT_IS_PROPOSAL_NOT_AUTHORITY",
+    "NO_SUCCESS_WITHOUT_RECEIPT_AND_READBACK",
+    "DRIVE_IS_NOT_HOT_RUNTIME_DB",
+    "GITHUB_IS_NOT_RUNTIME_TRUTH"
+  ],
+  "pc_resource_modes": [
+    "SURVIVAL",
+    "PRESSURE",
+    "NORMAL",
+    "RELAXED"
+  ],
+  "permission_classes": {
+    "P0_READ": "automatic",
+    "P1_SAFE": "automatic_if_policy_allows",
+    "P2_PROJECT_MODIFY": "snapshot_rollback_receipt_required",
+    "P3_SYSTEM_BOUNDED": "explicit_policy_and_readback_required",
+    "P4_DESTRUCTIVE_SECURITY": "fresh_human_approval_required"
+  },
+  "local_ai": {
+    "default_state": "COLD",
+    "pc_candidates": [
+      {
+        "id": "FUNCTIONGEMMA_270M",
+        "role": "tool_routing_extraction_classification",
+        "authority": false
+      },
+      {
+        "id": "QWEN2_5_CODER_0_5B",
+        "role": "small_code_log_config_tasks",
+        "authority": false
+      }
+    ],
+    "stronger_node_candidate": {
+      "device_class": "ANDROID_8GB",
+      "model_class": "QWEN3_1_7B_Q4",
+      "authority": false
+    },
+    "promotion_metric": "VERIFIED_USEFUL_WORK_PER_TOTAL_RESOURCE_COST"
+  },
+  "project_registry": {
+    "one_project_one_repo_assumption": false,
+    "supported_origins": [
+      "LOCAL",
+      "GITHUB",
+      "DRIVE",
+      "MONOREPO_SUBDIR",
+      "HYBRID",
+      "NO_REPO_YET"
+    ]
+  },
+  "transport": {
+    "same_pc": [
+      "NAMED_PIPE",
+      "AUTHENTICATED_LOCALHOST"
+    ],
+    "pc_phone": [
+      "TLS_WLAN_LAN",
+      "MDNS_NSD",
+      "QR_FALLBACK"
+    ],
+    "bluetooth_role": "PRESENCE_BOOTSTRAP_TINY_CONTROL_ONLY",
+    "remote_human": "TELEGRAM",
+    "artifact_primary": "DRIVE"
+  },
+  "build_order": [
+    "INVENTORY_ANTI_REINVENTION",
+    "CORE_WITHOUT_AI",
+    "WINDOWS_CAPABILITIES",
+    "AUTONOMOUS_BACKGROUND_EXECUTION",
+    "CHATGPT_TELEGRAM_DRIVE_INTEGRATION",
+    "LOCAL_AI_QUALIFICATION",
+    "CONVERGENCE",
+    "FIELD_CERTIFICATION"
+  ]
+}
