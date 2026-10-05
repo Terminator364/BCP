@@ -1,13 +1,13 @@
 {
   "schema": "bcp.android_source_candidate/1",
   "channel": "ci-candidate",
-  "version_code": 225,
-  "version_name": "2.2.5-excellentia-edge-evergreen",
+  "version_code": 226,
+  "version_name": "2.2.6-excellentia-edge-evergreen",
   "package_id": "com.blessing.bcpedge.evergreen",
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-10-05-EXCELLENTIA-ZERO-REPEAT-AUTO-CONTINUITY",
+  "requirements_revision": "2026-10-05-EXCELLENTIA-PERMANENT-EDGE-QR",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -88,9 +88,15 @@
     "Edge progress receipts include origin_session_id elapsed_ms and timed_out so PC reconciliation merges back into the canonical session",
     "snapshot refresh with the same pass preserves active B-EDGE browser sessions instead of resetting them",
     "single Android update supersedes 2.2.4 so the user is not asked to install twice",
-    "designed for automatic PC-side pass standby renewal and route repair without rescanning"
+    "designed for automatic PC-side pass standby renewal and route repair without rescanning",
+    "Excellentia QR is generated and displayed by the permanent B-EDGE phone itself",
+    "permanent Excellentia pass is derived from the existing encrypted BCP pairing credential",
+    "the QR remains reusable while each browser claim gets its own bounded 30/60/90/120/180/240/360/480 minute session",
+    "session duration starts only after the successful claim",
+    "PC network changes no longer invalidate the student entry point because the QR endpoint is B-EDGE port 8878",
+    "no PC port 8788 fallback is required for the permanent student route"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.5-zero-repeat-continuity_NEXUS-0.2.6",
+  "release_train": "BCP-0.7.18_EDGE-2.2.6-permanent-excellentia-qr_NEXUS-0.2.6",
   "signed_apk_sha256": "",
   "signature_schemes_verified": [],
   "signed_source_commit": "",
@@ -99,7 +105,7 @@
     "status": "NOT_RUN"
   },
   "exact_head_machine_qualification": {
-    "status": "PENDING_2_2_5_EXACT_HEAD"
+    "status": "PENDING_2_2_6_EXACT_HEAD"
   },
-  "remaining_human_gate": "BLOCKED_UNTIL_2_2_5_EXACT_HEAD_GREEN_SIGNING_AND_SINGLE_IN_PLACE_INSTALL"
+  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_THEN_SINGLE_ANDROID_IN_PLACE_CONFIRMATION"
 }
