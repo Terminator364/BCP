@@ -1,0 +1,35 @@
+name: BCP R3 Phase 2 Microkernel Convergence
+
+on:
+  pull_request:
+    paths:
+      - "windows/bcp_server_v2.py"
+      - "windows/execution_fabric/**"
+      - "tools/test_execution_fabric_phase2_critical_store.py"
+      - "tools/test_execution_fabric_phase2_microkernel.py"
+      - "docs/BCP_PC_MICROKERNEL_CONVERGENCE_R3_PHASE2_2026-10-05.md"
+      - ".github/workflows/bcp-r3-phase2-microkernel.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  microkernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 2 runtime
+        run: |
+          python -m compileall -q             windows/bcp_server_v2.py             windows/execution_fabric             tools/test_execution_fabric_phase2_critical_store.py             tools/test_execution_fabric_phase2_microkernel.py
+
+      - name: Reused CriticalStore durability and failure tests
+        run: python tools/test_execution_fabric_phase2_critical_store.py
+
+      - name: BCP Server V2 integrated selftest
+        run: python windows/bcp_server_v2.py --selftest
+
+      - name: Microkernel boundary guard
+        run: python tools/test_execution_fabric_phase2_microkernel.py
