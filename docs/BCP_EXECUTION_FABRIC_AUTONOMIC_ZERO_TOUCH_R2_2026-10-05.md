@@ -502,3 +502,179 @@ BCP Execution Fabric R2 is a **personal autonomic control plane**:
 
 The intended steady-state UX is:
 **Speak -> observe verified result.**
+
+
+## 25. Operational Digital Twin
+
+BCP maintains a lightweight structured projection of the real operating world.
+
+Entities:
+- nodes/devices;
+- projects;
+- repositories;
+- local roots;
+- installed components;
+- services/processes;
+- packages/runtimes;
+- capabilities;
+- desired-state resources;
+- missions/jobs;
+- artifacts;
+- transports/providers;
+- resource conditions;
+- incidents/recipes;
+- versions/update channels.
+
+Relationships:
+- project USES capability;
+- capability PROVIDED_BY node/provider;
+- mission TARGETS project;
+- task DEPENDS_ON capability/task;
+- artifact PRODUCED_BY build/revision;
+- desired state MANAGES resource;
+- incident RESOLVED_BY recipe;
+- component UPDATED_BY channel.
+
+Implementation:
+- SQLite relational tables + indexed views;
+- Chronicle remains immutable history;
+- Digital Twin is a reconstructible projection, not separate authority;
+- no Neo4j or heavy graph server on the 4 GB PC.
+
+ChatGPT consumes a task-scoped Context Projection from this twin instead of re-reading the whole system.
+
+## 26. Context Compiler for ChatGPT
+
+Before ChatGPT plans an action, BCP should be able to emit:
+
+```
+PROJECT
+current revision
+local root
+health
+pending missions
+recent incidents
+relevant capabilities
+resource state
+last verified receipts
+update state
+known blockers
+```
+
+The compiler selects only relevant data.
+
+Goal:
+- reduce repeated context reconstruction;
+- reduce user explanations;
+- reduce token/latency waste;
+- ground planning in machine reality;
+- avoid stale conversational assumptions.
+
+## 27. Work Portfolio Controller
+
+BCP manages all projects as one portfolio.
+
+Priority order by default:
+1. integrity/recovery;
+2. explicit interactive user request;
+3. blocking prerequisite;
+4. normal project work;
+5. maintenance;
+6. background improvement.
+
+Global constraints:
+- one heavy PC job;
+- per-project mutation locks;
+- foreground always wins;
+- resource and network admission;
+- deadlines/urgency;
+- starvation prevention for low-priority work.
+
+When the user says:
+"avance mes projets pendant que je fais autre chose"
+
+BCP can choose from READY background tasks without requiring a new ChatGPT turn for every micro-step.
+
+It may NOT invent new project goals. It executes only durable backlog items/desired-state reconciliation already authorized by user/project policy.
+
+## 28. Autonomy modes
+
+A user-facing autonomy profile controls interruption frequency.
+
+### SILENT_SAFE
+Automatic:
+- P0/P1;
+- diagnostics;
+- known self-heals;
+- checks;
+- safe updates staged;
+- background work.
+
+### PROJECT_AUTONOMOUS
+Adds:
+- P2 project mutations with snapshot/rollback/evidence;
+- commits on work branches;
+- builds/tests;
+- project-local updates.
+
+### SYSTEM_BOUNDED
+Adds explicitly pre-granted P3 capabilities:
+- BCP-owned services/tasks;
+- approved packages/runtimes;
+- approved firewall rules for BCP-owned endpoints where separately granted.
+
+P4 remains approval-gated in every mode.
+
+The install process can let the user pre-authorize capability classes once, represented as revocable Capability Grants.
+
+## 29. Interaction classes
+
+Every event is classified:
+
+- INVISIBLE: healthy reconciliation/background work.
+- DIGEST: non-urgent completion/status; batch into one summary.
+- NOTIFY: meaningful failure/recovery/update.
+- APPROVE: explicit bounded action needs consent.
+- HUMAN_ACTION: authentication/CAPTCHA/physical/provider gate.
+
+The system must not notify on every heartbeat or retry.
+
+## 30. Manual-friction learning
+
+BCP records every moment where the user had to:
+- open terminal;
+- run a script;
+- copy a log;
+- screenshot state;
+- move a file;
+- retry a command;
+- click a repair executable;
+- re-enter already-known configuration.
+
+Each becomes `FRICTION_EVENT`.
+
+The audit engine periodically asks:
+"Could the machine have observed/performed this itself?"
+
+If yes:
+- create automation debt;
+- attach to capability/update/project backlog;
+- prioritize repeated/high-cost friction.
+
+This turns the user's real annoyance into platform requirements automatically.
+
+## 31. Universal system criterion
+
+The system is not judged by the number of built-in tools.
+
+It is judged by:
+- breadth of trusted capability providers;
+- speed of safe capability acquisition;
+- amount of user mechanics eliminated;
+- ability to preserve state across failure;
+- verified useful work per RAM/CPU/network cost;
+- percentage of repeated incidents converted to self-healing recipes;
+- percentage of project setup/update/recovery handled declaratively.
+
+"Tout faire" therefore means:
+**Any legitimate authorized task is either already executable, can be acquired as a capability, or is escalated with a precise irreducible reason — without making the user the integration layer.**
