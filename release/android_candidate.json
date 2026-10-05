@@ -7,7 +7,7 @@
   "expected_signing_cert_sha256": "0baad4749918f1b2430bbbf3f5ddbdb1de4908b017910d67aef2cb987ddeb617",
   "minimum_server_version": "0.7.9",
   "coordinated_server_version": "0.7.18",
-  "requirements_revision": "2026-10-05-EXCELLENTIA-AUTO-SERVER-RESTORE",
+  "requirements_revision": "2026-10-05-EXCELLENTIA-FREE-STUDY-STUDENT-HUB",
   "base_distributed_version_code": 220,
   "base_distributed_version_name": "2.2.0-full-node-evergreen",
   "distribution_status": "UNSIGNED_CI_CANDIDATE_NOT_PUBLISHED",
@@ -103,9 +103,15 @@
     "snapshot refresh updates corpus/content while preserving the phone-resident permanent pass authority and active browser sessions",
     "no silent QR fallback to PC LAN is part of the permanent Excellentia continuity design",
     "MY_PACKAGE_REPLACED always restores dedicated server mode and restarts EdgeRelayService",
-    "BOOT_COMPLETED restores dedicated server mode and restarts EdgeRelayService even if legacy flag was lost"
+    "BOOT_COMPLETED restores dedicated server mode and restarts EdgeRelayService even if legacy flag was lost",
+    "QR opens the full Excellentia student free-study hub instead of auto-starting a questionnaire",
+    "student hub navigation includes Home Learn Train Review Exams and Progress",
+    "40-second timer starts only after the student explicitly launches training or an exam",
+    "Learn renders real lesson sheets from the validated offline snapshot",
+    "training preserves immediate green/red feedback while mock exams keep correction hidden until completion",
+    "existing local run is resumable from Home without forcing quiz mode on QR entry"
   ],
-  "release_train": "BCP-0.7.18_EDGE-2.2.6-auto-server-restore_NEXUS-0.2.6",
+  "release_train": "BCP-0.7.18_EDGE-2.2.6-free-study-hub_NEXUS-0.2.6",
   "signed_apk_sha256": "",
   "signature_schemes_verified": [],
   "signed_source_commit": "",
@@ -116,5 +122,5 @@
   "exact_head_machine_qualification": {
     "status": "PENDING_2_2_6_EXACT_HEAD"
   },
-  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_AND_IN_PLACE_INSTALL"
+  "remaining_human_gate": "BLOCKED_UNTIL_2_2_6_EXACT_HEAD_GREEN_SIGNING_AND_SINGLE_IN_PLACE_INSTALL"
 }
