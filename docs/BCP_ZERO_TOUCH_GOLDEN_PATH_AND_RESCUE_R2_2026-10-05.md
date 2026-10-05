@@ -106,3 +106,16 @@ Target:
 ChatGPT -> BCP mission -> Commander capability and MedRebuild branches -> automated repair/test/readback -> result.
 
 If Commander itself is the broken capability, BCP uses the native/rescue execution plane; Commander cannot be required to repair Commander.
+
+
+## 9. Optional-provider rule
+
+The Golden Path must never prefer a metered compatibility provider when a qualified native/local capability can perform the same effect.
+
+Desktop Commander:
+- classification: optional metered accelerator / compatibility provider;
+- never canonical runtime authority;
+- never required for bootstrap, local recovery, mission durability or core Windows effects;
+- quota exhaustion is a provider-health event, not a platform failure.
+
+Manual fallback remains forbidden merely because a provider quota is exhausted. The system must exhaust qualified machine alternatives first.
