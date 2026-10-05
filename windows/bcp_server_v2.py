@@ -12,7 +12,7 @@ import sqlite3
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse\n\nfrom execution_fabric.critical_store import CriticalStore
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -20,7 +20,7 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.3.0"
+SERVER_VERSION = "0.4.0-r3-phase2"
 DB_LOCK = threading.RLock()
 
 
@@ -105,6 +105,10 @@ def ensure_state() -> str:
         cx.commit()
     finally:
         cx.close()
+
+    # Phase 2 convergence: initialize fenced authority/history/outbox tables in the
+    # same local SQLite authority DB. Legacy events/heads remain compatibility views.
+    CriticalStore(DB_PATH)
     return token
 
 
@@ -112,6 +116,11 @@ def connect_db():
     cx = sqlite3.connect(DB_PATH, timeout=15, isolation_level=None)
     cx.row_factory = sqlite3.Row
     return cx
+
+
+def critical_store() -> CriticalStore:
+    """Return the canonical local durable authority store on the shared BCP SQLite DB."""
+    return CriticalStore(DB_PATH)
 
 
 def get_head(project_id: str):
@@ -278,7 +287,9 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
         if path == "/health":
             self.send_json(
                 200,
@@ -298,6 +309,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/v1/diagnostics":
+            store = critical_store()
             self.send_json(
                 200,
                 {
@@ -306,8 +318,29 @@ class Handler(BaseHTTPRequestHandler):
                     "paired": PAIR_PATH.exists(),
                     "pair": read_json(PAIR_PATH, {}),
                     "telemetry_file": str(TELEMETRY_DIR / "phone-events.jsonl"),
+                    "microkernel_candidate": True,
+                    "field_certified": False,
+                    "critical_store": {
+                        "integrity": store.integrity_check(),
+                        "pragmas": store.pragmas(),
+                    },
                 },
             )
+            return
+
+        if path == "/v2/authority/state":
+            stream = str((query.get("stream") or [""])[0])
+            self.send_json(200, {"stream_id": stream, "state": critical_store().get_state(stream)})
+            return
+
+        if path == "/v2/authority/history":
+            stream = str((query.get("stream") or [""])[0])
+            self.send_json(200, {"stream_id": stream, "history": critical_store().history(stream)})
+            return
+
+        if path == "/v2/outbox/due":
+            limit = int((query.get("limit") or ["32"])[0])
+            self.send_json(200, {"messages": critical_store().due_outbox(limit=limit)})
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
@@ -373,6 +406,58 @@ class Handler(BaseHTTPRequestHandler):
 
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
+            return
+
+        if path == "/v2/authority/fence":
+            try:
+                body = self.read_json()
+                token = critical_store().acquire_writer_fence(
+                    str(body.get("stream_id") or ""),
+                    str(body.get("owner_id") or ""),
+                )
+                self.send_json(
+                    200,
+                    {
+                        "schema": "bcp.writer_fence_receipt/1",
+                        "status": "ACQUIRED",
+                        "stream_id": str(body.get("stream_id") or ""),
+                        "fencing_token": token,
+                        "field_certified": False,
+                    },
+                )
+            except Exception as e:
+                self.send_json(409, {"error": "fence_failed", "detail": str(e)})
+            return
+
+        if path == "/v2/authority/transition":
+            try:
+                body = self.read_json()
+                receipt = critical_store().commit_transition(
+                    stream_id=str(body.get("stream_id") or ""),
+                    expected_revision=int(body.get("expected_revision")),
+                    new_revision=int(body.get("new_revision")),
+                    fencing_token=int(body.get("fencing_token")),
+                    payload=body.get("payload"),
+                    destination=str(body.get("destination") or "BCP_RUNTIME"),
+                )
+                self.send_json(
+                    200,
+                    {
+                        "schema": "bcp.durable_commit_receipt/1",
+                        "status": receipt.status,
+                        "stream_id": receipt.stream_id,
+                        "revision": receipt.revision,
+                        "fencing_token": receipt.fencing_token,
+                        "content_hash": receipt.content_hash,
+                        "predecessor_hash": receipt.predecessor_hash,
+                        "outbox_message_id": receipt.outbox_message_id,
+                        "idempotent_replay": receipt.idempotent_replay,
+                        "proof_scope": "FIELD" if os.name == "nt" else "SIMULATION",
+                        "field_certified": False,
+                    },
+                )
+            except Exception as e:
+                self.send_json(409, {"error": "transition_failed", "detail": str(e)})
             return
 
         if path == "/v1/telemetry":
@@ -462,6 +547,32 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
+
+        store = critical_store()
+        fence = store.acquire_writer_fence("bcp/core", "selftest-writer")
+        receipt = store.commit_transition(
+            stream_id="bcp/core",
+            expected_revision=0,
+            new_revision=1,
+            fencing_token=fence,
+            payload={"state": "PHASE2_SELFTEST", "field_certified": False},
+            destination="BCP_RUNTIME",
+            now_epoch=1000,
+        )
+        replay = store.commit_transition(
+            stream_id="bcp/core",
+            expected_revision=0,
+            new_revision=1,
+            fencing_token=fence,
+            payload={"state": "PHASE2_SELFTEST", "field_certified": False},
+            destination="BCP_RUNTIME",
+            now_epoch=1000,
+        )
+        assert receipt.status == "DURABLE_LOCAL"
+        assert replay.idempotent_replay is True
+        assert store.get_state("bcp/core")["revision"] == 1
+        assert len(store.due_outbox(now_epoch=1000)) == 1
+        assert store.integrity_check() == "ok"
     print("BCP_SERVER_SELFTEST=PASS")
 
 
