@@ -85,7 +85,7 @@ The planner never executes its own plan.
 
 Module: `windows/execution_fabric/legacy_error_ledger.py`
 
-The existing `.project-memory/ERROR_LEDGER.jsonl` remains historical causal knowledge. FIXED rows with regression/prevention evidence may become recipe-authoring candidates, but the projection is non-executable, CANDIDATE_ONLY, never silently VALIDATED, and never field-certified.
+The existing `.project-memory/ERROR_LEDGER.jsonl` remains historical causal knowledge. Closed `FIXED*` or `CORRECTED` rows with regression/prevention evidence may become recipe-authoring candidates, but the projection is non-executable, CANDIDATE_ONLY, never silently VALIDATED, and never field-certified.
 
 ## 8. Read-only microkernel views
 
