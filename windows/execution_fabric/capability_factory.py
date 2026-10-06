@@ -40,6 +40,18 @@ PERMISSION_ORDER = {
 }
 AUTO_PERMISSION_MAX = "P3_BOUNDED_SYSTEM_CHANGE"
 AUTO_TRUST = {"T0_BUILTIN", "T1_VERIFIED_LOCAL", "T2_VERIFIED_REMOTE"}
+FACTORY_PROMOTED_TRUST = {"T1_VERIFIED_LOCAL", "T2_VERIFIED_REMOTE"}
+EFFECT_TO_PERMISSION = {
+    "READ_ONLY": "P0_READ",
+    "SAFE_WRITE": "P1_SAFE_WRITE",
+    "PROJECT_MUTATION": "P2_PROJECT_MUTATION",
+    "BOUNDED_SYSTEM_CHANGE": "P3_BOUNDED_SYSTEM_CHANGE",
+    "DESTRUCTIVE_OR_SECURITY_SENSITIVE": "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE",
+}
+FORBIDDEN_INPUT_KEYS = {
+    "command", "argv", "shell", "script", "executable",
+    "powershell", "cmd", "commandline", "command_line",
+}
 TRUST_CLASSES = AUTO_TRUST | {"T3_CANDIDATE", "T4_QUARANTINED"}
 LICENSE_STATES = {"APPROVED", "REVIEW_REQUIRED", "DENIED", "UNKNOWN", "NOT_APPLICABLE"}
 SCOPE_ORDER = {"REPOSITORY": 0, "SIMULATION": 1, "PROVIDER": 2, "FIELD": 3}
@@ -187,6 +199,25 @@ def _hash_obj(value: Any) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _find_forbidden_input(value: Any, path: str = "$") -> str | None:
+    if isinstance(value, dict):
+        props = value.get("properties")
+        if isinstance(props, dict):
+            for key in props:
+                if str(key).casefold() in FORBIDDEN_INPUT_KEYS:
+                    return f"{path}.properties.{key}"
+        for key, item in value.items():
+            found = _find_forbidden_input(item, f"{path}.{key}")
+            if found:
+                return found
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            found = _find_forbidden_input(item, f"{path}[{index}]")
+            if found:
+                return found
+    return None
+
+
 def _candidate_stream(project_id: str, candidate_id: str) -> str:
     project = _text(project_id, "project_id", 128)
     candidate = _text(candidate_id, "candidate_id", 200)
@@ -233,8 +264,13 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
         raise ValueError("invalid permission_class")
     if manifest.get("resource_class") not in RESOURCE_ORDER:
         raise ValueError("invalid resource_class")
+    if manifest["permission_class"] != EFFECT_TO_PERMISSION[manifest["effect_class"]]:
+        raise ValueError("effect_class and permission_class must match")
     if not isinstance(manifest.get("input_schema"), dict):
         raise ValueError("input_schema must be object")
+    forbidden_input = _find_forbidden_input(manifest["input_schema"])
+    if forbidden_input:
+        raise ValueError(f"free-form execution input forbidden at {forbidden_input}")
     if "output_schema" in manifest and not isinstance(manifest.get("output_schema"), dict):
         raise ValueError("output_schema must be object")
     evidence = manifest.get("evidence_contract")
@@ -252,6 +288,8 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
     for field in ("requires_network", "requires_pc", "requires_bedge", "requires_admin", "preemptible"):
         if field in manifest and type(manifest.get(field)) is not bool:
             raise ValueError(f"invalid {field}")
+    if manifest.get("requires_admin") is True and PERMISSION_ORDER[manifest["permission_class"]] < PERMISSION_ORDER["P3_BOUNDED_SYSTEM_CHANGE"]:
+        raise ValueError("admin requirement requires P3 classification")
     timeout = manifest.get("timeout_seconds")
     if timeout is not None and (type(timeout) is not int or timeout < 1 or timeout > 86400):
         raise ValueError("invalid timeout_seconds")
@@ -360,8 +398,14 @@ def validate_candidate(candidate: Any) -> dict[str, Any]:
     if not CANDIDATE_RE.fullmatch(cid) or not PROJECT_RE.fullmatch(project) or not CAPABILITY_RE.fullmatch(requested):
         raise ValueError("invalid candidate identity")
     _text(candidate.get("original_mission_id"), "original_mission_id", 128, optional=True)
-    if candidate.get("trust_class") not in TRUST_CLASSES:
-        raise ValueError("invalid trust_class")
+    trust_class = candidate.get("trust_class")
+    if trust_class not in TRUST_CLASSES or trust_class == "T0_BUILTIN":
+        raise ValueError("invalid factory trust_class")
+    if candidate.get("stage") == "REGISTERED":
+        if trust_class not in FACTORY_PROMOTED_TRUST or not candidate.get("registration_ref"):
+            raise ValueError("registered candidate requires promoted T1/T2 trust")
+    elif trust_class not in {"T3_CANDIDATE", "T4_QUARANTINED"}:
+        raise ValueError("candidate cannot self-claim verified trust before registration")
     source = _validate_source(candidate["source"])
     license_info = _validate_license(candidate["license"])
     manifest = validate_manifest(candidate["proposed_manifest"])
@@ -428,7 +472,7 @@ def validate_registration(registration: Any) -> dict[str, Any]:
     required = {
         "schema", "registration_id", "candidate_id", "project_id",
         "capability_id", "provider_id", "version", "trust_class",
-        "manifest", "gate_receipts", "registered_at", "field_certified",
+        "manifest", "source", "license", "gate_receipts", "registered_at", "field_certified",
     }
     optional = {"source_revision"}
     if not isinstance(registration, dict) or set(registration) - required - optional or not required <= set(registration):
@@ -441,6 +485,8 @@ def validate_registration(registration: Any) -> dict[str, Any]:
     if not PROJECT_RE.fullmatch(project):
         raise ValueError("invalid registration project")
     manifest = validate_manifest(registration["manifest"])
+    source = _validate_source(registration["source"])
+    license_info = _validate_license(registration["license"])
     for field in ("capability_id", "provider_id", "version"):
         if registration[field] != manifest[field]:
             raise ValueError(f"registration {field} does not match manifest")
@@ -453,10 +499,15 @@ def validate_registration(registration: Any) -> dict[str, Any]:
         _text(ref, "registration gate receipt", 200)
     _text(registration.get("source_revision"), "source_revision", 256, optional=True)
     _iso(registration["registered_at"], "registered_at")
-    if registration.get("field_certified") is not False:
-        raise ValueError("registration is not execution field authority")
+    field_certified = registration.get("field_certified")
+    if type(field_certified) is not bool:
+        raise ValueError("field_certified must be boolean")
+    if registration["trust_class"] == "T1_VERIFIED_LOCAL" and field_certified is not True:
+        raise ValueError("T1 verified-local registration requires field proof")
     out = deepcopy(registration)
     out["manifest"] = manifest
+    out["source"] = source
+    out["license"] = license_info
     return out
 
 
@@ -512,6 +563,44 @@ class CapabilityRegistry:
     def list(self, *, limit: int = 1024) -> list[dict[str, Any]]:
         return self.store.list_states(REGISTRATION_PREFIX, limit=limit)
 
+    def search(
+        self,
+        capability_id: str,
+        *,
+        project_id: str,
+        minimum_trust: str = "T2_VERIFIED_REMOTE",
+    ) -> list[dict[str, Any]]:
+        cap = _text(capability_id, "capability_id", 128)
+        project = _text(project_id, "project_id", 128)
+        if not CAPABILITY_RE.fullmatch(cap) or not PROJECT_RE.fullmatch(project):
+            raise ValueError("invalid capability search")
+        trust_rank = {
+            "T2_VERIFIED_REMOTE": 1,
+            "T1_VERIFIED_LOCAL": 2,
+            "T0_BUILTIN": 3,
+        }
+        if minimum_trust not in trust_rank:
+            raise ValueError("invalid minimum_trust")
+        out = []
+        for state in self.list(limit=4096):
+            reg = state["payload"]
+            if reg["capability_id"] != cap:
+                continue
+            if trust_rank[reg["trust_class"]] < trust_rank[minimum_trust]:
+                continue
+            scopes = set(reg["manifest"].get("project_scopes") or [])
+            if scopes and "*" not in scopes and project not in scopes:
+                continue
+            out.append(state)
+        out.sort(
+            key=lambda x: (
+                -trust_rank[x["payload"]["trust_class"]],
+                x["payload"]["provider_id"],
+                x["payload"]["version"],
+            )
+        )
+        return out
+
     def put(self, registration: dict[str, Any], *, owner_id: str) -> dict[str, Any]:
         clean = validate_registration(registration)
         sid = _registration_stream(
@@ -557,6 +646,17 @@ class CapabilityFactory:
             prefix += project + "/"
         return self.store.list_states(prefix, limit=limit)
 
+    def find_reusable(
+        self,
+        project_id: str,
+        capability_id: str,
+    ) -> list[dict[str, Any]]:
+        return self.registry.search(
+            capability_id,
+            project_id=project_id,
+            minimum_trust="T2_VERIFIED_REMOTE",
+        )
+
     def _put(self, candidate: dict[str, Any], *, owner_id: str) -> dict[str, Any]:
         clean = validate_candidate(candidate)
         sid = _candidate_stream(clean["project_id"], clean["candidate_id"])
@@ -600,6 +700,16 @@ class CapabilityFactory:
 
         if manifest["capability_id"] != requested_capability_id:
             raise ValueError("requested capability and manifest mismatch")
+        if trust_class not in {"T3_CANDIDATE", "T4_QUARANTINED"}:
+            raise ValueError("new factory candidate must start T3 or T4")
+        if manifest["permission_class"] == "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE":
+            raise ValueError("P4 capability factory qualification requires a separate human-approved lane")
+        if manifest["resource_class"] == "R4_LOCAL_AI":
+            raise ValueError("R4 local AI qualification is deferred to Phase 10")
+        if isinstance(manifest.get("executor"), dict) and manifest["executor"].get("kind") == "MODEL":
+            raise ValueError("MODEL executor qualification is deferred to Phase 10")
+        if not policy["require_sandbox"] or not policy["require_security_test"] or not policy["require_canary"]:
+            raise ValueError("automatic factory requires sandbox, security test and canary")
         if trust_class == "T4_QUARANTINED":
             stage, status = "QUARANTINED", "HOLD"
             failure = {"code": "SOURCE_QUARANTINED", "detail": "source trust class is T4"}
@@ -793,20 +903,14 @@ class CapabilityFactory:
         candidate["failure"] = None
 
         if gate == "source_trust":
-            if trust_class is None or trust_class not in TRUST_CLASSES:
-                raise CandidateTransitionError("source trust gate requires resulting trust class")
+            if trust_class not in {"T3_CANDIDATE", "T4_QUARANTINED"}:
+                raise CandidateTransitionError("source trust gate may keep T3 or quarantine T4 only")
             candidate["trust_class"] = trust_class
             if trust_class == "T4_QUARANTINED":
                 candidate["stage"] = "QUARANTINED"
                 candidate["status"] = "HOLD"
                 candidate["failure"] = {"code": "SOURCE_QUARANTINED", "detail": None}
                 return self._put(candidate, owner_id=owner_id)
-            if trust_class not in candidate["policy"]["allowed_trust_classes"]:
-                candidate["stage"] = "WAITING_APPROVAL"
-                candidate["status"] = "HOLD"
-                candidate["failure"] = {"code": "SOURCE_TRUST_NOT_AUTO_APPROVED", "detail": trust_class}
-                return self._put(candidate, owner_id=owner_id)
-
         if gate == "license_policy":
             if license_status is None or license_status not in LICENSE_STATES:
                 raise CandidateTransitionError("license gate requires resulting license status")
@@ -856,8 +960,8 @@ class CapabilityFactory:
         if candidate["status"] != "ACTIVE" or candidate["stage"] != "REGISTER":
             raise CandidateTransitionError("candidate is not registration-ready")
         manifest = candidate["proposed_manifest"]
-        if candidate["trust_class"] not in AUTO_TRUST:
-            raise CandidateTransitionError("candidate trust class is not registration-qualified")
+        if candidate["trust_class"] != "T3_CANDIDATE":
+            raise CandidateTransitionError("registration requires a T3 candidate that completed all gates")
         if candidate["license"]["status"] not in {"APPROVED", "NOT_APPLICABLE"}:
             raise CandidateTransitionError("candidate license is not registration-qualified")
         if PERMISSION_ORDER[manifest["permission_class"]] > PERMISSION_ORDER[AUTO_PERMISSION_MAX]:
@@ -879,6 +983,21 @@ class CapabilityFactory:
                 "registration missing gates: " + ",".join(missing)
             )
 
+        canary_ref = candidate["gate_receipts"].get("canary")
+        if not canary_ref:
+            raise CandidateTransitionError("registration requires canary receipt")
+        canary = self.receipts.get(canary_ref)["payload"]
+        if canary["proof_scope"] == "FIELD" and canary.get("field_certified") is True:
+            target_trust = "T1_VERIFIED_LOCAL"
+            field_certified = True
+        elif canary["proof_scope"] in {"PROVIDER", "FIELD"}:
+            target_trust = "T2_VERIFIED_REMOTE"
+            field_certified = bool(canary.get("field_certified"))
+        else:
+            raise CandidateTransitionError("repository/simulation canary cannot promote unattended capability")
+        if target_trust not in candidate["policy"]["allowed_trust_classes"]:
+            raise CandidateTransitionError("canary-derived trust class is not allowed by policy")
+
         registration = {
             "schema": "bcp.capability_registration/1",
             "registration_id": _registration_id(candidate),
@@ -887,18 +1006,21 @@ class CapabilityFactory:
             "capability_id": manifest["capability_id"],
             "provider_id": manifest["provider_id"],
             "version": manifest["version"],
-            "trust_class": candidate["trust_class"],
+            "trust_class": target_trust,
             "manifest": deepcopy(manifest),
+            "source": deepcopy(candidate["source"]),
+            "license": deepcopy(candidate["license"]),
             "gate_receipts": [
                 candidate["gate_receipts"][gate] for gate in required_gates
             ],
             "source_revision": candidate["source"].get("revision"),
             "registered_at": _iso(now, "now"),
-            "field_certified": False,
+            "field_certified": field_certified,
         }
         registered = self.registry.put(registration, owner_id=owner_id)
         candidate["stage"] = "REGISTERED"
         candidate["status"] = "REGISTERED"
+        candidate["trust_class"] = target_trust
         candidate["registration_ref"] = registration["registration_id"]
         candidate["updated_at"] = _iso(now, "now")
         self._put(candidate, owner_id=owner_id)
