@@ -22,6 +22,11 @@ from execution_fabric.incident_recipe import RecipeRegistry
 from execution_fabric.release_controller import ReleaseController
 from execution_fabric.transport_cockpit import TransportController
 from execution_fabric.capability_factory import CapabilityFactory
+from execution_fabric.project_adapter_registry import (
+    ProjectAdapterAmbiguous,
+    ProjectAdapterNotFound,
+    ProjectAdapterRegistry,
+)
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -223,6 +228,10 @@ def transport_controller() -> TransportController:
 
 def capability_factory() -> CapabilityFactory:
     return CapabilityFactory(critical_store())
+
+
+def project_adapter_registry() -> ProjectAdapterRegistry:
+    return ProjectAdapterRegistry(critical_store())
 
 
 def get_head(project_id: str):
@@ -507,6 +516,76 @@ class Handler(BaseHTTPRequestHandler):
                     "schema": "bcp.capability_registry_view/1",
                     "registrations": items,
                     "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/project-adapters":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            try:
+                items = project_adapter_registry().list(project, limit=1024)
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "project_adapter_query_failed", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.project_adapter_registry_view/1",
+                    "project_id": project,
+                    "adapters": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/project-adapters/resolve":
+            project = str((query.get("project") or [""])[0]).strip()
+            operation = str((query.get("operation") or [""])[0]).strip().upper()
+            include_waiting = str(
+                (query.get("include_waiting") or ["false"])[0]
+            ).strip().lower() in {"1", "true", "yes"}
+            try:
+                item = project_adapter_registry().resolve(
+                    project,
+                    operation,
+                    require_bound=not include_waiting,
+                )
+            except ProjectAdapterNotFound:
+                self.send_json(
+                    404,
+                    {
+                        "error": "project_adapter_binding_not_found",
+                        "project": project,
+                        "operation": operation,
+                    },
+                )
+                return
+            except ProjectAdapterAmbiguous:
+                self.send_json(
+                    409,
+                    {
+                        "error": "project_adapter_binding_ambiguous",
+                        "project": project,
+                        "operation": operation,
+                    },
+                )
+                return
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "project_adapter_resolution_failed", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.project_adapter_resolution/1",
+                    "resolution": item,
                     "field_certified": False,
                 },
             )
