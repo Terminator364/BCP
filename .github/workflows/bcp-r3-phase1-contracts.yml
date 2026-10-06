@@ -1,0 +1,58 @@
+name: BCP R3 Phase 1 Contract Convergence
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_project_record_v1.schema.json"
+      - "schemas/bcp_action_receipt_v1.schema.json"
+      - "schemas/bcp_mission_ingress_v1.schema.json"
+      - "schemas/bcp_capability_observation_v1.schema.json"
+      - "schemas/bcp_capability_manifest_v1.schema.json"
+      - "schemas/bcp_capability_grant_v1.schema.json"
+      - "schemas/bcp_mission_envelope_v2.schema.json"
+      - "docs/BCP_EXECUTION_FABRIC_CONTRACT_CONVERGENCE_R3_PHASE1_2026-10-05.md"
+      - "docs/examples/execution-fabric/**"
+      - "tools/test_execution_fabric_phase1_contracts.py"
+      - ".github/workflows/bcp-r3-phase1-contracts.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-convergence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse canonical schemas and examples
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          paths = [
+              Path("schemas/bcp_project_record_v1.schema.json"),
+              Path("schemas/bcp_action_receipt_v1.schema.json"),
+              Path("schemas/bcp_mission_ingress_v1.schema.json"),
+              Path("schemas/bcp_capability_observation_v1.schema.json"),
+              Path("schemas/bcp_capability_manifest_v1.schema.json"),
+              Path("schemas/bcp_capability_grant_v1.schema.json"),
+              Path("schemas/bcp_mission_envelope_v2.schema.json"),
+          ]
+          for path in paths:
+              json.loads(path.read_text(encoding="utf-8"))
+              print("PARSE_OK", path)
+          PY
+
+      - name: Run provider-neutral convergence gate
+        run: python tools/test_execution_fabric_phase1_contracts.py
+
+      - name: Enforce no field claim
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          receipt = Path("docs/examples/execution-fabric/phase1.repository-action-receipt.example.json").read_text(encoding="utf-8")
+          assert '"field_certified": false' in receipt
+          print("ANTI_FALSE_PASS=PASS")
+          PY

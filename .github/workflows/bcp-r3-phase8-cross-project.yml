@@ -1,0 +1,50 @@
+name: BCP R3 Phase 8 Cross Project Adapters
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_cross_project_catalog_v1.schema.json"
+      - "schemas/bcp_project_adapter_v1.schema.json"
+      - "schemas/bcp_project_record_v1.schema.json"
+      - "windows/execution_fabric/project_adapter_registry.py"
+      - "windows/execution_fabric/catalogs/phase8_cross_project.json"
+      - "windows/bcp_server_v2.py"
+      - "tools/test_execution_fabric_phase8_cross_project.py"
+      - "tools/test_execution_fabric_phase8_contracts.py"
+      - "docs/BCP_CROSS_PROJECT_ADAPTERS_R3_PHASE8_2026-10-06.md"
+      - ".github/workflows/bcp-r3-phase8-cross-project.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-phase8-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cross-project-adapters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 8
+        run: |
+          python -m compileall -q \
+            windows/bcp_server_v2.py \
+            windows/execution_fabric/project_adapter_registry.py \
+            tools/test_execution_fabric_phase8_cross_project.py \
+            tools/test_execution_fabric_phase8_contracts.py
+
+      - name: Cross-project adapter registry tests
+        run: python tools/test_execution_fabric_phase8_cross_project.py
+
+      - name: Phase 8 contract boundary guard
+        run: python tools/test_execution_fabric_phase8_contracts.py
+
+      - name: Project Registry regression
+        run: python tools/test_execution_fabric_phase3_project_registry.py
+
+      - name: Capability Factory contract regression
+        run: python tools/test_execution_fabric_phase7_contracts.py

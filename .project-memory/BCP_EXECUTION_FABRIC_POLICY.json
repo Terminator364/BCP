@@ -1,0 +1,334 @@
+{
+  "schema": "bcp.execution_fabric_policy/4",
+  "status": "AUTONOMIC_ZERO_TOUCH_R2",
+  "revision": "2026-10-05-R2-FINAL-VERIFY",
+  "authority": {
+    "mission": "BCP",
+    "policy": "BCP",
+    "canonical_memory": "BCP",
+    "validation": "BCP",
+    "primary_human_interface": "ChatGPT",
+    "secondary_human_interface": "Telegram"
+  },
+  "invariants": [
+    "NO_SECOND_MODEL_BROKER",
+    "NO_SECOND_RESOURCE_GOVERNOR",
+    "NO_SECOND_CONTEXT_PACK",
+    "NO_SECOND_CANONICAL_MISSION_DB",
+    "NO_LOCAL_LLM_REQUIRED_FOR_CORRECTNESS",
+    "ONE_HEAVY_PC_WORKER",
+    "USER_FOREGROUND_PRIORITY",
+    "NO_ARBITRARY_ADMIN_SHELL_FOR_LLM",
+    "MODEL_OUTPUT_IS_PROPOSAL_NOT_AUTHORITY",
+    "NO_SUCCESS_WITHOUT_RECEIPT_AND_READBACK",
+    "DRIVE_IS_NOT_HOT_RUNTIME_DB",
+    "GITHUB_IS_NOT_RUNTIME_TRUTH",
+    "CAPABILITY_LOSS_BLOCKS_ONLY_DEPENDENT_BRANCHES",
+    "DESKTOP_COMMANDER_IS_BREAK_GLASS_NOT_AUTHORITY",
+    "LOCAL_AI_NOT_INSTALLED_BY_DEFAULT",
+    "ONE_PRIMARY_STARTUP_PATH_PER_COMPONENT",
+    "NO_REINSTALL_AS_TRANSIENT_REPAIR",
+    "NO_AT_LATEST_IN_CRITICAL_RUNTIME_PATHS",
+    "BACKGROUND_WORK_IS_PREEMPTIBLE",
+    "NO_AUTOMATIC_KILL_OF_UNRELATED_USER_PROCESSES",
+    "BCP_MISSION_STATE_IS_TRANSPORT_INDEPENDENT",
+    "COORDINATOR_CHANGES_REQUIRE_EPOCH_FENCING",
+    "DESIRED_STATE_RECONCILIATION_IS_FIRST_CLASS",
+    "KNOWN_FAILURES_SHOULD_SELF_HEAL",
+    "REPEATED_AVOIDABLE_MANUAL_STEP_IS_PLATFORM_DEFECT",
+    "CAPABILITY_GAPS_USE_FACTORY_NOT_USER_AS_INTEGRATION_LAYER",
+    "NEW_CAPABILITY_CODE_IS_VERSIONED_ARTIFACT",
+    "AUTO_UPDATE_REQUIRES_QUALIFICATION_CANARY_HEALTH_ROLLBACK",
+    "NO_CRITICAL_AT_LATEST_RUNTIME_PATHS",
+    "OPERATIONAL_DIGITAL_TWIN_IS_RECONSTRUCTIBLE_PROJECTION",
+    "WORK_PORTFOLIO_CONTROLLER_MAY_EXECUTE_ONLY_AUTHORIZED_BACKLOG",
+    "TALK_ONLY_IS_PRIMARY_UX",
+    "LOCAL_MODEL_IS_OPTIONAL_ACCELERATOR_NOT_INTELLIGENCE_AUTHORITY",
+    "NO_PARALLEL_G6_SECURITY_OR_EFFECT_CONTRACT_STACK",
+    "LEGACY_WORKERS_ARE_INVENTORIED_BEFORE_NEW_WORKER_IMPLEMENTATION",
+    "CHATGPT_PC_RFC0001_IS_PC_NODE_VNEXT_BASELINE",
+    "ONE_RESIDENT_PC_CONTROL_PROCESS_TARGET",
+    "BCP_WINDOWS_AND_G6_AGENTCORE_MUST_CONVERGE_NOT_COEXIST_AS_FULL_CONTROL_PLANES",
+    "NO_EXTERNAL_METERED_PROVIDER_AS_CORRECTNESS_DEPENDENCY",
+    "DESKTOP_COMMANDER_OPTIONAL_METERED_ACCELERATOR_ONLY",
+    "CORE_MUST_BOOT_AND_OPERATE_WITHOUT_DESKTOP_COMMANDER",
+    "LONG_MISSIONS_ARE_DURABLE_CHECKPOINTABLE_DAGS",
+    "MISSION_LIFETIME_EXCEEDS_CHAT_CONVERSATION_LIFETIME",
+    "NO_PROGRESS_FROM_ELAPSED_TIME_OR_HEARTBEAT",
+    "QUOTA_EXHAUSTION_BLOCKS_ONLY_DEPENDENT_BRANCHES",
+    "PROVIDER_LOW_QUOTA_STOPS_NEW_OPTIONAL_ASSIGNMENTS",
+    "CHATGPT_TURN_END_DOES_NOT_ERASE_OR_FINISH_MISSION",
+    "NEEDS_REASONING_IS_HONEST_PAUSE_STATE"
+  ],
+  "pc_resource_modes": [
+    "SURVIVAL",
+    "PRESSURE",
+    "NORMAL",
+    "RELAXED"
+  ],
+  "permission_classes": {
+    "P0_READ": "automatic",
+    "P1_SAFE": "automatic_if_policy_allows",
+    "P2_PROJECT_MODIFY": "snapshot_rollback_receipt_required",
+    "P3_SYSTEM_BOUNDED": "explicit_policy_and_readback_required",
+    "P4_DESTRUCTIVE_SECURITY": "fresh_human_approval_required"
+  },
+  "local_ai": {
+    "default_state": "NOT_INSTALLED_V1",
+    "pc_candidates": [
+      {
+        "id": "FUNCTIONGEMMA_270M",
+        "role": "tool_routing_extraction_classification",
+        "authority": false
+      },
+      {
+        "id": "QWEN2_5_CODER_0_5B",
+        "role": "small_code_log_config_tasks",
+        "authority": false
+      }
+    ],
+    "stronger_node_candidate": {
+      "device_class": "ANDROID_8GB",
+      "model_class": "QWEN3_1_7B_Q4",
+      "authority": false
+    },
+    "promotion_metric": "VERIFIED_USEFUL_WORK_PER_TOTAL_RESOURCE_COST",
+    "install_policy": "FIELD_BENCHMARK_GATED_OPTIONAL",
+    "correctness_dependency": false
+  },
+  "project_registry": {
+    "one_project_one_repo_assumption": false,
+    "supported_origins": [
+      "LOCAL",
+      "GITHUB",
+      "DRIVE",
+      "MONOREPO_SUBDIR",
+      "HYBRID",
+      "NO_REPO_YET"
+    ]
+  },
+  "transport": {
+    "same_pc": [
+      "NAMED_PIPE",
+      "AUTHENTICATED_LOCALHOST"
+    ],
+    "pc_phone": [
+      "TLS_WLAN_LAN",
+      "MDNS_NSD",
+      "QR_FALLBACK"
+    ],
+    "bluetooth_role": "PRESENCE_BOOTSTRAP_TINY_CONTROL_ONLY",
+    "remote_human": "TELEGRAM",
+    "artifact_primary": "DRIVE"
+  },
+  "build_order": [
+    "INVENTORY_ANTI_REINVENTION",
+    "CORE_WITHOUT_AI",
+    "WINDOWS_CAPABILITIES",
+    "AUTONOMOUS_BACKGROUND_EXECUTION",
+    "CHATGPT_TELEGRAM_DRIVE_INTEGRATION",
+    "LOCAL_AI_QUALIFICATION",
+    "CONVERGENCE",
+    "FIELD_CERTIFICATION"
+  ],
+  "resource_policy": {
+    "user_foreground_priority": true,
+    "global_heavy_pc_workers": 1,
+    "modes": [
+      "SURVIVAL",
+      "PRESSURE",
+      "NORMAL",
+      "RELAXED"
+    ],
+    "preferred_idle_incremental_mb": 60,
+    "preconception_max_target_mb": 96,
+    "thresholds": "MEASURED_NOT_FIXED_PERCENT_ONLY",
+    "preemption": "SAFE_CHECKPOINT_BOUNDARIES"
+  },
+  "startup_policy": {
+    "primary": "EVENT_OR_LOGON_TRIGGER",
+    "fallback": "BOUNDED_RECONCILIATION",
+    "forbid_redundant_normal_startup": [
+      "HKCU_RUN_PLUS_STARTUP_PLUS_LOGON_TASK_PLUS_FREQUENT_WATCHDOG"
+    ],
+    "watchdog": "STALE_HEALTH_ONLY_WITH_COOLDOWN"
+  },
+  "capability_failure": {
+    "branch_semantics": "WAITING_CAPABILITY",
+    "independent_branches_continue": true,
+    "no_single_adapter_required": true
+  },
+  "coordinator": {
+    "target": "BEDGE_WHEN_FIELD_QUALIFIED",
+    "compatibility": "PC_EXPLICIT_STANDALONE_OR_CURRENT_AUTHORITY_DURING_MIGRATION",
+    "split_brain": "FORBIDDEN",
+    "transition": "EXPLICIT_EPOCH_FENCING"
+  },
+  "privilege": {
+    "standard_core": "NORMAL_USER",
+    "least_privilege_service": "LOCALSERVICE_WHERE_SUFFICIENT",
+    "privileged_capsules": "TYPED_ALLOWLISTED_ON_DEMAND",
+    "arbitrary_admin_shell": false,
+    "p4_requires_fresh_human_approval": true,
+    "local_ipc_acl": "EXPLICIT"
+  },
+  "autonomic": {
+    "control_loop": "MAPE_K_INSPIRED_EVENT_FIRST",
+    "primitives": [
+      "DURABLE_MISSION",
+      "DESIRED_STATE_RESOURCE"
+    ],
+    "desired_state_schema": "schemas/bcp_desired_state_resource_v1.schema.json",
+    "capability_grant_schema": "schemas/bcp_capability_grant_v1.schema.json",
+    "known_failure_path": [
+      "OBSERVE",
+      "RECONCILE",
+      "VALIDATED_RECIPE",
+      "BOUNDED_RESTART",
+      "ROLLBACK",
+      "REPROVISION_EXACT_QUALIFIED",
+      "CAPABILITY_FACTORY",
+      "CHATGPT_OR_HUMAN"
+    ]
+  },
+  "zero_touch": {
+    "routine_terminal_copy_paste_target": 0,
+    "routine_screenshot_telemetry_target": 0,
+    "routine_manual_file_relay_target": 0,
+    "repeated_uac_for_granted_capability_target": 0,
+    "manual_update_check_target": 0,
+    "reinstall_as_first_response": false,
+    "user_interruptions": [
+      "PHYSICAL_ACTION",
+      "EXTERNAL_AUTH_2FA_CAPTCHA",
+      "PROVIDER_ACCOUNT_OR_PAYMENT_DECISION",
+      "P4_DESTRUCTIVE_SECURITY",
+      "IRREVERSIBLE_AMBIGUITY"
+    ]
+  },
+  "capability_factory": {
+    "enabled_in_design": true,
+    "promotion_pipeline": [
+      "GAP_DETECTED",
+      "DEFINE_CONTRACT",
+      "REUSE_SEARCH",
+      "SOURCE_TRUST_CHECK",
+      "LICENSE_POLICY_CHECK",
+      "BUILD_ADAPTER",
+      "STATIC_VALIDATE",
+      "SANDBOX_TEST",
+      "RESOURCE_TEST",
+      "ROLLBACK_TEST",
+      "SECURITY_TEST",
+      "CANARY",
+      "REGISTER",
+      "EXECUTE_ORIGINAL_INTENT",
+      "LEARN_RECIPE"
+    ],
+    "unattended_trust_classes": [
+      "T0_BUILTIN",
+      "T1_VERIFIED_LOCAL",
+      "T2_VERIFIED_REMOTE"
+    ],
+    "candidate_class": "T3_CANDIDATE",
+    "quarantine_class": "T4_QUARANTINED"
+  },
+  "update_fabric": {
+    "blind_latest": false,
+    "stages": [
+      "DISCOVERED",
+      "STAGED",
+      "VERIFIED",
+      "CANARY",
+      "ACTIVATING",
+      "HEALTHCHECK",
+      "COMMITTED"
+    ],
+    "failure_path": [
+      "FAILED",
+      "ROLLBACK",
+      "LKG"
+    ],
+    "anti_rollback": true,
+    "provenance_required_for_promoted_artifacts": true,
+    "project_release_controller": "docs/BCP_PROJECT_RELEASE_CONTROLLER_R2_2026-10-05.md"
+  },
+  "digital_twin": {
+    "implementation": "SQLITE_PLUS_CHRONICLE_PLUS_RECONSTRUCTIBLE_PROJECTIONS",
+    "heavy_graph_server": false,
+    "chatgpt_context_projection": true
+  },
+  "user_experience": {
+    "primary": "NATURAL_LANGUAGE_CHATGPT_TEXT_OR_VOICE",
+    "prefix_required": false,
+    "steady_state_goal": "SPEAK_TO_VERIFIED_RESULT"
+  },
+  "contract_convergence": {
+    "anti_reinvention_doc": "docs/BCP_AUTONOMIC_R2_G6_MAXV_CONTRACT_CONVERGENCE_2026-10-05.md",
+    "canonical_rules": [
+      "R2_MISSION_ENVELOPE_IS_INTAKE_NOT_REPLACEMENT_FOR_G6_MISSION_IR",
+      "R2_CAPABILITY_MANIFEST_IS_REGISTRY_PROJECTION_EXECUTABLES_USE_G6_SKILL_MANIFEST",
+      "R2_CAPABILITY_GRANT_IS_POLICY_PROJECTION_AUTHORITY_USES_G6_AUTHORITY_DB",
+      "R2_RECONCILE_EFFECTS_USE_G6_SIDE_EFFECT_JOURNAL",
+      "R2_RELEASE_CONTROLLER_REUSES_G6_PACKAGE_MIGRATION_AB_BOOT_RECEIPT_CONTRACTS",
+      "R2_CAPABILITY_FACTORY_REUSES_G6_SELF_EXTENSION_ADMISSION",
+      "MAXV_LOCAL_WORKER_IS_LEGACY_PROVIDER_TO_ABSORB_NOT_DUPLICATE",
+      "W5_WRITE_AHEAD_READBACK_IDEMPOTENCY_RESUME_PRINCIPLES_ARE_BCP_WIDE"
+    ]
+  },
+  "pc_node_baseline": {
+    "canonical_design": "Terminator364/ChatGPT-PC/chatgpt-pc/rfcs/RFC-0001-LOCAL-FIRST-MICROKERNEL.md",
+    "resident_target_mib": {
+      "green": 45,
+      "amber": 36,
+      "red_critical": 28
+    },
+    "status": "DESIGN_TARGET_FIELD_BENCHMARK_REQUIRED",
+    "runtime_convergence": "ONE_RESIDENT_PC_CONTROL_PROCESS_TARGET",
+    "no_dual_full_control_planes": true
+  },
+  "provider_budget_policy": {
+    "classes": [
+      "LOCAL_UNMETERED",
+      "LOCAL_BOUNDED_RESOURCE",
+      "EXTERNAL_METERED",
+      "EXTERNAL_UNMETERED_OR_ACCOUNT",
+      "UNKNOWN_BUDGET"
+    ],
+    "desktop_commander": {
+      "class": "EXTERNAL_METERED",
+      "role": "OPTIONAL_ACCELERATOR_COMPATIBILITY",
+      "correctness_dependency": false,
+      "required_for_boot": false,
+      "required_for_recovery": false
+    },
+    "exhausted_semantics": "BLOCK_ONLY_PROVIDER_EXCLUSIVE_DEPENDENT_BRANCHES",
+    "low_semantics": "DRAIN_SAFE_ATOMIC_UNIT_THEN_MIGRATE_NEW_WORK",
+    "retry_storm_forbidden": true,
+    "auto_purchase_or_upgrade": false
+  },
+  "long_horizon": {
+    "supported_duration": "MINUTES_TO_WEEKS",
+    "durable_dag": true,
+    "work_unit_protocol": [
+      "OPEN",
+      "EXECUTE",
+      "OBSERVE",
+      "VERIFY",
+      "COMMIT"
+    ],
+    "required_resume_classes": [
+      "RESUME_NATIVE",
+      "REPLAY_IDEMPOTENT",
+      "OBSERVE_BEFORE_RETRY",
+      "NONRESUMABLE_ATOMIC",
+      "EXTERNAL_JOB_HANDLE",
+      "NEEDS_REASONING"
+    ],
+    "pc_off_state": "WAITING_NODE",
+    "network_loss_state": "WAITING_NETWORK_FOR_DEPENDENT_BRANCHES",
+    "chat_end_semantics": "AUTHORIZED_DETERMINISTIC_BRANCHES_CONTINUE_NOVEL_REASONING_NEEDS_REASONING",
+    "no_wall_clock_progress": true,
+    "final_rules_doc": "docs/BCP_FINAL_VERIFICATION_RULES_QUOTA_LONG_HORIZON_R2_2026-10-05.md"
+  }
+}

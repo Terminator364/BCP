@@ -1,0 +1,19 @@
+{
+  "schema": "bcp.capability_observation/1",
+  "observation_id": "capobs-repository-contract-0001",
+  "project_id": "BCP_CORE",
+  "capability_id": "repository.contract.verify",
+  "provider_id": "GITHUB_REPOSITORY",
+  "node_id": "REPOSITORY",
+  "state": "AVAILABLE",
+  "transport": "GITHUB",
+  "evidence_class": "REPOSITORY_STATIC",
+  "details": {
+    "field_certified": false,
+    "purpose": "Phase 1 schema and convergence validation"
+  },
+  "source_revision": "PR168_PHASE1_CONTRACT_CANDIDATE",
+  "observed_at": "2026-10-05T20:30:00Z",
+  "expires_at": null,
+  "fresh": true
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_capability_observation_v1.schema.json",
+  "title": "BCP Capability Observation V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "observation_id",
+    "capability_id",
+    "provider_id",
+    "node_id",
+    "state",
+    "transport",
+    "evidence_class",
+    "details",
+    "observed_at"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.capability_observation/1"},
+    "observation_id": {"type": "string", "minLength": 8, "maxLength": 200},
+    "project_id": {"type": ["string", "null"], "maxLength": 128},
+    "capability_id": {"type": "string", "minLength": 3, "maxLength": 160},
+    "provider_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "node_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "state": {
+      "enum": [
+        "AVAILABLE",
+        "DEGRADED",
+        "TEMP_UNAVAILABLE",
+        "AUTH_REQUIRED",
+        "RESOURCE_HOLD",
+        "UNSUPPORTED",
+        "STALE",
+        "UNKNOWN"
+      ]
+    },
+    "transport": {
+      "enum": [
+        "LOCAL_NATIVE",
+        "GITHUB",
+        "BUILDHUB",
+        "TELEGRAM",
+        "DRIVE",
+        "NEXUS",
+        "B_EDGE",
+        "DESKTOP_COMMANDER",
+        "REMOTE_PROVIDER",
+        "NONE"
+      ]
+    },
+    "evidence_class": {
+      "enum": [
+        "REPOSITORY_STATIC",
+        "SIMULATION",
+        "PROVIDER_PROBE",
+        "FIELD_READBACK",
+        "SELF_REPORTED",
+        "UNKNOWN"
+      ]
+    },
+    "details": {"type": "object"},
+    "source_revision": {"type": ["string", "null"], "maxLength": 256},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": ["string", "null"], "format": "date-time"},
+    "fresh": {"type": ["boolean", "null"]}
+  }
+}

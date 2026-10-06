@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_desired_state_resource_v1.schema.json",
+  "title": "BCP Desired State Resource V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "api_version",
+    "kind",
+    "metadata",
+    "spec",
+    "status"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.desired_state_resource/1"
+    },
+    "api_version": {
+      "const": "bcp/v1"
+    },
+    "kind": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{2,127}$"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "project_id",
+        "generation",
+        "created_at"
+      ],
+      "properties": {
+        "resource_id": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,159}$"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "owner": {
+          "enum": [
+            "USER",
+            "CHATGPT",
+            "BCP_POLICY",
+            "PROJECT_ADAPTER"
+          ]
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "required": [
+        "desired",
+        "reconcile_policy"
+      ],
+      "properties": {
+        "desired": {
+          "type": "object"
+        },
+        "reconcile_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "max_permission_class"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "OBSERVE_ONLY",
+                "AUTO_SAFE",
+                "AUTO_PROJECT",
+                "AUTO_BOUNDED_SYSTEM"
+              ]
+            },
+            "max_permission_class": {
+              "enum": [
+                "P0_READ",
+                "P1_SAFE_WRITE",
+                "P2_PROJECT_MUTATION",
+                "P3_BOUNDED_SYSTEM_CHANGE"
+              ]
+            },
+            "resource_ceiling": {
+              "enum": [
+                "R0_TINY",
+                "R1_LIGHT",
+                "R2_MEDIUM",
+                "R3_HEAVY",
+                "R4_LOCAL_AI"
+              ]
+            },
+            "repair_backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 86400
+            },
+            "max_attempts_per_incident": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          }
+        },
+        "evidence_contract": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "uniqueItems": true
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "object",
+      "required": [
+        "observed_generation",
+        "phase"
+      ],
+      "properties": {
+        "observed_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "phase": {
+          "enum": [
+            "UNKNOWN",
+            "IN_SYNC",
+            "DRIFTED",
+            "RECONCILING",
+            "WAITING_RESOURCE",
+            "WAITING_CAPABILITY",
+            "AUTH_REQUIRED",
+            "DEGRADED",
+            "FAILED_SAFE"
+          ]
+        },
+        "last_observed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_reconciled_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "status"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "status": {
+                "enum": [
+                  "TRUE",
+                  "FALSE",
+                  "UNKNOWN"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "evidence_ref": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 512
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

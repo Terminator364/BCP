@@ -1,0 +1,56 @@
+{
+  "schema": "bcp.construction_bootstrap/2",
+  "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "revision": "R3_1_AUTO_ROUTING_2026-10-05",
+  "canonical_repo": "Terminator364/BCP",
+  "design_branch": "design/unified-execution-fabric-2026-10-05",
+  "draft_pr": 168,
+  "entrypoint": "docs/BCP_BUILD_CONTRACT_ABC_R3_2026-10-05.md",
+  "audit": "docs/BCP_PRECONSTRUCTION_AUDIT_ABC_R3_2026-10-05.md",
+  "start_mode": "EXECUTE",
+  "first_phase": "PHASE_0A_SOURCE_PREFLIGHT",
+  "pc_phase": "PHASE_0B_READ_ONLY_CAPABILITY_PROBE_IF_REACHABLE",
+  "first_vertical_slice": "MED_REBUILD_ZERO_TOUCH_NATIVE_NO_DESKTOP_COMMANDER",
+  "doctrine": [
+    "REUSE",
+    "ADAPT",
+    "BUILD_ONLY_IF_GAP"
+  ],
+  "verification": [
+    "IMPLEMENT",
+    "TEST",
+    "AUDIT",
+    "COUNTER_AUDIT",
+    "FAILURE_INJECT",
+    "READBACK",
+    "RECEIPT"
+  ],
+  "no_reinvent": true,
+  "no_local_llm_initially": true,
+  "desktop_commander_required": false,
+  "long_horizon_required": true,
+  "user_mechanics_target": "ZERO_AVOIDABLE",
+  "main_merge_authorized": false,
+  "p4_authorized": false,
+  "construction_routing": {
+    "mode": "AUTOMATIC_SIMULATION_FIRST",
+    "policy": "docs/BCP_CONSTRUCTION_EXECUTION_ROUTING_R3_1_2026-10-05.md",
+    "provider_order": [
+      "GITHUB_REPO_STATIC",
+      "GITHUB_ACTIONS_OR_BUILDHUB_IF_BUDGET",
+      "BCP_NATIVE_PC_FIELD",
+      "DESKTOP_COMMANDER_METERED_SPECIALIST"
+    ],
+    "github_actions_quota_aware": true,
+    "desktop_commander": {
+      "required": false,
+      "usage": "LAST_MILE_SPECIFIC_ONLY",
+      "budget_class": "EXTERNAL_METERED",
+      "unknown_budget_semantics": "TREAT_AS_LOW",
+      "batch_field_campaigns": true
+    },
+    "auto_continue": true,
+    "ask_continue_between_tranches": false,
+    "field_validation_batching": true
+  }
+}

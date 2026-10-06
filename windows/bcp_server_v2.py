@@ -12,7 +12,21 @@ import sqlite3
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
+
+from execution_fabric.critical_store import CriticalStore
+from execution_fabric.resource_admission import snapshot as resource_snapshot
+from execution_fabric.project_registry import ProjectAliasAmbiguous, ProjectNotFound, ProjectRegistry
+from execution_fabric.desired_state_registry import DesiredStateRegistry, DesiredStateNotFound
+from execution_fabric.incident_recipe import RecipeRegistry
+from execution_fabric.release_controller import ReleaseController
+from execution_fabric.transport_cockpit import TransportController
+from execution_fabric.capability_factory import CapabilityFactory
+from execution_fabric.project_adapter_registry import (
+    ProjectAdapterAmbiguous,
+    ProjectAdapterNotFound,
+    ProjectAdapterRegistry,
+)
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -20,7 +34,8 @@ TELEMETRY_DIR = APP_ROOT / "telemetry"
 DB_PATH = STATE_DIR / "bcp.sqlite3"
 TOKEN_PATH = STATE_DIR / "bcp_token.txt"
 PAIR_PATH = STATE_DIR / "paired_edge.json"
-SERVER_VERSION = "0.3.0"
+SERVER_VERSION = "0.4.0-r3-phase2"
+SERVER_FILE = Path(__file__).resolve()
 DB_LOCK = threading.RLock()
 
 
@@ -56,6 +71,74 @@ def atomic_json(path: Path, obj) -> None:
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
+
+
+def lifecycle_registration_status() -> dict:
+    """Read-only status for the single per-user BCP startup trigger."""
+    if os.name != "nt":
+        return {"supported": False, "registered": False, "reason": "non_windows"}
+    try:
+        import sys
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        value_name = "BlessingControlPlane"
+        pythonw = Path(sys.executable).with_name("pythonw.exe")
+        launcher = pythonw if pythonw.is_file() else Path(sys.executable)
+        command = f'"{launcher}" "{SERVER_FILE}" --bind 0.0.0.0 --port 8765'
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ) as key:
+            try:
+                current, _ = winreg.QueryValueEx(key, value_name)
+            except FileNotFoundError:
+                current = ""
+        return {
+            "supported": True,
+            "registered": str(current) == command,
+            "value_name": value_name,
+            "launcher": str(launcher),
+            "trigger": "HKCU_RUN",
+        }
+    except Exception as exc:
+        return {"supported": True, "registered": False, "error": str(exc)[:240]}
+
+
+def ensure_lifecycle_registration() -> dict:
+    """Idempotently register only this microkernel at user logon.
+
+    This is the candidate primary startup trigger. It is not a second control plane,
+    supervisor loop or field certification.
+    """
+    if os.name != "nt":
+        return {"supported": False, "registered": False, "reason": "non_windows"}
+    try:
+        import sys
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        value_name = "BlessingControlPlane"
+        pythonw = Path(sys.executable).with_name("pythonw.exe")
+        launcher = pythonw if pythonw.is_file() else Path(sys.executable)
+        command = f'"{launcher}" "{SERVER_FILE}" --bind 0.0.0.0 --port 8765'
+        with winreg.CreateKeyEx(
+            winreg.HKEY_CURRENT_USER,
+            key_path,
+            0,
+            winreg.KEY_READ | winreg.KEY_WRITE,
+        ) as key:
+            current = ""
+            try:
+                current, _ = winreg.QueryValueEx(key, value_name)
+            except FileNotFoundError:
+                pass
+            if str(current) != command:
+                winreg.SetValueEx(key, value_name, 0, winreg.REG_SZ, command)
+        return {
+            "supported": True,
+            "registered": True,
+            "value_name": value_name,
+            "launcher": str(launcher),
+            "trigger": "HKCU_RUN",
+        }
+    except Exception as exc:
+        return {"supported": True, "registered": False, "error": str(exc)[:240]}
 
 
 def ensure_state() -> str:
@@ -105,6 +188,10 @@ def ensure_state() -> str:
         cx.commit()
     finally:
         cx.close()
+
+    # Phase 2 convergence: initialize fenced authority/history/outbox tables in the
+    # same local SQLite authority DB. Legacy events/heads remain compatibility views.
+    CriticalStore(DB_PATH)
     return token
 
 
@@ -112,6 +199,39 @@ def connect_db():
     cx = sqlite3.connect(DB_PATH, timeout=15, isolation_level=None)
     cx.row_factory = sqlite3.Row
     return cx
+
+
+def critical_store() -> CriticalStore:
+    """Return the canonical local durable authority store on the shared BCP SQLite DB."""
+    return CriticalStore(DB_PATH)
+
+
+def project_registry() -> ProjectRegistry:
+    return ProjectRegistry(critical_store())
+
+
+def desired_state_registry() -> DesiredStateRegistry:
+    return DesiredStateRegistry(critical_store())
+
+
+def recipe_registry() -> RecipeRegistry:
+    return RecipeRegistry(critical_store())
+
+
+def release_controller() -> ReleaseController:
+    return ReleaseController(critical_store())
+
+
+def transport_controller() -> TransportController:
+    return TransportController(critical_store())
+
+
+def capability_factory() -> CapabilityFactory:
+    return CapabilityFactory(critical_store())
+
+
+def project_adapter_registry() -> ProjectAdapterRegistry:
+    return ProjectAdapterRegistry(critical_store())
 
 
 def get_head(project_id: str):
@@ -278,7 +398,9 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
         if path == "/health":
             self.send_json(
                 200,
@@ -298,6 +420,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/v1/diagnostics":
+            store = critical_store()
             self.send_json(
                 200,
                 {
@@ -306,8 +429,297 @@ class Handler(BaseHTTPRequestHandler):
                     "paired": PAIR_PATH.exists(),
                     "pair": read_json(PAIR_PATH, {}),
                     "telemetry_file": str(TELEMETRY_DIR / "phone-events.jsonl"),
+                    "microkernel_candidate": True,
+                    "field_certified": False,
+                    "critical_store": {
+                        "integrity": store.integrity_check(),
+                        "pragmas": store.pragmas(),
+                    },
+                    "resource_snapshot": resource_snapshot(APP_ROOT),
+                    "lifecycle": lifecycle_registration_status(),
                 },
             )
+            return
+
+        if path == "/v2/resources":
+            self.send_json(200, resource_snapshot(APP_ROOT))
+            return
+
+        if path == "/v2/cockpit":
+            project = str((query.get("project") or [""])[0]).strip()
+            if not project:
+                self.send_json(400, {"error": "project_required"})
+                return
+            projection = transport_controller().latest_projection(project)
+            if projection is None:
+                self.send_json(404, {"error": "cockpit_projection_not_found", "project": project})
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.cockpit_view/1",
+                    "project_id": project,
+                    "projection": projection,
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/deliveries":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            items = transport_controller().list(project_id=project, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.transport_delivery_view/1",
+                    "deliveries": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/capability-factory":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            try:
+                items = capability_factory().list(project_id=project, limit=512)
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "invalid_capability_factory_query", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.capability_factory_view/1",
+                    "project_id": project,
+                    "candidates": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/capabilities":
+            try:
+                items = capability_factory().registry.list(limit=1024)
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "capability_registry_query_failed", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.capability_registry_view/1",
+                    "registrations": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/project-adapters":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            try:
+                items = project_adapter_registry().list(project, limit=1024)
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "project_adapter_query_failed", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.project_adapter_registry_view/1",
+                    "project_id": project,
+                    "adapters": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/project-adapters/resolve":
+            project = str((query.get("project") or [""])[0]).strip()
+            operation = str((query.get("operation") or [""])[0]).strip().upper()
+            include_waiting = str(
+                (query.get("include_waiting") or ["false"])[0]
+            ).strip().lower() in {"1", "true", "yes"}
+            try:
+                item = project_adapter_registry().resolve(
+                    project,
+                    operation,
+                    require_bound=not include_waiting,
+                )
+            except ProjectAdapterNotFound:
+                self.send_json(
+                    404,
+                    {
+                        "error": "project_adapter_binding_not_found",
+                        "project": project,
+                        "operation": operation,
+                    },
+                )
+                return
+            except ProjectAdapterAmbiguous:
+                self.send_json(
+                    409,
+                    {
+                        "error": "project_adapter_binding_ambiguous",
+                        "project": project,
+                        "operation": operation,
+                    },
+                )
+                return
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "project_adapter_resolution_failed", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.project_adapter_resolution/1",
+                    "resolution": item,
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/releases":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            items = release_controller().list(project_id=project, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.release_transaction_view/1",
+                    "releases": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/projects":
+            items = project_registry().list(limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.project_registry_view/1",
+                    "projects": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/projects/resolve":
+            identifier = str((query.get("identifier") or [""])[0])
+            try:
+                item = project_registry().resolve(identifier)
+                self.send_json(
+                    200,
+                    {
+                        "schema": "bcp.project_resolution/1",
+                        "identifier": identifier,
+                        "project": item,
+                        "field_certified": False,
+                    },
+                )
+            except ProjectNotFound:
+                self.send_json(404, {"error": "project_not_found", "identifier": identifier})
+            except ProjectAliasAmbiguous:
+                self.send_json(409, {"error": "project_alias_ambiguous", "identifier": identifier})
+            return
+
+        if path == "/v2/desired":
+            project = str((query.get("project") or [""])[0]).strip()
+            resource = str((query.get("resource") or [""])[0]).strip()
+            try:
+                if project and resource:
+                    item = desired_state_registry().get(project, resource)
+                    self.send_json(
+                        200,
+                        {
+                            "schema": "bcp.desired_state_view/1",
+                            "item": item,
+                            "field_certified": False,
+                        },
+                    )
+                else:
+                    items = desired_state_registry().list(project or None, limit=512)
+                    self.send_json(
+                        200,
+                        {
+                            "schema": "bcp.desired_state_view/1",
+                            "items": items,
+                            "count": len(items),
+                            "field_certified": False,
+                        },
+                    )
+            except DesiredStateNotFound:
+                self.send_json(
+                    404,
+                    {
+                        "error": "desired_state_not_found",
+                        "project": project,
+                        "resource": resource,
+                    },
+                )
+            return
+
+        if path == "/v2/recipes":
+            status_filter = str((query.get("status") or [""])[0]).strip().upper()
+            items = recipe_registry().list(limit=512)
+            if status_filter:
+                items = [
+                    item for item in items
+                    if str(item.get("payload", {}).get("status") or "").upper() == status_filter
+                ]
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.recipe_registry_view/1",
+                    "items": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/incidents":
+            project = str((query.get("project") or [""])[0]).strip()
+            prefix = "incident/" + (project + "/" if project else "")
+            items = critical_store().list_states(prefix, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.incident_registry_view/1",
+                    "items": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/authority/state":
+            stream = str((query.get("stream") or [""])[0])
+            self.send_json(200, {"stream_id": stream, "state": critical_store().get_state(stream)})
+            return
+
+        if path == "/v2/authority/history":
+            stream = str((query.get("stream") or [""])[0])
+            self.send_json(200, {"stream_id": stream, "history": critical_store().history(stream)})
+            return
+
+        if path == "/v2/outbox/due":
+            limit = int((query.get("limit") or ["32"])[0])
+            self.send_json(200, {"messages": critical_store().due_outbox(limit=limit)})
             return
 
         parts = [unquote(x) for x in path.split("/") if x]
@@ -374,6 +786,9 @@ class Handler(BaseHTTPRequestHandler):
         if not self.authorized():
             self.send_json(401, {"error": "unauthorized"})
             return
+
+        # CriticalStore mutation is intentionally internal-only.
+        # Network callers must use typed domain/capability surfaces once admitted.
 
         if path == "/v1/telemetry":
             try:
@@ -462,6 +877,32 @@ def selftest():
         assert r1["result"] == "COMMITTED"
         assert r2["result"] == "ALREADY_COMMITTED"
         assert get_head("buildhub")["revision"] == 1
+
+        store = critical_store()
+        fence = store.acquire_writer_fence("bcp/core", "selftest-writer")
+        receipt = store.commit_transition(
+            stream_id="bcp/core",
+            expected_revision=0,
+            new_revision=1,
+            fencing_token=fence,
+            payload={"state": "PHASE2_SELFTEST", "field_certified": False},
+            destination="BCP_RUNTIME",
+            now_epoch=1000,
+        )
+        replay = store.commit_transition(
+            stream_id="bcp/core",
+            expected_revision=0,
+            new_revision=1,
+            fencing_token=fence,
+            payload={"state": "PHASE2_SELFTEST", "field_certified": False},
+            destination="BCP_RUNTIME",
+            now_epoch=1000,
+        )
+        assert receipt.status == "DURABLE_LOCAL"
+        assert replay.idempotent_replay is True
+        assert store.get_state("bcp/core")["revision"] == 1
+        assert len(store.due_outbox(now_epoch=1000)) == 1
+        assert store.integrity_check() == "ok"
     print("BCP_SERVER_SELFTEST=PASS")
 
 
@@ -477,9 +918,12 @@ def main():
         return 0
 
     token = ensure_state()
+    lifecycle = ensure_lifecycle_registration()
     server = ThreadingHTTPServer((args.bind, args.port), Handler)
     server.bcp_token = token
     print(f"[BCP] v{SERVER_VERSION} listening on {args.bind}:{args.port}", flush=True)
+    if lifecycle.get("supported") and not lifecycle.get("registered"):
+        print("[BCP] lifecycle registration degraded", lifecycle, flush=True)
     try:
         server.serve_forever(poll_interval=0.5)
     except KeyboardInterrupt:

@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_mission_envelope_v2.schema.json",
+  "title": "BCP Mission Envelope V2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mission_id",
+    "project_id",
+    "goal",
+    "source",
+    "priority",
+    "execution_profile",
+    "approval_policy",
+    "resource_policy",
+    "idempotency_key",
+    "created_at"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.mission_envelope/2"
+    },
+    "mission_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "CHATGPT",
+            "TELEGRAM",
+            "LOCAL_UI",
+            "DRIVE_MAILBOX",
+            "NEXUS",
+            "API",
+            "RECOVERY"
+          ]
+        },
+        "conversation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        },
+        "transport_event_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    },
+    "project_revision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "policy_revision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "coordinator_epoch": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "priority": {
+      "enum": [
+        "CRITICAL_INTEGRITY_RECOVERY",
+        "USER_INTERACTIVE",
+        "NORMAL_PROJECT",
+        "BACKGROUND_IMPROVEMENT"
+      ]
+    },
+    "execution_profile": {
+      "enum": [
+        "FAST",
+        "NORMAL",
+        "DEEP",
+        "AUDIT",
+        "BACKGROUND"
+      ]
+    },
+    "approval_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_permission_class"
+      ],
+      "properties": {
+        "max_permission_class": {
+          "enum": [
+            "P0_READ",
+            "P1_SAFE_WRITE",
+            "P2_PROJECT_MUTATION",
+            "P3_BOUNDED_SYSTEM_CHANGE",
+            "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE"
+          ]
+        },
+        "fresh_human_approval_for_p4": {
+          "const": true
+        }
+      }
+    },
+    "resource_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_resource_class": {
+          "enum": [
+            "R0_TINY",
+            "R1_LIGHT",
+            "R2_MEDIUM",
+            "R3_HEAVY",
+            "R4_LOCAL_AI"
+          ]
+        },
+        "foreground_priority": {
+          "type": "boolean"
+        },
+        "preemptible": {
+          "type": "boolean"
+        },
+        "network_optional": {
+          "type": "boolean"
+        }
+      }
+    },
+    "allowed_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "denied_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "uniqueItems": true
+    },
+    "tasks": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "step_id",
+          "capability_id",
+          "depends_on"
+        ],
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "capability_id": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 128
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "uniqueItems": true
+          },
+          "input": {
+            "type": "object"
+          },
+          "evidence_contract_override": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
+          },
+          "on_capability_unavailable": {
+            "enum": [
+              "WAIT",
+              "SKIP_IF_OPTIONAL",
+              "ESCALATE_CHATGPT",
+              "NEEDS_USER"
+            ]
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "evidence_contract": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "rollback_contract": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deadline": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_committed_step": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "next_safe_step": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    }
+  }
+}

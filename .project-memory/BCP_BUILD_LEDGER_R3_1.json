@@ -1,0 +1,222 @@
+{
+  "schema": "bcp.build_ledger/2",
+  "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "revision": "R3.1-ABC",
+  "updated_at": "2026-10-06T18:10:17Z",
+  "route": "SIM_FIRST",
+  "primary_build_target": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "vertical_evidence_only": true,
+  "historical_vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE",
+  "repository": {
+    "repo": "Terminator364/BCP",
+    "design_branch": "design/unified-execution-fabric-2026-10-05",
+    "design_pr": 168,
+    "observed_design_head_before_ledger_update": "cc1718aed99017f36e2adcdab49aa8bb1a5ae7fe",
+    "main_promotion": false
+  },
+  "doctrine": {
+    "no_reinvent": true,
+    "proof_mandatory": true,
+    "github_primary": true,
+    "sim_first": true,
+    "buildhub_enabled": true,
+    "pc_native": "FIELD_ONLY",
+    "desktop_commander": "LAST_MILE_METERED",
+    "field_batch": 1,
+    "local_llm_initial": false,
+    "ci_is_not_field_proof": true,
+    "conversation_is_not_project_authority": true
+  },
+  "phases": {
+    "phase_0a": {
+      "status": "COMPLETE",
+      "objective": "SOURCE_PREFLIGHT_ROUTING_REUSE_MAP"
+    },
+    "phase_1": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "CONTRACT_CONVERGENCE",
+      "integration_commit": "926074e5d9dfd875c70c1f166267f82b8b0921ec",
+      "pr": 169,
+      "field_certified": false
+    },
+    "phase_2": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "ONE_LIGHTWEIGHT_RESIDENT_PC_MICROKERNEL",
+      "integration_commit": "e60d1772bfbf531e1bd5a22427eb6d4408805357",
+      "invariants": [
+        "CriticalStore fencing/revision/hash/outbox",
+        "local-only SQLite hot authority",
+        "resource admission GREEN/AMBER/RED/CRITICAL",
+        "Windows Job Object worker containment",
+        "no remote free-form shell/argv execution",
+        "single lightweight startup candidate"
+      ],
+      "field_certified": false
+    },
+    "phase_3": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "FENCED_PROJECT_REGISTRY_TYPED_ADAPTER",
+      "integration_commit": "a5f805a1abc2b98f397c1f3208ec43907ae72ac5",
+      "field_certified": false
+    },
+    "phase_4": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "DESIRED_STATE_INCIDENT_RECIPE_RECEIPT_CHAIN",
+      "integration_commits": [
+        "28b6dbc",
+        "e9f21fe",
+        "e05d46b",
+        "cc1718aed99017f36e2adcdab49aa8bb1a5ae7fe"
+      ],
+      "invariants": [
+        "immutable action receipts",
+        "real receipt required for recipe promotion",
+        "desired generation cannot self-certify observation",
+        "generation-scoped repair episodes",
+        "raw CriticalStore mutations absent from network surface",
+        "BCP computes desired-state drift from observed state; provider matches_desired claims are not trusted",
+        "typed reconcile execution requires current capability state AVAILABLE",
+        "P3 bounded-system repair recipes require field evidence"
+      ],
+      "field_certified": false,
+      "hardening": {
+        "status": "INTEGRATED_GREEN",
+        "pr": 184,
+        "integration_commit": "cc1718aed99017f36e2adcdab49aa8bb1a5ae7fe",
+        "targeted_phase4_ci": "PASS",
+        "phase2_microkernel_regression": "PASS",
+        "field_ecosystem_preflight": "PASS",
+        "coordinated_product_qualification": "PASS",
+        "field_certified": false
+      }
+    },
+    "phase_5": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "GENERIC_RELEASE_UPDATE_CONTROLLER",
+      "integration_commits": [
+        "df91abb",
+        "e05d46b"
+      ],
+      "invariants": [
+        "anti-downgrade",
+        "LKG rollback",
+        "exact readback",
+        "stale transaction protection"
+      ],
+      "field_certified": false
+    },
+    "phase_6": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "PROVIDER_NEUTRAL_TRANSPORT_COCKPIT",
+      "integration_commit": "484be5de0778b88e2b7d9c2f8442302f09271d33",
+      "field_certified": false
+    },
+    "phase_7": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "EVIDENCE_GATED_CAPABILITY_FACTORY",
+      "integration_commit": "ecbfc6369065df8f09eb1b15738679d8dc59a5ec",
+      "invariants": [
+        "reuse search before build",
+        "source trust/license gates",
+        "sandbox/resource/rollback/security/canary gates",
+        "immutable capability registration",
+        "P4 separate human lane",
+        "R4 local AI deferred"
+      ],
+      "field_certified": false
+    },
+    "phase_8": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "CROSS_PROJECT_TYPED_ADAPTERS",
+      "integration_commit": "363a05722e09cc2fe425d7765634b1f138bb1f8f",
+      "pr": 181,
+      "projects": [
+        "TLIB",
+        "EXCELLENTIA",
+        "DELIVERY",
+        "BUILDHUB",
+        "PC_COMMAND",
+        "PHONEMOUSE",
+        "P2PCR95"
+      ],
+      "binding_truth": {
+        "TLIB": "SOURCE_UNRESOLVED_NO_INVENTION",
+        "EXCELLENTIA": "REPO_AND_STABLE_RELEASE_MANIFEST_BOUND",
+        "DELIVERY": "REPO_INSPECT_BOUND_RELEASE_MULTI_PROVIDER_WAITING",
+        "BUILDHUB": "REPO_INSPECT_BOUND",
+        "PC_COMMAND": "STATE_BUS_COMPATIBILITY_NOT_ENGINEERING_AUTHORITY",
+        "PHONEMOUSE": "REPO_INSPECT_BOUND",
+        "P2PCR95": "REPO_INSPECT_BOUND"
+      },
+      "targeted_ci": "PASS",
+      "coordinated_qualification": "PASS",
+      "field_ecosystem_preflight": "PASS",
+      "field_certified": false
+    }
+  },
+  "field_binding_package": {
+    "status": "INTEGRATED_REPOSITORY_GREEN",
+    "integration_commit": "bf8a720e042396df88cedd38f1191617e1122501",
+    "pr": 182,
+    "probe_path": "windows/BCP_R3_CROSS_PROJECT_FIELD_BINDING_PROBE.ps1",
+    "schema_path": "schemas/bcp_cross_project_field_binding_probe_v1.schema.json",
+    "scope": [
+      "BCP",
+      "TLIB",
+      "EXCELLENTIA",
+      "DELIVERY",
+      "BUILDHUB",
+      "PC_COMMAND",
+      "PHONEMOUSE",
+      "P2PCR95"
+    ],
+    "safety": {
+      "read_only_system_probe": true,
+      "no_process_mutation": true,
+      "no_task_mutation": true,
+      "no_service_mutation": true,
+      "no_registry_mutation": true,
+      "no_remote_network_discovery": true,
+      "no_recursive_disk_crawl": true,
+      "command_line_redaction": true,
+      "candidate_is_not_binding": true
+    },
+    "repository_gate": {
+      "schema_parse": "PASS",
+      "no_mutation_guard": "PASS",
+      "powershell_parse": "PASS",
+      "phase8_regression": "PASS"
+    },
+    "field_certified": false
+  },
+  "field_execution": {
+    "device": "MBMPC",
+    "transport": "DESKTOP_COMMANDER_LAST_MILE",
+    "status": "ATTEMPTED_UNVERIFIED_DEVICE_OFFLINE",
+    "remote_budget_observed_before_attempt_pct_remaining": 73,
+    "probe_transfer": "ATTEMPTED_UNVERIFIED",
+    "probe_execution": "ATTEMPTED_TIMEOUT_NO_RESPONSE",
+    "evidence_readback": "UNAVAILABLE_DEVICE_OFFLINE",
+    "duplicate_retry_performed": false,
+    "device_status_after_attempt": "OFFLINE",
+    "claims_allowed": [
+      "repository package is green",
+      "field attempt occurred",
+      "device became unavailable before readback"
+    ],
+    "claims_forbidden": [
+      "probe completed",
+      "evidence file exists",
+      "local root is bound",
+      "runtime is field certified",
+      "Phase 8 is field certified"
+    ]
+  },
+  "ci_routing": {
+    "status": "OVERTRIGGER_DEFECT_OPEN",
+    "policy": "NO_DUPLICATE_RERUN; targeted gates authoritative for tranche proof; generic queues must not create false blockers for non-runtime docs/probe deltas",
+    "note": "Global workflows were green for Phase 8; generic runs for the read-only field-package delta remained pending when PR182 was merged after its specialized gate passed."
+  },
+  "next_atomic_work_unit": "WHEN_MBMPC_ONLINE_READ_BACK_EXISTING_FIELD_PROBE_RESULT_BEFORE_ANY_RETRY;IF_ABSENT_RUN_EXACTLY_ONE_READ_ONLY_PROBE;ADJUDICATE_BINDINGS_WITH_BCP_READBACK;UPDATE_LEDGER",
+  "field_certified": false
+}

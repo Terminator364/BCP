@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_cross_project_field_binding_probe_v1.schema.json",
+  "title": "BCP Cross Project Field Binding Probe V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "observed_at",
+    "computer_name",
+    "user_name",
+    "os",
+    "safety",
+    "resources",
+    "bcp_health",
+    "projects",
+    "decision_policy"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.cross_project_field_binding_probe/1"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "computer_name": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "os": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "version"
+      ],
+      "properties": {
+        "platform": {
+          "const": "WINDOWS"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "read_only_system_probe",
+        "process_mutation",
+        "scheduled_task_mutation",
+        "service_mutation",
+        "registry_mutation",
+        "network_mutation",
+        "evidence_file_write_only",
+        "command_line_redaction",
+        "field_certified"
+      ],
+      "properties": {
+        "read_only_system_probe": {
+          "const": true
+        },
+        "process_mutation": {
+          "const": false
+        },
+        "scheduled_task_mutation": {
+          "const": false
+        },
+        "service_mutation": {
+          "const": false
+        },
+        "registry_mutation": {
+          "const": false
+        },
+        "network_mutation": {
+          "const": false
+        },
+        "evidence_file_write_only": {
+          "type": "boolean"
+        },
+        "command_line_redaction": {
+          "const": true
+        },
+        "field_certified": {
+          "const": false
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "memory_total_mib": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "memory_free_mib": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "memory_load_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "pagefile_allocated_mib": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pagefile_current_mib": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pagefile_peak_mib": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "system_drive_free_mib": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "bcp_health": {
+      "type": "object",
+      "required": [
+        "reachable",
+        "version",
+        "pc_name",
+        "error"
+      ],
+      "properties": {
+        "reachable": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pc_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "projects": {
+      "type": "object",
+      "required": [
+        "BCP",
+        "TLIB",
+        "EXCELLENTIA",
+        "DELIVERY",
+        "BUILDHUB",
+        "PC_COMMAND",
+        "PHONEMOUSE",
+        "P2PCR95"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "BCP": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "TLIB": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "EXCELLENTIA": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "DELIVERY": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "BUILDHUB": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "PC_COMMAND": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "PHONEMOUSE": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        },
+        "P2PCR95": {
+          "type": "object",
+          "required": [
+            "local_root_candidates",
+            "runtime_observations",
+            "candidate_counts",
+            "binding_decision",
+            "field_certified"
+          ],
+          "properties": {
+            "local_root_candidates": {
+              "type": "array"
+            },
+            "runtime_observations": {
+              "type": "object"
+            },
+            "candidate_counts": {
+              "type": "object"
+            },
+            "binding_decision": {
+              "const": "READBACK_REQUIRED"
+            },
+            "field_certified": {
+              "const": false
+            }
+          }
+        }
+      }
+    },
+    "decision_policy": {
+      "type": "object",
+      "required": [
+        "local_root_candidate_is_not_binding",
+        "process_match_is_not_install_proof",
+        "listener_match_is_not_project_authority",
+        "provider_synced_root_is_not_hot_state_authority",
+        "repository_bindings_remain_from_phase8_catalog",
+        "final_binding_requires_bcp_readback"
+      ],
+      "properties": {
+        "local_root_candidate_is_not_binding": {
+          "const": true
+        },
+        "process_match_is_not_install_proof": {
+          "const": true
+        },
+        "listener_match_is_not_project_authority": {
+          "const": true
+        },
+        "provider_synced_root_is_not_hot_state_authority": {
+          "const": true
+        },
+        "repository_bindings_remain_from_phase8_catalog": {
+          "const": true
+        },
+        "final_binding_requires_bcp_readback": {
+          "const": true
+        }
+      }
+    }
+  }
+}

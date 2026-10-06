@@ -1,0 +1,83 @@
+{
+  "schema": "bcp.project_adapter/1",
+  "adapter_id": "med-rebuild.project-adapter",
+  "project_id": "MED_REBUILD",
+  "version": "0.1.0-r3-phase3",
+  "bindings": [
+    {
+      "operation": "RELEASE_VERIFY",
+      "capability_id": "repository.release.verify",
+      "provider_id": "GITHUB_REPOSITORY",
+      "state": "BOUND",
+      "permission_class": "P0_READ",
+      "resource_class": "R1_LIGHT",
+      "evidence_contract": ["GIT_REVISION", "HASH", "TEST_RESULT"],
+      "input_defaults": {
+        "repository": "Terminator364/ChatGPT-PC",
+        "release_manifest": "med-rebuild-study-hub/release/v1.5-current.json"
+      },
+      "binding_reason": "Repository and release manifest are observed bindings."
+    },
+    {
+      "operation": "INSPECT",
+      "capability_id": "project.runtime.inspect",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P0_READ",
+      "resource_class": "R0_TINY",
+      "evidence_contract": ["FILE_READBACK", "PROCESS_HEALTH"],
+      "input_defaults": {},
+      "binding_reason": "Local project root is not yet field-observed."
+    },
+    {
+      "operation": "TEST",
+      "capability_id": "project.test.run",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P1_SAFE_WRITE",
+      "resource_class": "R2_MEDIUM",
+      "evidence_contract": ["EXIT_CODE", "TEST_RESULT"],
+      "input_defaults": {},
+      "binding_reason": "Test entrypoint must be derived from an observed project binding; no command is invented."
+    },
+    {
+      "operation": "HEALTHCHECK",
+      "capability_id": "project.runtime.health",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P0_READ",
+      "resource_class": "R0_TINY",
+      "evidence_contract": ["PROCESS_HEALTH", "HTTP_HEALTH"],
+      "input_defaults": {},
+      "binding_reason": "Runtime endpoint/process binding awaits field inventory."
+    },
+    {
+      "operation": "UPDATE_ACTIVATE",
+      "capability_id": "project.update.activate",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P2_PROJECT_MUTATION",
+      "resource_class": "R2_MEDIUM",
+      "evidence_contract": ["HASH", "PROCESS_HEALTH", "DESTINATION_READBACK"],
+      "input_defaults": {},
+      "binding_reason": "Activation remains unavailable until local root/updater are field-bound and rollback is proven."
+    },
+    {
+      "operation": "ROLLBACK",
+      "capability_id": "project.update.rollback",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P2_PROJECT_MUTATION",
+      "resource_class": "R1_LIGHT",
+      "evidence_contract": ["HASH", "PROCESS_HEALTH", "DESTINATION_READBACK"],
+      "input_defaults": {},
+      "binding_reason": "Rollback capability is not admitted until LKG and local updater authority are field-proven."
+    }
+  ],
+  "source_revision": "BCP_R3_PHASE3_CANDIDATE",
+  "notes": [
+    "This adapter contains capability bindings, not executable commands.",
+    "MED-REBUILD remains a BCP project client, not mission authority.",
+    "WAITING_BINDING operations must not be auto-promoted from repository assumptions."
+  ]
+}

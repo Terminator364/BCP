@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_capability_registration_v1.schema.json",
+  "title": "BCP Capability Registration V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "registration_id",
+    "candidate_id",
+    "project_id",
+    "capability_id",
+    "provider_id",
+    "version",
+    "trust_class",
+    "manifest",
+    "source",
+    "license",
+    "gate_receipts",
+    "registered_at",
+    "field_certified"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.capability_registration/1"
+    },
+    "registration_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,199}$"
+    },
+    "candidate_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 128
+    },
+    "capability_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "provider_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "trust_class": {
+      "enum": [
+        "T0_BUILTIN",
+        "T1_VERIFIED_LOCAL",
+        "T2_VERIFIED_REMOTE"
+      ]
+    },
+    "manifest": {
+      "$ref": "./bcp_capability_manifest_v1.schema.json"
+    },
+    "gate_receipts": {
+      "type": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 200
+      }
+    },
+    "source_revision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "registered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "field_certified": {
+      "type": "boolean"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "locator",
+        "revision",
+        "artifact_sha256",
+        "publisher"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "BUILTIN",
+            "LOCAL_REPO",
+            "REMOTE_REPO",
+            "PACKAGE",
+            "EXISTING_CAPABILITY",
+            "GENERATED_ADAPTER"
+          ]
+        },
+        "locator": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1000
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        },
+        "artifact_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "identifier",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "APPROVED",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "identifier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 160
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "trust_class": {
+            "const": "T0_BUILTIN"
+          }
+        },
+        "required": [
+          "trust_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "candidate_id": {
+            "type": "null"
+          },
+          "field_certified": {
+            "const": false
+          },
+          "source": {
+            "properties": {
+              "kind": {
+                "const": "BUILTIN"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "trust_class": {
+            "const": "T1_VERIFIED_LOCAL"
+          }
+        },
+        "required": [
+          "trust_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200
+          },
+          "field_certified": {
+            "const": true
+          },
+          "gate_receipts": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "trust_class": {
+            "const": "T2_VERIFIED_REMOTE"
+          }
+        },
+        "required": [
+          "trust_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200
+          },
+          "gate_receipts": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

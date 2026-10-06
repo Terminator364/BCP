@@ -1,0 +1,123 @@
+{
+  "schema": "bcp.mission_envelope/2",
+  "mission_id": "MR-DEMO-20261005-001",
+  "project_id": "med-rebuild",
+  "goal": "Continue Med Rebuild, restore the Desktop Commander capability if possible, and independently audit the installer and launcher without slowing foreground use.",
+  "source": {
+    "kind": "CHATGPT",
+    "conversation_id": null,
+    "transport_event_id": null
+  },
+  "project_revision": null,
+  "policy_revision": "2026-10-05-R1",
+  "coordinator_epoch": 0,
+  "priority": "USER_INTERACTIVE",
+  "execution_profile": "NORMAL",
+  "approval_policy": {
+    "max_permission_class": "P2_PROJECT_MUTATION",
+    "fresh_human_approval_for_p4": true
+  },
+  "resource_policy": {
+    "max_resource_class": "R3_HEAVY",
+    "foreground_priority": true,
+    "preemptible": true,
+    "network_optional": true
+  },
+  "allowed_capabilities": [
+    "desktop_commander.remote.ensure_available",
+    "project.inspect",
+    "git.status",
+    "files.search",
+    "installer.static_audit",
+    "launcher.healthcheck",
+    "test.run"
+  ],
+  "denied_capabilities": [],
+  "tasks": [
+    {
+      "step_id": "commander",
+      "capability_id": "desktop_commander.remote.ensure_available",
+      "depends_on": [],
+      "input": {
+        "repair_mode": "in_place",
+        "preserve_identity": true
+      },
+      "on_capability_unavailable": "NEEDS_USER",
+      "optional": true
+    },
+    {
+      "step_id": "inspect",
+      "capability_id": "project.inspect",
+      "depends_on": [],
+      "input": {
+        "scope": "current"
+      },
+      "on_capability_unavailable": "WAIT",
+      "optional": false
+    },
+    {
+      "step_id": "git",
+      "capability_id": "git.status",
+      "depends_on": [
+        "inspect"
+      ],
+      "input": {
+        "porcelain": true
+      },
+      "on_capability_unavailable": "WAIT",
+      "optional": false
+    },
+    {
+      "step_id": "installer-audit",
+      "capability_id": "installer.static_audit",
+      "depends_on": [
+        "inspect"
+      ],
+      "input": {
+        "target": "current_installer"
+      },
+      "on_capability_unavailable": "WAIT",
+      "optional": false
+    },
+    {
+      "step_id": "launcher-health",
+      "capability_id": "launcher.healthcheck",
+      "depends_on": [
+        "inspect"
+      ],
+      "input": {
+        "target": "current_launcher"
+      },
+      "on_capability_unavailable": "WAIT",
+      "optional": false
+    },
+    {
+      "step_id": "targeted-tests",
+      "capability_id": "test.run",
+      "depends_on": [
+        "installer-audit",
+        "launcher-health"
+      ],
+      "input": {
+        "profile": "smoke"
+      },
+      "on_capability_unavailable": "WAIT",
+      "optional": false
+    }
+  ],
+  "idempotency_key": "med-rebuild-commander-demo-20261005-001",
+  "evidence_contract": [
+    "PROJECT_STATE",
+    "GIT_STATUS",
+    "INSTALLER_AUDIT",
+    "LAUNCHER_HEALTH",
+    "TEST_RESULTS"
+  ],
+  "rollback_contract": {
+    "required_for_project_mutations": true
+  },
+  "created_at": "2026-10-05T17:41:00+01:00",
+  "deadline": null,
+  "last_committed_step": null,
+  "next_safe_step": "inspect"
+}

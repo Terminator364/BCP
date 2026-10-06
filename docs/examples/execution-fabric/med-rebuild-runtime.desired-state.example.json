@@ -1,0 +1,45 @@
+{
+  "schema": "bcp.desired_state_resource/1",
+  "api_version": "bcp/v1",
+  "kind": "MedRebuildRuntime",
+  "metadata": {
+    "resource_id": "med-rebuild/runtime-main",
+    "project_id": "med-rebuild",
+    "generation": 1,
+    "created_at": "2026-10-05T17:41:00+01:00",
+    "updated_at": null,
+    "owner": "USER"
+  },
+  "spec": {
+    "desired": {
+      "release_channel": "QUALIFIED_CURRENT",
+      "launcher_health": "PASS",
+      "updater_health": "HEALTHY",
+      "startup_mode": "ON_DEMAND_FAST",
+      "foreground_first": true,
+      "desktop_commander_dependency": "OPTIONAL",
+      "manual_repair_files_required": false
+    },
+    "reconcile_policy": {
+      "mode": "AUTO_PROJECT",
+      "max_permission_class": "P2_PROJECT_MUTATION",
+      "resource_ceiling": "R3_HEAVY",
+      "repair_backoff_seconds": 60,
+      "max_attempts_per_incident": 4
+    },
+    "evidence_contract": [
+      "EXACT_VERSION_READBACK",
+      "LAUNCHER_HEALTHCHECK",
+      "UPDATER_HEALTHCHECK",
+      "ROLLBACK_AVAILABLE"
+    ],
+    "dependencies": []
+  },
+  "status": {
+    "observed_generation": 0,
+    "phase": "UNKNOWN",
+    "last_observed_at": null,
+    "last_reconciled_at": null,
+    "conditions": []
+  }
+}

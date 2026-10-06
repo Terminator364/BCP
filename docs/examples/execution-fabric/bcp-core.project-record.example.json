@@ -1,0 +1,65 @@
+{
+  "schema": "bcp.project_record/1",
+  "project_id": "BCP_CORE",
+  "display_name": "Blessing Control Plane",
+  "aliases": ["BCP", "Blessing Control Plane"],
+  "profile": "CONTROL_PLANE",
+  "status": "ACTIVE",
+  "continuation_codes": ["BCPGO", "BCPBUILD|R3.1-ABC"],
+  "authority": {
+    "engineering": "GITHUB",
+    "runtime": "PC",
+    "artifacts": "MIXED",
+    "conversation": "NON_AUTHORITATIVE"
+  },
+  "origins": {
+    "local_roots": [
+      {
+        "status": "UNRESOLVED",
+        "path": null,
+        "authority": "UNRESOLVED"
+      }
+    ],
+    "repos": [
+      {
+        "status": "BOUND",
+        "repository": "Terminator364/BCP",
+        "branch": "main",
+        "path": null,
+        "authority": "CANONICAL"
+      }
+    ],
+    "drive_refs": []
+  },
+  "adapters": [
+    "CHATGPT",
+    "TELEGRAM",
+    "B_EDGE",
+    "NEXUS"
+  ],
+  "resource_profile": {
+    "resource_class": "R1_LIGHT",
+    "heavy_work": false,
+    "offline_capable": true,
+    "background_policy": "GREEN_OR_AMBER_LIGHT"
+  },
+  "permission_profile": {
+    "max_permission_class": "P3_BOUNDED_SYSTEM_CHANGE",
+    "read_allowed": true,
+    "project_write_policy": "POLICY",
+    "system_modify_policy": "GATED"
+  },
+  "update_profile": {
+    "mode": "BCP_MANAGED",
+    "rollback_required": true,
+    "channel": "main"
+  },
+  "head_revision": null,
+  "coordinator_epoch": null,
+  "source_revision": "PR168_PHASE1_CONTRACT_CANDIDATE",
+  "compatibility": {
+    "legacy_authority_present": true,
+    "migration_rule": "Converge existing Windows, B-EDGE and ChatGPT-PC contracts without creating a second control plane."
+  },
+  "updated_at": "2026-10-05T20:30:00Z"
+}
