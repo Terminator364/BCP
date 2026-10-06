@@ -259,35 +259,33 @@ class CapabilityFactoryTests(unittest.TestCase):
         self,
         candidate_id: str = "candidate-phase7-001",
         *,
-        target_scope: str = "SIMULATION",
+        target_scope: str = "PROVIDER",
         optional: bool = False,
     ):
         self.create(
             candidate_id,
             policy_obj=policy(
                 target_scope=target_scope,
-                sandbox=not optional,
-                rollback=not optional,
-                security=not optional,
-                canary=not optional,
+                sandbox=True,
+                rollback=True,
+                security=True,
+                canary=True,
             ),
         )
         self.put_and_record(candidate_id, "reuse_search")
-        self.put_and_record(candidate_id, "source_trust", trust_class="T2_VERIFIED_REMOTE")
+        self.put_and_record(candidate_id, "source_trust", trust_class="T3_CANDIDATE")
         self.put_and_record(candidate_id, "license_policy", license_status="APPROVED")
         self.put_and_record(candidate_id, "build_adapter")
         self.put_and_record(candidate_id, "static_validate")
-        if not optional:
-            self.put_and_record(candidate_id, "sandbox_test")
+        self.put_and_record(candidate_id, "sandbox_test")
         self.put_and_record(candidate_id, "resource_test")
-        if not optional:
-            self.put_and_record(candidate_id, "rollback_test")
-            self.put_and_record(candidate_id, "security_test")
-            self.put_and_record(
-                candidate_id,
-                "canary",
-                scope="FIELD" if target_scope == "FIELD" else target_scope,
-            )
+        self.put_and_record(candidate_id, "rollback_test")
+        self.put_and_record(candidate_id, "security_test")
+        self.put_and_record(
+            candidate_id,
+            "canary",
+            scope="FIELD" if target_scope == "FIELD" else target_scope,
+        )
         return self.factory.get("BCP_CORE", candidate_id)
 
     def test_candidate_starts_at_reuse_search_with_typed_plan(self):
@@ -360,20 +358,25 @@ class CapabilityFactoryTests(unittest.TestCase):
         self.assertEqual(state["payload"]["stage"], "QUARANTINED")
         self.assertEqual(state["payload"]["failure"]["code"], "LICENSE_DENIED")
 
-    def test_source_trust_must_be_verified_for_auto_path(self):
+    def test_source_trust_gate_does_not_pre_promote_candidate(self):
         self.create()
         self.put_and_record("candidate-phase7-001", "reuse_search")
         state = self.put_and_record(
             "candidate-phase7-001", "source_trust", trust_class="T3_CANDIDATE"
         )
-        self.assertEqual(state["payload"]["stage"], "WAITING_APPROVAL")
-        self.assertEqual(state["payload"]["status"], "HOLD")
+        self.assertEqual(state["payload"]["stage"], "LICENSE_POLICY_CHECK")
+        self.assertEqual(state["payload"]["status"], "ACTIVE")
+        self.assertEqual(state["payload"]["trust_class"], "T3_CANDIDATE")
+
+    def test_candidate_cannot_start_pretrusted(self):
+        with self.assertRaisesRegex(ValueError, "start T3 or T4"):
+            self.create(trust="T2_VERIFIED_REMOTE")
 
     def test_license_review_holds_without_fake_progress(self):
         self.create()
         self.put_and_record("candidate-phase7-001", "reuse_search")
         self.put_and_record(
-            "candidate-phase7-001", "source_trust", trust_class="T2_VERIFIED_REMOTE"
+            "candidate-phase7-001", "source_trust", trust_class="T3_CANDIDATE"
         )
         state = self.put_and_record(
             "candidate-phase7-001", "license_policy", license_status="REVIEW_REQUIRED"
@@ -385,7 +388,7 @@ class CapabilityFactoryTests(unittest.TestCase):
         self.create()
         self.put_and_record("candidate-phase7-001", "reuse_search")
         self.put_and_record(
-            "candidate-phase7-001", "source_trust", trust_class="T2_VERIFIED_REMOTE"
+            "candidate-phase7-001", "source_trust", trust_class="T3_CANDIDATE"
         )
         self.put_and_record(
             "candidate-phase7-001", "license_policy", license_status="APPROVED"
@@ -397,7 +400,7 @@ class CapabilityFactoryTests(unittest.TestCase):
         self.create(policy_obj=policy(permission="P1_SAFE_WRITE"))
         self.put_and_record("candidate-phase7-001", "reuse_search")
         self.put_and_record(
-            "candidate-phase7-001", "source_trust", trust_class="T2_VERIFIED_REMOTE"
+            "candidate-phase7-001", "source_trust", trust_class="T3_CANDIDATE"
         )
         self.put_and_record(
             "candidate-phase7-001", "license_policy", license_status="APPROVED"
@@ -412,7 +415,7 @@ class CapabilityFactoryTests(unittest.TestCase):
         self.create(policy_obj=policy(resource="R1_LIGHT"))
         self.put_and_record("candidate-phase7-001", "reuse_search")
         self.put_and_record(
-            "candidate-phase7-001", "source_trust", trust_class="T2_VERIFIED_REMOTE"
+            "candidate-phase7-001", "source_trust", trust_class="T3_CANDIDATE"
         )
         self.put_and_record(
             "candidate-phase7-001", "license_policy", license_status="APPROVED"
@@ -427,7 +430,7 @@ class CapabilityFactoryTests(unittest.TestCase):
         self.create()
         self.put_and_record("candidate-phase7-001", "reuse_search")
         self.put_and_record(
-            "candidate-phase7-001", "source_trust", trust_class="T2_VERIFIED_REMOTE"
+            "candidate-phase7-001", "source_trust", trust_class="T3_CANDIDATE"
         )
         self.put_and_record(
             "candidate-phase7-001", "license_policy", license_status="APPROVED"
@@ -437,13 +440,24 @@ class CapabilityFactoryTests(unittest.TestCase):
         )
         self.assertEqual(plan["decision"], "WAITING_RESOURCE")
 
-    def test_optional_gates_are_skipped_by_policy(self):
-        state = self.qualify("candidate-phase7-optional", optional=True)
-        self.assertEqual(state["payload"]["stage"], "REGISTER")
-        self.assertNotIn("sandbox_test", state["payload"]["gate_receipts"])
-        self.assertNotIn("rollback_test", state["payload"]["gate_receipts"])
-        self.assertNotIn("security_test", state["payload"]["gate_receipts"])
-        self.assertNotIn("canary", state["payload"]["gate_receipts"])
+    def test_factory_rejects_skipping_mandatory_safety_gates(self):
+        for kwargs in (
+            {"sandbox": False},
+            {"security": False},
+            {"canary": False},
+        ):
+            with self.assertRaisesRegex(ValueError, "sandbox, security test and canary"):
+                self.create(
+                    candidate_id="candidate-phase7-unsafe-" + next(iter(kwargs)),
+                    policy_obj=policy(**kwargs),
+                )
+
+    def test_factory_policy_cannot_disable_manifest_required_rollback(self):
+        with self.assertRaisesRegex(ValueError, "required rollback"):
+            self.create(
+                candidate_id="candidate-phase7-no-rollback",
+                policy_obj=policy(rollback=False),
+            )
 
     def test_field_canary_requires_real_field_receipt(self):
         candidate_id = "candidate-phase7-field"
@@ -459,7 +473,7 @@ class CapabilityFactoryTests(unittest.TestCase):
             self.put_and_record(
                 candidate_id,
                 gate,
-                trust_class="T2_VERIFIED_REMOTE" if gate == "source_trust" else None,
+                trust_class="T3_CANDIDATE" if gate == "source_trust" else None,
                 license_status="APPROVED" if gate == "license_policy" else None,
             )
         rec = receipt(
@@ -490,6 +504,13 @@ class CapabilityFactoryTests(unittest.TestCase):
         self.assertEqual(payload["capability_id"], "demo.capability")
         self.assertEqual(payload["trust_class"], "T2_VERIFIED_REMOTE")
         self.assertFalse(payload["field_certified"])
+        self.assertEqual(payload["source"]["revision"], "source-r1")
+        self.assertEqual(payload["source"]["artifact_sha256"], ARTIFACT_SHA)
+        self.assertEqual(payload["license"]["status"], "APPROVED")
+        self.assertIn(
+            "receipt-candidate-phase7-001-license_policy",
+            payload["license"]["evidence_refs"],
+        )
         final = self.factory.get("BCP_CORE", "candidate-phase7-001")["payload"]
         self.assertEqual(final["stage"], "REGISTERED")
         self.assertEqual(final["status"], "REGISTERED")
@@ -502,11 +523,38 @@ class CapabilityFactoryTests(unittest.TestCase):
             self.factory.registry.put(changed, owner_id="collision")
 
     def test_p4_capability_is_not_auto_factory_path(self):
-        state = self.create(
-            manifest_obj=manifest(permission="P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE"),
+        with self.assertRaisesRegex(ValueError, "P4 capability factory"):
+            self.create(
+                manifest_obj=manifest(permission="P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE"),
+            )
+
+    def test_simulation_canary_cannot_promote_unattended_capability(self):
+        state = self.qualify("candidate-phase7-sim-only", target_scope="SIMULATION")
+        self.assertEqual(state["payload"]["stage"], "REGISTER")
+        with self.assertRaisesRegex(CandidateTransitionError, "simulation canary"):
+            self.factory.register(
+                "BCP_CORE", "candidate-phase7-sim-only",
+                owner_id="register", now=NOW,
+            )
+
+    def test_field_canary_promotes_t1_verified_local(self):
+        self.qualify("candidate-phase7-local", target_scope="FIELD")
+        registered = self.factory.register(
+            "BCP_CORE", "candidate-phase7-local",
+            owner_id="register", now=NOW,
         )
-        self.assertEqual(state["payload"]["stage"], "WAITING_APPROVAL")
-        self.assertEqual(state["payload"]["status"], "HOLD")
+        payload = registered["payload"]
+        self.assertEqual(payload["trust_class"], "T1_VERIFIED_LOCAL")
+        self.assertTrue(payload["field_certified"])
+
+    def test_free_form_command_input_schema_is_rejected(self):
+        bad = manifest()
+        bad["input_schema"] = {
+            "type": "object",
+            "properties": {"command": {"type": "string"}},
+        }
+        with self.assertRaisesRegex(ValueError, "free-form execution input"):
+            self.create(manifest_obj=bad)
 
     def test_manifest_cannot_underdeclare_effect_class(self):
         bad = manifest(permission="P2_PROJECT_MUTATION")
@@ -514,10 +562,10 @@ class CapabilityFactoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "semantic mismatch"):
             self.create(manifest_obj=bad)
 
-    def test_model_executor_cannot_hold_mutation_authority(self):
-        bad = manifest(permission="P1_SAFE_WRITE")
+    def test_model_executor_is_deferred_to_phase10(self):
+        bad = manifest(permission="P0_READ")
         bad["executor"] = {"kind": "MODEL"}
-        with self.assertRaisesRegex(ValueError, "MODEL executor"):
+        with self.assertRaisesRegex(ValueError, "Phase 10"):
             self.create(manifest_obj=bad)
 
     def test_local_executable_requires_pinned_version_and_hash(self):
