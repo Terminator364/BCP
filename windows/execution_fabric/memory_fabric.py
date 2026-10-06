@@ -263,6 +263,17 @@ def _is_expired(record: dict[str, Any] | None, now: dt.datetime) -> bool:
     return expires is not None and expires <= now
 
 
+def _canonical_record_hash(record: dict[str, Any]) -> str:
+    raw = json.dumps(
+        record,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
 def _canonical_record(claim: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": claim["claim_id"],
@@ -448,7 +459,10 @@ class MemoryFabric:
                 continue
             item = copy.deepcopy(record)
             item["slot_revision"] = int(state["revision"])
-            item["slot_content_hash"] = state["content_hash"]
+            # Context/index equality follows canonical content, not the latest rejected
+            # claim stored in the slot envelope.
+            item["slot_content_hash"] = _canonical_record_hash(record)
+            item["slot_state_hash"] = state["content_hash"]
             out.append(item)
         out.sort(
             key=lambda x: (
