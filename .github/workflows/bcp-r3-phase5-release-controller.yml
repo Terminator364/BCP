@@ -47,7 +47,7 @@ jobs:
           python tools/test_execution_fabric_phase4_desired_state.py
           python tools/test_execution_fabric_phase4_incident_recipe.py
           python tools/test_execution_fabric_phase4_error_ledger_projection.py
-          python tools/test_execution_fabric_phase4_desired_incident.py
+          python tools/test_execution_fabric_phase4_convergence.py
 
       - name: Phase 3 regression
         run: |
