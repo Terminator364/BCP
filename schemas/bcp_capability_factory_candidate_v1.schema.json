@@ -80,7 +80,6 @@
     },
     "trust_class": {
       "enum": [
-        "T0_BUILTIN",
         "T1_VERIFIED_LOCAL",
         "T2_VERIFIED_REMOTE",
         "T3_CANDIDATE",
@@ -355,5 +354,51 @@
     "field_certified": {
       "const": false
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "REGISTERED"
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trust_class": {
+            "enum": [
+              "T1_VERIFIED_LOCAL",
+              "T2_VERIFIED_REMOTE"
+            ]
+          }
+        },
+        "required": [
+          "registration_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "QUARANTINED"
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trust_class": {
+            "const": "T4_QUARANTINED"
+          }
+        }
+      }
+    }
+  ]
 }
