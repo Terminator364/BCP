@@ -20,6 +20,7 @@ from execution_fabric.project_registry import ProjectAliasAmbiguous, ProjectNotF
 from execution_fabric.desired_state_registry import DesiredStateRegistry, DesiredStateNotFound
 from execution_fabric.incident_recipe import RecipeRegistry
 from execution_fabric.release_controller import ReleaseController
+from execution_fabric.transport_cockpit import TransportController
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -213,6 +214,10 @@ def recipe_registry() -> RecipeRegistry:
 
 def release_controller() -> ReleaseController:
     return ReleaseController(critical_store())
+
+
+def transport_controller() -> TransportController:
+    return TransportController(critical_store())
 
 
 def get_head(project_id: str):
@@ -424,6 +429,40 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/v2/resources":
             self.send_json(200, resource_snapshot(APP_ROOT))
+            return
+
+        if path == "/v2/cockpit":
+            project = str((query.get("project") or [""])[0]).strip()
+            if not project:
+                self.send_json(400, {"error": "project_required"})
+                return
+            projection = transport_controller().latest_projection(project)
+            if projection is None:
+                self.send_json(404, {"error": "cockpit_projection_not_found", "project": project})
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.cockpit_view/1",
+                    "project_id": project,
+                    "projection": projection,
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/deliveries":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            items = transport_controller().list(project_id=project, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.transport_delivery_view/1",
+                    "deliveries": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
             return
 
         if path == "/v2/releases":

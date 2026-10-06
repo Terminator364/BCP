@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_transport_delivery_v1.schema.json",
+  "title": "BCP Transport Delivery V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "delivery_id",
+    "project_id",
+    "mission_id",
+    "surface",
+    "payload_kind",
+    "projection",
+    "content_sha256",
+    "preferred_transports",
+    "target_scope",
+    "policy",
+    "route",
+    "status",
+    "receipt_ref",
+    "idempotency_key",
+    "created_at",
+    "expires_at",
+    "field_certified"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.transport_delivery/1"
+    },
+    "delivery_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,199}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
+    },
+    "mission_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "surface": {
+      "enum": [
+        "TELEGRAM",
+        "CHATGPT",
+        "DRIVE",
+        "LOCAL_UI"
+      ]
+    },
+    "payload_kind": {
+      "enum": [
+        "STATUS",
+        "DETAILS",
+        "ALERT",
+        "APPROVAL",
+        "REPORT",
+        "CHECKPOINT"
+      ]
+    },
+    "projection": {
+      "$ref": "./bcp_cockpit_projection_v1.schema.json"
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "preferred_transports": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "LOCAL_NATIVE",
+          "TELEGRAM",
+          "DRIVE",
+          "NEXUS",
+          "B_EDGE",
+          "REMOTE_PROVIDER"
+        ]
+      }
+    },
+    "target_scope": {
+      "enum": [
+        "REPOSITORY",
+        "SIMULATION",
+        "PROVIDER",
+        "FIELD"
+      ]
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "selected_transport",
+        "provider_id",
+        "capability_id",
+        "store_forward",
+        "reason",
+        "evidence_class",
+        "evidence_contract"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "LIVE_READY",
+            "DEGRADED_READY",
+            "STORE_FORWARD_READY",
+            "WAITING_AUTH",
+            "WAITING_NETWORK",
+            "NO_ROUTE",
+            "ACKNOWLEDGED",
+            "FAILED_SAFE"
+          ]
+        },
+        "selected_transport": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "enum": [
+                "LOCAL_NATIVE",
+                "TELEGRAM",
+                "DRIVE",
+                "NEXUS",
+                "B_EDGE",
+                "REMOTE_PROVIDER"
+              ]
+            }
+          ]
+        },
+        "provider_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 160
+        },
+        "capability_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 160
+        },
+        "store_forward": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "evidence_class": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "enum": [
+                "REPOSITORY_STATIC",
+                "SIMULATION",
+                "PROVIDER_PROBE",
+                "FIELD_READBACK",
+                "SELF_REPORTED",
+                "UNKNOWN"
+              ]
+            }
+          ]
+        },
+        "evidence_contract": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "EXIT_CODE",
+              "FILE_READBACK",
+              "HASH",
+              "PROCESS_HEALTH",
+              "HTTP_HEALTH",
+              "SERVICE_STATE",
+              "GIT_REVISION",
+              "TEST_RESULT",
+              "ARTIFACT_SIGNATURE",
+              "PROVIDER_ACK",
+              "DESTINATION_READBACK",
+              "CUSTOM_VALIDATOR"
+            ]
+          }
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "DISPATCH_READY",
+        "WAITING_AUTH",
+        "WAITING_NETWORK",
+        "ACKNOWLEDGED",
+        "FAILED_SAFE",
+        "EXPIRED"
+      ]
+    },
+    "receipt_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 240
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "field_certified": {
+      "const": false
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "low_data",
+        "allow_degraded",
+        "allow_store_forward"
+      ],
+      "properties": {
+        "low_data": {
+          "type": "boolean"
+        },
+        "allow_degraded": {
+          "type": "boolean"
+        },
+        "allow_store_forward": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
