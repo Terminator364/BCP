@@ -100,3 +100,10 @@ for required in (
 print("BCP_R3_FIELD_BINDING_PACKAGE_STATIC_GUARD=PASS")
 print("system_mutation=false")
 print("field_certified=false")
+
+
+# Discovery identities must remain specific enough to avoid generic Windows noise.
+assert 'DELIVERY = "(?i)(chatgpt[-_ ]?delivery|delivery)"' not in SCRIPT, (
+    "generic Delivery token must not be used"
+)
+assert "ChatGPT_ManagedApps" in SCRIPT
