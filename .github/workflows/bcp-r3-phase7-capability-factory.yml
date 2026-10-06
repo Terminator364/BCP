@@ -10,6 +10,7 @@ on:
       - "windows/bcp_server_v2.py"
       - "tools/test_execution_fabric_phase7_capability_factory.py"
       - "tools/test_execution_fabric_phase7_contracts.py"
+      - "tools/test_execution_fabric_phase6_transport_cockpit.py"
       - "docs/BCP_CAPABILITY_FACTORY_R3_PHASE7_2026-10-06.md"
       - ".github/workflows/bcp-r3-phase7-capability-factory.yml"
   workflow_dispatch:
