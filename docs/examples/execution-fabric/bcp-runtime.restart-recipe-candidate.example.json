@@ -1,0 +1,33 @@
+{
+  "schema": "bcp.repair_recipe/1",
+  "recipe_id": "recipe-bcp-runtime-restart",
+  "signature": "ddfd8cbecd799c19a848b7f48bac0bf94b4ec37b1906c940ddebc56e7a2b2912",
+  "status": "CANDIDATE",
+  "project_scopes": ["BCP_CORE"],
+  "max_permission_class": "P1_SAFE_WRITE",
+  "max_resource_class": "R1_LIGHT",
+  "steps": [
+    {
+      "step_id": "restart",
+      "capability_id": "bcp.runtime.restart",
+      "permission_class": "P1_SAFE_WRITE",
+      "resource_class": "R1_LIGHT",
+      "input_template": {"component": "bcp-core"},
+      "evidence_contract": ["PROCESS_HEALTH", "FILE_READBACK"],
+      "optional": false
+    }
+  ],
+  "validation": {
+    "successful_receipt_refs": [],
+    "regression_refs": [],
+    "field_evidence_required": true,
+    "field_evidence_refs": []
+  },
+  "created_at": "2026-10-05T21:30:00Z",
+  "updated_at": "2026-10-05T21:30:00Z",
+  "promoted_at": null,
+  "notes": [
+    "Candidate only. It cannot be auto-executed before successful receipt, regression and field evidence are attached.",
+    "The recipe contains a typed capability binding, not executable command text."
+  ]
+}

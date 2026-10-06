@@ -17,6 +17,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 from execution_fabric.critical_store import CriticalStore
 from execution_fabric.resource_admission import snapshot as resource_snapshot
 from execution_fabric.project_registry import ProjectAliasAmbiguous, ProjectNotFound, ProjectRegistry
+from execution_fabric.desired_state_registry import DesiredStateRegistry, DesiredStateNotFound
+from execution_fabric.incident_recipe import FrictionRegistry, RecipeRegistry
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -198,6 +200,18 @@ def critical_store() -> CriticalStore:
 
 def project_registry() -> ProjectRegistry:
     return ProjectRegistry(critical_store())
+
+
+def desired_state_registry() -> DesiredStateRegistry:
+    return DesiredStateRegistry(critical_store())
+
+
+def recipe_registry() -> RecipeRegistry:
+    return RecipeRegistry(critical_store())
+
+
+def friction_registry() -> FrictionRegistry:
+    return FrictionRegistry(critical_store())
 
 
 def get_head(project_id: str):
@@ -441,6 +455,90 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(404, {"error": "project_not_found", "identifier": identifier})
             except ProjectAliasAmbiguous:
                 self.send_json(409, {"error": "project_alias_ambiguous", "identifier": identifier})
+            return
+
+        if path == "/v2/desired":
+            project = str((query.get("project") or [""])[0]).strip()
+            resource = str((query.get("resource") or [""])[0]).strip()
+            try:
+                if project and resource:
+                    item = desired_state_registry().get(project, resource)
+                    self.send_json(
+                        200,
+                        {
+                            "schema": "bcp.desired_state_view/1",
+                            "item": item,
+                            "field_certified": False,
+                        },
+                    )
+                else:
+                    items = desired_state_registry().list(project or None, limit=512)
+                    self.send_json(
+                        200,
+                        {
+                            "schema": "bcp.desired_state_view/1",
+                            "items": items,
+                            "count": len(items),
+                            "field_certified": False,
+                        },
+                    )
+            except DesiredStateNotFound:
+                self.send_json(
+                    404,
+                    {
+                        "error": "desired_state_not_found",
+                        "project": project,
+                        "resource": resource,
+                    },
+                )
+            return
+
+        if path == "/v2/recipes":
+            status_filter = str((query.get("status") or [""])[0]).strip().upper()
+            items = recipe_registry().list(limit=512)
+            if status_filter:
+                items = [
+                    item for item in items
+                    if str(item.get("payload", {}).get("status") or "").upper() == status_filter
+                ]
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.recipe_registry_view/1",
+                    "items": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/incidents":
+            project = str((query.get("project") or [""])[0]).strip()
+            prefix = "incident/" + (project + "/" if project else "")
+            items = critical_store().list_states(prefix, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.incident_registry_view/1",
+                    "items": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/friction":
+            project = str((query.get("project") or [""])[0]).strip()
+            items = friction_registry().list(project or None, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.friction_registry_view/1",
+                    "items": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
             return
 
         if path == "/v2/authority/state":
