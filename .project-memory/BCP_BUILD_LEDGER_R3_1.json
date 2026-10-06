@@ -2,7 +2,7 @@
   "schema": "bcp.build_ledger/2",
   "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
   "revision": "R3.1-ABC",
-  "updated_at": "2026-10-06T16:45:00Z",
+  "updated_at": "2026-10-06T18:10:17Z",
   "route": "SIM_FIRST",
   "primary_build_target": "BCP_AUTONOMIC_EXECUTION_FABRIC",
   "vertical_evidence_only": true,
@@ -11,7 +11,7 @@
     "repo": "Terminator364/BCP",
     "design_branch": "design/unified-execution-fabric-2026-10-05",
     "design_pr": 168,
-    "observed_design_head_before_ledger_update": "bf8a720e042396df88cedd38f1191617e1122501",
+    "observed_design_head_before_ledger_update": "cc1718aed99017f36e2adcdab49aa8bb1a5ae7fe",
     "main_promotion": false
   },
   "doctrine": {
@@ -65,16 +65,30 @@
       "integration_commits": [
         "28b6dbc",
         "e9f21fe",
-        "e05d46b"
+        "e05d46b",
+        "cc1718aed99017f36e2adcdab49aa8bb1a5ae7fe"
       ],
       "invariants": [
         "immutable action receipts",
         "real receipt required for recipe promotion",
         "desired generation cannot self-certify observation",
         "generation-scoped repair episodes",
-        "raw CriticalStore mutations absent from network surface"
+        "raw CriticalStore mutations absent from network surface",
+        "BCP computes desired-state drift from observed state; provider matches_desired claims are not trusted",
+        "typed reconcile execution requires current capability state AVAILABLE",
+        "P3 bounded-system repair recipes require field evidence"
       ],
-      "field_certified": false
+      "field_certified": false,
+      "hardening": {
+        "status": "INTEGRATED_GREEN",
+        "pr": 184,
+        "integration_commit": "cc1718aed99017f36e2adcdab49aa8bb1a5ae7fe",
+        "targeted_phase4_ci": "PASS",
+        "phase2_microkernel_regression": "PASS",
+        "field_ecosystem_preflight": "PASS",
+        "coordinated_product_qualification": "PASS",
+        "field_certified": false
+      }
     },
     "phase_5": {
       "status": "INTEGRATED_GREEN",
@@ -203,6 +217,6 @@
     "policy": "NO_DUPLICATE_RERUN; targeted gates authoritative for tranche proof; generic queues must not create false blockers for non-runtime docs/probe deltas",
     "note": "Global workflows were green for Phase 8; generic runs for the read-only field-package delta remained pending when PR182 was merged after its specialized gate passed."
   },
-  "next_atomic_work_unit": "WHEN_MBMPC_ONLINE_READ_BACK_EXISTING_FIELD_PROBE_RESULT_BEFORE_ANY_RETRY;_IF_ABSENT_RUN_EXACTLY_ONE_READ_ONLY_PROBE;ADJUDICATE_BINDINGS_WITH_BCP_READBACK;UPDATE_LEDGER",
+  "next_atomic_work_unit": "WHEN_MBMPC_ONLINE_READ_BACK_EXISTING_FIELD_PROBE_RESULT_BEFORE_ANY_RETRY;IF_ABSENT_RUN_EXACTLY_ONE_READ_ONLY_PROBE;ADJUDICATE_BINDINGS_WITH_BCP_READBACK;UPDATE_LEDGER",
   "field_certified": false
 }
