@@ -399,6 +399,30 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "not": {
+              "enum": [
+                "REGISTERED",
+                "QUARANTINED"
+              ]
+            }
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trust_class": {
+            "const": "T3_CANDIDATE"
+          }
+        }
+      }
     }
   ]
 }
