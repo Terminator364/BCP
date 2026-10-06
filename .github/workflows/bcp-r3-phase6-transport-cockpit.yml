@@ -1,0 +1,66 @@
+name: BCP R3 Phase 6 Transport Cockpit
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_cockpit_projection_v1.schema.json"
+      - "schemas/bcp_transport_delivery_v1.schema.json"
+      - "windows/execution_fabric/transport_cockpit.py"
+      - "windows/bcp_server_v2.py"
+      - "tools/test_execution_fabric_phase6_*.py"
+      - "docs/BCP_TRANSPORT_COCKPIT_R3_PHASE6_2026-10-06.md"
+      - ".github/workflows/bcp-r3-phase6-transport-cockpit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-phase6-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  transport-cockpit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse Phase 6 contracts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in [
+              Path("schemas/bcp_cockpit_projection_v1.schema.json"),
+              Path("schemas/bcp_transport_delivery_v1.schema.json"),
+          ]:
+              json.loads(p.read_text(encoding="utf-8"))
+              print("PARSE_OK", p)
+          PY
+
+      - name: Compile Phase 6
+        run: |
+          python -m compileall -q \
+            windows/bcp_server_v2.py \
+            windows/execution_fabric/transport_cockpit.py \
+            tools/test_execution_fabric_phase6_transport_cockpit.py \
+            tools/test_execution_fabric_phase6_server_boundary.py
+
+      - name: Transport and Cockpit safety tests
+        run: python tools/test_execution_fabric_phase6_transport_cockpit.py
+
+      - name: Read-only / no-runtime-clock boundary
+        run: python tools/test_execution_fabric_phase6_server_boundary.py
+
+      - name: Microkernel selftest
+        run: python windows/bcp_server_v2.py --selftest
+
+      - name: Phase 5 release regression
+        run: python tools/test_execution_fabric_phase5_release_controller.py
+
+      - name: Canonical Phase 4 regression
+        run: python tools/test_execution_fabric_phase4_convergence.py
+
+      - name: Phase 3 registry regression
+        run: python tools/test_execution_fabric_phase3_project_registry.py
