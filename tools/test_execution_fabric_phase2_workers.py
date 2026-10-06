@@ -18,12 +18,24 @@ from execution_fabric.worker_supervisor import WorkerSupervisor, WorkerTimeout  
 
 
 class ResourceAdmissionTests(unittest.TestCase):
-    def test_g6_constrained_pc_thresholds(self):
+    def test_mbpmc_normal_high_ram_band(self):
         total = 4 * 1024 * MB
-        self.assertEqual(classify_mode(total, 1200 * MB, 70, 5 * 1024 * MB), "GREEN")
-        self.assertEqual(classify_mode(total, 700 * MB, 80, 5 * 1024 * MB), "AMBER")
-        self.assertEqual(classify_mode(total, 250 * MB, 91, 5 * 1024 * MB), "RED")
-        self.assertEqual(classify_mode(total, 120 * MB, 96, 5 * 1024 * MB), "CRITICAL")
+        disk = 5 * 1024 * MB
+        # 80-95% load is the observed normal envelope on MBMPC when real headroom exists.
+        self.assertEqual(classify_mode(total, 820 * MB, 80, disk, 2 * 1024 * MB), "GREEN")
+        self.assertEqual(classify_mode(total, 410 * MB, 90, disk, 1500 * MB), "GREEN")
+        self.assertEqual(classify_mode(total, 205 * MB, 95, disk, 900 * MB), "GREEN")
+        self.assertEqual(classify_mode(total, 150 * MB, 96, disk, 700 * MB), "AMBER")
+        self.assertEqual(classify_mode(total, 90 * MB, 98, disk, 400 * MB), "RED")
+        self.assertEqual(classify_mode(total, 60 * MB, 99, disk, 200 * MB), "CRITICAL")
+
+    def test_pagefile_and_disk_headroom_override_normal_load(self):
+        total = 4 * 1024 * MB
+        disk = 5 * 1024 * MB
+        self.assertEqual(classify_mode(total, 500 * MB, 90, disk, 400 * MB), "AMBER")
+        self.assertEqual(classify_mode(total, 500 * MB, 90, disk, 200 * MB), "RED")
+        self.assertEqual(classify_mode(total, 500 * MB, 90, disk, 100 * MB), "CRITICAL")
+        self.assertEqual(classify_mode(total, 500 * MB, 90, 900 * MB, 2 * 1024 * MB), "RED")
 
     def test_admission_matrix(self):
         self.assertTrue(decide("R3_HEAVY", mode="GREEN").allowed)
@@ -33,6 +45,22 @@ class ResourceAdmissionTests(unittest.TestCase):
         self.assertTrue(decide("R0_TINY", mode="RED").allowed)
         self.assertFalse(decide("R0_TINY", mode="CRITICAL").allowed)
         self.assertTrue(decide("R0_TINY", mode="CRITICAL", essential=True).allowed)
+
+    def test_green_mode_still_checks_real_worker_headroom_when_known(self):
+        # GREEN does not mean a heavy worker may consume the user's last free MiB.
+        d = decide("R3_HEAVY", mode="GREEN", available_bytes=300 * MB)
+        self.assertFalse(d.allowed)
+        self.assertEqual(d.reason, "RESOURCE_HOLD_HEADROOM")
+
+        d = decide("R1_LIGHT", mode="GREEN", available_bytes=220 * MB)
+        self.assertTrue(d.allowed)
+
+    def test_95_percent_is_not_automatically_red(self):
+        total = 4 * 1024 * MB
+        self.assertEqual(
+            classify_mode(total, 205 * MB, 95, 5 * 1024 * MB, 900 * MB),
+            "GREEN",
+        )
 
     def test_background_is_more_restrictive(self):
         self.assertTrue(decide("R1_LIGHT", mode="GREEN", background=True).allowed)

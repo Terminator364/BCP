@@ -5,9 +5,12 @@ from __future__ import annotations
 Adapted from ChatGPT-PC G6 resource_governor.py source commit
 6bf6e32b36008957dda014542742657af6b9e017.
 
-The policy is deliberately conservative for the user's ~4 GiB Windows machine.
+The policy is calibrated for the user's real ~4 GiB Windows operating envelope.
+On this machine, 80-95% physical-RAM load is a normal operating band, not by itself
+a failure signal. Admission is headroom-first: available memory, pagefile pressure,
+disk reserve, task class and foreground/background priority dominate raw load percent.
 It decides whether a typed work unit may start; it never launches arbitrary commands.
-Local AI remains disabled in Phase 2.
+Local AI remains disabled in the Phase 2 baseline and is handled as a later cold-burst capability.
 """
 
 from dataclasses import dataclass
@@ -43,6 +46,19 @@ CLASS_CAP_MB = {
     "R4_LOCAL_AI": 0,
 }
 
+# MBMPC calibration: raw Windows memory load is normally high.
+NORMAL_RAM_LOAD_MIN = 80
+NORMAL_RAM_LOAD_MAX = 95
+
+# Free-memory reserve left outside the bounded worker itself.
+HEADROOM_RESERVE_MB = {
+    "R0_TINY": 32,
+    "R1_LIGHT": 64,
+    "R2_MEDIUM": 128,
+    "R3_HEAVY": 256,
+    "R4_LOCAL_AI": 0,
+}
+
 
 @dataclass(frozen=True)
 class AdmissionDecision:
@@ -70,7 +86,8 @@ class AdmissionDecision:
         }
 
 
-def _memory() -> tuple[int, int, int]:
+def _memory() -> tuple[int, int, int, int, int]:
+    """Return physical total/available/load plus pagefile total/available bytes."""
     if os.name == "nt":
         class M(ctypes.Structure):
             _fields_ = [
@@ -88,8 +105,14 @@ def _memory() -> tuple[int, int, int]:
         m.dwLength = ctypes.sizeof(M)
         ok = ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
         if ok:
-            return int(m.ullTotalPhys), int(m.ullAvailPhys), int(m.dwMemoryLoad)
-        return 0, 0, 0
+            return (
+                int(m.ullTotalPhys),
+                int(m.ullAvailPhys),
+                int(m.dwMemoryLoad),
+                int(m.ullTotalPageFile),
+                int(m.ullAvailPageFile),
+            )
+        return 0, 0, 0, 0, 0
 
     try:
         d: dict[str, int] = {}
@@ -100,37 +123,85 @@ def _memory() -> tuple[int, int, int]:
         total = int(d["MemTotal"])
         avail = int(d.get("MemAvailable", d.get("MemFree", 0)))
         load = round(100 * (1 - (avail / total))) if total else 0
-        return total, avail, load
+        swap_total = int(d.get("SwapTotal", 0))
+        swap_free = int(d.get("SwapFree", 0))
+        # Windows "pagefile" includes commit headroom beyond physical RAM. Linux swap
+        # is not identical, but this is adequate for deterministic CI/simulation.
+        page_total = total + swap_total
+        page_avail = avail + swap_free
+        return total, avail, load, page_total, page_avail
     except Exception:
-        return 0, 0, 0
+        return 0, 0, 0, 0, 0
 
 
-def classify_mode(total: int, available: int, load_pct: int, disk_free: int) -> str:
-    if disk_free < 512 * MB or (total and available < 160 * MB) or load_pct >= 95:
+def classify_mode(
+    total: int,
+    available: int,
+    load_pct: int,
+    disk_free: int,
+    pagefile_available: int | None = None,
+) -> str:
+    """Classify machine pressure using real headroom, not RAM-load percent alone.
+
+    80-95% physical-RAM load remains GREEN when physical/pagefile/disk headroom
+    is healthy. This matches MBMPC's observed normal operating envelope.
+    """
+    page_avail = None if pagefile_available is None else int(pagefile_available)
+
+    if (
+        disk_free < 512 * MB
+        or (total and available < 64 * MB)
+        or load_pct >= 99
+        or (page_avail is not None and page_avail < 128 * MB)
+    ):
         return "CRITICAL"
-    if disk_free < 1024 * MB or (total and available < 300 * MB) or load_pct >= 90:
+
+    if (
+        disk_free < 1024 * MB
+        or (total and available < 96 * MB)
+        or load_pct >= 98
+        or (page_avail is not None and page_avail < 256 * MB)
+    ):
         return "RED"
-    if (total and available < 800 * MB) or load_pct >= 78:
+
+    if (
+        (total and available < 160 * MB)
+        or load_pct >= 96
+        or (page_avail is not None and page_avail < 512 * MB)
+    ):
         return "AMBER"
+
     return "GREEN"
 
 
 def snapshot(path: str | Path | None = None) -> dict[str, Any]:
-    total, available, load_pct = _memory()
+    total, available, load_pct, page_total, page_available = _memory()
     disk = shutil.disk_usage(path or os.getcwd())
-    mode = classify_mode(total, available, load_pct, int(disk.free))
+    mode = classify_mode(
+        total,
+        available,
+        load_pct,
+        int(disk.free),
+        pagefile_available=page_available if page_total else None,
+    )
+    normal_band = NORMAL_RAM_LOAD_MIN <= load_pct <= NORMAL_RAM_LOAD_MAX
     return {
         "schema": "bcp.resource_snapshot/1",
         "mode": mode,
         "memory_total": total,
         "memory_available": available,
         "memory_load_pct": load_pct,
+        "normal_operating_band": normal_band,
+        "normal_operating_band_pct": [NORMAL_RAM_LOAD_MIN, NORMAL_RAM_LOAD_MAX],
+        "pagefile_total": page_total,
+        "pagefile_available": page_available,
         "disk_free": int(disk.free),
+        "pressure_basis": "HEADROOM_FIRST",
         "policy": {
-            "GREEN": "normal lightweight work; serialized heavy work permitted",
-            "AMBER": "foreground light work only; defer medium/heavy/background",
-            "RED": "tiny essential/foreground work only",
-            "CRITICAL": "essential continuity/receipt/health work only",
+            "GREEN": "normal operation; 80-95% RAM is acceptable when headroom is healthy",
+            "AMBER": "headroom tightening; foreground tiny/light work, defer medium/heavy/background",
+            "RED": "low real headroom; tiny essential/foreground work only",
+            "CRITICAL": "continuity/receipt/health work only",
         }[mode],
         "field_certified": False,
     }
@@ -143,11 +214,19 @@ def decide(
     background: bool = False,
     essential: bool = False,
     local_ai_enabled: bool = False,
+    available_bytes: int | None = None,
 ) -> AdmissionDecision:
     rc = str(resource_class).upper()
     if rc not in RESOURCE_ORDER:
         raise ValueError(f"unknown resource_class: {resource_class}")
-    m = str(mode or snapshot()["mode"]).upper()
+    live = None
+    if mode is None:
+        live = snapshot()
+        m = str(live["mode"]).upper()
+        if available_bytes is None:
+            available_bytes = int(live.get("memory_available") or 0)
+    else:
+        m = str(mode).upper()
     if m not in MODE_CAP_MB:
         raise ValueError(f"unknown resource mode: {m}")
 
@@ -168,6 +247,14 @@ def decide(
         "RED": RESOURCE_ORDER["R0_TINY"],
         "CRITICAL": RESOURCE_ORDER["R0_TINY"] if essential else -1,
     }[m]
+
+    if available_bytes is not None and available_bytes > 0 and class_cap:
+        required_headroom = (process_cap + HEADROOM_RESERVE_MB[rc]) * MB
+        if int(available_bytes) < required_headroom:
+            return AdmissionDecision(
+                False, m, rc, "RESOURCE_HOLD_HEADROOM",
+                process_cap, job_cap, False, local_ai_enabled=False,
+            )
 
     if RESOURCE_ORDER[rc] > max_by_mode:
         return AdmissionDecision(
@@ -222,6 +309,9 @@ def worker_policy(
 __all__ = [
     "AdmissionDecision",
     "RESOURCE_ORDER",
+    "NORMAL_RAM_LOAD_MIN",
+    "NORMAL_RAM_LOAD_MAX",
+    "HEADROOM_RESERVE_MB",
     "classify_mode",
     "snapshot",
     "decide",
