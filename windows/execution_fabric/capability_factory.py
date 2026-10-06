@@ -753,6 +753,7 @@ class CapabilityFactory:
             failure = {"code": "SOURCE_QUARANTINED", "detail": "source trust class is T4"}
         elif license_info["status"] == "DENIED":
             stage, status = "QUARANTINED", "HOLD"
+            trust_class = "T4_QUARANTINED"
             failure = {"code": "LICENSE_DENIED", "detail": "license policy denied source"}
         elif PERMISSION_ORDER[manifest["permission_class"]] > PERMISSION_ORDER[policy["max_permission_class"]]:
             stage, status = "WAITING_APPROVAL", "HOLD"
@@ -961,6 +962,7 @@ class CapabilityFactory:
             if license_status == "DENIED":
                 candidate["stage"] = "QUARANTINED"
                 candidate["status"] = "HOLD"
+                candidate["trust_class"] = "T4_QUARANTINED"
                 candidate["failure"] = {"code": "LICENSE_DENIED", "detail": license_identifier}
                 return self._put(candidate, owner_id=owner_id)
             if license_status not in {"APPROVED", "NOT_APPLICABLE"}:
