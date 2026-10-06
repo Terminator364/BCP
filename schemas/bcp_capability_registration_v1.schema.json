@@ -29,7 +29,10 @@
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,199}$"
     },
     "candidate_id": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "minLength": 8,
       "maxLength": 200
     },
@@ -64,7 +67,7 @@
     },
     "gate_receipts": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "uniqueItems": true,
       "items": {
         "type": "string",
@@ -176,6 +179,35 @@
       "if": {
         "properties": {
           "trust_class": {
+            "const": "T0_BUILTIN"
+          }
+        },
+        "required": [
+          "trust_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "candidate_id": {
+            "type": "null"
+          },
+          "field_certified": {
+            "const": false
+          },
+          "source": {
+            "properties": {
+              "kind": {
+                "const": "BUILTIN"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "trust_class": {
             "const": "T1_VERIFIED_LOCAL"
           }
         },
@@ -185,8 +217,40 @@
       },
       "then": {
         "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200
+          },
           "field_certified": {
             "const": true
+          },
+          "gate_receipts": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "trust_class": {
+            "const": "T2_VERIFIED_REMOTE"
+          }
+        },
+        "required": [
+          "trust_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 200
+          },
+          "gate_receipts": {
+            "minItems": 1
           }
         }
       }
