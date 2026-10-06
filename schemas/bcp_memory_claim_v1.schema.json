@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_memory_claim_v1.schema.json",
+  "title": "BCP Memory Claim V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "claim_id",
+    "project_id",
+    "scope",
+    "memory_key",
+    "category",
+    "payload",
+    "evidence_class",
+    "source",
+    "authority",
+    "provenance",
+    "llm_exportable",
+    "pinned",
+    "idempotency_key",
+    "observed_at"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.memory_claim/1"},
+    "claim_id": {
+      "type": "string",
+      "pattern": "^mcl-[A-Za-z0-9._-]{8,96}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
+    },
+    "scope": {
+      "enum": [
+        "USER_MEMORY",
+        "PROJECT_MEMORY",
+        "TECHNICAL_KNOWLEDGE",
+        "OPERATING_STATE",
+        "HISTORY",
+        "POLICY"
+      ]
+    },
+    "memory_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "category": {
+      "enum": ["NORMATIVE", "DESCRIPTIVE", "DERIVED", "UNTRUSTED_CONTENT"]
+    },
+    "payload": {},
+    "evidence_class": {
+      "enum": [
+        "SYSTEM_POLICY",
+        "USER_DECLARED",
+        "VALIDATED",
+        "MACHINE_READBACK",
+        "MACHINE_VERIFIED",
+        "SOURCE_VERIFIED",
+        "CACHE",
+        "MODEL_PROPOSED",
+        "UNTRUSTED_EXTERNAL",
+        "UNVERIFIED"
+      ]
+    },
+    "source": {"type": "string", "minLength": 1, "maxLength": 160},
+    "authority": {"type": "string", "minLength": 1, "maxLength": 96},
+    "provenance": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "source_revision": {"type": ["string", "null"], "maxLength": 256},
+    "source_hash": {
+      "type": ["string", "null"],
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "sensitivity": {
+      "enum": ["PUBLIC", "INTERNAL", "PRIVATE", "SECRET_NO_STORE"]
+    },
+    "llm_exportable": {"type": "boolean"},
+    "pinned": {"type": "boolean"},
+    "expires_at": {"type": ["string", "null"], "format": "date-time"},
+    "supersedes_claim_id": {
+      "type": ["string", "null"],
+      "pattern": "^mcl-[A-Za-z0-9._-]{8,96}$"
+    },
+    "idempotency_key": {"type": "string", "minLength": 8, "maxLength": 192},
+    "observed_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scope": {"enum": ["USER_MEMORY", "POLICY"]}
+        },
+        "required": ["scope"]
+      },
+      "then": {
+        "properties": {
+          "evidence_class": {
+            "enum": ["SYSTEM_POLICY", "USER_DECLARED", "VALIDATED"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"sensitivity": {"const": "SECRET_NO_STORE"}},
+        "required": ["sensitivity"]
+      },
+      "then": {
+        "properties": {"llm_exportable": {"const": false}}
+      }
+    }
+  ]
+}
