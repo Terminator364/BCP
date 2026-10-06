@@ -499,7 +499,13 @@ def validate_registration(registration: Any) -> dict[str, Any]:
     if registration.get("schema") != "bcp.capability_registration/1":
         raise ValueError("unsupported capability registration")
     _text(registration["registration_id"], "registration_id", 200)
-    _text(registration["candidate_id"], "candidate_id", 200)
+    trust_class = registration["trust_class"]
+    candidate_id = registration.get("candidate_id")
+    if trust_class == "T0_BUILTIN":
+        if candidate_id is not None:
+            raise ValueError("T0 builtin registration must not invent candidate_id")
+    else:
+        _text(candidate_id, "candidate_id", 200)
     project = _text(registration["project_id"], "project_id", 128)
     if not PROJECT_RE.fullmatch(project):
         raise ValueError("invalid registration project")
@@ -509,11 +515,18 @@ def validate_registration(registration: Any) -> dict[str, Any]:
     for field in ("capability_id", "provider_id", "version"):
         if registration[field] != manifest[field]:
             raise ValueError(f"registration {field} does not match manifest")
-    if registration["trust_class"] not in AUTO_TRUST:
+    if trust_class not in AUTO_TRUST:
         raise ValueError("registration requires verified trust class")
+    if trust_class == "T0_BUILTIN":
+        if source["kind"] != "BUILTIN":
+            raise ValueError("T0 registration requires BUILTIN provenance")
+    elif license_info["status"] not in {"APPROVED", "NOT_APPLICABLE"}:
+        raise ValueError("verified capability registration requires approved license")
     refs = registration["gate_receipts"]
-    if not isinstance(refs, list) or not refs or len(refs) != len(set(refs)):
+    if not isinstance(refs, list) or len(refs) != len(set(refs)):
         raise ValueError("invalid registration gate receipts")
+    if trust_class != "T0_BUILTIN" and not refs:
+        raise ValueError("verified registration gate receipts required")
     for ref in refs:
         _text(ref, "registration gate receipt", 200)
     _text(registration.get("source_revision"), "source_revision", 256, optional=True)
@@ -521,8 +534,10 @@ def validate_registration(registration: Any) -> dict[str, Any]:
     field_certified = registration.get("field_certified")
     if type(field_certified) is not bool:
         raise ValueError("field_certified must be boolean")
-    if registration["trust_class"] == "T1_VERIFIED_LOCAL" and field_certified is not True:
+    if trust_class == "T1_VERIFIED_LOCAL" and field_certified is not True:
         raise ValueError("T1 verified-local registration requires field proof")
+    if trust_class == "T0_BUILTIN" and field_certified is not False:
+        raise ValueError("T0 builtin registration is qualified code, not field execution proof")
     out = deepcopy(registration)
     out["manifest"] = manifest
     out["source"] = source
@@ -532,6 +547,8 @@ def validate_registration(registration: Any) -> dict[str, Any]:
 
 def _gate_required(candidate: dict[str, Any], gate: str) -> bool:
     policy = candidate["policy"]
+    if gate == "build_adapter":
+        return candidate["source"]["kind"] == "GENERATED_ADAPTER"
     if gate == "sandbox_test":
         return policy["require_sandbox"]
     if gate == "rollback_test":
