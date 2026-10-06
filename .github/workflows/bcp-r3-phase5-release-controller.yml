@@ -1,0 +1,58 @@
+name: BCP R3 Phase 5 Release Controller
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_release_transaction_v1.schema.json"
+      - "windows/bcp_server_v2.py"
+      - "windows/execution_fabric/release_controller.py"
+      - "tools/test_execution_fabric_phase5_release_controller.py"
+      - "tools/test_execution_fabric_phase5_contracts.py"
+      - "docs/BCP_RELEASE_UPDATE_CONTROLLER_R3_PHASE5_2026-10-05.md"
+      - "docs/examples/execution-fabric/med-rebuild.release-transaction-hold.example.json"
+      - ".github/workflows/bcp-r3-phase5-release-controller.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-phase5-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 5
+        run: |
+          python -m compileall -q             windows/bcp_server_v2.py             windows/execution_fabric/release_controller.py             tools/test_execution_fabric_phase5_release_controller.py             tools/test_execution_fabric_phase5_contracts.py
+
+      - name: Release contract / no-updater guard
+        run: python tools/test_execution_fabric_phase5_contracts.py
+
+      - name: Release transaction safety tests
+        run: python tools/test_execution_fabric_phase5_release_controller.py
+
+      - name: Microkernel selftest
+        run: python windows/bcp_server_v2.py --selftest
+
+      - name: Phase 4 regressions
+        run: |
+          python tools/test_execution_fabric_phase4_contracts.py
+          python tools/test_execution_fabric_phase4_action_receipts.py
+          python tools/test_execution_fabric_phase4_desired_state.py
+          python tools/test_execution_fabric_phase4_incident_recipe.py
+          python tools/test_execution_fabric_phase4_error_ledger_projection.py
+          python tools/test_execution_fabric_phase4_desired_incident.py
+
+      - name: Phase 3 regression
+        run: |
+          python tools/test_execution_fabric_phase3_project_registry.py
+          python tools/test_execution_fabric_phase3_project_adapter.py
+
+      - name: Phase 2 boundary regression
+        run: python tools/test_execution_fabric_phase2_microkernel.py

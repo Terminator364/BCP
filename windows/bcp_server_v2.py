@@ -19,6 +19,7 @@ from execution_fabric.resource_admission import snapshot as resource_snapshot
 from execution_fabric.project_registry import ProjectAliasAmbiguous, ProjectNotFound, ProjectRegistry
 from execution_fabric.desired_state_registry import DesiredStateRegistry, DesiredStateNotFound
 from execution_fabric.incident_recipe import RecipeRegistry
+from execution_fabric.release_controller import ReleaseController
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -208,6 +209,10 @@ def desired_state_registry() -> DesiredStateRegistry:
 
 def recipe_registry() -> RecipeRegistry:
     return RecipeRegistry(critical_store())
+
+
+def release_controller() -> ReleaseController:
+    return ReleaseController(critical_store())
 
 
 def get_head(project_id: str):
@@ -419,6 +424,20 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/v2/resources":
             self.send_json(200, resource_snapshot(APP_ROOT))
+            return
+
+        if path == "/v2/releases":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            items = release_controller().list(project_id=project, limit=512)
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.release_transaction_view/1",
+                    "releases": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
             return
 
         if path == "/v2/projects":
