@@ -659,10 +659,13 @@ class CriticalStore:
             ).fetchall()
         return [
             {
+                "stream_id": stream,
                 "revision": int(r["revision"]),
                 "fencing_token": int(r["fencing_token"]),
                 "content_hash": r["content_hash"],
                 "predecessor_hash": r["predecessor_hash"],
+                "payload": json.loads(bytes(r["payload_json"]).decode("utf-8")),
+                "committed_epoch": float(r["committed_epoch"]),
             }
             for r in rows
         ]
