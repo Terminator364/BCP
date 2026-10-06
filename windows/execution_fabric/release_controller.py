@@ -13,7 +13,7 @@ import re
 from typing import Any
 
 from .critical_store import CriticalStore, RevisionConflict
-from .repair_recipes import RESOURCE_ORDER
+from .resource_admission import RESOURCE_ORDER
 
 RELEASE_PERMISSION_ORDER = {
     "P0_READ": 0,
