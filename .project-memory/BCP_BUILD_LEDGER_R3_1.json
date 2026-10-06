@@ -1,295 +1,208 @@
 {
-  "schema": "bcp.build_ledger/1",
+  "schema": "bcp.build_ledger/2",
   "program": "BCP_AUTONOMIC_EXECUTION_FABRIC",
   "revision": "R3.1-ABC",
-  "created_at": "2026-10-05",
+  "updated_at": "2026-10-06T16:45:00Z",
   "route": "SIM_FIRST",
-  "vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE_EVIDENCE_ONLY",
-  "phase_0a": {
-    "status": "COMPLETE",
-    "source_preflight": {
-      "bcp_main": "accaa6a2ea7169f57d3574e8d202112665de53b2",
-      "bcp_design": "9bc771d9577617ac458e0bfe213d24eb59565b1a",
-      "chatgpt_pc_main": "eb1b293fed51063abe81dacd096e75dc9cbc97b6",
-      "buildhub_main": "18ac5c048acfa6f190713239cd1611952d9ca24c",
-      "pc_command_state_main": "f10913f1fecc678a1c6ccc31758eb753cdb20924",
-      "med_rebuild_pr20_head": "5577e34fe2d138b1df6354c39acf25351809431c",
-      "med_rebuild_pr20_divergence": {
-        "ahead_by": 101,
-        "behind_by": 74,
-        "status": "diverged"
-      },
-      "rfc0001_repo": "Terminator364/ChatGPT-PC",
-      "rfc0001_sha": "a92a79ad6d2918b1c1285425d1d5104c832ce507"
-    },
-    "routing": {
-      "github_repo_static": "PRIMARY",
-      "github_actions": "TARGETED_ONLY_QUOTA_AWARE",
-      "buildhub": "ENABLED_FALLBACK",
-      "pc_native": "FIELD_ONLY",
-      "desktop_commander": "LAST_MILE_METERED_UNKNOWN_TREATED_LOW"
-    },
-    "reuse_map": {
-      "KEEP": [
-        "BCP durable mission/policy/memory authority",
-        "ChatGPT-PC vNext CriticalStore transactional outbox",
-        "ChatGPT-PC WorkerSupervisor + Windows Job Object",
-        "ChatGPT-PC Project Capsule registry",
-        "G6 canonical receipts/readback semantics",
-        "Med Rebuild V1.4 application/updater from PR20",
-        "BuildHub generic build/test/package provider"
-      ],
-      "ADAPT": [
-        "Project Capsule: register MED_REBUILD without inventing PC root",
-        "vNext vertical adapter: durable mission -> bounded native worker -> receipt",
-        "Med Rebuild audit/health operations as typed project capabilities",
-        "field probe: read-only Windows/Med Rebuild inventory"
-      ],
-      "MERGE": [
-        "PR20 Med Rebuild source files onto current ChatGPT-PC main-derived implementation branch",
-        "R3.1 routing policy with existing vNext runtime primitives"
-      ],
-      "RETIRE": [
-        "Desktop Commander as routine Med Rebuild coding/test/update loop",
-        "manual CMD/PowerShell relay as normal recovery path",
-        "parallel project-specific mission kernel"
-      ]
-    },
-    "anti_false_pass": {
-      "field_certified": false,
-      "pc_probe_run": true,
-      "desktop_commander_used": true,
-      "ci_is_not_field_proof": true
-    },
-    "completed_evidence": {
-      "bcp_pr168_head": "9bc771d9577617ac458e0bfe213d24eb59565b1a",
-      "chatgpt_pc_main_at_v181_convergence": "f6bdeb10f87582d80c82e8a34f0a4033f779b38a",
-      "med_rebuild_release_branch": "feat/med-rebuild-study-engine-v1-5",
-      "med_rebuild_release_source_commit": "3b70c8bf9074077fbbad4873aa05ae7e1141cac2",
-      "med_rebuild_target_version": "1.8.1",
-      "exact_release_blobs": "47/47",
-      "curriculum": "3 tomes / 60 modules / 156 fiches",
-      "r3_candidate_pr": 28,
-      "r3_candidate_head": "840ec2a6dbb6a0800ea75091df1fc067c701325f",
-      "r3_ci_run": 37361105748,
-      "r3_ci_status": "IN_PROGRESS",
-      "superseded_pr": 27
-    },
-    "note": "Historical first vertical evidence only. MED-REBUILD is not the primary construction target."
-  },
-  "implementation": {
+  "primary_build_target": "BCP_AUTONOMIC_EXECUTION_FABRIC",
+  "vertical_evidence_only": true,
+  "historical_vertical": "MED_REBUILD_ZERO_TOUCH_NATIVE",
+  "repository": {
     "repo": "Terminator364/BCP",
+    "design_branch": "design/unified-execution-fabric-2026-10-05",
     "design_pr": 168,
-    "phase1_pr": 169,
-    "phase2a_pr": 170,
-    "phase2b_pr": 171,
-    "model": "STACKED_PRS_SIM_FIRST",
-    "med_rebuild": "HISTORICAL_VERTICAL_EVIDENCE_ONLY"
+    "observed_design_head_before_ledger_update": "bf8a720e042396df88cedd38f1191617e1122501",
+    "main_promotion": false
   },
-  "exact_field_probe": {
-    "status": "PHASE2C_TO_BUILD",
-    "expected_path": "windows/BCP_R3_PHASE2_FIELD_PROBE.ps1",
-    "batch_scope": [
-      "actual BCP startup mechanisms",
-      "installed/running BCP variants",
-      "ports/process command lines",
-      "local roots and hashes",
-      "resource snapshot",
-      "Windows Job Object capability and bounded test",
-      "single-primary-trigger feasibility"
-    ],
-    "claims_allowed": [
-      "inventory",
-      "resource snapshot",
-      "runtime/startup observation",
-      "hash receipt",
-      "bounded Job Object field evidence"
-    ],
-    "claims_forbidden": [
-      "field_certified_from_ci",
-      "delete_legacy_startup_before_readback",
-      "invent_local_bindings"
-    ]
+  "doctrine": {
+    "no_reinvent": true,
+    "proof_mandatory": true,
+    "github_primary": true,
+    "sim_first": true,
+    "buildhub_enabled": true,
+    "pc_native": "FIELD_ONLY",
+    "desktop_commander": "LAST_MILE_METERED",
+    "field_batch": 1,
+    "local_llm_initial": false,
+    "ci_is_not_field_proof": true,
+    "conversation_is_not_project_authority": true
   },
-  "next_atomic_work_unit": "PHASE_2C_REPOSITORY_STARTUP_INVENTORY_AND_READ_ONLY_FIELD_PROBE_PACKAGE_THEN_PHASE2_TARGETED_CI_READBACK",
-  "phase_0b": {
-    "status": "FIELD_ACTIVE_V192_CANDIDATE_V193_PENDING_CI",
-    "device": "MBMPC",
-    "latest_readback_at": "2026-10-05T20:03Z",
-    "transport": "DESKTOP_COMMANDER_LAST_MILE",
-    "observed": {
-      "active_version": "1.9.2",
-      "active_source_commit": "85dfad454b7c05fbea5974cd01675e27bba16ef6",
-      "active_health_port_8805": "PASS",
-      "active_build": "2026.10.05-v1.9.2-no-blank-views",
-      "legacy_port_8798": "RESPONDS_V1_9_1_RUNTIME_HARDENING",
-      "rollback_version": "1.5.0",
-      "expected_rollback_lkg": "1.4.0",
-      "updater_agent_version": "1.9.1",
-      "updater_last_result": "AUTH_REQUIRED",
-      "ram_load_pct": 88.1,
-      "resource_governor": {
-        "mode": "STUDENT_ACTIVE",
-        "reason": "INTERACTION_PRIORITY",
-        "rss_mb": 63,
-        "free_ram_mb": 426,
-        "update_check": false,
-        "content_scan": false,
-        "safe_to_activate": true,
-        "active_mission_persisted": true
-      }
+  "phases": {
+    "phase_0a": {
+      "status": "COMPLETE",
+      "objective": "SOURCE_PREFLIGHT_ROUTING_REUSE_MAP"
     },
-    "defects_open": [
-      "ROLLBACK_POINTER_NOT_CANONICAL_LKG_1_4_0",
-      "LEGACY_RUNTIME_8798_STILL_RESPONDING",
-      "SCHEDULED_UPDATER_AUTH_FALSE_NEGATIVE_OR_PATH_CONTEXT",
-      "V1_9_2_UPDATER_USES_GITHUB_CONTENTS_FOR_PAYLOAD"
-    ],
-    "safety": {
-      "no_downgrade_attempted": true,
-      "no_heavy_local_test_due_ram": true,
-      "no_secret_extracted": true
+    "phase_1": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "CONTRACT_CONVERGENCE",
+      "integration_commit": "926074e5d9dfd875c70c1f166267f82b8b0921ec",
+      "pr": 169,
+      "field_certified": false
+    },
+    "phase_2": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "ONE_LIGHTWEIGHT_RESIDENT_PC_MICROKERNEL",
+      "integration_commit": "e60d1772bfbf531e1bd5a22427eb6d4408805357",
+      "invariants": [
+        "CriticalStore fencing/revision/hash/outbox",
+        "local-only SQLite hot authority",
+        "resource admission GREEN/AMBER/RED/CRITICAL",
+        "Windows Job Object worker containment",
+        "no remote free-form shell/argv execution",
+        "single lightweight startup candidate"
+      ],
+      "field_certified": false
+    },
+    "phase_3": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "FENCED_PROJECT_REGISTRY_TYPED_ADAPTER",
+      "integration_commit": "a5f805a1abc2b98f397c1f3208ec43907ae72ac5",
+      "field_certified": false
+    },
+    "phase_4": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "DESIRED_STATE_INCIDENT_RECIPE_RECEIPT_CHAIN",
+      "integration_commits": [
+        "28b6dbc",
+        "e9f21fe",
+        "e05d46b"
+      ],
+      "invariants": [
+        "immutable action receipts",
+        "real receipt required for recipe promotion",
+        "desired generation cannot self-certify observation",
+        "generation-scoped repair episodes",
+        "raw CriticalStore mutations absent from network surface"
+      ],
+      "field_certified": false
+    },
+    "phase_5": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "GENERIC_RELEASE_UPDATE_CONTROLLER",
+      "integration_commits": [
+        "df91abb",
+        "e05d46b"
+      ],
+      "invariants": [
+        "anti-downgrade",
+        "LKG rollback",
+        "exact readback",
+        "stale transaction protection"
+      ],
+      "field_certified": false
+    },
+    "phase_6": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "PROVIDER_NEUTRAL_TRANSPORT_COCKPIT",
+      "integration_commit": "484be5de0778b88e2b7d9c2f8442302f09271d33",
+      "field_certified": false
+    },
+    "phase_7": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "EVIDENCE_GATED_CAPABILITY_FACTORY",
+      "integration_commit": "ecbfc6369065df8f09eb1b15738679d8dc59a5ec",
+      "invariants": [
+        "reuse search before build",
+        "source trust/license gates",
+        "sandbox/resource/rollback/security/canary gates",
+        "immutable capability registration",
+        "P4 separate human lane",
+        "R4 local AI deferred"
+      ],
+      "field_certified": false
+    },
+    "phase_8": {
+      "status": "INTEGRATED_GREEN",
+      "objective": "CROSS_PROJECT_TYPED_ADAPTERS",
+      "integration_commit": "363a05722e09cc2fe425d7765634b1f138bb1f8f",
+      "pr": 181,
+      "projects": [
+        "TLIB",
+        "EXCELLENTIA",
+        "DELIVERY",
+        "BUILDHUB",
+        "PC_COMMAND",
+        "PHONEMOUSE",
+        "P2PCR95"
+      ],
+      "binding_truth": {
+        "TLIB": "SOURCE_UNRESOLVED_NO_INVENTION",
+        "EXCELLENTIA": "REPO_AND_STABLE_RELEASE_MANIFEST_BOUND",
+        "DELIVERY": "REPO_INSPECT_BOUND_RELEASE_MULTI_PROVIDER_WAITING",
+        "BUILDHUB": "REPO_INSPECT_BOUND",
+        "PC_COMMAND": "STATE_BUS_COMPATIBILITY_NOT_ENGINEERING_AUTHORITY",
+        "PHONEMOUSE": "REPO_INSPECT_BOUND",
+        "P2PCR95": "REPO_INSPECT_BOUND"
+      },
+      "targeted_ci": "PASS",
+      "coordinated_qualification": "PASS",
+      "field_ecosystem_preflight": "PASS",
+      "field_certified": false
     }
   },
-  "external_blocker": {
-    "provider": "GITHUB_ACTIONS",
-    "status": "QUEUED_NOT_GLOBAL_BLOCKER",
-    "affected_work": [
-      "PHASE1_CI_PROOF",
-      "PHASE2A_CI_PROOF",
-      "PHASE2B_CI_PROOF"
+  "field_binding_package": {
+    "status": "INTEGRATED_REPOSITORY_GREEN",
+    "integration_commit": "bf8a720e042396df88cedd38f1191617e1122501",
+    "pr": 182,
+    "probe_path": "windows/BCP_R3_CROSS_PROJECT_FIELD_BINDING_PROBE.ps1",
+    "schema_path": "schemas/bcp_cross_project_field_binding_probe_v1.schema.json",
+    "scope": [
+      "BCP",
+      "TLIB",
+      "EXCELLENTIA",
+      "DELIVERY",
+      "BUILDHUB",
+      "PC_COMMAND",
+      "PHONEMOUSE",
+      "P2PCR95"
     ],
-    "independent_repository_work_continues": true,
-    "policy": "NO_DUPLICATE_RERUN; NO_FIELD_PROMOTION_WITHOUT_REQUIRED_GATES"
-  },
-  "vertical_evidence_only": true,
-  "primary_build_target": "BCP_AUTONOMIC_EXECUTION_FABRIC",
-  "phase_1": {
-    "status": "IMPLEMENTED_PENDING_CI",
-    "objective": "CONTRACT_CONVERGENCE",
-    "repo": "Terminator364/BCP",
-    "branch": "build/execution-fabric-r3-phase1-contracts-20261005",
-    "pr": 169,
-    "head": "e981364e9e33269c9258d2829c8d2689ed714d99",
-    "base": "design/unified-execution-fabric-2026-10-05",
-    "deliverables": [
-      "schemas/bcp_project_record_v1.schema.json",
-      "schemas/bcp_action_receipt_v1.schema.json",
-      "schemas/bcp_mission_ingress_v1.schema.json",
-      "schemas/bcp_capability_observation_v1.schema.json",
-      "docs/BCP_EXECUTION_FABRIC_CONTRACT_CONVERGENCE_R3_PHASE1_2026-10-05.md",
-      "tools/test_execution_fabric_phase1_contracts.py"
-    ],
-    "reused": [
-      "bcp.mission_envelope/2",
-      "bcp.capability_manifest/1",
-      "bcp.capability_grant/1",
-      "bcp.desired_state_resource/1",
-      "B-EDGE Project/Receipt/Capability entities",
-      "ChatGPT-PC Project Capsule",
-      "G6 mission/journal contracts",
-      "vNext fencing/revision/hash/outbox semantics"
-    ],
-    "targeted_ci": {
-      "run_id": 37372708453,
-      "status": "QUEUED"
+    "safety": {
+      "read_only_system_probe": true,
+      "no_process_mutation": true,
+      "no_task_mutation": true,
+      "no_service_mutation": true,
+      "no_registry_mutation": true,
+      "no_remote_network_discovery": true,
+      "no_recursive_disk_crawl": true,
+      "command_line_redaction": true,
+      "candidate_is_not_binding": true
     },
-    "accidental_global_ci": {
-      "run_id": 37372708339,
-      "status": "QUEUED",
-      "classification": "ROUTING_DEFECT"
+    "repository_gate": {
+      "schema_parse": "PASS",
+      "no_mutation_guard": "PASS",
+      "powershell_parse": "PASS",
+      "phase8_regression": "PASS"
     },
     "field_certified": false
   },
-  "phase_2": {
-    "status": "IN_PROGRESS",
-    "objective": "ONE_LIGHTWEIGHT_RESIDENT_PC_MICROKERNEL",
-    "architectural_decision": {
-      "target": "windows/bcp_server_v2.py",
-      "compatibility_monolith": "windows/bcp_server.py",
-      "no_third_server": true,
-      "shared_local_db": "bcp.sqlite3",
-      "provider_specific_logic_outside_core": true
-    },
-    "phase_2a": {
-      "status": "IMPLEMENTED_PENDING_CI",
-      "branch": "build/execution-fabric-r3-phase2-microkernel-20261005",
-      "pr": 170,
-      "head": "1e2787821ac3bc9846f89352a066143fb584a9d8",
-      "reused_source_commit": "6bf6e32b36008957dda014542742657af6b9e017",
-      "reused": [
-        "CriticalStore",
-        "local_path_policy"
-      ],
-      "features": [
-        "writer fencing",
-        "revision compare-and-swap",
-        "hash chain",
-        "transactional state+outbox",
-        "idempotent exact replay",
-        "outbox claim leases/backoff",
-        "local-only SQLite authority"
-      ],
-      "targeted_ci": {
-        "run_id": 37373207503,
-        "status": "QUEUED"
-      },
-      "field_certified": false
-    },
-    "phase_2b": {
-      "status": "IMPLEMENTED_PENDING_CI",
-      "branch": "build/execution-fabric-r3-phase2b-workers-20261005",
-      "pr": 171,
-      "head": "743b90e274c64eae8a640fef641020c362f0d135",
-      "reused_source_commit": "6bf6e32b36008957dda014542742657af6b9e017",
-      "reused": [
-        "WorkerSupervisor",
-        "worker_bootstrap",
-        "Windows Job Object design"
-      ],
-      "added": [
-        "resource_admission"
-      ],
-      "invariants": [
-        "no arbitrary shell/argv HTTP endpoint",
-        "typed worker primitive only",
-        "bounded stdout/stderr",
-        "bounded inline input",
-        "process/job memory caps",
-        "timeout tree termination",
-        "GREEN/AMBER/RED/CRITICAL admission",
-        "R4 local AI remains policy gated"
-      ],
-      "targeted_ci": {
-        "run_id": 37373732966,
-        "status": "QUEUED"
-      },
-      "field_certified": false
-    },
-    "phase_2c": {
-      "status": "NEXT_REPOSITORY_WORK",
-      "objective": "STARTUP_CONSOLIDATION_AND_ONE_BATCHED_FIELD_PROBE",
-      "field_batch": 1
-    }
+  "field_execution": {
+    "device": "MBMPC",
+    "transport": "DESKTOP_COMMANDER_LAST_MILE",
+    "status": "ATTEMPTED_UNVERIFIED_DEVICE_OFFLINE",
+    "remote_budget_observed_before_attempt_pct_remaining": 73,
+    "probe_transfer": "ATTEMPTED_UNVERIFIED",
+    "probe_execution": "ATTEMPTED_TIMEOUT_NO_RESPONSE",
+    "evidence_readback": "UNAVAILABLE_DEVICE_OFFLINE",
+    "duplicate_retry_performed": false,
+    "device_status_after_attempt": "OFFLINE",
+    "claims_allowed": [
+      "repository package is green",
+      "field attempt occurred",
+      "device became unavailable before readback"
+    ],
+    "claims_forbidden": [
+      "probe completed",
+      "evidence file exists",
+      "local root is bound",
+      "runtime is field certified",
+      "Phase 8 is field certified"
+    ]
   },
-  "routing_incidents": [
-    {
-      "id": "CI_OVERTRIGGER_PR169",
-      "provider": "GITHUB_ACTIONS",
-      "symptom": "BCP Coordinated Product Qualification queued in addition to targeted Phase 1 gate",
-      "policy_effect": "DO_NOT_RERUN_DUPLICATES; continue repository work"
-    },
-    {
-      "id": "CI_OVERTRIGGER_PR170_PR171",
-      "provider": "GITHUB_ACTIONS",
-      "symptom": "Global Product Qualification and Field Ecosystem Preflight also queue on stacked R3 PRs",
-      "policy_effect": "TREAT_AS_ROUTING_DEFECT; targeted gates remain authoritative for tranche proof"
-    },
-    {
-      "id": "GITHUB_RUNNER_QUEUE",
-      "provider": "GITHUB_ACTIONS",
-      "symptom": "targeted R3 gates remain queued",
-      "policy_effect": "WAITING_PROVIDER only for dependent CI proof; independent construction continues"
-    }
-  ]
+  "ci_routing": {
+    "status": "OVERTRIGGER_DEFECT_OPEN",
+    "policy": "NO_DUPLICATE_RERUN; targeted gates authoritative for tranche proof; generic queues must not create false blockers for non-runtime docs/probe deltas",
+    "note": "Global workflows were green for Phase 8; generic runs for the read-only field-package delta remained pending when PR182 was merged after its specialized gate passed."
+  },
+  "next_atomic_work_unit": "WHEN_MBMPC_ONLINE_READ_BACK_EXISTING_FIELD_PROBE_RESULT_BEFORE_ANY_RETRY;_IF_ABSENT_RUN_EXACTLY_ONE_READ_ONLY_PROBE;ADJUDICATE_BINDINGS_WITH_BCP_READBACK;UPDATE_LEDGER",
+  "field_certified": false
 }
