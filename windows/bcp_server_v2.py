@@ -21,6 +21,7 @@ from execution_fabric.desired_state_registry import DesiredStateRegistry, Desire
 from execution_fabric.incident_recipe import RecipeRegistry
 from execution_fabric.release_controller import ReleaseController
 from execution_fabric.transport_cockpit import TransportController
+from execution_fabric.capability_factory import CapabilityFactory
 
 APP_ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "ChatGPT_ManagedApps" / "bcp"
 STATE_DIR = APP_ROOT / "state"
@@ -218,6 +219,10 @@ def release_controller() -> ReleaseController:
 
 def transport_controller() -> TransportController:
     return TransportController(critical_store())
+
+
+def capability_factory() -> CapabilityFactory:
+    return CapabilityFactory(critical_store())
 
 
 def get_head(project_id: str):
@@ -459,6 +464,48 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "schema": "bcp.transport_delivery_view/1",
                     "deliveries": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/capability-factory":
+            project = str((query.get("project") or [""])[0]).strip() or None
+            try:
+                items = capability_factory().list(project_id=project, limit=512)
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "invalid_capability_factory_query", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.capability_factory_view/1",
+                    "project_id": project,
+                    "candidates": items,
+                    "count": len(items),
+                    "field_certified": False,
+                },
+            )
+            return
+
+        if path == "/v2/capabilities":
+            try:
+                items = capability_factory().registry.list(limit=1024)
+            except Exception as exc:
+                self.send_json(
+                    400,
+                    {"error": "capability_registry_query_failed", "detail": str(exc)[:240]},
+                )
+                return
+            self.send_json(
+                200,
+                {
+                    "schema": "bcp.capability_registry_view/1",
+                    "registrations": items,
                     "count": len(items),
                     "field_certified": False,
                 },
