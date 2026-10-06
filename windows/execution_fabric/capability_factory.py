@@ -48,13 +48,6 @@ EFFECT_PERMISSION = {
 }
 AUTO_TRUST = {"T0_BUILTIN", "T1_VERIFIED_LOCAL", "T2_VERIFIED_REMOTE"}
 FACTORY_PROMOTED_TRUST = {"T1_VERIFIED_LOCAL", "T2_VERIFIED_REMOTE"}
-EFFECT_TO_PERMISSION = {
-    "READ_ONLY": "P0_READ",
-    "SAFE_WRITE": "P1_SAFE_WRITE",
-    "PROJECT_MUTATION": "P2_PROJECT_MUTATION",
-    "BOUNDED_SYSTEM_CHANGE": "P3_BOUNDED_SYSTEM_CHANGE",
-    "DESTRUCTIVE_OR_SECURITY_SENSITIVE": "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE",
-}
 FORBIDDEN_INPUT_KEYS = {
     "command", "argv", "shell", "script", "executable",
     "powershell", "cmd", "commandline", "command_line",
@@ -273,8 +266,6 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
         raise ValueError("effect_class/permission_class semantic mismatch")
     if manifest.get("resource_class") not in RESOURCE_ORDER:
         raise ValueError("invalid resource_class")
-    if manifest["permission_class"] != EFFECT_TO_PERMISSION[manifest["effect_class"]]:
-        raise ValueError("effect_class and permission_class must match")
     if not isinstance(manifest.get("input_schema"), dict):
         raise ValueError("input_schema must be object")
     forbidden_input = _find_forbidden_input(manifest["input_schema"])
@@ -303,8 +294,6 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
     if timeout is not None and (type(timeout) is not int or timeout < 1 or timeout > 86400):
         raise ValueError("invalid timeout_seconds")
     rollback = manifest.get("rollback")
-    if manifest.get("requires_admin") is True and PERMISSION_ORDER[manifest["permission_class"]] < PERMISSION_ORDER["P3_BOUNDED_SYSTEM_CHANGE"]:
-        raise ValueError("admin capability cannot be declared below P3")
     if manifest["permission_class"] in {"P2_PROJECT_MUTATION", "P3_BOUNDED_SYSTEM_CHANGE"}:
         if not isinstance(rollback, dict) or rollback.get("required") is not True:
             raise ValueError("P2/P3 capability requires explicit rollback")
@@ -740,6 +729,8 @@ class CapabilityFactory:
             raise ValueError("MODEL executor qualification is deferred to Phase 10")
         if not policy["require_sandbox"] or not policy["require_security_test"] or not policy["require_canary"]:
             raise ValueError("automatic factory requires sandbox, security test and canary")
+        if isinstance(manifest.get("rollback"), dict) and manifest["rollback"].get("required") is True and not policy["require_rollback"]:
+            raise ValueError("factory policy cannot disable required rollback test")
         if trust_class == "T4_QUARANTINED":
             stage, status = "QUARANTINED", "HOLD"
             failure = {"code": "SOURCE_QUARANTINED", "detail": "source trust class is T4"}
