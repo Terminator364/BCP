@@ -72,6 +72,18 @@ for required in (
 ):
     assert required in planner, required
 
+for required in (
+    "P3 recipe requires field_evidence_required=true",
+    "capability_states object required",
+    "WAITING_CAPABILITY",
+    "CAPABILITY_",
+    "observation.observed object required",
+):
+    assert required in planner, required
+
+# A provider-supplied boolean may never be a trust input for reconciliation.
+assert '"matches_desired"' not in planner
+
 assert "subprocess" not in planner
 assert "os.system" not in planner
 assert "shell=True" not in planner
