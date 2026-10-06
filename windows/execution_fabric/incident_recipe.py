@@ -292,6 +292,13 @@ def validate_recipe(recipe: Any) -> dict[str, Any]:
     if not isinstance(notes, list) or not all(isinstance(x, str) and len(x) <= 1000 for x in notes):
         raise RecipeValidationError("invalid notes")
 
+    system_change = (
+        recipe["max_permission_class"] == "P3_BOUNDED_SYSTEM_CHANGE"
+        or any(step["permission_class"] == "P3_BOUNDED_SYSTEM_CHANGE" for step in steps)
+    )
+    if system_change and validation["field_evidence_required"] is not True:
+        raise RecipeValidationError("P3 recipe requires field_evidence_required=true")
+
     if status == "VALIDATED":
         if not receipts or not regressions:
             raise RecipeValidationError("validated recipe needs successful receipt and regression")
@@ -755,36 +762,47 @@ class ReconcilePlanner:
         self.incidents = incidents
         self.recipes = recipes
 
+    @staticmethod
+    def _capability_state(value: Any) -> str:
+        if isinstance(value, dict):
+            return str(value.get("state") or "UNKNOWN").upper()
+        return str(value or "UNKNOWN").upper()
+
     def plan(
         self,
         desired_resource: dict[str, Any],
         observation: dict[str, Any],
         *,
+        capability_states: dict[str, Any],
         environment_fingerprint: str,
         resource_mode: str,
         observed_at: str,
         owner_id: str,
     ) -> dict[str, Any]:
         desired_resource = validate_resource(desired_resource)
-        if not isinstance(observation, dict) or set(observation) - {"matches_desired","symptoms","evidence_refs","observed"}:
+        if not isinstance(observation, dict) or set(observation) - {"observed", "symptoms", "evidence_refs"}:
             raise ValueError("invalid observation fields")
-        if "observed" in observation:
-            if not isinstance(observation["observed"], dict):
-                raise ValueError("observation.observed must be object")
-            drift = deep_drift(desired_resource["spec"]["desired"], observation["observed"])
-            matches_desired = not drift
-            symptoms = observation.get("symptoms")
-            if not matches_desired and not symptoms:
-                symptoms = {
-                    "kind": "DESIRED_STATE_DRIFT",
-                    "drift_paths": [item["path"] for item in drift],
-                }
-        else:
-            if type(observation.get("matches_desired")) is not bool:
-                raise ValueError("observation.matches_desired boolean required")
-            matches_desired = observation["matches_desired"]
-            drift = []
-            symptoms = observation.get("symptoms")
+        observed = observation.get("observed")
+        if not isinstance(observed, dict):
+            raise ValueError("observation.observed object required")
+        if not isinstance(capability_states, dict):
+            raise ValueError("capability_states object required")
+
+        drift = deep_drift(desired_resource["spec"]["desired"], observed)
+        symptoms = observation.get("symptoms")
+        if drift and not symptoms:
+            symptoms = {
+                "kind": "DESIRED_STATE_DRIFT",
+                "drift_paths": [item["path"] for item in drift],
+            }
+        evidence_refs = observation.get("evidence_refs") or []
+        if (
+            not isinstance(evidence_refs, list)
+            or len(evidence_refs) != len(set(evidence_refs))
+            or not all(isinstance(x, str) and 0 < len(x) <= 512 for x in evidence_refs)
+        ):
+            raise ValueError("invalid observation evidence_refs")
+
         strict_iso(observed_at, "observed_at")
         if not isinstance(environment_fingerprint, str) or not environment_fingerprint.strip() or len(environment_fingerprint) > 512:
             raise ValueError("invalid environment_fingerprint")
@@ -804,15 +822,14 @@ class ReconcilePlanner:
             "field_certified": False,
         }
 
-        if matches_desired is True:
+        if not drift:
             self.incidents.resolve_resource(
                 project_id,
                 resource_id,
                 owner_id=owner_id,
                 observed_at=observed_at,
             )
-            return {**base, "decision": "IN_SYNC", "reason": "OBSERVATION_MATCHES_DESIRED"}
-
+            return {**base, "decision": "IN_SYNC", "reason": "OBSERVED_STATE_MATCHES_DESIRED"}
 
         if not isinstance(symptoms, dict) or not symptoms:
             return {**base, "decision": "NEEDS_REASONING", "reason": "DRIFT_WITHOUT_CAUSAL_SYMPTOMS"}
@@ -876,6 +893,15 @@ class ReconcilePlanner:
             )
             if not admission.allowed:
                 return {**base, "decision": "WAITING_RESOURCE", "reason": admission.reason}
+
+            capability_state = self._capability_state(capability_states.get(step["capability_id"]))
+            if capability_state != "AVAILABLE":
+                return {
+                    **base,
+                    "decision": "WAITING_CAPABILITY",
+                    "reason": "CAPABILITY_" + capability_state,
+                }
+
             steps.append({
                 "step_id": step["step_id"],
                 "capability_id": step["capability_id"],

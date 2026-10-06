@@ -150,6 +150,21 @@ class Phase4ConvergenceTests(unittest.TestCase):
             "FRICTION",
         )
 
+    def test_provider_boolean_cannot_override_observed_drift(self):
+        with self.assertRaisesRegex(ValueError, "observation fields"):
+            self.planner.plan(
+                desired(),
+                {
+                    "matches_desired": True,
+                    "observed": {"enabled": False, "version": "1"},
+                },
+                capability_states={},
+                environment_fingerprint="sim",
+                resource_mode="GREEN",
+                observed_at="2026-10-06T14:04:00Z",
+                owner_id="observer",
+            )
+
     def test_action_pass_does_not_recover_until_fresh_conforming_observation(self):
         symptoms = {"kind": "DESIRED_STATE_DRIFT", "drift_paths": ["$/enabled"]}
         incident = self.incidents.observe(
@@ -186,6 +201,7 @@ class Phase4ConvergenceTests(unittest.TestCase):
         result = self.planner.plan(
             desired(),
             {"observed": {"enabled": True, "version": "1", "extra": "ok"}},
+            capability_states={},
             environment_fingerprint="sim",
             resource_mode="GREEN",
             observed_at="2026-10-06T14:05:00Z",

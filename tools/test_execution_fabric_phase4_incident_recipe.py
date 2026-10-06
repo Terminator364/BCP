@@ -161,7 +161,11 @@ class IncidentRecipeTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def observation(self):
-        return {"matches_desired": False, "symptoms": copy.deepcopy(SYMPTOMS)}
+        return {
+            "observed": {"healthy": False, "port": 8765},
+            "symptoms": copy.deepcopy(SYMPTOMS),
+            "evidence_refs": [],
+        }
 
     def promote(self, rec=None, *, field_refs=None):
         rec = rec or candidate()
@@ -191,10 +195,21 @@ class IncidentRecipeTests(unittest.TestCase):
             field_evidence_refs=field_refs,
         )
 
-    def plan(self, ds=None, *, mode="GREEN", at="2026-10-05T21:32:00Z"):
+    def plan(
+        self,
+        ds=None,
+        *,
+        mode="GREEN",
+        at="2026-10-05T21:32:00Z",
+        capabilities=None,
+    ):
         return self.planner.plan(
             ds or desired(),
             self.observation(),
+            capability_states=(
+                {"bcp.runtime.restart": {"state": "AVAILABLE"}}
+                if capabilities is None else capabilities
+            ),
             environment_fingerprint="windows-11-4gb",
             resource_mode=mode,
             observed_at=at,
@@ -232,6 +247,14 @@ class IncidentRecipeTests(unittest.TestCase):
                 regression_refs=[],
                 promoted_at="2026-10-05T21:31:00Z",
             )
+
+    def test_p3_recipe_requires_field_evidence_even_if_author_omits_it(self):
+        rec = candidate(
+            perm="P3_BOUNDED_SYSTEM_CHANGE",
+            field_required=False,
+        )
+        with self.assertRaisesRegex(RecipeValidationError, "P3 recipe"):
+            self.recipes.register_candidate(rec, owner_id="author")
 
     def test_field_required_recipe_needs_field_evidence(self):
         rec = candidate(field_required=True)
@@ -324,6 +347,14 @@ class IncidentRecipeTests(unittest.TestCase):
         self.assertEqual(plan["decision"], "POLICY_BLOCKED")
         self.assertIn("RESOURCE", plan["reason"])
 
+    def test_unavailable_capability_defers_without_execution(self):
+        self.promote()
+        plan = self.plan(
+            capabilities={"bcp.runtime.restart": {"state": "TEMP_UNAVAILABLE"}}
+        )
+        self.assertEqual(plan["decision"], "WAITING_CAPABILITY")
+        self.assertEqual(plan["steps"], [])
+
     def test_current_resource_pressure_defers_without_execution(self):
         rec = candidate(resource="R2_MEDIUM", perm="P1_SAFE_WRITE")
         self.promote(rec)
@@ -401,7 +432,11 @@ class IncidentRecipeTests(unittest.TestCase):
     def test_in_sync_needs_no_incident_or_recipe(self):
         plan = self.planner.plan(
             desired(),
-            {"matches_desired": True},
+            {
+                "observed": {"healthy": True, "port": 8765, "extra": "ignored"},
+                "evidence_refs": [],
+            },
+            capability_states={},
             environment_fingerprint="windows-11-4gb",
             resource_mode="GREEN",
             observed_at="2026-10-05T21:32:00Z",
@@ -410,6 +445,21 @@ class IncidentRecipeTests(unittest.TestCase):
         self.assertEqual(plan["decision"], "IN_SYNC")
         self.assertIsNone(plan["incident_id"])
         self.assertEqual(self.incidents.store.list_states("incident/"), [])
+
+    def test_provider_matches_desired_claim_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "observation fields"):
+            self.planner.plan(
+                desired(),
+                {
+                    "matches_desired": True,
+                    "observed": {"healthy": False, "port": 8765},
+                },
+                capability_states={},
+                environment_fingerprint="windows-11-4gb",
+                resource_mode="GREEN",
+                observed_at="2026-10-05T21:32:00Z",
+                owner_id="planner",
+            )
 
 
 if __name__ == "__main__":

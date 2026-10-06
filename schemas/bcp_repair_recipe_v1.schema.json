@@ -251,6 +251,32 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "max_permission_class": {
+            "const": "P3_BOUNDED_SYSTEM_CHANGE"
+          }
+        },
+        "required": [
+          "max_permission_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "validation": {
+            "properties": {
+              "field_evidence_required": {
+                "const": true
+              }
+            },
+            "required": [
+              "field_evidence_required"
+            ]
+          }
+        }
+      }
     }
   ]
 }
