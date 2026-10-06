@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_reconcile_plan_v1.schema.json",
+  "title": "BCP Reconcile Plan V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "resource_id",
+    "project_id",
+    "desired_generation",
+    "decision",
+    "reason",
+    "steps",
+    "field_certified"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.reconcile_plan/1"
+    },
+    "resource_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "desired_generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "incident_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "recipe_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "decision": {
+      "enum": [
+        "IN_SYNC",
+        "OBSERVE_ONLY_DRIFT",
+        "EXECUTE_TYPED_PLAN",
+        "WAITING_BACKOFF",
+        "WAITING_RESOURCE",
+        "WAITING_CAPABILITY",
+        "POLICY_BLOCKED",
+        "NEEDS_REASONING",
+        "FAILED_SAFE"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "steps": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "step_id",
+          "capability_id",
+          "permission_class",
+          "resource_class",
+          "input",
+          "evidence_contract"
+        ],
+        "properties": {
+          "step_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "capability_id": {
+            "type": "string",
+            "maxLength": 128,
+            "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+          },
+          "permission_class": {
+            "type": "string",
+            "enum": [
+              "P0_READ",
+              "P1_SAFE_WRITE",
+              "P2_PROJECT_MUTATION",
+              "P3_BOUNDED_SYSTEM_CHANGE"
+            ]
+          },
+          "resource_class": {
+            "type": "string",
+            "enum": [
+              "R0_TINY",
+              "R1_LIGHT",
+              "R2_MEDIUM",
+              "R3_HEAVY"
+            ]
+          },
+          "input": {
+            "type": "object"
+          },
+          "evidence_contract": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "EXIT_CODE",
+                "FILE_READBACK",
+                "HASH",
+                "PROCESS_HEALTH",
+                "HTTP_HEALTH",
+                "SERVICE_STATE",
+                "GIT_REVISION",
+                "TEST_RESULT",
+                "ARTIFACT_SIGNATURE",
+                "PROVIDER_ACK",
+                "DESTINATION_READBACK",
+                "CUSTOM_VALIDATOR"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "optional": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "field_certified": {
+      "const": false
+    }
+  }
+}
