@@ -183,6 +183,27 @@ def validate_resource(resource: Any) -> dict[str, Any]:
 
     return copy.deepcopy(resource)
 
+def deep_drift(desired: Any, observed: Any, path: str = "$") -> list[dict[str, Any]]:
+    """Deterministic subset drift: extra observed fields are tolerated."""
+    out: list[dict[str, Any]] = []
+    if isinstance(desired, dict):
+        if not isinstance(observed, dict):
+            return [{"path": path, "reason": "TYPE_MISMATCH", "expected": desired, "observed": observed}]
+        for key in sorted(desired):
+            escaped = str(key).replace("~", "~0").replace("/", "~1")
+            child = f"{path}/{escaped}"
+            if key not in observed:
+                out.append({"path": child, "reason": "MISSING", "expected": desired[key], "observed": None})
+            else:
+                out.extend(deep_drift(desired[key], observed[key], child))
+    elif isinstance(desired, list):
+        if not isinstance(observed, list) or desired != observed:
+            out.append({"path": path, "reason": "VALUE_MISMATCH", "expected": desired, "observed": observed})
+    elif desired != observed:
+        out.append({"path": path, "reason": "VALUE_MISMATCH", "expected": desired, "observed": observed})
+    return out
+
+
 def _spec_projection(resource: dict[str, Any]) -> dict[str, Any]:
     metadata = dict(resource["metadata"])
     # updated_at is metadata about the write, not desired semantics.
@@ -225,6 +246,12 @@ class DesiredStateRegistry:
             }
             for x in states
         ]
+
+    def drift(self, project_id: str, resource_id: str, observed: dict[str, Any]) -> list[dict[str, Any]]:
+        item = self.get(project_id, resource_id)
+        if not isinstance(observed, dict):
+            raise ValueError("observed must be object")
+        return deep_drift(item["resource"]["spec"]["desired"], observed)
 
     def put_spec(self, resource: dict[str, Any], *, owner_id: str) -> dict[str, Any]:
         incoming = validate_resource(resource)
@@ -352,5 +379,6 @@ __all__ = [
     "DesiredStateNotFound",
     "DesiredGenerationConflict",
     "validate_resource",
+    "deep_drift",
     "stream_id",
 ]
