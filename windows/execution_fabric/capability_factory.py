@@ -406,6 +406,13 @@ def validate_candidate(candidate: Any) -> dict[str, Any]:
     return out
 
 
+def _gate_idempotency(candidate_id: str, gate: str) -> str:
+    candidate = _text(candidate_id, "candidate_id", 200)
+    if gate not in GATE_SEQUENCE:
+        raise ValueError("invalid factory gate")
+    return f"factory:{candidate}:{gate}"
+
+
 def _registration_id(candidate: dict[str, Any]) -> str:
     m = candidate["proposed_manifest"]
     digest = _hash_obj({
@@ -716,6 +723,7 @@ class CapabilityFactory:
             "target_scope": scope,
             "input": {
                 "candidate_id": candidate_id,
+                "idempotency_key": _gate_idempotency(candidate_id, current_gate),
                 "requested_capability_id": candidate["requested_capability_id"],
                 "source": deepcopy(candidate["source"]),
                 "trust_class": candidate["trust_class"],
@@ -760,10 +768,16 @@ class CapabilityFactory:
         except (ActionReceiptError, ActionReceiptValidationError) as exc:
             raise CandidateTransitionError("factory gate receipt invalid: " + str(exc)) from exc
         receipt = receipt_state["payload"]
+        if receipt["idempotency_key"] != _gate_idempotency(candidate_id, gate):
+            raise CandidateTransitionError("receipt idempotency key does not match candidate gate")
         if receipt["capability_id"] != GATE_CAPABILITY[gate]:
             raise CandidateTransitionError("receipt capability does not match factory gate")
         if SCOPE_ORDER[receipt["proof_scope"]] < SCOPE_ORDER[min_scope]:
             raise CandidateTransitionError("receipt proof scope below gate requirement")
+        source_revision = candidate["source"].get("revision")
+        receipt_revision = receipt.get("source_revision")
+        if source_revision is not None and receipt_revision is not None and receipt_revision != source_revision:
+            raise CandidateTransitionError("receipt source revision does not match candidate")
         pass_kinds = {
             item["kind"] for item in receipt.get("evidence") or []
             if item.get("status") == "PASS"
