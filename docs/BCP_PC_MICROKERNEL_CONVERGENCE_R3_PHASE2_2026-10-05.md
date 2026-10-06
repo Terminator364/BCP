@@ -217,3 +217,23 @@ The only initial failure was a static-test escaping bug for the Windows Run-key 
 Before accepting that green path, a second security counter-audit found the raw CriticalStore POST endpoints too broad. They were removed before promotion.
 
 CI routing was also hardened with workflow concurrency/cancel-in-progress so superseded Phase 2 runs do not consume targeted runner budget unnecessarily.
+
+
+## MBMPC resource calibration — 2026-10-06
+
+Field/user operating reality supersedes the original conservative raw-load thresholds.
+
+Observed baseline:
+- approximately 4 GiB RAM;
+- Windows commonly operates between **80% and 95% physical-RAM load** during normal use;
+- foreground user interaction must remain the priority.
+
+Therefore the Resource Admission Controller is **headroom-first**, not load-percent-first:
+- 80–95% RAM load is a normal band when physical/pagefile/disk headroom is still healthy;
+- AMBER starts from real pressure (for example <160 MiB physical headroom, >=96% load, or low commit/pagefile headroom);
+- RED/CRITICAL are reserved for progressively smaller real headroom, >=98/99% load, or disk/pagefile exhaustion;
+- a GREEN machine may still reject an R2/R3 worker when the worker memory cap plus foreground reserve would consume the remaining headroom;
+- background work remains stricter than foreground work;
+- all heavy work stays bounded, serialized and stream/chunk oriented.
+
+This calibration does not make high RAM consumption desirable; it prevents BCP from treating the machine's normal Windows baseline as a fault.
