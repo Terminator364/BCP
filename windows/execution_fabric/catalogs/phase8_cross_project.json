@@ -1,0 +1,1244 @@
+{
+  "schema": "bcp.cross_project_catalog/1",
+  "created_at": "2026-10-06T16:10:00Z",
+  "projects": [
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "TLIB",
+      "display_name": "TLIB Hybrid V2",
+      "aliases": [
+        "TLIB",
+        "Total Library"
+      ],
+      "profile": "KNOWLEDGE_CORPUS",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "UNRESOLVED",
+        "runtime": "PC",
+        "artifacts": "UNRESOLVED",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "UNRESOLVED",
+            "repository": null,
+            "branch": null,
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R2_MEDIUM",
+        "heavy_work": false,
+        "offline_capable": true,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P2_PROJECT_MUTATION",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "TLIB_REPOSITORY_BINDING_UNRESOLVED_2026-10-06",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "Historical deployment evidence exists, but Phase 8 does not infer a canonical source repository from audit references."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    },
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "EXCELLENTIA",
+      "display_name": "Excellentia Study Hub",
+      "aliases": [
+        "Excellentia",
+        "Excellentia Study Cockpit"
+      ],
+      "profile": "KNOWLEDGE_CORPUS",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "GITHUB",
+        "runtime": "PC",
+        "artifacts": "MIXED",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "BOUND",
+            "repository": "Terminator364/ChatGPT-PC",
+            "branch": "main",
+            "path": "excellentia-study-cockpit",
+            "authority": "ENGINEERING"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R2_MEDIUM",
+        "heavy_work": false,
+        "offline_capable": true,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P2_PROJECT_MUTATION",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "BCP owns orchestration/evidence; Excellentia keeps project-specific study state and release semantics."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    },
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "DELIVERY",
+      "display_name": "ChatGPT Delivery",
+      "aliases": [
+        "Delivery",
+        "ChatGPT Delivery"
+      ],
+      "profile": "DELIVERY_PROVIDER",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "GITHUB",
+        "runtime": "PC_DRIVE",
+        "artifacts": "DRIVE",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "BOUND",
+            "repository": "Terminator364/ChatGPT-PC",
+            "branch": "main",
+            "path": "chatgpt-delivery",
+            "authority": "ENGINEERING"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R2_MEDIUM",
+        "heavy_work": false,
+        "offline_capable": false,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P2_PROJECT_MUTATION",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "Delivery remains its own transport/provider implementation; BCP consumes typed Delivery capabilities rather than duplicating its queue/runtime."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    },
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "BUILDHUB",
+      "display_name": "BuildHub",
+      "aliases": [
+        "BuildHub"
+      ],
+      "profile": "SPECIALIZED_EXECUTOR",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "GITHUB",
+        "runtime": "UNRESOLVED",
+        "artifacts": "BUILDHUB",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "BOUND",
+            "repository": "Terminator364/BuildHub",
+            "branch": "main",
+            "path": null,
+            "authority": "ENGINEERING"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R2_MEDIUM",
+        "heavy_work": true,
+        "offline_capable": false,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P2_PROJECT_MUTATION",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "18ac5c048acfa6f190713239cd1611952d9ca24c",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "BuildHub is a provider/executor candidate; repository presence alone does not certify live execution availability."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    },
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "PC_COMMAND",
+      "display_name": "PC COMMAND",
+      "aliases": [
+        "PC Command",
+        "PC-COMMAND"
+      ],
+      "profile": "SPECIALIZED_EXECUTOR",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "UNRESOLVED",
+        "runtime": "PC",
+        "artifacts": "UNRESOLVED",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "BOUND",
+            "repository": "Terminator364/PC-COMMAND-STATE",
+            "branch": "main",
+            "path": null,
+            "authority": "COMPATIBILITY"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R2_MEDIUM",
+        "heavy_work": false,
+        "offline_capable": true,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P3_BOUNDED_SYSTEM_CHANGE",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "f10913f1fecc678a1c6ccc31758eb753cdb20924",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "PC-COMMAND-STATE is observed as the private state bus, not asserted as engineering source."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    },
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "PHONEMOUSE",
+      "display_name": "PhoneMouse",
+      "aliases": [
+        "PhoneMouse"
+      ],
+      "profile": "SPECIALIZED_EXECUTOR",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "GITHUB",
+        "runtime": "PC",
+        "artifacts": "UNRESOLVED",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "BOUND",
+            "repository": "Terminator364/PhoneMouse",
+            "branch": "main",
+            "path": null,
+            "authority": "ENGINEERING"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R1_LIGHT",
+        "heavy_work": false,
+        "offline_capable": true,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P3_BOUNDED_SYSTEM_CHANGE",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "397ad5e1aac7d1b5ef53a6dec52655e907a80d44",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "Repository is observed; local runtime/root and consequential control operations remain field-gated."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    },
+    {
+      "schema": "bcp.project_record/1",
+      "project_id": "P2PCR95",
+      "display_name": "P2PCR95",
+      "aliases": [
+        "P2PCR95",
+        "PC Remote"
+      ],
+      "profile": "SPECIALIZED_EXECUTOR",
+      "status": "BINDING_INCOMPLETE",
+      "authority": {
+        "engineering": "GITHUB",
+        "runtime": "PC",
+        "artifacts": "UNRESOLVED",
+        "conversation": "NON_AUTHORITATIVE"
+      },
+      "origins": {
+        "local_roots": [
+          {
+            "status": "UNRESOLVED",
+            "path": null,
+            "authority": "UNRESOLVED"
+          }
+        ],
+        "repos": [
+          {
+            "status": "BOUND",
+            "repository": "Terminator364/P2PCR95",
+            "branch": "main",
+            "path": null,
+            "authority": "ENGINEERING"
+          }
+        ],
+        "drive_refs": []
+      },
+      "adapters": [
+        "GITHUB_REPOSITORY",
+        "BCP_NATIVE_PC"
+      ],
+      "resource_profile": {
+        "resource_class": "R1_LIGHT",
+        "heavy_work": false,
+        "offline_capable": true,
+        "background_policy": "GREEN_ONLY"
+      },
+      "permission_profile": {
+        "max_permission_class": "P3_BOUNDED_SYSTEM_CHANGE",
+        "read_allowed": true,
+        "project_write_policy": "POLICY",
+        "system_modify_policy": "GATED"
+      },
+      "update_profile": {
+        "mode": "PROJECT_DEFINED",
+        "rollback_required": true,
+        "channel": null
+      },
+      "head_revision": null,
+      "coordinator_epoch": null,
+      "source_revision": "64c4539288404602fb8aedc9fdf8fa314a9a482d",
+      "compatibility": {
+        "legacy_authority_present": true,
+        "migration_rule": "Repository is observed; local runtime/root and control-plane activation remain field-gated."
+      },
+      "updated_at": "2026-10-06T16:10:00Z"
+    }
+  ],
+  "adapters": [
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "tlib.project-adapter",
+      "project_id": "TLIB",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Canonical repository/path is not observed; no repository is invented."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {},
+          "binding_reason": "No canonical release manifest/pointer is proven for repository-only verification."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "TLIB_REPOSITORY_BINDING_UNRESOLVED_2026-10-06",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    },
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "excellentia.project-adapter",
+      "project_id": "EXCELLENTIA",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/ChatGPT-PC",
+            "ref": "main",
+            "project_path": "excellentia-study-cockpit"
+          },
+          "binding_reason": "Repository/path observed from GitHub source inventory."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/ChatGPT-PC",
+            "ref": "main",
+            "project_path": "excellentia-study-cockpit",
+            "release_manifest": "excellentia-study-cockpit/release/current.json"
+          },
+          "binding_reason": "Stable release manifest is observed in ChatGPT-PC/main and pins source commit plus file SHA-256 values."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    },
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "delivery.project-adapter",
+      "project_id": "DELIVERY",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/ChatGPT-PC",
+            "ref": "main",
+            "project_path": "chatgpt-delivery"
+          },
+          "binding_reason": "Repository/path observed from GitHub source inventory."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "DELIVERY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Delivery canonical truth spans stable manifest, Drive/update feedback and live health; repository-only verification is intentionally insufficient."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    },
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "buildhub.project-adapter",
+      "project_id": "BUILDHUB",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/BuildHub",
+            "ref": "main"
+          },
+          "binding_reason": "Repository/path observed from GitHub source inventory."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Repository head is observed, but a canonical release pointer is not asserted by Phase 8."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "18ac5c048acfa6f190713239cd1611952d9ca24c",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    },
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "pc-command.project-adapter",
+      "project_id": "PC_COMMAND",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/PC-COMMAND-STATE",
+            "ref": "main"
+          },
+          "binding_reason": "Repository/path observed from GitHub source inventory."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {},
+          "binding_reason": "PC-COMMAND-STATE is a state bus; it is not treated as an engineering/release repository."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "f10913f1fecc678a1c6ccc31758eb753cdb20924",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    },
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "phonemouse.project-adapter",
+      "project_id": "PHONEMOUSE",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/PhoneMouse",
+            "ref": "main"
+          },
+          "binding_reason": "Repository/path observed from GitHub source inventory."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {},
+          "binding_reason": "No canonical release manifest/pointer is proven for repository-only verification."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "397ad5e1aac7d1b5ef53a6dec52655e907a80d44",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    },
+    {
+      "schema": "bcp.project_adapter/1",
+      "adapter_id": "p2pcr95.project-adapter",
+      "project_id": "P2PCR95",
+      "version": "0.1.0-r3-phase8",
+      "bindings": [
+        {
+          "operation": "INSPECT",
+          "capability_id": "repository.project.inspect",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "BOUND",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH"
+          ],
+          "input_defaults": {
+            "repository": "Terminator364/P2PCR95",
+            "ref": "main"
+          },
+          "binding_reason": "Repository/path observed from GitHub source inventory."
+        },
+        {
+          "operation": "RELEASE_VERIFY",
+          "capability_id": "repository.release.verify",
+          "provider_id": "GITHUB_REPOSITORY",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "GIT_REVISION",
+            "HASH",
+            "ARTIFACT_SIGNATURE"
+          ],
+          "input_defaults": {},
+          "binding_reason": "No canonical release manifest/pointer is proven for repository-only verification."
+        },
+        {
+          "operation": "TEST",
+          "capability_id": "project.test.run",
+          "provider_id": "GITHUB_ACTIONS",
+          "state": "WAITING_BINDING",
+          "permission_class": "P1_SAFE_WRITE",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "EXIT_CODE",
+            "TEST_RESULT"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Test workflow/entrypoint has not been admitted as a typed capability for this project."
+        },
+        {
+          "operation": "HEALTHCHECK",
+          "capability_id": "project.runtime.health",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P0_READ",
+          "resource_class": "R0_TINY",
+          "evidence_contract": [
+            "PROCESS_HEALTH",
+            "HTTP_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Local runtime/root remains a field binding; repository evidence cannot certify it."
+        },
+        {
+          "operation": "UPDATE_ACTIVATE",
+          "capability_id": "project.update.activate",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R2_MEDIUM",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Activation requires observed local updater/root plus proven rollback."
+        },
+        {
+          "operation": "ROLLBACK",
+          "capability_id": "project.update.rollback",
+          "provider_id": "BCP_NATIVE_PC",
+          "state": "WAITING_BINDING",
+          "permission_class": "P2_PROJECT_MUTATION",
+          "resource_class": "R1_LIGHT",
+          "evidence_contract": [
+            "HASH",
+            "DESTINATION_READBACK",
+            "PROCESS_HEALTH"
+          ],
+          "input_defaults": {},
+          "binding_reason": "Rollback requires observed LKG and local updater authority."
+        }
+      ],
+      "source_revision": "64c4539288404602fb8aedc9fdf8fa314a9a482d",
+      "notes": [
+        "Typed capability bindings only; no executable command mechanics.",
+        "WAITING_BINDING is intentional when repository evidence is insufficient for field/runtime authority."
+      ]
+    }
+  ],
+  "provenance": [
+    {
+      "project_id": "TLIB",
+      "status": "PARTIAL",
+      "repository": "Terminator364/ChatGPT-PC",
+      "revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "path": "excellentia-study-cockpit/audit/TLIB_DELIVERY_FOUNDATIONS_AUDIT_2026-09-29.md",
+      "evidence": "Audit records TLIB deployed build/runtime, but no canonical TLIB source root is observed on ChatGPT-PC/main."
+    },
+    {
+      "project_id": "EXCELLENTIA",
+      "status": "OBSERVED",
+      "repository": "Terminator364/ChatGPT-PC",
+      "revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "path": "excellentia-study-cockpit/release/current.json",
+      "evidence": "Stable manifest app_version 2.3.0 pins source commit 73f6bc1f841643b5dda94f1c6fd81d56b65780bc and file SHA-256 values."
+    },
+    {
+      "project_id": "DELIVERY",
+      "status": "OBSERVED",
+      "repository": "Terminator364/ChatGPT-PC",
+      "revision": "7f3a04d4a597086e2505bfc5e31bc02497bd963e",
+      "path": "chatgpt-delivery/project_state.json",
+      "evidence": "Project state and canonical truth order are present; live/release truth remains multi-provider and is not reduced to repo-only evidence."
+    },
+    {
+      "project_id": "BUILDHUB",
+      "status": "OBSERVED",
+      "repository": "Terminator364/BuildHub",
+      "revision": "18ac5c048acfa6f190713239cd1611952d9ca24c",
+      "path": null,
+      "evidence": "Repository and main head observed through GitHub connector."
+    },
+    {
+      "project_id": "PC_COMMAND",
+      "status": "PARTIAL",
+      "repository": "Terminator364/PC-COMMAND-STATE",
+      "revision": "f10913f1fecc678a1c6ccc31758eb753cdb20924",
+      "path": null,
+      "evidence": "Private runtime state bus observed; engineering source remains unresolved."
+    },
+    {
+      "project_id": "PHONEMOUSE",
+      "status": "OBSERVED",
+      "repository": "Terminator364/PhoneMouse",
+      "revision": "397ad5e1aac7d1b5ef53a6dec52655e907a80d44",
+      "path": null,
+      "evidence": "Repository and main head observed through GitHub connector."
+    },
+    {
+      "project_id": "P2PCR95",
+      "status": "OBSERVED",
+      "repository": "Terminator364/P2PCR95",
+      "revision": "64c4539288404602fb8aedc9fdf8fa314a9a482d",
+      "path": null,
+      "evidence": "Repository and main head observed through GitHub connector."
+    }
+  ]
+}
