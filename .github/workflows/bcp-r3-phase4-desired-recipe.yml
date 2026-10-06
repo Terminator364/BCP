@@ -12,6 +12,7 @@ on:
       - "docs/examples/execution-fabric/bcp-runtime.desired-state.example.json"
       - "docs/examples/execution-fabric/bcp-runtime.restart-recipe-candidate.example.json"
       - "tools/test_execution_fabric_phase4_*.py"
+      - "windows/execution_fabric/release_controller.py"
       - "windows/bcp_server_v2.py"
       - "windows/execution_fabric/action_receipt_registry.py"
       - "windows/execution_fabric/desired_state_registry.py"
@@ -46,7 +47,8 @@ jobs:
             tools/test_execution_fabric_phase4_desired_state.py \
             tools/test_execution_fabric_phase4_incident_recipe.py \
             tools/test_execution_fabric_phase4_error_ledger_projection.py \
-            tools/test_execution_fabric_phase4_contracts.py
+            tools/test_execution_fabric_phase4_contracts.py \
+            tools/test_execution_fabric_phase4_convergence.py
 
       - name: Immutable Action Receipt proof tests
         run: python tools/test_execution_fabric_phase4_action_receipts.py
@@ -62,3 +64,9 @@ jobs:
 
       - name: Phase 4 execution boundary guard
         run: python tools/test_execution_fabric_phase4_contracts.py
+
+      - name: Canonical Phase 4 convergence regression
+        run: python tools/test_execution_fabric_phase4_convergence.py
+
+      - name: Phase 5 import regression
+        run: python -m compileall -q windows/execution_fabric/release_controller.py

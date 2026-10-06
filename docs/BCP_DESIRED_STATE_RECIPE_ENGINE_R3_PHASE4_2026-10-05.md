@@ -124,3 +124,40 @@ Repository PASS requires:
 **Phase 5 — Release/update controller**
 
 Reuse existing BCP release contracts, G6 package/update receipts, BCP rollback experience, and Desired State/Recipe invariants. Do not build another project-specific updater.
+
+
+## 13. Phase 4 convergence decision
+
+A counter-audit found a second experimental Phase 4 stack using
+`desired_state.py`, `incident_engine.py`, and `repair_recipes.py`.
+Keeping both would create two semantics for the same Desired State and
+`bcp.repair_recipe/1` contracts.
+
+The canonical stack is therefore:
+
+- `desired_state_registry.py` — fenced Desired State generations plus deterministic subset drift;
+- `incident_recipe.py` — durable incidents, friction events, evidence-gated recipes, reconciliation planning;
+- `action_receipt_registry.py` — immutable normalized proof;
+- `resource_admission.py` — shared resource policy;
+- `release_controller.py` — Phase 5 release transactions consuming the same shared primitives.
+
+The canonical repair lifecycle remains:
+
+`CANDIDATE -> VALIDATED -> SUSPENDED / RETIRED`.
+
+A recipe requiring field evidence cannot become `VALIDATED` until real
+field-certified Action Receipts cover every non-optional capability. This
+subsumes the safety intent of the removed experimental
+`REPOSITORY_VALIDATED/FIELD_VALIDATED` vocabulary without maintaining a
+second recipe contract.
+
+Unique behavior preserved from the removed experiment:
+
+1. deterministic desired-vs-observed subset drift;
+2. durable friction recurrence;
+3. an action receipt PASS leaves an incident `RECONCILING`;
+4. only a fresh conforming observation may mark the incident `RESOLVED`;
+5. release control imports the common resource policy directly and does not
+   depend on a second recipe engine.
+
+After convergence there is one Phase 4 authority model and one Phase 4 CI gate.
