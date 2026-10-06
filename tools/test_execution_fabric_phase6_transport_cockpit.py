@@ -440,7 +440,7 @@ class TransportControllerTests(unittest.TestCase):
 
     def test_dispatch_plan_is_typed_and_contains_no_command_surface(self):
         self.prepare()
-        plan = self.controller.dispatch_plan("BCP_CORE", "delivery-phase6-001")
+        plan = self.controller.dispatch_plan("BCP_CORE", "delivery-phase6-001", now=NOW)
         self.assertEqual(plan["capability_id"], "transport.telegram.deliver")
         encoded = repr(plan).lower()
         for forbidden in ("powershell", "cmd.exe", "'command'", "'argv'", "'shell'"):
@@ -470,6 +470,7 @@ class TransportControllerTests(unittest.TestCase):
                 "delivery-phase6-001",
                 "receipt-wrong-idem",
                 owner_id="ack",
+                now=NOW,
             )
 
     def test_late_receipt_cannot_acknowledge_expired_delivery(self):
@@ -496,6 +497,7 @@ class TransportControllerTests(unittest.TestCase):
             self.controller.acknowledge(
                 "BCP_CORE", "delivery-phase6-001", "receipt-does-not-exist",
                 owner_id="ack",
+                now=NOW,
             )
 
     def test_wrong_provider_or_capability_receipt_is_rejected(self):
@@ -508,6 +510,7 @@ class TransportControllerTests(unittest.TestCase):
             self.controller.acknowledge(
                 "BCP_CORE", "delivery-phase6-001", "receipt-transport-ok",
                 owner_id="ack",
+                now=NOW,
             )
 
         self.receipts.put(
@@ -521,6 +524,7 @@ class TransportControllerTests(unittest.TestCase):
             self.controller.acknowledge(
                 "BCP_CORE", "delivery-phase6-001", "receipt-wrong-cap",
                 owner_id="ack",
+                now=NOW,
             )
 
     def test_missing_delivery_evidence_contract_is_rejected(self):
@@ -536,6 +540,7 @@ class TransportControllerTests(unittest.TestCase):
             self.controller.acknowledge(
                 "BCP_CORE", "delivery-phase6-001", "receipt-incomplete",
                 owner_id="ack",
+                now=NOW,
             )
 
     def test_matching_receipt_acknowledges_and_is_idempotent(self):
@@ -545,6 +550,7 @@ class TransportControllerTests(unittest.TestCase):
         ack = self.controller.acknowledge(
             "BCP_CORE", "delivery-phase6-001", "receipt-transport-ok",
             owner_id="ack",
+            now=NOW,
         )
         self.assertEqual(ack["delivery"]["status"], "ACKNOWLEDGED")
         self.assertEqual(ack["delivery"]["route"]["state"], "ACKNOWLEDGED")
@@ -552,6 +558,7 @@ class TransportControllerTests(unittest.TestCase):
         replay = self.controller.acknowledge(
             "BCP_CORE", "delivery-phase6-001", "receipt-transport-ok",
             owner_id="ack-2",
+            now=NOW,
         )
         self.assertEqual(replay["revision"], ack["revision"])
 
@@ -563,6 +570,7 @@ class TransportControllerTests(unittest.TestCase):
             self.controller.acknowledge(
                 "BCP_CORE", "delivery-phase6-001", "receipt-transport-ok",
                 owner_id="ack",
+                now=NOW,
             )
 
         self.receipts.put(
@@ -572,6 +580,7 @@ class TransportControllerTests(unittest.TestCase):
         ack = self.controller.acknowledge(
             "BCP_CORE", "delivery-phase6-001", "receipt-field-ok",
             owner_id="ack",
+            now=NOW,
         )
         self.assertEqual(ack["delivery"]["status"], "ACKNOWLEDGED")
 
