@@ -1,0 +1,428 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_capability_factory_candidate_v1.schema.json",
+  "title": "BCP Capability Factory Candidate V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "candidate_id",
+    "project_id",
+    "original_mission_id",
+    "requested_capability_id",
+    "stage",
+    "status",
+    "trust_class",
+    "source",
+    "license",
+    "proposed_manifest",
+    "policy",
+    "gate_receipts",
+    "created_at",
+    "updated_at",
+    "field_certified"
+  ],
+  "properties": {
+    "schema": {
+      "const": "bcp.capability_factory_candidate/1"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,199}$"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"
+    },
+    "original_mission_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "requested_capability_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "stage": {
+      "enum": [
+        "GAP_DETECTED",
+        "DEFINE_CONTRACT",
+        "REUSE_SEARCH",
+        "SOURCE_TRUST_CHECK",
+        "LICENSE_POLICY_CHECK",
+        "BUILD_ADAPTER",
+        "STATIC_VALIDATE",
+        "SANDBOX_TEST",
+        "RESOURCE_TEST",
+        "ROLLBACK_TEST",
+        "SECURITY_TEST",
+        "CANARY",
+        "REGISTER",
+        "REGISTERED",
+        "WAITING_APPROVAL",
+        "WAITING_RESOURCE",
+        "WAITING_CAPABILITY",
+        "QUARANTINED",
+        "FAILED_SAFE",
+        "SUPERSEDED"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ACTIVE",
+        "HOLD",
+        "FAILED_SAFE",
+        "REGISTERED",
+        "SUPERSEDED"
+      ]
+    },
+    "trust_class": {
+      "enum": [
+        "T1_VERIFIED_LOCAL",
+        "T2_VERIFIED_REMOTE",
+        "T3_CANDIDATE",
+        "T4_QUARANTINED"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "locator",
+        "revision",
+        "artifact_sha256",
+        "publisher"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "BUILTIN",
+            "LOCAL_REPO",
+            "REMOTE_REPO",
+            "PACKAGE",
+            "EXISTING_CAPABILITY",
+            "GENERATED_ADAPTER"
+          ]
+        },
+        "locator": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1000
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        },
+        "artifact_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "identifier",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "APPROVED",
+            "REVIEW_REQUIRED",
+            "DENIED",
+            "UNKNOWN",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "identifier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 160
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
+    },
+    "proposed_manifest": {
+      "$ref": "./bcp_capability_manifest_v1.schema.json"
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_permission_class",
+        "max_resource_class",
+        "allowed_trust_classes",
+        "require_sandbox",
+        "require_rollback",
+        "require_security_test",
+        "require_canary",
+        "target_scope"
+      ],
+      "properties": {
+        "max_permission_class": {
+          "enum": [
+            "P0_READ",
+            "P1_SAFE_WRITE",
+            "P2_PROJECT_MUTATION",
+            "P3_BOUNDED_SYSTEM_CHANGE"
+          ]
+        },
+        "max_resource_class": {
+          "enum": [
+            "R0_TINY",
+            "R1_LIGHT",
+            "R2_MEDIUM",
+            "R3_HEAVY"
+          ]
+        },
+        "allowed_trust_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "T0_BUILTIN",
+              "T1_VERIFIED_LOCAL",
+              "T2_VERIFIED_REMOTE"
+            ]
+          }
+        },
+        "require_sandbox": {
+          "type": "boolean"
+        },
+        "require_rollback": {
+          "type": "boolean"
+        },
+        "require_security_test": {
+          "type": "boolean"
+        },
+        "require_canary": {
+          "type": "boolean"
+        },
+        "target_scope": {
+          "enum": [
+            "REPOSITORY",
+            "SIMULATION",
+            "PROVIDER",
+            "FIELD"
+          ]
+        }
+      }
+    },
+    "gate_receipts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reuse_search": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "source_trust": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "license_policy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "build_adapter": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "static_validate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "sandbox_test": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "resource_test": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "rollback_test": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "security_test": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "canary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        }
+      }
+    },
+    "registration_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "failure": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "field_certified": {
+      "const": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "REGISTERED"
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trust_class": {
+            "enum": [
+              "T1_VERIFIED_LOCAL",
+              "T2_VERIFIED_REMOTE"
+            ]
+          }
+        },
+        "required": [
+          "registration_ref"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "QUARANTINED"
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trust_class": {
+            "const": "T4_QUARANTINED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "not": {
+              "enum": [
+                "REGISTERED",
+                "QUARANTINED"
+              ]
+            }
+          }
+        },
+        "required": [
+          "stage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "trust_class": {
+            "const": "T3_CANDIDATE"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bcp.local/schemas/bcp_capability_factory_plan_v1.schema.json",
+  "title": "BCP Capability Factory Plan V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema","candidate_id","project_id","decision","gate","capability_id",
+    "permission_class","resource_class","target_scope","input",
+    "evidence_contract","field_certified"
+  ],
+  "properties": {
+    "schema": {"const": "bcp.capability_factory_plan/1"},
+    "candidate_id": {"type": "string","minLength": 8,"maxLength": 200},
+    "project_id": {"type": "string","minLength": 2,"maxLength": 128},
+    "decision": {
+      "enum": [
+        "EXECUTE_TYPED_GATE","WAITING_APPROVAL","WAITING_RESOURCE",
+        "WAITING_CAPABILITY","REGISTER_READY","QUARANTINED",
+        "FAILED_SAFE","REGISTERED","SUPERSEDED"
+      ]
+    },
+    "gate": {
+      "type": ["string","null"],
+      "enum": [
+        null,"reuse_search","source_trust","license_policy","build_adapter",
+        "static_validate","sandbox_test","resource_test","rollback_test",
+        "security_test","canary"
+      ]
+    },
+    "capability_id": {
+      "type": ["string","null"],
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "permission_class": {
+      "type": ["string","null"],
+      "enum": [
+        null,"P0_READ","P1_SAFE_WRITE","P2_PROJECT_MUTATION",
+        "P3_BOUNDED_SYSTEM_CHANGE"
+      ]
+    },
+    "resource_class": {
+      "type": ["string","null"],
+      "enum": [null,"R0_TINY","R1_LIGHT","R2_MEDIUM","R3_HEAVY"]
+    },
+    "target_scope": {
+      "type": ["string","null"],
+      "enum": [null,"REPOSITORY","SIMULATION","PROVIDER","FIELD"]
+    },
+    "input": {"type": "object"},
+    "evidence_contract": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "EXIT_CODE","FILE_READBACK","HASH","PROCESS_HEALTH","HTTP_HEALTH",
+          "SERVICE_STATE","GIT_REVISION","TEST_RESULT","ARTIFACT_SIGNATURE",
+          "PROVIDER_ACK","DESTINATION_READBACK","CUSTOM_VALIDATOR"
+        ]
+      }
+    },
+    "field_certified": {"const": false}
+  }
+}

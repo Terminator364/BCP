@@ -1,0 +1,71 @@
+name: BCP R3 Phase 7 Capability Factory
+
+on:
+  pull_request:
+    paths:
+      - "schemas/bcp_capability_factory_candidate_v1.schema.json"
+      - "schemas/bcp_capability_factory_plan_v1.schema.json"
+      - "schemas/bcp_capability_registration_v1.schema.json"
+      - "windows/execution_fabric/capability_factory.py"
+      - "windows/bcp_server_v2.py"
+      - "tools/test_execution_fabric_phase7_capability_factory.py"
+      - "tools/test_execution_fabric_phase7_contracts.py"
+      - "docs/BCP_CAPABILITY_FACTORY_R3_PHASE7_2026-10-06.md"
+      - ".github/workflows/bcp-r3-phase7-capability-factory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-phase7-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capability-factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Phase 7
+        run: |
+          python -m compileall -q \
+            windows/bcp_server_v2.py \
+            windows/execution_fabric/capability_factory.py \
+            tools/test_execution_fabric_phase7_capability_factory.py \
+            tools/test_execution_fabric_phase7_contracts.py
+
+      - name: Parse Phase 7 schemas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in [
+              Path("schemas/bcp_capability_factory_candidate_v1.schema.json"),
+              Path("schemas/bcp_capability_factory_plan_v1.schema.json"),
+              Path("schemas/bcp_capability_registration_v1.schema.json"),
+          ]:
+              obj = json.loads(path.read_text(encoding="utf-8"))
+              assert obj["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+              assert obj["type"] == "object"
+              assert obj["additionalProperties"] is False
+              print("PARSE_OK", path)
+          PY
+
+      - name: Capability Factory failure injection
+        run: python tools/test_execution_fabric_phase7_capability_factory.py
+
+      - name: Phase 7 contract and authority guard
+        run: python tools/test_execution_fabric_phase7_contracts.py
+
+      - name: Phase 6 regression
+        run: python tools/test_execution_fabric_phase6_transport_cockpit.py
+
+      - name: Phase 5 regression
+        run: |
+          python tools/test_execution_fabric_phase5_contracts.py
+          python tools/test_execution_fabric_phase5_release_controller.py
+
+      - name: Phase 2 network boundary regression
+        run: python tools/test_execution_fabric_phase2_microkernel.py
