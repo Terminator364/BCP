@@ -39,6 +39,13 @@ PERMISSION_ORDER = {
     "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE": 4,
 }
 AUTO_PERMISSION_MAX = "P3_BOUNDED_SYSTEM_CHANGE"
+EFFECT_PERMISSION = {
+    "READ_ONLY": "P0_READ",
+    "SAFE_WRITE": "P1_SAFE_WRITE",
+    "PROJECT_MUTATION": "P2_PROJECT_MUTATION",
+    "BOUNDED_SYSTEM_CHANGE": "P3_BOUNDED_SYSTEM_CHANGE",
+    "DESTRUCTIVE_OR_SECURITY_SENSITIVE": "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE",
+}
 AUTO_TRUST = {"T0_BUILTIN", "T1_VERIFIED_LOCAL", "T2_VERIFIED_REMOTE"}
 FACTORY_PROMOTED_TRUST = {"T1_VERIFIED_LOCAL", "T2_VERIFIED_REMOTE"}
 EFFECT_TO_PERMISSION = {
@@ -262,6 +269,8 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
         raise ValueError("invalid effect_class")
     if manifest.get("permission_class") not in PERMISSION_ORDER:
         raise ValueError("invalid permission_class")
+    if EFFECT_PERMISSION[manifest["effect_class"]] != manifest["permission_class"]:
+        raise ValueError("effect_class/permission_class semantic mismatch")
     if manifest.get("resource_class") not in RESOURCE_ORDER:
         raise ValueError("invalid resource_class")
     if manifest["permission_class"] != EFFECT_TO_PERMISSION[manifest["effect_class"]]:
@@ -294,6 +303,11 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
     if timeout is not None and (type(timeout) is not int or timeout < 1 or timeout > 86400):
         raise ValueError("invalid timeout_seconds")
     rollback = manifest.get("rollback")
+    if manifest.get("requires_admin") is True and PERMISSION_ORDER[manifest["permission_class"]] < PERMISSION_ORDER["P3_BOUNDED_SYSTEM_CHANGE"]:
+        raise ValueError("admin capability cannot be declared below P3")
+    if manifest["permission_class"] in {"P2_PROJECT_MUTATION", "P3_BOUNDED_SYSTEM_CHANGE"}:
+        if not isinstance(rollback, dict) or rollback.get("required") is not True:
+            raise ValueError("P2/P3 capability requires explicit rollback")
     if rollback is not None:
         if not isinstance(rollback, dict) or set(rollback) - {"required", "strategy"}:
             raise ValueError("invalid rollback")
@@ -312,6 +326,11 @@ def validate_manifest(manifest: Any) -> dict[str, Any]:
             "BUILDHUB", "DELIVERY", "MODEL", "REMOTE_PROVIDER",
         }:
             raise ValueError("invalid executor kind")
+        if executor["kind"] == "MODEL" and manifest["permission_class"] != "P0_READ":
+            raise ValueError("MODEL executor cannot hold consequential mutation authority")
+        if executor["kind"] in {"POWERSHELL", "WIN32", "PYTHON", "NODE"}:
+            if not executor.get("pinned_version") or not executor.get("sha256"):
+                raise ValueError("local executable capability requires pinned version and sha256")
         if executor.get("entrypoint") is not None:
             _text(executor.get("entrypoint"), "executor.entrypoint", 500)
         if executor.get("pinned_version") is not None:
@@ -429,6 +448,17 @@ def validate_candidate(candidate: Any) -> dict[str, Any]:
         raise ValueError("invalid candidate stage")
     if candidate["status"] not in {"ACTIVE", "HOLD", "FAILED_SAFE", "REGISTERED", "SUPERSEDED"}:
         raise ValueError("invalid candidate status")
+    hold_stages = {"WAITING_APPROVAL", "WAITING_RESOURCE", "WAITING_CAPABILITY", "QUARANTINED"}
+    if candidate["stage"] in hold_stages and candidate["status"] != "HOLD":
+        raise ValueError("hold stage requires HOLD status")
+    if candidate["stage"] == "REGISTERED" and candidate["status"] != "REGISTERED":
+        raise ValueError("REGISTERED stage requires REGISTERED status")
+    if candidate["status"] == "REGISTERED" and candidate.get("registration_ref") is None:
+        raise ValueError("registered candidate requires registration_ref")
+    if candidate["stage"] == "FAILED_SAFE" and candidate["status"] != "FAILED_SAFE":
+        raise ValueError("FAILED_SAFE stage/status mismatch")
+    if candidate["stage"] == "SUPERSEDED" and candidate["status"] != "SUPERSEDED":
+        raise ValueError("SUPERSEDED stage/status mismatch")
     _iso(candidate["created_at"], "created_at")
     _iso(candidate["updated_at"], "updated_at")
     if candidate.get("field_certified") is not False:
