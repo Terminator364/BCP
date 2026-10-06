@@ -1,0 +1,106 @@
+{
+  "schema": "bcp.release_transaction/1",
+  "release_id": "med-rebuild-example-candidate",
+  "project_id": "MED_REBUILD",
+  "state": "WAITING_CAPABILITY",
+  "candidate": {
+    "version": "example-candidate",
+    "sequence": 2,
+    "artifact_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "manifest_ref": "med-rebuild-study-hub/release/v1.5-current.json",
+    "source_revision": "EXAMPLE_ONLY_NOT_FIELD_AUTHORITY",
+    "qualification": "CI_QUALIFIED"
+  },
+  "current": {
+    "version": "example-current",
+    "sequence": 1,
+    "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "manifest_ref": "example-current-manifest",
+    "source_revision": "EXAMPLE_ONLY_NOT_FIELD_AUTHORITY",
+    "qualification": "PROVIDER_VERIFIED"
+  },
+  "lkg": {
+    "version": "example-current",
+    "sequence": 1,
+    "artifact_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "manifest_ref": "example-current-manifest",
+    "source_revision": "EXAMPLE_ONLY_NOT_FIELD_AUTHORITY",
+    "qualification": "PROVIDER_VERIFIED",
+    "proof_scope": "SIMULATION",
+    "proven": true
+  },
+  "migration": {
+    "class": "NONE",
+    "approval_granted": false,
+    "rollback_capability_required": true,
+    "notes": "Example only. No MED_REBUILD field activation is authorized by this artifact."
+  },
+  "policy": {
+    "target_scope": "SIMULATION",
+    "rollback_required": true,
+    "anti_downgrade": true,
+    "exact_readback_required": true,
+    "healthcheck_required": true,
+    "max_permission_class": "P2_PROJECT_MUTATION",
+    "resource_ceiling": "R2_MEDIUM"
+  },
+  "operations": {
+    "RELEASE_VERIFY": {
+      "capability_id": "repository.release.verify",
+      "provider_id": "GITHUB_REPOSITORY",
+      "state": "BOUND",
+      "permission_class": "P0_READ",
+      "resource_class": "R1_LIGHT",
+      "evidence_contract": ["GIT_REVISION", "HASH", "TEST_RESULT"]
+    },
+    "UPDATE_STAGE": {
+      "capability_id": null,
+      "provider_id": null,
+      "state": "UNSUPPORTED",
+      "permission_class": null,
+      "resource_class": null,
+      "evidence_contract": []
+    },
+    "UPDATE_ACTIVATE": {
+      "capability_id": "project.update.activate",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P2_PROJECT_MUTATION",
+      "resource_class": "R2_MEDIUM",
+      "evidence_contract": ["HASH", "PROCESS_HEALTH", "DESTINATION_READBACK"]
+    },
+    "HEALTHCHECK": {
+      "capability_id": "project.runtime.health",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P0_READ",
+      "resource_class": "R0_TINY",
+      "evidence_contract": ["PROCESS_HEALTH", "HTTP_HEALTH"]
+    },
+    "ROLLBACK": {
+      "capability_id": "project.update.rollback",
+      "provider_id": "BCP_NATIVE_PC",
+      "state": "WAITING_BINDING",
+      "permission_class": "P2_PROJECT_MUTATION",
+      "resource_class": "R1_LIGHT",
+      "evidence_contract": ["HASH", "PROCESS_HEALTH", "DESTINATION_READBACK"]
+    }
+  },
+  "receipts": {},
+  "readback": {
+    "status": "NOT_RUN",
+    "observed_version": null,
+    "observed_sequence": null,
+    "observed_sha256": null,
+    "health": "UNKNOWN",
+    "observed_at": null
+  },
+  "rollback_readback": null,
+  "failure": {
+    "operation": "UPDATE_STAGE",
+    "code": "UPDATE_STAGE_UNSUPPORTED",
+    "detail": null
+  },
+  "created_at": "2026-10-05T22:00:00Z",
+  "updated_at": "2026-10-05T22:00:00Z"
+}
