@@ -1,0 +1,59 @@
+name: BCP R3 Cross Project Field Binding Package
+
+on:
+  pull_request:
+    paths:
+      - "windows/BCP_R3_CROSS_PROJECT_FIELD_BINDING_PROBE.ps1"
+      - "schemas/bcp_cross_project_field_binding_probe_v1.schema.json"
+      - "tools/test_bcp_r3_field_binding_package.py"
+      - "docs/BCP_CROSS_PROJECT_FIELD_BINDING_BATCH_R3_2026-10-06.md"
+      - ".github/workflows/bcp-r3-field-binding-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bcp-r3-field-binding-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse field receipt schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("schemas/bcp_cross_project_field_binding_probe_v1.schema.json")
+          obj=json.loads(p.read_text(encoding="utf-8"))
+          assert obj["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+          assert obj["properties"]["safety"]["properties"]["field_certified"]["const"] is False
+          print("FIELD_BINDING_SCHEMA_PARSE=PASS")
+          PY
+
+      - name: Static no-mutation guard
+        run: python tools/test_bcp_r3_field_binding_package.py
+
+      - name: Parse PowerShell without executing field probe
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "windows/BCP_R3_CROSS_PROJECT_FIELD_BINDING_PROBE.ps1"),
+            [ref]$tokens,
+            [ref]$errors
+          )
+          if($errors.Count -gt 0){
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw "POWERSHELL_PARSE_FAILED"
+          }
+          Write-Output "POWERSHELL_PARSE=PASS"
+
+      - name: Phase 8 contract regression
+        run: python tools/test_execution_fabric_phase8_contracts.py
