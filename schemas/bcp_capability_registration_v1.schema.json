@@ -14,6 +14,8 @@
     "version",
     "trust_class",
     "manifest",
+    "source",
+    "license",
     "gate_receipts",
     "registered_at",
     "field_certified"
@@ -83,6 +85,90 @@
     },
     "field_certified": {
       "type": "boolean"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "locator",
+        "revision",
+        "artifact_sha256",
+        "publisher"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "BUILTIN",
+            "LOCAL_REPO",
+            "REMOTE_REPO",
+            "PACKAGE",
+            "EXISTING_CAPABILITY",
+            "GENERATED_ADAPTER"
+          ]
+        },
+        "locator": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1000
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        },
+        "artifact_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "identifier",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "APPROVED",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "identifier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 160
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
     }
   },
   "allOf": [
