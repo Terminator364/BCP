@@ -53,6 +53,13 @@ def manifest(
     version: str = "1.0.0",
     description: str = "Test capability",
 ) -> dict:
+    effects = {
+        "P0_READ": "READ_ONLY",
+        "P1_SAFE_WRITE": "SAFE_WRITE",
+        "P2_PROJECT_MUTATION": "PROJECT_MUTATION",
+        "P3_BOUNDED_SYSTEM_CHANGE": "BOUNDED_SYSTEM_CHANGE",
+        "P4_DESTRUCTIVE_OR_SECURITY_SENSITIVE": "DESTRUCTIVE_OR_SECURITY_SENSITIVE",
+    }
     return {
         "schema": "bcp.capability_manifest/1",
         "capability_id": "demo.capability",
@@ -61,7 +68,7 @@ def manifest(
         "description": description,
         "project_scopes": ["BCP_CORE"],
         "availability": "AVAILABLE",
-        "effect_class": "SAFE_WRITE",
+        "effect_class": effects[permission],
         "permission_class": permission,
         "resource_class": resource,
         "requires_network": False,
@@ -73,7 +80,7 @@ def manifest(
         "input_schema": {"type": "object"},
         "output_schema": {"type": "object"},
         "preconditions": [],
-        "rollback": {"required": True, "strategy": "typed rollback capability"},
+        "rollback": {"required": permission != "P0_READ", "strategy": "typed rollback capability"},
         "evidence_contract": ["TEST_RESULT"],
         "executor": {
             "kind": "INTERNAL",
@@ -130,12 +137,13 @@ def receipt(
     evidence_kind: str | None = None,
     source_revision: str = "source-r1",
     idempotency_key: str | None = None,
+    receipt_id: str | None = None,
 ) -> dict:
     kind = evidence_kind or GATE_EVIDENCE[gate]
     field = scope == "FIELD"
     return {
         "schema": "bcp.action_receipt/1",
-        "receipt_id": f"receipt-{candidate_id}-{gate}",
+        "receipt_id": receipt_id or f"receipt-{candidate_id}-{gate}",
         "mission_id": "mission-phase7",
         "project_id": "BCP_CORE",
         "action_id": f"factory-{gate}",
@@ -454,7 +462,12 @@ class CapabilityFactoryTests(unittest.TestCase):
                 trust_class="T2_VERIFIED_REMOTE" if gate == "source_trust" else None,
                 license_status="APPROVED" if gate == "license_policy" else None,
             )
-        rec = receipt(candidate_id, "canary", scope="SIMULATION")
+        rec = receipt(
+            candidate_id,
+            "canary",
+            scope="SIMULATION",
+            receipt_id=f"receipt-{candidate_id}-canary-sim",
+        )
         self.factory.receipts.put(rec, owner_id="receipt")
         with self.assertRaises(CandidateTransitionError):
             self.factory.record_gate(
@@ -494,6 +507,30 @@ class CapabilityFactoryTests(unittest.TestCase):
         )
         self.assertEqual(state["payload"]["stage"], "WAITING_APPROVAL")
         self.assertEqual(state["payload"]["status"], "HOLD")
+
+    def test_manifest_cannot_underdeclare_effect_class(self):
+        bad = manifest(permission="P2_PROJECT_MUTATION")
+        bad["effect_class"] = "SAFE_WRITE"
+        with self.assertRaisesRegex(ValueError, "semantic mismatch"):
+            self.create(manifest_obj=bad)
+
+    def test_model_executor_cannot_hold_mutation_authority(self):
+        bad = manifest(permission="P1_SAFE_WRITE")
+        bad["executor"] = {"kind": "MODEL"}
+        with self.assertRaisesRegex(ValueError, "MODEL executor"):
+            self.create(manifest_obj=bad)
+
+    def test_local_executable_requires_pinned_version_and_hash(self):
+        bad = manifest()
+        bad["executor"] = {"kind": "PYTHON", "entrypoint": "candidate.py"}
+        with self.assertRaisesRegex(ValueError, "pinned version"):
+            self.create(manifest_obj=bad)
+
+    def test_p2_capability_requires_explicit_rollback(self):
+        bad = manifest(permission="P2_PROJECT_MUTATION")
+        bad["rollback"]["required"] = False
+        with self.assertRaisesRegex(ValueError, "requires explicit rollback"):
+            self.create(manifest_obj=bad)
 
     def test_factory_module_has_no_direct_execution_or_network_provider(self):
         source_text = (
