@@ -288,6 +288,86 @@ class CapabilityFactoryTests(unittest.TestCase):
         )
         return self.factory.get("BCP_CORE", candidate_id)
 
+    def test_builtin_t0_is_catalogued_without_fake_candidate(self):
+        builtin_manifest = manifest(permission="P0_READ", version="builtin-1")
+        builtin_manifest["provider_id"] = "BCP_BUILTIN"
+        registration = {
+            "schema": "bcp.capability_registration/1",
+            "registration_id": "capreg-builtin-demo-0001",
+            "candidate_id": None,
+            "project_id": "BCP_CORE",
+            "capability_id": builtin_manifest["capability_id"],
+            "provider_id": builtin_manifest["provider_id"],
+            "version": builtin_manifest["version"],
+            "trust_class": "T0_BUILTIN",
+            "manifest": builtin_manifest,
+            "source": {
+                "kind": "BUILTIN",
+                "locator": "bcp://builtin/demo.capability",
+                "revision": "builtin-r1",
+                "artifact_sha256": ARTIFACT_SHA,
+                "publisher": "BCP",
+            },
+            "license": {
+                "status": "NOT_APPLICABLE",
+                "identifier": None,
+                "evidence_refs": [],
+            },
+            "gate_receipts": [],
+            "source_revision": "builtin-r1",
+            "registered_at": NOW,
+            "field_certified": False,
+        }
+        state = self.factory.registry.put(registration, owner_id="builtin-seed")
+        self.assertEqual(state["payload"]["trust_class"], "T0_BUILTIN")
+        reusable = self.factory.find_reusable("BCP_CORE", "demo.capability")
+        self.assertEqual(len(reusable), 1)
+        self.assertEqual(reusable[0]["payload"]["provider_id"], "BCP_BUILTIN")
+
+    def test_existing_capability_source_skips_build_adapter(self):
+        candidate_id = "candidate-phase7-reuse-existing"
+        existing_source = {
+            "kind": "EXISTING_CAPABILITY",
+            "locator": "catalog://demo.capability/remote/1.0.0",
+            "revision": "catalog-r1",
+            "artifact_sha256": ARTIFACT_SHA,
+            "publisher": "VERIFIED_PROVIDER",
+        }
+        self.factory.create(
+            candidate_id=candidate_id,
+            project_id="BCP_CORE",
+            original_mission_id="mission-phase7",
+            requested_capability_id="demo.capability",
+            trust_class="T3_CANDIDATE",
+            source=existing_source,
+            license_info=license_unknown(),
+            proposed_manifest=manifest(),
+            policy=policy(),
+            owner_id="factory-test",
+            now=NOW,
+        )
+        for gate in ("reuse_search", "source_trust", "license_policy"):
+            rec = receipt(
+                candidate_id,
+                gate,
+                source_revision="catalog-r1",
+            )
+            self.factory.receipts.put(rec, owner_id="receipt")
+            self.factory.record_gate(
+                "BCP_CORE",
+                candidate_id,
+                gate=gate,
+                receipt_id=rec["receipt_id"],
+                owner_id="transition",
+                now=NOW,
+                trust_class="T3_CANDIDATE" if gate == "source_trust" else None,
+                license_status="APPROVED" if gate == "license_policy" else None,
+                license_identifier="MIT" if gate == "license_policy" else None,
+            )
+        state = self.factory.get("BCP_CORE", candidate_id)
+        self.assertEqual(state["payload"]["stage"], "STATIC_VALIDATE")
+        self.assertNotIn("build_adapter", state["payload"]["gate_receipts"])
+
     def test_candidate_starts_at_reuse_search_with_typed_plan(self):
         self.create()
         plan = self.factory.plan_next(
