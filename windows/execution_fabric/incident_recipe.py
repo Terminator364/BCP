@@ -20,7 +20,7 @@ from .action_receipt_registry import (
     ActionReceiptError,
     ActionReceiptValidationError,
 )
-from .desired_state_registry import validate_resource
+from .desired_state_registry import validate_resource, deep_drift
 
 
 INCIDENT_PREFIX = "incident/"
@@ -306,6 +306,7 @@ def validate_recipe(recipe: Any) -> dict[str, Any]:
 class IncidentRegistry:
     def __init__(self, store: CriticalStore):
         self.store = store
+        self.receipts = ActionReceiptRegistry(store)
 
     def observe(
         self,
@@ -386,6 +387,164 @@ class IncidentRegistry:
         if state is None:
             raise IncidentNotFound(signature)
         return state
+
+    def list(self, project_id: str | None = None, resource_id: str | None = None, *, limit: int = 512) -> list[dict[str, Any]]:
+        prefix = INCIDENT_PREFIX
+        if project_id is not None:
+            project = str(project_id).strip()
+            if not PROJECT_ID_RE.fullmatch(project):
+                raise ValueError("invalid project_id")
+            prefix += project + "/"
+            if resource_id is not None:
+                resource = str(resource_id).strip()
+                if not RESOURCE_ID_RE.fullmatch(resource):
+                    raise ValueError("invalid resource_id")
+                prefix += resource + "/"
+        elif resource_id is not None:
+            raise ValueError("resource filter requires project_id")
+        return self.store.list_states(prefix, limit=limit)
+
+    def resolve_resource(
+        self,
+        project_id: str,
+        resource_id: str,
+        *,
+        owner_id: str,
+        observed_at: str,
+    ) -> int:
+        now = strict_iso(observed_at, "observed_at")
+        resolved = 0
+        for state in self.list(project_id, resource_id, limit=2048):
+            payload = state["payload"]
+            if payload.get("status") == "RESOLVED":
+                continue
+            self.set_state(
+                project_id,
+                resource_id,
+                payload["signature"],
+                status="RESOLVED",
+                owner_id=owner_id,
+                matched_recipe_id=payload.get("matched_recipe_id"),
+                next_retry_at=None,
+                last_error=None,
+            )
+            resolved += 1
+        return resolved
+
+    def record_action_receipt(
+        self,
+        project_id: str,
+        resource_id: str,
+        signature: str,
+        *,
+        receipt_id: str,
+        expected_capability_id: str,
+        owner_id: str,
+    ) -> dict[str, Any]:
+        incident = self.get(project_id, resource_id, signature)
+        receipt_state = self.receipts.get(receipt_id)
+        receipt = receipt_state["payload"]
+        if receipt.get("project_id") != project_id:
+            raise ValueError("receipt project mismatch")
+        if receipt.get("capability_id") != expected_capability_id:
+            raise ValueError("receipt capability mismatch")
+        if receipt.get("status") == "SUCCEEDED" and receipt.get("result") == "PASS":
+            # Action success is not system recovery. Keep RECONCILING until a fresh
+            # conforming observation resolves the resource incidents.
+            return self.set_state(
+                project_id,
+                resource_id,
+                signature,
+                status="RECONCILING",
+                owner_id=owner_id,
+                matched_recipe_id=incident["payload"].get("matched_recipe_id"),
+                receipt_ref=receipt_id,
+                next_retry_at=None,
+                last_error=None,
+            )
+        return self.set_state(
+            project_id,
+            resource_id,
+            signature,
+            status="FAILED_SAFE",
+            owner_id=owner_id,
+            matched_recipe_id=incident["payload"].get("matched_recipe_id"),
+            receipt_ref=receipt_id,
+            next_retry_at=None,
+            last_error={
+                "class": "ACTION_RECEIPT_FAILED",
+                "code": receipt.get("status"),
+                "detail": receipt.get("result"),
+                "retryable": False,
+            },
+        )
+
+    def record_friction(
+        self,
+        *,
+        project_id: str,
+        category: str,
+        detail: str,
+        source: str,
+        avoidable: bool,
+        user_action_required: bool,
+        observed_at: str,
+        owner_id: str,
+        environment_fingerprint: str = "operational-friction",
+    ) -> dict[str, Any]:
+        category_text = str(category).strip()
+        detail_text = str(detail).strip()
+        source_text = str(source).strip()
+        if not category_text or len(category_text) > 128:
+            raise ValueError("invalid friction category")
+        if not detail_text or len(detail_text) > 2000:
+            raise ValueError("invalid friction detail")
+        if not source_text or len(source_text) > 128:
+            raise ValueError("invalid friction source")
+        token = hashlib.sha256(category_text.casefold().encode("utf-8")).hexdigest()[:20]
+        resource_id = "friction-" + token
+        symptoms = {
+            "incident_class": "FRICTION",
+            "category": category_text,
+            "detail": detail_text,
+            "source": source_text,
+            "avoidable": bool(avoidable),
+            "user_action_required": bool(user_action_required),
+        }
+        signature = causal_signature(project_id, resource_id, symptoms)
+        sid = incident_stream(project_id, resource_id, signature)
+        current = self.store.get_state(sid)
+        now = strict_iso(observed_at, "observed_at")
+        if current is None:
+            state = self.observe(
+                project_id=project_id,
+                resource_id=resource_id,
+                symptoms=symptoms,
+                environment_fingerprint=environment_fingerprint,
+                desired_generation=1,
+                observed_at=now,
+                owner_id=owner_id,
+            )
+            payload = copy.deepcopy(state["payload"])
+            payload["observation"]["occurrence_count"] = 1
+        else:
+            payload = copy.deepcopy(current["payload"])
+            payload["last_observed_at"] = now
+            payload["observation"] = copy.deepcopy(symptoms)
+            payload["observation"]["occurrence_count"] = int(
+                current["payload"].get("observation", {}).get("occurrence_count", 1)
+            ) + 1
+        base = self.store.get_state(sid)
+        fence = self.store.acquire_writer_fence(sid, owner_id)
+        self.store.commit_transition(
+            stream_id=sid,
+            expected_revision=int(base["revision"]),
+            new_revision=int(base["revision"]) + 1,
+            fencing_token=fence,
+            payload=payload,
+            destination="BCP_INCIDENT_LEDGER",
+        )
+        return self.store.get_state(sid)
 
     def set_state(
         self,
@@ -607,10 +766,25 @@ class ReconcilePlanner:
         owner_id: str,
     ) -> dict[str, Any]:
         desired_resource = validate_resource(desired_resource)
-        if not isinstance(observation, dict) or set(observation) - {"matches_desired","symptoms","evidence_refs"}:
+        if not isinstance(observation, dict) or set(observation) - {"matches_desired","symptoms","evidence_refs","observed"}:
             raise ValueError("invalid observation fields")
-        if type(observation.get("matches_desired")) is not bool:
-            raise ValueError("observation.matches_desired boolean required")
+        if "observed" in observation:
+            if not isinstance(observation["observed"], dict):
+                raise ValueError("observation.observed must be object")
+            drift = deep_drift(desired_resource["spec"]["desired"], observation["observed"])
+            matches_desired = not drift
+            symptoms = observation.get("symptoms")
+            if not matches_desired and not symptoms:
+                symptoms = {
+                    "kind": "DESIRED_STATE_DRIFT",
+                    "drift_paths": [item["path"] for item in drift],
+                }
+        else:
+            if type(observation.get("matches_desired")) is not bool:
+                raise ValueError("observation.matches_desired boolean required")
+            matches_desired = observation["matches_desired"]
+            drift = []
+            symptoms = observation.get("symptoms")
         strict_iso(observed_at, "observed_at")
         if not isinstance(environment_fingerprint, str) or not environment_fingerprint.strip() or len(environment_fingerprint) > 512:
             raise ValueError("invalid environment_fingerprint")
@@ -630,10 +804,16 @@ class ReconcilePlanner:
             "field_certified": False,
         }
 
-        if observation["matches_desired"] is True:
+        if matches_desired is True:
+            self.incidents.resolve_resource(
+                project_id,
+                resource_id,
+                owner_id=owner_id,
+                observed_at=observed_at,
+            )
             return {**base, "decision": "IN_SYNC", "reason": "OBSERVATION_MATCHES_DESIRED"}
 
-        symptoms = observation.get("symptoms")
+
         if not isinstance(symptoms, dict) or not symptoms:
             return {**base, "decision": "NEEDS_REASONING", "reason": "DRIFT_WITHOUT_CAUSAL_SYMPTOMS"}
 
