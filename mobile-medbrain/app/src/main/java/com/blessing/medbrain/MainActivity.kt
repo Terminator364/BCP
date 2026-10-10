@@ -130,7 +130,8 @@ class MainActivity:ComponentActivity() {
     private var serviceConnection:ServiceConnection?=null
     private var serviceMessenger:Messenger?=null
     private var completion:((String)->Unit)?=null
-    private val aiQueue=ArrayDeque<Pair<String,(String)->Unit>>()
+    private data class PendingAi(val prompt:String,val maxTokens:Int?,val done:(String)->Unit)
+    private val aiQueue=ArrayDeque<PendingAi>()
     private var aiSerial=0
     private val aiHandler=Handler(Looper.getMainLooper())
     private var aiTimeout:Runnable?=null
@@ -888,7 +889,7 @@ class MainActivity:ComponentActivity() {
     private fun requestAI(prompt:String,maxTokensOverride:Int?=null,done:(String)->Unit){
         if(busy){
             if(aiQueue.size>=2)done("Deux tâches déjà en attente. Essaie après la réponse en cours.")
-            else aiQueue.addLast(prompt to done)
+            else aiQueue.addLast(PendingAi(prompt,maxTokensOverride,done))
             return
         }
         busy=true
@@ -964,7 +965,7 @@ class MainActivity:ComponentActivity() {
         callback?.invoke(out)
         if(aiQueue.isNotEmpty()){
             val next=aiQueue.removeFirst()
-            aiHandler.post{requestAI(next.first,next.second)}
+            aiHandler.post{requestAI(next.prompt,next.maxTokens,next.done)}
         }
     }
     private fun unbindAI(){
