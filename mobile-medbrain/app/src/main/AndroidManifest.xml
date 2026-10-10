@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <!-- No Internet, broad storage or privileged account permissions. SAF-only consent. -->
     <application
-        android:label="Blessing MedBrain"
+        android:label="MedBrain Personnel"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
