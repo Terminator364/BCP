@@ -25,7 +25,7 @@ class StudyEngineTest {
     }
     @Test fun realProvenanceInPrompts(){
         val output=StudyEngine.summaryPrompt("insuffisance cardiaque",evidence)
-        assertTrue(output.contains("Cardiologie Tome I — page 142 (TEXT)"))
+        assertTrue(output.contains("[Cardiologie Tome I, p. 142]"))
         assertTrue(output.contains("insuffisance cardiaque"))
     }
     @Test fun correctionIncludesOriginalResponse(){
