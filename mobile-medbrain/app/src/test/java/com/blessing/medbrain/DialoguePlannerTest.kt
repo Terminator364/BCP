@@ -17,6 +17,35 @@ class DialoguePlannerTest {
             assertNull("Follow-up must not be issued as FTS query: "+it,plan.searchQuery)
         }
     }
+    @Test fun grammarRecognizesReferentialClinicalFollowups(){
+        val prefixes=listOf("Et quels sont","Quels sont","Décris","Précise","Peux-tu préciser")
+        val ownership=listOf("ses","leurs","ces")
+        val facets=listOf("symptômes","causes","examens","complications","signes",
+            "traitements","mécanismes","risques")
+        var count=0
+        for(prefix in prefixes)for(owner in ownership)for(facet in facets){
+            val question="$prefix $owner $facet ?"
+            assertTrue("Missed context $question",DialoguePlanner.isFollowUp(question))
+            count++
+        }
+        assertEquals(120,count)
+        listOf("Et le traitement ?","Quelles complications ?",
+            "Et chez l'enfant ?","Et les causes de ce syndrome ?",
+            "Quelle est sa physiopathologie ?","Explique ses facteurs de risque").forEach{
+            assertTrue("Missed follow-up: $it",DialoguePlanner.isFollowUp(it))
+        }
+    }
+    @Test fun explicitNewDiseaseIsNotMistakenForPreviousTopic(){
+        val topics=listOf("la tuberculose","la pneumonie","l'insuffisance cardiaque",
+            "la néphropathie diabétique","le paludisme","la méningite")
+        for(topic in topics){
+            listOf("Quel est le traitement de $topic ?",
+                "Quels sont les symptômes de $topic ?",
+                "Parle moi en détail de $topic").forEach{
+                assertFalse("New topic misrouted: $it",DialoguePlanner.isFollowUp(it))
+            }
+        }
+    }
     @Test fun medicalTopicStartsNewSearch() {
         val p=DialoguePlanner.route("Quels sont les signes de l'insuffisance cardiaque ?",history)
         assertFalse(p.followUp)

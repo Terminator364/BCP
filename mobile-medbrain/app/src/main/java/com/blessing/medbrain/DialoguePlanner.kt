@@ -6,10 +6,41 @@ object DialoguePlanner {
     private val followUpPattern=Regex(
         "^(?:donc|et donc|alors|et alors|puis|ensuite|et apres|apres|continue|continues|poursuis|reprends|la suite|vas y|et la suite|explique encore|developpe|plus de details|parle moi en detail|parles? moi en detail|tu t.es arrete|reviens au point|et les causes|et le traitement)(?:\\b|$)"
     )
+    private val genericClinicalFacets=setOf(
+        "signe","signes","symptome","symptomes","cause","causes","diagnostic",
+        "traitement","traitements","examen","examens","prise","charge",
+        "complication","complications","pronostic","physiopathologie","mecanisme",
+        "mecanismes","formes","stade","stades","etapes","point","points",
+        "surveillance","details","detail","suite","risques","consequences",
+        "parle","precise","explique","decris","developpe","role","choix","quand")
+    private val referential=setOf(
+        "son","sa","ses","leur","leurs","celui","celle","ceux","celles",
+        "ce","cet","cette","ces","cela","ca","ceci","lui","elle","elles",
+        "ils","eux","elles","les","en","y")
+    private val sentenceOpeners=Regex(
+        "^(?:et |mais |alors |ensuite |maintenant )?(?:quel|quels|quelle|quelles|comment|pourquoi|peux|peut|explique|decris|precise|et |dis |les )"
+    )
+    /**
+     * Interpret references to the ACTIVE conversation. This is a small open grammar,
+     * not a table of canned medical responses; explicit topics win over ellipses.
+     */
     fun isFollowUp(raw:String):Boolean {
         val q=SearchPolicy.normalized(raw).replace(Regex("[^a-z0-9 ]+")," ")
             .replace(Regex("\\s+")," ").trim()
-        return q.length<=110 && followUpPattern.containsMatchIn(q)
+        if(q.isBlank()||q.length>180)return false
+        val words=q.split(" ")
+        val concepts=SearchPolicy.terms(q).filterNot{it in genericClinicalFacets}
+        val deictic=words.any{it in referential}
+        val explicit=concepts.isNotEmpty() &&
+            Regex("\\b(?:de|du|des|pour|chez|sur) (?:la |le |les |l )?[a-z]{4,}").containsMatchIn(q) &&
+            !Regex("\\b(?:de|du|des) (?:ce|cet|cette|ces|son|sa|ses|leur|leurs)\\b").containsMatchIn(q)
+        if(explicit && (followUpPattern.containsMatchIn(q)||sentenceOpeners.containsMatchIn(q)))
+            return false
+        if(followUpPattern.containsMatchIn(q))return true
+        if(words.size>25)return false
+        if(deictic && concepts.size<=1 && sentenceOpeners.containsMatchIn(q))return true
+        val pureFacet=SearchPolicy.terms(q).isNotEmpty() && concepts.isEmpty()
+        return pureFacet && sentenceOpeners.containsMatchIn(q)
     }
     fun failedAnswer(text:String):Boolean {
         val t=SearchPolicy.normalized(text).replace(Regex("[^a-z0-9 ]+")," ")
