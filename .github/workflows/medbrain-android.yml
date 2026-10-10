@@ -89,15 +89,16 @@ jobs:
               assert "classes.dex" in z.namelist(), "missing classes.dex"
               print("APK_STRUCTURE=PASS native_libraries",len(libs))
           PY
-      - name: Record the side-by-side package identity
+      - name: Verify non-destructive upgrade identity and monotonic version
         shell: bash
         run: |
-          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'"
+          set -euo pipefail
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'" | grep "versionCode='41'"
           test -f /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar
           cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar mobile-medbrain/apksigner-tool.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: medbrain-personal-0-4-6-release-unsigned
+          name: medbrain-personal-0-5-0-internal-unsigned
           path: |
             mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
             mobile-medbrain/apk-sha256.txt

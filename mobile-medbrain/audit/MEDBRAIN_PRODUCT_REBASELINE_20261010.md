@@ -71,3 +71,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - The router additionally recognizes pronominal/anaphoric references and facet-only follow-ups (symptoms, tests, therapy, risks) across more than 120 generated, varied test phrasings.
 - Explicit named medical conditions remain independent search queries, rather than being grafted onto the preceding conversation.
 - Distinguish this deterministic routing evidence from genuine LLM conversation quality; no assertion of GPT-level semantic understanding.
+
+## 0.5.0 internal candidate (NOT installable yet)
+- Build versionCode increments 40 (delivered 0.4.6) -> 41. Same applicationId `com.blessing.medbrain.personal`, Kotlin/SQLite migration additive. GitHub workflow verifies v41 and outputs an explicitly non-installable, unsigned engineering artifact.
+- No signing or Delivery publication until Android + BCP CI success plus clinical/multi-turn evaluation on device. Android package identity preservation alone cannot certify that local data survived an actual 0.4.6->0.5.0 upgrade.

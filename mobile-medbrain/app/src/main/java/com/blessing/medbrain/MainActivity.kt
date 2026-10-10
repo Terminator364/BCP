@@ -979,7 +979,7 @@ class MainActivity:ComponentActivity() {
         val battery=getSystemService(BATTERY_SERVICE) as BatteryManager
         val percent=battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val docs=KnowledgeStore(this).use{it.counts()+"\n"+it.lastEvents()}
-        return "Version 0.4.6 candidate • Android ${Build.VERSION.RELEASE}\nRAM libre : ${info.availMem/1048576} Mio • Alerte système : ${info.lowMemory}\nBatterie : $percent %\n"+ModelVault.status(this)+"\n"+docs
+        return "Version 0.5.0 engineering candidate • Android ${Build.VERSION.RELEASE}\nRAM libre : ${info.availMem/1048576} Mio • Alerte système : ${info.lowMemory}\nBatterie : $percent %\n"+ModelVault.status(this)+"\n"+docs
     }
     override fun onConfigurationChanged(config:Configuration){
         val draft=chatComposer?.text?.toString().orEmpty()
