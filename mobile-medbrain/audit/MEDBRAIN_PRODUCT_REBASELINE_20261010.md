@@ -122,3 +122,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 ## Regression resolution, grounded clinical followups
 - Unit tests on the previous candidate found `Continue, parle du traitement` was incorrectly routed as a new topic because the verb `continue` survived concept filtering. The planner now treats continuation verbs as structural dialogue words rather than pathologies and budgets historical context *before* composing the final prompt, leaving space for the user's actual question and instructions.
 - The source-retention regression test was updated to assert the new expected behavior: valid preceding MedRebuild citations are reused, while the fallback explicitly disclaims that the text was generated as an AI continuation.
+
+## Native readable assistant messages
+- Original Qwen outputs previously showed raw Markdown markers in Chat bubbles, as seen in field screenshots. Assistant-only bubbles now render bold headings/emphasis and inline technical code using Android Spannables; persisted source text and copied student messages remain untouched.
+- Unmatched delimiters remain visible instead of silently discarding medical text. Robolectric tests validate markers, paragraphs, and technical terms. Full CommonMark is not claimed.

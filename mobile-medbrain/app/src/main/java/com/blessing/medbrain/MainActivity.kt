@@ -744,7 +744,9 @@ class MainActivity:ComponentActivity() {
                 setPadding(dp(13),dp(9),dp(13),dp(10))
             }
             bubble.addView(text(if(user)"TOI" else "MEDBRAIN",10f,true,if(user)Color.WHITE else accent))
-            bubble.addView(text(message.body,15f,false,if(user)Color.WHITE else fg))
+            bubble.addView(text(message.body,15f,false,if(user)Color.WHITE else fg).apply{
+                if(!user)this.text=MedicalMarkdown.render(message.body)
+            })
             if(!user && message.sources.isNotBlank()){
                 val more=Button(this).apply{
                     text="📚 Voir les passages sources";isAllCaps=false;textSize=12f
