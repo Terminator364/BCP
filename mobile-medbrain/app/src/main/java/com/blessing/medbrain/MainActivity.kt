@@ -462,6 +462,19 @@ class MainActivity:ComponentActivity() {
             }
             "practice"->{
                 card("🩺 Questions et raisonnement","Questions ouvertes et situations basées sur tes références. Les réponses devront être confrontées aux connaissances retrouvées.")
+                val assigned=CardioPractice.match(
+                    pref.getString("cardio_active_study_id",null),
+                    topic.text.toString(),CardioCurriculum.all(this))
+                if(assigned!=null){
+                    card("📘 Fiche MedRebuild disponible",
+                        "Questions originales, repères et cours accessibles sans modèle neuronal.")
+                    add(action("📚 Rouvrir ce cours"){
+                        pref.edit().putString("cardio_fiche_id",assigned.id)
+                            .putBoolean("cardio_catalog_open",true)
+                            .putBoolean("cardio_selfcheck",false).apply()
+                        render(2)
+                    })
+                }
                 add(action("Générer des questions de pratique"){
                     topicText=topic.text.toString()
                     studyTask("questions",topicText,"")
@@ -623,6 +636,7 @@ class MainActivity:ComponentActivity() {
             add(action("🩺 Pratiquer à partir de cette notion"){
                 pref.edit().putString("study_section","practice")
                     .putString("study_draft",fiche.title)
+                    .putString("cardio_active_study_id",fiche.id)
                     .putBoolean("cardio_catalog_open",false).apply()
                 topicText=fiche.title
                 render(2)
@@ -1027,6 +1041,22 @@ class MainActivity:ComponentActivity() {
             render(2);return
         }
         if(topic.isBlank())return
+        val linked=CardioPractice.match(
+            chatPrefs().getString("cardio_active_study_id",null),
+            topic,CardioCurriculum.all(this))
+        if(linked!=null){
+            studySources=CardioPractice.source(linked)
+            studyText=when(kind){
+                "questions"->CardioPractice.questions(linked)
+                "correction"->CardioPractice.comparison(linked,response)
+                else->"Cours original — "+linked.title+"
+
+"+linked.content+"
+
+"+studySources
+            }
+            render(2);return
+        }
         val pieces=KnowledgeStore(this).use{it.retrieve(topic)}
         if(pieces.isEmpty()){studyText="Aucun extrait trouvé pour « $topic ». Importe des cours adaptés.";render(2);return}
         val quoted=StudyEngine.references(pieces)

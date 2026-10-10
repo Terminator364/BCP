@@ -85,3 +85,8 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 ## Offline recall path without overstated scoring
 - Added source-derived free-answer self-check within the original cardiology fiche reader. Course hidden during recall; answer draft persists by fiche ID; user reveals original essential points for comparison and can mark `A_REVOIR`. No fake AI grade or automatic mastery proof.
 - Expanded Robolectric UI smoke test: from `Étudier` to actual cardiology fiche source text, then switch to recall without showing answer content.
+
+## MedRebuild ↔ Practice source continuity
+- Practise from a cardiology lesson now binds the exact original fiche ID and checks that its title remains the user's active topic.
+- Generated questions and answer-comparison references are the original recall/essentials from the source, instantly usable offline. This is explicitly NOT automated student grading.
+- Returning to the full original fiche works; switching topic clears source match, preventing stale-document attribution. Robolectric smoke covers course→practice→questions.

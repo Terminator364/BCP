@@ -72,6 +72,27 @@ class UiSmokeTest {
         })
         assertFalse(allText(activity.window.decorView).any{it=="Cours original"})
     }
+    @Test fun medRebuildCatalogueToPracticeUsesRealOfflineMaterial(){
+        WorkManagerTestInitHelper.initializeTestWorkManager(
+            ApplicationProvider.getApplicationContext<Context>())
+        val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        allButtons(activity.window.decorView)
+            .first{it.contentDescription?.toString()=="Ouvrir Étudier"}.performClick()
+        allButtons(activity.window.decorView)
+            .first{it.text.toString().contains("156 fiches MedRebuild")}.performClick()
+        assertTrue(allText(activity.window.decorView).any{
+            it.contains("collection pédagogique MedRebuild")})
+        allButtons(activity.window.decorView)
+            .first{it.text.toString().contains(" →")}.performClick()
+        assertTrue(allText(activity.window.decorView).contains("Cours original"))
+        allButtons(activity.window.decorView)
+            .first{it.text.toString().contains("Pratiquer à partir de cette notion")}.performClick()
+        assertTrue(allText(activity.window.decorView).contains("📘 Fiche MedRebuild disponible"))
+        allButtons(activity.window.decorView)
+            .first{it.text.toString().contains("Générer des questions de pratique")}.performClick()
+        assertTrue(allText(activity.window.decorView).any{
+            it.contains("Questions issues de la fiche originale")})
+    }
     @Test fun pinnedComposerRemainsOutsideScrollableContent(){
         WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
