@@ -11,7 +11,7 @@ data class Passage(val title:String,val page:Int,val text:String,val method:Stri
 }
 
 /** Owns persistent evidence and checkpoints; schema 2 upgrades alpha v1 without data loss. */
-class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null,2),java.io.Closeable {
+class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null,3),java.io.Closeable {
     override fun onCreate(db:SQLiteDatabase) {
         db.execSQL("CREATE TABLE docs(id TEXT PRIMARY KEY,title TEXT NOT NULL,uri TEXT NOT NULL,processed INTEGER NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'QUEUED',error TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL DEFAULT 0)")
         db.execSQL("CREATE TABLE pages(doc_id TEXT NOT NULL,page INTEGER NOT NULL,body TEXT NOT NULL,extraction_method TEXT NOT NULL DEFAULT 'TEXT',PRIMARY KEY(doc_id,page))")
@@ -19,9 +19,10 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         db.execSQL("CREATE TABLE reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,ts INTEGER NOT NULL,topic TEXT NOT NULL,grade TEXT NOT NULL)")
         db.execSQL("CREATE INDEX page_doc_idx ON pages(doc_id,page)")
         db.execSQL("CREATE VIRTUAL TABLE pages_fts USING fts4(doc_id,page,body,tokenize=unicode61)")
+        db.execSQL("CREATE TABLE scan_nodes(tree_uri TEXT NOT NULL,node_uri TEXT NOT NULL,depth INTEGER NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',PRIMARY KEY(tree_uri,node_uri))")
     }
     override fun onUpgrade(db:SQLiteDatabase,oldVersion:Int,newVersion:Int) {
-        if(oldVersion==1 && newVersion>=2) {
+        if(oldVersion<=1 && newVersion>=2) {
             db.execSQL("ALTER TABLE docs ADD COLUMN error TEXT NOT NULL DEFAULT ''")
             db.execSQL("ALTER TABLE docs ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0")
             db.execSQL("ALTER TABLE pages ADD COLUMN extraction_method TEXT NOT NULL DEFAULT 'TEXT'")
@@ -29,7 +30,10 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
             db.execSQL("CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,ts INTEGER NOT NULL,topic TEXT NOT NULL,grade TEXT NOT NULL)")
             db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts4(doc_id,page,body,tokenize=unicode61)")
             db.execSQL("INSERT INTO pages_fts(doc_id,page,body) SELECT doc_id,page,body FROM pages")
-        } else throw IllegalStateException("Migration unavailable $oldVersion->$newVersion")
+        }
+        if(oldVersion<=2 && newVersion>=3){
+            db.execSQL("CREATE TABLE IF NOT EXISTS scan_nodes(tree_uri TEXT NOT NULL,node_uri TEXT NOT NULL,depth INTEGER NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',PRIMARY KEY(tree_uri,node_uri))")
+        }
     }
     fun register(id:String,title:String,uri:String) {
         writableDatabase.execSQL("INSERT OR IGNORE INTO docs(id,title,uri,updated_at) VALUES(?,?,?,?)",arrayOf(id,title,uri,System.currentTimeMillis()))
@@ -96,6 +100,41 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
             while(it.moveToNext())out.add("${it.getString(0)} : ${it.getString(1)}")
         }
         return out.joinToString("\n")
+    }
+    /** Durable discovery queue without arbitrary 500-file truncation. */
+    fun startFolderScan(treeUri:String,rootUri:String,force:Boolean=false) {
+        if(force)writableDatabase.execSQL("DELETE FROM scan_nodes WHERE tree_uri=?",arrayOf(treeUri))
+        addScanNode(treeUri,rootUri,0,"Dossier racine","vnd.android.document/directory")
+    }
+    fun addScanNode(treeUri:String,docUri:String,depth:Int,name:String,mime:String) {
+        writableDatabase.execSQL(
+            "INSERT OR IGNORE INTO scan_nodes(tree_uri,node_uri,depth,name,mime) VALUES(?,?,?,?,?)",
+            arrayOf(treeUri,docUri,depth,name.take(250),mime.take(120))
+        )
+    }
+    data class ScanNode(val uri:String,val depth:Int,val name:String,val mime:String)
+    fun nextScanNode(treeUri:String):ScanNode?{
+        readableDatabase.rawQuery("SELECT node_uri,depth,name,mime FROM scan_nodes WHERE tree_uri=? AND status='PENDING' ORDER BY depth,node_uri LIMIT 1",arrayOf(treeUri)).use{
+            return if(it.moveToFirst()) ScanNode(it.getString(0),it.getInt(1),it.getString(2),it.getString(3)) else null
+        }
+    }
+    fun scanNodeDone(treeUri:String,docUri:String){
+        writableDatabase.execSQL("UPDATE scan_nodes SET status='DONE' WHERE tree_uri=? AND node_uri=?",arrayOf(treeUri,docUri))
+    }
+    fun scanNodeFailed(treeUri:String,docUri:String){
+        writableDatabase.execSQL("UPDATE scan_nodes SET status='ERROR' WHERE tree_uri=? AND node_uri=?",arrayOf(treeUri,docUri))
+    }
+    fun pendingScanNodes(treeUri:String):Int{
+        readableDatabase.rawQuery("SELECT COUNT(*) FROM scan_nodes WHERE tree_uri=? AND status='PENDING'",arrayOf(treeUri)).use{
+            return if(it.moveToFirst()) it.getInt(0) else 0
+        }
+    }
+    fun scanSummary():String {
+        val parts=mutableListOf<String>()
+        readableDatabase.rawQuery("SELECT COUNT(*),SUM(CASE WHEN status='PENDING' THEN 1 ELSE 0 END),SUM(CASE WHEN status='ERROR' THEN 1 ELSE 0 END) FROM scan_nodes",null).use{
+            if(it.moveToFirst()) parts.add("${it.getInt(0)} éléments explorés/enregistrés · ${it.getInt(1)} à parcourir · ${it.getInt(2)} erreurs")
+        }
+        return parts.joinToString("")
     }
     fun review(topic:String,grade:String) {
         writableDatabase.execSQL("INSERT INTO reviews(ts,topic,grade) VALUES(?,?,?)",arrayOf(System.currentTimeMillis(),topic.take(200),grade.take(30)))
