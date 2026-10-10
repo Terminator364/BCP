@@ -13,13 +13,13 @@ data class ModelReceipt(val bytes:Long,val sha256:String)
 /** Full local file integrity, rollback on failed import. Never stores weights in GitHub. */
 object ModelVault {
     fun file(ctx:Context):File=File(ctx.filesDir,"models/brain.gguf")
-    suspend fun import(ctx:Context,uri:Uri):ModelReceipt=withContext(Dispatchers.IO) {
+    suspend fun import(ctx:Context,uri:Uri,onProgress:((Long,Long)->Unit)?=null):ModelReceipt=withContext(Dispatchers.IO) {
         val target=file(ctx)
         target.parentFile?.mkdirs()
         val part=File(target.parentFile,"brain.partial")
         val backup=File(target.parentFile,"brain.previous")
         val available=StatFs(target.parentFile!!.absolutePath).availableBytes
-        val sourceSize=ctx.contentResolver.openAssetFileDescriptor(uri,"r")?.use{it.length}?:-1L
+        val sourceSize=try {ctx.contentResolver.openAssetFileDescriptor(uri,"r")?.use{it.length}?:-1L} catch(_:Exception){-1L}
         require(sourceSize<0 || sourceSize+500_000_000L<available){"Espace insuffisant (réserve minimale 500 Mo)."}
         val digest=MessageDigest.getInstance("SHA-256")
         var length=0L
@@ -35,6 +35,9 @@ object ModelVault {
                         require(length<4_000_000_000L){"Modèle >4 Go refusé"}
                         digest.update(buffer,0,n)
                         dest.write(buffer,0,n)
+                        if(onProgress!=null && (length % (32L*1024L*1024L)) < n) {
+                            withContext(Dispatchers.Main.immediate){onProgress(length,sourceSize)}
+                        }
                     }
                 }
             }
@@ -49,6 +52,7 @@ object ModelVault {
             try{check(part.renameTo(target)){"Impossible de finaliser le modèle"}}
             catch(e:Throwable){backup.renameTo(target);throw e}
             backup.delete()
+            withContext(Dispatchers.Main.immediate){onProgress?.invoke(length,sourceSize)}
             val hash=digest.digest().joinToString(""){"%02x".format(it)}
             ctx.getSharedPreferences("medbrain",Context.MODE_PRIVATE).edit()
                 .putString("model_sha256",hash).putLong("model_size",length).apply()
