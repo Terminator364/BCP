@@ -6,6 +6,8 @@
     <!-- No Internet, broad storage or privileged account permissions. SAF-only consent. -->
     <application
         android:label="MedBrain Personnel"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">

@@ -114,6 +114,8 @@ class MainActivity:ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window,false)
         window.statusBarColor=Color.TRANSPARENT
         window.navigationBarColor=Color.TRANSPARENT
+        WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightStatusBars=!night
+        WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightNavigationBars=!night
         val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
         ViewCompat.setOnApplyWindowInsetsListener(shell){v,insets->
             val safe=insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
