@@ -34,7 +34,7 @@ class KnowledgeStoreTest {
         }
         KnowledgeStore(ctx).use{store->
             assertEquals(2,store.threads().size)
-            val renal=store.threads().first{it.title.contains("Physiologie")}
+            val renal=store.threads().first{it.title=="Rénal — physiologie"}
             val cardiac=store.threads().first{it.title.contains("ECG")}
             store.clearChat(renal.id)
             assertTrue(store.messages(renal.id).isEmpty())
