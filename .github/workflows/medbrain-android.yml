@@ -1,22 +1,21 @@
-name: MedBrain Android debug APK
+name: MedBrain Android qualification
 on:
   push:
+    branches: ["feat/mobile-medbrain-v0-1-20261010"]
     paths:
       - "mobile-medbrain/**"
       - ".github/workflows/medbrain-android.yml"
-    branches:
-      - "feat/mobile-medbrain-v0-1-20261010"
   workflow_dispatch:
 
 permissions:
   contents: read
 concurrency:
-  group: medbrain-build-${{ github.ref }}
+  group: medbrain-qualification-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  debug-apk:
+  qualify:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v5
@@ -26,19 +25,49 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Install Android API 35
+      - name: Android SDK
+        shell: bash
         run: |
           yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
           /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Build and lint (single worker)
-        working-directory: mobile-medbrain
+      - name: Security and scope gates
+        shell: bash
         run: |
-          gradle :app:assembleDebug :app:lintDebug --no-daemon --max-workers=1
-      - name: Android APK SHA-256
-        run: sha256sum mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk
+          set -euo pipefail
+          M=mobile-medbrain/app/src/main/AndroidManifest.xml
+          grep -F 'android:process=":inference"' "$M"
+          grep -F 'android:exported="false"' "$M"
+          if grep -Eq 'android.permission.INTERNET|MANAGE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES' "$M"; then
+            echo "Broad network or device permission unexpectedly introduced"; exit 1
+          fi
+          test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/UiSmokeTest.kt
+          test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/KnowledgeStoreTest.kt
+      - name: Unit, simulated UI, migrations, lint, APK
+        working-directory: mobile-medbrain
+        run: gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon --max-workers=1
+      - name: APK package and cryptographic digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$APK" | head -n 4
+          sha256sum "$APK" | tee mobile-medbrain/apk-sha256.txt
+          python - <<'PY'
+          import zipfile,sys
+          p="mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk"
+          with zipfile.ZipFile(p) as z:
+              libs=[x for x in z.namelist() if x.startswith("lib/") and x.endswith(".so")]
+              assert libs and any("arm64-v8a" in x for x in libs), "missing arm64 native inference"
+              assert "classes.dex" in z.namelist(), "missing classes.dex"
+              print("APK_STRUCTURE=PASS native_libraries",len(libs))
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: medbrain-alpha-debug-apk
-          path: mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 14
+          name: medbrain-0-2-qualified-candidate
+          path: |
+            mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk
+            mobile-medbrain/apk-sha256.txt
+            mobile-medbrain/app/build/test-results/testDebugUnitTest/*.xml
           if-no-files-found: error
+          retention-days: 14

@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- No broad storage, account, network, microphone or deletion permission. -->
+    <!-- No Internet, broad storage or privileged account permissions. SAF-only consent. -->
     <application
         android:label="Blessing MedBrain"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="false"
-        android:usesCleartextTraffic="false"
-        android:extractNativeLibs="true">
+        android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <service
+            android:name=".InferenceService"
+            android:process=":inference"
+            android:exported="false" />
     </application>
 </manifest>

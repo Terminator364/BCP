@@ -1,38 +1,32 @@
-# Blessing MedBrain — Android, alpha 0.1
+# Blessing MedBrain — Android 0.2.0 candidate
 
-## Ce qui est réellement implémenté
-- Application Android arm64-v8a autonome (sans connexion au PC).
-- Import Android Storage Access Framework de PDF textuels et fichiers texte, y compris un document choisi dans un compte Drive visible dans le sélecteur Android.
-- Extraction page par page via PdfBox-Android (pages contenant du texte sélectionnable uniquement).
-- Journal de progression SQLite, ingestion en lots de 8 pages avec reprise WorkManager et absence de doublons (clé document+page).
-- Recherche lexicale locale avec extraits **vraiment présents** dans les documents, titres et numéros de page.
-- Import volontaire de poids GGUF dans le stockage privé de l'application.
-- Réponse en français via inférence locale llama.cpp AAR + extraits de la bibliothèque, sans réseau requis pour les fichiers locaux.
+Medical learning assistant, user-controlled, on-device and zero-PC operation.
 
-## Ce qui n'est PAS fait
-- Pas de parcours récursif automatique du second compte Drive (autorisation OAuth / sélection des dossiers à implémenter).
-- Pas de compréhension des figures, ni d'OCR des pages scannées.
-- Pas d'entraînement neuronal ou fine-tuning; « apprendre » signifie ici extraire/indexer pour retrieval-augmented generation.
-- Pas de garantie de validité clinique; ne pas utiliser comme dispositif de décision.
-- Pas de synchronisation TLIB / BCP active : seulement architecture séparée, avant intégration contractuelle.
-- Pas d'auto-exécution continue chaque minute; WorkManager peut différer les travaux.
-- Pas de suppression de photos ou action PC.
-- Bibliothèque et modèles non inclus dans l'APK (données privées / taille).
+## Architecture
+- Native Android app with five nonempty functional workspaces.
+- SQLite v2 migrates alpha v1 without dropping books, adds FTS4 search, provenance, review ledger, and recent events.
+- PDF text extraction and Latin OCR fallback for image-only pages (ML Kit bundled offline); image imports recognize text but do NOT imply comprehension of all diagrams.
+- Persistent WorkManager batches and automatic resumption after process death; optional local-folder discovery through Android SAF.
+- Optional Qwen3-1.7B GGUF local inference in **separate :inference process** (llama.cpp Android wrapper). The main app never needs to load model weights.
+- Atomic model vault import with SHA-256, storage reserve, old-model rollback, no GGUF distributed with APK.
+- Grounded FTS4 retrieval with title/page provenance, study materials, response correction, manual review records, diagnostics and user-directed text export.
+- No network permission or credentials. An individual file can be chosen from Google Drive's document provider; a whole remote Drive account is NOT synchronized through this API.
 
-## Compilation reproductible
-```bash
-cd mobile-medbrain
-gradle :app:assembleDebug --no-daemon
-```
-Le pipeline GitHub fournit un artefact APK debug si et seulement si la compilation aboutit. Ne pas déclarer d'APK livré sans preuve du workflow et de l'artefact.
+## Honesty gates
+- CI success demonstrates compilation, lint, and simulated JVM/Robolectric tests only.
+- Physical Galaxy S21 FE RAM/thermal/reboot and source-provider behavior are not certified without real device evidence.
+- OCR of text is not interpretation of charts/anatomical images.
+- RAG is not continuous training of neural weights. Knowledge growth is queryable corpus + verified retrieval; LoRA fine-tuning remains research.
+- No clinical diagnosis, patient decision support or medical practice use.
+- No auto-delete and no broad media access.
+- BCP orchestration authority remains canonical. No shadow broker and no replacement of B-EDGE.
 
-## Premier gate humain
-1. Installer l'APK debug quand il est compilé et vérifié.
-2. Dans l'app, choisir un PDF depuis le sélecteur Android (Drive ou stockage).
-3. Choisir le fichier GGUF Qwen3-1.7B existant si disponible sur l'appareil.
-Les identifiants Google et tokens ne doivent jamais être placés dans GitHub.
+## Proof
+Workflow: .github/workflows/medbrain-android.yml
+Unit tests: SQLite/FTS, academic provenance, five UI pages.
+Release candidate APK is published only on PASS, with SHA256 receipt. No merge or stable-label before phone qualification.
 
-## Limitations opérationnelles
-Le premier traitement PDF est textuel; les passages qui sont des images doivent être marqués non traités, pas proclamés assimilés.
-Sur des documents volumineux, PdfBox peut consommer beaucoup de mémoire lors de l'ouverture, malgré le traitement par lots. La qualification sur Galaxy S21 FE est obligatoire.
-Utiliser branche isolée, aucun remplacement de B-EDGE; publication et intégration BCP bloquées jusqu'aux preuves terrain.
+## Desired future expansion
+- OAuth read-only Drive folder sync for the second Google account with user consent and incremental changes API.
+- True medical multimodal image model and diagram caption validation, semantic embeddings, relationship graph and robust exam benchmarking.
+- Signed release update channel and mobile field test suite, integrated with BCP contracts.
