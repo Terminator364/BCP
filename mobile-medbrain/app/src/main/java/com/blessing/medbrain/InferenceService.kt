@@ -29,7 +29,10 @@ class InferenceService:Service() {
                     require(!memory.lowMemory){"Mémoire Android insuffisante : modèle suspendu pour protéger le téléphone."}
                     val model=ModelVault.file(this@InferenceService)
                     require(model.exists()){"Importe d'abord ton modèle GGUF."}
-                    local=Llama.loadModel(model.absolutePath,LlamaConfig(contextSize=2048,threads=4,gpuLayers=0,temperature=0.2f))
+                    val prefs=getSharedPreferences("medbrain",MODE_PRIVATE)
+                    val ctx=prefs.getInt("context_size",2048).coerceIn(1024,2048)
+                    val threads=prefs.getInt("cpu_threads",4).coerceIn(2,4)
+                    local=Llama.loadModel(model.absolutePath,LlamaConfig(contextSize=ctx,threads=threads,gpuLayers=0,temperature=0.2f))
                     val result=Llama.complete(local!!,prompt=prompt,systemPrompt=instruction,maxTokens=420)
                     response=result.text.trim()+"\n\n[Génération locale : "+String.format("%.1f",result.tokensPerSecond)+" tokens/s]"
                 } catch(e:Throwable) {
