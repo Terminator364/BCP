@@ -1138,7 +1138,7 @@ class MainActivity:ComponentActivity() {
                 if(msg.data.getInt("request_id")!=id||id!=aiSerial||!busy)return
                 if(msg.what==InferenceService.PARTIAL){
                     val visible=stream.accept(id,msg.data.getBoolean("safe_output"),
-                        msg.data.getString("delta").orEmpty(),SystemClock.uptimeMillis())
+                        msg.data.getString("delta").orEmpty(),android.os.SystemClock.uptimeMillis())
                     if(visible!=null)onProgress?.invoke(visible)
                     return
                 }
