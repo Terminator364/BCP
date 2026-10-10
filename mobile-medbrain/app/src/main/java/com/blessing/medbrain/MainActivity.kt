@@ -843,8 +843,17 @@ class MainActivity:ComponentActivity() {
         // Deictic follow-ups must never be treated as FTS queries.
         val evidence=if(mode=="general"||route.searchQuery==null)emptyList()
             else KnowledgeStore(this).use{it.retrieve(route.searchQuery,4)}
-        val authored=if(mode=="general"||route.searchQuery==null)emptyList()
-            else CardioCurriculum.findRelevant(this,route.searchQuery,2)
+        val authored=when {
+            mode=="general"->emptyList()
+            route.followUp->{
+                val previousAnswer=previous.lastOrNull{it.kind=="assistant"&&
+                    !DialoguePlanner.failedAnswer(it.body)}
+                CardioCurriculum.fromPreviousReferences(
+                    this,previousAnswer?.sources.orEmpty())
+            }
+            route.searchQuery!=null->CardioCurriculum.findRelevant(this,route.searchQuery,2)
+            else->emptyList()
+        }
         val sources=listOf(CardioCurriculum.references(authored),
             StudyEngine.references(evidence)).filter{it.isNotBlank()}.joinToString("\n\n")
         val hasModel=ModelVault.file(this).exists()

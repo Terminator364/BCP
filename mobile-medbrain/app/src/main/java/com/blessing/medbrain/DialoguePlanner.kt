@@ -79,7 +79,13 @@ object DialoguePlanner {
         if(route.followUp){
             return ("Conversation suivie. Ne cherche pas un nouveau sujet documentaire.\n"+
                 "Question antérieure : "+topic.take(170)+"\n"+
-                "Dernière réponse utile (fin) : "+assistant.takeLast(650)+"\n"+
+                "Dernière réponse utile (fin) : "+assistant.takeLast(if(curated.isEmpty())650 else 370)+"\n"+
+                (if(curated.isEmpty())"" else {
+                    val f=curated.first()
+                    "Référence confirmée dans la discussion : MedRebuild Google Docs, Tome "+
+                        f.tome+", "+f.sourceLocator.take(80)+". Extrait original : "+
+                        CardioCurriculum.excerpt(f,topic.ifBlank{f.title},320)+"\n"
+                })+
                 "Demande actuelle : "+question.take(175)+"\n"+
                 "Reprends exactement le fil. Si le contexte manque, dis-le. Ne répète pas les points précédents. Français, réponse directe. /no_think"
             ).take(1350)
@@ -119,7 +125,13 @@ object DialoguePlanner {
             }
             return "Le modèle neuronal n'est pas disponible maintenant. Voici des passages réellement indexés, sans synthèse inventée :\n\n"+refs
         }
-        return if(followUp)
+        return if(followUp && curated.isNotEmpty()){
+            val f=curated.first()
+            "Le modèle n'a pas produit une suite fiable. La référence utilisée précédemment est toujours disponible :\n\n"+
+                CardioCurriculum.excerpt(f,f.title,450)+"\n\n"+
+                "Source originale : "+f.sourceTitle+" · "+f.sourceLocator+
+                "\nCe texte est un extrait du cours, pas la suite rédigée par l'IA."
+        }else if(followUp)
             "Je n'ai pas réussi à produire la suite avec le modèle local. Le fil de discussion est conservé. Recharge le téléphone avant une nouvelle tentative; je n'attribue pas de sources hors sujet à ta relance."
         else
             "Le moteur neuronal n'a pas répondu à temps. La conversation et les livres sont conservés. Recharge le téléphone et réessaie; aucune réponse médicale non vérifiée n'a été inventée."

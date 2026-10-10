@@ -94,6 +94,13 @@ object CardioCurriculum {
             .thenBy{it.second.tome}.thenBy{it.second.id})
             .take(limit.coerceIn(1,3)).map{it.second}
     }
+    /** Resolve a previously recorded citation, never a random semantic re-search. */
+    fun fromPreviousReferences(context:Context,sources:String):List<Fiche>{
+        if(sources.isBlank())return emptyList()
+        val ids=Regex("""\[MedRebuild, Google Docs, Tome [123], fiche (CARDIO\.T[123]\.M\d+\.F\d+)\]""")
+            .findAll(sources).map{it.groupValues[1]}.distinct().take(2).toList()
+        return ids.mapNotNull{get(context,it)}
+    }
     fun references(fiches:List<Fiche>):String = fiches.take(2).joinToString("\n\n"){f->
         "[MedRebuild, Google Docs, Tome "+f.tome+", fiche "+f.id+"]\n"+
             "Document : "+f.sourceTitle+"\nRepère : "+f.sourceLocator
