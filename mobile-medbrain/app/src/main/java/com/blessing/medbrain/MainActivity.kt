@@ -16,6 +16,11 @@ import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import android.os.StatFs
+import java.io.File
 import androidx.work.*
 import kotlinx.coroutines.*
 import java.security.MessageDigest
@@ -73,26 +78,33 @@ class MainActivity:ComponentActivity() {
                 val request=OneTimeWorkRequestBuilder<FolderScanWorker>().setInputData(input).build()
                 WorkManager.getInstance(this).enqueueUniqueWork("folder-"+digest(uri.toString()),
                     ExistingWorkPolicy.REPLACE,request)
-                answerText="Dossier ajouté à la file d'exploration. Limite de sécurité : 500 fichiers par passage."
+                answerText="Dossier autorisé : indexation progressive et reprise automatique. Le nombre total de livres n’est pas limité à 500."
             }catch(e:Exception){answerText="Autorisation du dossier refusée : ${e.message}"}
             render(1)
         }
     }
     private val importModel=registerForActivityResult(ActivityResultContracts.OpenDocument()){uri->
+        recordDiagnostic("PICKER_MODEL_RETURN",if(uri==null)"cancelled" else "selected")
         if(uri!=null){
             if(!displayName(uri).endsWith(".gguf",true)){
                 answerText="Fichier refusé : sélectionne un modèle GGUF."
                 render(4)
             }else {
                 busy=true
-                answerText="Vérification et import du modèle en cours…"
+                recordDiagnostic("MODEL_IMPORT_STARTED","file selected")
+                answerText="Import GGUF : préparation. Ne ferme pas MedBrain."
                 render(4)
                 lifecycleScope.launch{
                     try{
-                        val receipt=ModelVault.import(this@MainActivity,uri)
+                        val receipt=ModelVault.import(this@MainActivity,uri) { copied,total ->
+                            runOnUiThread {
+                                answerText="Import GGUF : ${copied/1048576} Mio"+if(total>0)"/${total/1048576} Mio" else ""
+                                if(page==4 && copied%(128L*1048576)<65536)render(4)
+                            }
+                        }
                         answerText="GGUF importé (${receipt.bytes/1048576} Mio). Empreinte SHA-256 : ${receipt.sha256.take(18)}…"
                         KnowledgeStore(this@MainActivity).use{it.event("MODEL_IMPORTED",receipt.sha256.take(20))}
-                    }catch(e:Throwable){answerText="Import refusé : ${e.message}"}
+                    }catch(e:Throwable){recordDiagnostic("MODEL_IMPORT_FAILED",e.javaClass.simpleName+": "+e.message);answerText="Import refusé : ${e.message}"}
                     finally{busy=false;render(4)}
                 }
             }
@@ -108,30 +120,44 @@ class MainActivity:ComponentActivity() {
     }
     override fun onCreate(savedInstanceState:Bundle?){
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window,false)
+        window.statusBarColor=Color.TRANSPARENT
+        window.navigationBarColor=Color.TRANSPARENT
         val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
+        ViewCompat.setOnApplyWindowInsetsListener(shell){v,insets->
+            val safe=insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            v.setPadding(safe.left,safe.top,safe.right,safe.bottom)
+            insets
+        }
         val top=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(17),dp(16),dp(17),dp(10))}
         top.addView(text("●  MEDBRAIN",21f,true,accent))
         top.addView(text("Cerveau médical personnel  •  traitement local",12f,false,muted))
         stats=text("Chargement des acquis…",12f,false,muted)
         top.addView(stats)
         shell.addView(top)
+        nav=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(surface);setPadding(dp(8),dp(2),dp(8),dp(4))}
+        shell.addView(nav)
         val scroll=ScrollView(this).apply{isFillViewport=false;isVerticalScrollBarEnabled=true}
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(8),dp(16),dp(22))}
         scroll.addView(body)
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=true}
-        nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(6),dp(7),dp(6),dp(7));setBackgroundColor(surface)}
-        navScroll.addView(nav)
-        shell.addView(navScroll)
         setContentView(shell)
         MaintenanceWorker.arm(this)
-        render(0)
+        render(savedInstanceState?.getInt("tab") ?: 0)
+        recordDiagnostic("UI_START","screenDp="+resources.configuration.screenWidthDp+" fontScale="+resources.configuration.fontScale)
         lifecycleScope.launch{
             while(isActive){
                 delay(4000)
                 if(!isFinishing)refreshSummary()
             }
         }
+    }
+    override fun onSaveInstanceState(outState:Bundle){
+        outState.putInt("tab",page)
+        super.onSaveInstanceState(outState)
+    }
+    private fun recordDiagnostic(kind:String,detail:String){
+        try{KnowledgeStore(this).use{it.event(kind,detail.take(250))}}catch(_:Throwable){}
     }
     private fun dp(px:Int):Int=(px*resources.displayMetrics.density).toInt()
     private fun drawable(color:Int,radius:Int=13):GradientDrawable=
@@ -178,13 +204,24 @@ class MainActivity:ComponentActivity() {
         body.removeAllViews()
         nav.removeAllViews()
         val menu=arrayOf("Accueil","Bibliothèque","Étudier","Interroger","Diagnostic")
-        menu.forEachIndexed{i,title->
-            nav.addView(Button(this).apply{
-                text=title;isAllCaps=false;textSize=11f
-                setTextColor(if(i==tab)Color.WHITE else fg)
-                background=drawable(if(i==tab)accent else surface,9)
-                setOnClickListener{render(i)}
-            },LinearLayout.LayoutParams(dp(if(i==1)103 else 87),dp(44)))
+        val wide=resources.configuration.screenWidthDp>=600
+        val groups=if(wide)listOf(listOf(0,1,2,3,4))else listOf(listOf(0,1,2),listOf(3,4))
+        groups.forEach{group->
+            val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            group.forEach{i->
+                val title=menu[i]
+                val btn=Button(this).apply{
+                    text=title;contentDescription="Ouvrir "+title;isAllCaps=false
+                    textSize=if(resources.configuration.fontScale>1.25f)10f else 11.5f
+                    setTextColor(if(i==tab)Color.WHITE else fg)
+                    background=drawable(if(i==tab)accent else surface,9)
+                    setPadding(dp(2),0,dp(2),0)
+                    minHeight=dp(44)
+                    setOnClickListener{render(i)}
+                }
+                row.addView(btn,LinearLayout.LayoutParams(0,dp(46),1f).apply{setMargins(dp(2),dp(2),dp(2),dp(2))})
+            }
+            nav.addView(row,LinearLayout.LayoutParams(-1,-2))
         }
         refreshSummary()
         when(tab){
@@ -211,7 +248,8 @@ class MainActivity:ComponentActivity() {
         add(action("＋  Importer des livres (Drive / fichiers)") {
             importDocs.launch(arrayOf("application/pdf","text/plain","image/*","text/markdown"))
         })
-        add(action("📁  Scanner un dossier local autorisé"){importFolder.launch(null)})
+        add(action("📁  Surveiller un dossier local autorisé"){importFolder.launch(null)})
+        card("Google Drive","Choisis plusieurs PDF depuis ton compte Drive. Le choix de la racine Drive est limité par Android ; la synchronisation intégrale exige une connexion Google dédiée.")
         add(action("↻  Reprendre les documents en attente"){resumeAll()})
         add(action("Actualiser les progrès"){render(1)})
         if(answerText.isNotBlank())card("État",answerText)
@@ -252,8 +290,19 @@ class MainActivity:ComponentActivity() {
     }
     private fun system(){
         section("Diagnostic et contrôle","Chaque incident est visible. Aucune réinstallation ou capture répétée n'est nécessaire pour connaître l'état.")
-        card("Modèle neuronal",ModelVault.status(this),"Importer ou remplacer mon GGUF"){importModel.launch(arrayOf("*/*"))}
+        card("Modèle neuronal",ModelVault.status(this)+"\nChoisis un modèle GGUF déjà téléchargé dans Documents ou Téléchargements.", "Sélectionner mon GGUF"){
+            recordDiagnostic("PICKER_MODEL_OPEN","user")
+            try{importModel.launch(arrayOf("application/octet-stream","*/*"))}
+            catch(e:Exception){recordDiagnostic("PICKER_MODEL_ERROR",e.message?:"?");answerText="Sélecteur indisponible : "+e.message;render(4)}
+        }
         card("Données et appareil",diagnostic())
+        add(action("Auto-test : espace disponible pour le GGUF"){
+            val dir=File(filesDir,"models").apply{mkdirs()}
+            val free=StatFs(dir.absolutePath).availableBytes/1048576
+            answerText="Espace libre pour MedBrain : "+free+" Mio. Prévoir une réserve de 700 Mio en plus de la taille du modèle."
+            recordDiagnostic("STORAGE_PROBE","free MiB="+free)
+            render(4)
+        })
         add(action("Exporter les diagnostics en texte"){exportReport.launch("MedBrain_diagnostic.txt")})
         add(action("Relancer tous les traitements incomplets"){resumeAll()})
         if(answerText.isNotBlank())card("Dernière opération",answerText)
