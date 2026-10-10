@@ -882,7 +882,7 @@ class MainActivity:ComponentActivity() {
             val why=if(battery in 1..14)
                 "⚡ Batterie faible ("+battery+" %) : génération lourde suspendue. Recharge le téléphone.\n\n"
             else "⏳ Le moteur a récemment expiré : nouvelle tentative neuronale temporairement suspendue.\n\n"
-            KnowledgeStore(this).use{it.addChat("assistant",why+DialoguePlanner.fallback(evidence,route.followUp),sources,threadId)}
+            KnowledgeStore(this).use{it.addChat("assistant",why+DialoguePlanner.fallback(evidence,route.followUp,authored,question),sources,threadId)}
             render(3);return
         }
         evidencePreviewByThread[threadId]=if(evidence.isEmpty()&&authored.isEmpty())"" else
@@ -896,7 +896,7 @@ class MainActivity:ComponentActivity() {
             generatingChatThreads.remove(threadId)
             evidencePreviewByThread.remove(threadId)
             val response=if(AnswerContinuationPolicy.isFailure(out))
-                DialoguePlanner.fallback(evidence,route.followUp) else out
+                DialoguePlanner.fallback(evidence,route.followUp,authored,question) else out
             KnowledgeStore(this).use{it.addChat("assistant",response,sources,threadId)}
             if(page==3 && currentThreadId()==threadId)render(3)
         }

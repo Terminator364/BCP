@@ -30,6 +30,16 @@ class CardioChatEvidenceTest{
         assertFalse(prompt.contains("p. 999"))
         assertTrue(prompt.length<=1410)
     }
+    @Test fun modelFailureStillDisplaysGroundedOriginalSource(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        val sources=CardioCurriculum.findRelevant(ctx,"Insuffisance cardiaque",2)
+        val out=DialoguePlanner.fallback(emptyList(),false,sources,"Insuffisance cardiaque")
+        assertTrue(out.contains("ORIGINAL"))
+        assertTrue(out.contains(sources.first().sourceTitle))
+        assertTrue(out.contains("sans numéro de page PDF"))
+        val follow=DialoguePlanner.fallback(emptyList(),true,sources,"donc")
+        assertFalse(follow.contains(sources.first().sourceTitle))
+    }
     @Test fun nonCardiacTopicDoesNotReceiveStaleCardioCitation(){
         val ctx=ApplicationProvider.getApplicationContext<Context>()
         assertTrue(CardioCurriculum.findRelevant(ctx,"hémorragie digestive massive",2).isEmpty())

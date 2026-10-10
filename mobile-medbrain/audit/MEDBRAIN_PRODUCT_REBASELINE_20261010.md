@@ -104,3 +104,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - Source strings are explicitly labeled Google Docs with tome, fiche, original document title and section locator, NOT synthetic PDF page numbers.
 - Without GGUF, the chat displays the original MedRebuild excerpt immediately rather than falsely saying nothing exists; noncardiac questions must not inherit a cardiology source. This is retrieval over authored lessons, not learning neural weights.
 - Added tests for actual cardiac query lookup, source labels, prompt budget, noncardiac specificity.
+
+## No silent source loss after inference failure
+- When the local GGUF times out but authored MedRebuild evidence is available, Chat now displays an exact labeled original extract and its Google Doc title/locator, not a generic no-answer string. It never implies a synthetic PDF page or a successful neural synthesis.
+- Conversational follow-ups do not suddenly insert a new unrelated document. Mixed-source prompts explicitly distinguish Google Docs locators from PDF pages. Dedicated regression added.

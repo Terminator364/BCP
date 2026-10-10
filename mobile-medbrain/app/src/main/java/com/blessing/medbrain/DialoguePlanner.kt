@@ -98,11 +98,20 @@ object DialoguePlanner {
         return (("Question: "+question.take(260)+"\n")+
             if(sources.isBlank())
                 "Aucune source documentaire pertinente vérifiée. Réponds sans inventer de citation."
-            else "Extraits retrouvés (ne cite que ces pages):\n"+sources+
+            else "Extraits retrouvés (citer uniquement ces documents, sans inventer de pages Google Docs):\n"+sources+
                 "\nAppuie-toi uniquement sur ces extraits pour attribuer des affirmations aux livres."
             ).take(1250)+"\nRéponds directement en français sans réflexion interne. /no_think"
     }
-    fun fallback(evidence:List<Passage>,followUp:Boolean):String {
+    fun fallback(evidence:List<Passage>,followUp:Boolean,
+                 curated:List<CardioCurriculum.Fiche> = emptyList(),
+                 question:String = ""):String {
+        if(curated.isNotEmpty()&&!followUp){
+            val f=curated.first()
+            return "La synthèse neuronale n'a pas abouti. Voici un extrait ORIGINAL de MedRebuild, sans correction inventée :\n\n"+
+                CardioCurriculum.excerpt(f,question.ifBlank{f.title},480)+"\n\n"+
+                "Source : "+f.sourceTitle+" · "+f.sourceLocator+
+                "\nDocument Google Docs, sans numéro de page PDF."
+        }
         if(evidence.isNotEmpty()&&!followUp) {
             val refs=evidence.take(2).joinToString("\n\n") {
                 "• "+it.text.replace(Regex("\\s+")," ").take(330).trim()+
