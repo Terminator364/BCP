@@ -124,4 +124,28 @@ class KnowledgeStoreTest {
             assertEquals(1,it.messages().size)
         }
     }
+    @Test fun retrievalDoesNotLoseCardiologyAfterTwoHundredUnrelatedPages(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        KnowledgeStore(ctx).use { store ->
+            // FTS4 historically returned only the first 180 OR hits, hiding the answer.
+            for(i in 1..240) {
+                val id="obst-$i"
+                store.register(id,"Cours d'obstétrique $i","content://fictitious/obst/$i")
+                store.save(id,1,
+                    "La taille du sac gestationnel et le coeur foetal sont étudiés en obstétrique.",
+                    1,1,"INDEXED")
+            }
+            store.register("cardiology","Anatomie cardiovasculaire","content://fictitious/cardio")
+            store.save("cardiology",1,
+                "La taille du coeur adulte varie avec la morphologie et les dimensions cardiaques.",
+                1,1,"INDEXED")
+            val hits=store.retrieve("taille du coeur",4)
+            assertTrue("Cardiac adult reference missing after FTS noise: $hits",
+                hits.any { it.title=="Anatomie cardiovasculaire" })
+            assertTrue("No fetal obstetric page should pass this adult cardiac query",
+                hits.none { it.title.startsWith("Cours d'obstétrique") })
+        }
+    }
+
 }

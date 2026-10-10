@@ -26,6 +26,22 @@ object SearchPolicy {
             else->listOf(it)
         }
     }
+    /**
+     * Precision first: intersect concepts before a bounded broad fallback.
+     * The FTS4 tokenizer receives only normalized alphanumeric tokens, never raw user SQL.
+     * A broad OR scan alone would lose relevant pages behind early unrelated hits.
+     */
+    fun candidateQueries(question:String):List<String> {
+        val groups=terms(question).take(6).map { token ->
+            "(" + expand(listOf(token)).distinct().joinToString(" OR ") { "$it*" } + ")"
+        }
+        if(groups.isEmpty())return emptyList()
+        if(groups.size==1)return groups
+        val strict=groups.take(3).joinToString(" AND ")
+        val pair=groups.take(2).joinToString(" AND ")
+        val broad=groups.joinToString(" OR ")
+        return listOf(strict,pair,broad).distinct()
+    }
     fun firstPosition(terms:List<String>,text:String):Int{
         val norm=normalized(text)
         return expand(terms).map{norm.indexOf(it)}.filter{it>=0}.minOrNull()?:0

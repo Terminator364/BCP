@@ -168,31 +168,49 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         writableDatabase.execSQL("DELETE FROM chats WHERE thread_id=?",arrayOf(threadId))
         event("CHAT_CLEAR","User confirmed chat history deletion")
     }
-    /** Precision-first retrieval: no obstetrics snippets for a cardiac anatomy query. */
+    /**
+     * Multi-stage retrieval prevents early OR-only FTS results from crowding out
+     * a clinically relevant page in a large indexed library.
+     * Read-only search: database schema and all document checkpoints are unchanged.
+     */
     fun retrieve(question:String,limit:Int=5):List<Passage> {
-        val tokens=SearchPolicy.terms(question)
-        if(tokens.isEmpty()) return emptyList()
-        // Normalize search terms to FTS unicode61, allow spelling variants only from known word families.
-        val queries=SearchPolicy.expand(tokens).distinct().take(14)
-        val match=queries.joinToString(" OR "){"$it*"}
-        val ranked=ArrayList<Pair<Double,Passage>>()
-        readableDatabase.rawQuery(
-            "SELECT d.title,pages_fts.page,pages_fts.body,p.extraction_method FROM pages_fts JOIN docs d ON d.id=pages_fts.doc_id LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id AND p.page=CAST(pages_fts.page AS INTEGER) WHERE pages_fts MATCH ? LIMIT 180",
-            arrayOf(match)
-        ).use{c->
-            while(c.moveToNext()){
-                val title=c.getString(0)
-                val body=c.getString(2)
-                val score=SearchPolicy.score(question,title,body)
-                if(score>0){
-                    val offset=SearchPolicy.firstPosition(tokens,body)
-                    val begin=(offset-150).coerceAtLeast(0)
-                    val excerpt=body.substring(begin,minOf(body.length,begin+950))
-                    ranked.add(score to Passage(title,c.getInt(1),excerpt,c.getString(3)?:"TEXT"))
+        val stages=SearchPolicy.candidateQueries(question)
+        if(stages.isEmpty())return emptyList()
+        val cap=limit.coerceIn(1,8)
+        val evidence=LinkedHashMap<String,Pair<Double,Passage>>()
+        for(match in stages) {
+            readableDatabase.rawQuery(
+                "SELECT pages_fts.doc_id,d.title,pages_fts.page,pages_fts.body," +
+                    "COALESCE(p.extraction_method,'TEXT') FROM pages_fts " +
+                    "JOIN docs d ON d.id=pages_fts.doc_id " +
+                    "LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id " +
+                    "AND p.page=CAST(pages_fts.page AS INTEGER) " +
+                    "WHERE pages_fts MATCH ? LIMIT 360",
+                arrayOf(match)
+            ).use { c->
+                while(c.moveToNext()) {
+                    val title=c.getString(1)
+                    val body=c.getString(3)
+                    val score=SearchPolicy.score(question,title,body)
+                    if(score>0) {
+                        val offset=SearchPolicy.firstPosition(SearchPolicy.terms(question),body)
+                        val begin=(offset-150).coerceAtLeast(0)
+                        val excerpt=body.substring(begin,minOf(body.length,begin+950))
+                        val page=c.getInt(2)
+                        val key=c.getString(0)+":"+page
+                        val passage=Passage(title,page,excerpt,c.getString(4))
+                        if(evidence[key]?.first?.let{score>it} != false)
+                            evidence[key]=score to passage
+                    }
                 }
             }
+            // Collect a small diversity reserve, then avoid a potentially noisy OR scan.
+            if(evidence.size>=cap*3)break
         }
-        return ranked.sortedByDescending{it.first}.take(limit.coerceIn(1,8)).map{it.second}
+        return evidence.values.sortedWith(
+            compareByDescending<Pair<Double,Passage>>{it.first}
+                .thenBy{it.second.title}.thenBy{it.second.page}
+        ).take(cap).map{it.second}
     }
     fun passages(question:String,limit:Int=5):String = retrieve(question,limit).joinToString("\n\n"){
         "[${it.citation()}]\n${it.text}"
