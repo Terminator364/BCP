@@ -1,0 +1,108 @@
+name: MedBrain Android qualification
+on:
+  push:
+    branches: ["feat/mobile-medbrain-v0-1-20261010"]
+    paths:
+      - "mobile-medbrain/**"
+      - ".github/workflows/medbrain-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: medbrain-qualification-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Android SDK
+        shell: bash
+        run: |
+          yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Security and scope gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          M=mobile-medbrain/app/src/main/AndroidManifest.xml
+          grep -F 'android:process=":inference"' "$M"
+          grep -F 'android:exported="false"' "$M"
+          if grep -Eq 'MANAGE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES' "$M"; then
+            echo "Broad device permission unexpectedly introduced"; exit 1
+          fi
+          grep -F 'android.permission.INTERNET"' "$M"
+          grep -F 'android.permission.ACCESS_NETWORK_STATE' "$M"
+          test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/UiSmokeTest.kt
+          test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/KnowledgeStoreTest.kt
+          test -f mobile-medbrain/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/SearchPolicyTest.kt
+          test -f mobile-medbrain/app/src/main/java/com/blessing/medbrain/ModelDownloadWorker.kt
+      - name: Unit, simulated UI, migrations, lint, APK
+        working-directory: mobile-medbrain
+        shell: bash
+        run: |
+          set +e
+          gradle :app:testDebugUnitTest :app:lintRelease :app:assembleRelease --no-daemon --max-workers=1
+          CODE=$?
+          if [ "$CODE" -ne 0 ]; then
+            echo "=== TEST FAILURE DIAGNOSTICS ==="
+            python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          for file in Path("app/build/test-results/testDebugUnitTest").glob("TEST-*.xml"):
+              root=ET.parse(file).getroot()
+              for case in root.findall("testcase"):
+                  for failure in case.findall("failure"):
+                      print("FAILED",file.name,case.get("name"),failure.get("message"))
+                      print((failure.text or "")[:2600])
+          PY
+          fi
+          exit "$CODE"
+      - name: APK package and cryptographic digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
+          test -s "$APK"
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$APK" | head -n 4
+          sha256sum "$APK" | tee mobile-medbrain/apk-sha256.txt
+          if /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$APK" | grep -q 'application-debuggable'; then
+            echo "INSECURE: release APK debuggable"; exit 1
+          fi
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump permissions "$APK" | grep 'android.permission.INTERNET'
+          python - <<'PY'
+          import zipfile,sys
+          p="mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk"
+          with zipfile.ZipFile(p) as z:
+              libs=[x for x in z.namelist() if x.startswith("lib/") and x.endswith(".so")]
+              assert libs and any("arm64-v8a" in x for x in libs), "missing arm64 native inference"
+              assert "classes.dex" in z.namelist(), "missing classes.dex"
+              print("APK_STRUCTURE=PASS native_libraries",len(libs))
+          PY
+      - name: Verify non-destructive upgrade identity and monotonic version
+        shell: bash
+        run: |
+          set -euo pipefail
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'" | grep "versionCode='41'"
+          test -f /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar
+          cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar mobile-medbrain/apksigner-tool.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: medbrain-personal-0-5-0-internal-unsigned
+          path: |
+            mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
+            mobile-medbrain/apk-sha256.txt
+            mobile-medbrain/apksigner-tool.jar
+            mobile-medbrain/app/build/test-results/testDebugUnitTest/*.xml
+          if-no-files-found: error
+          retention-days: 14
