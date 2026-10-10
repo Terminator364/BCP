@@ -3,6 +3,24 @@ package com.blessing.medbrain
 /** Evidence-first study material, no invented claims when a local LLM is absent. */
 object StudyEngine {
     fun references(passages:List<Passage>)=passages.take(4).joinToString("\n\n"){"[${it.citation()}]\n${it.text.take(850)}"}
+    /** Show exact documentary content while neural inference may take tens of seconds. */
+    fun immediatePreview(question:String,curated:List<CardioCurriculum.Fiche>,
+                         pdf:List<Passage>):String{
+        if(curated.isEmpty()&&pdf.isEmpty())return ""
+        val result=StringBuilder("📖 Extraits de sources, disponibles immédiatement (sans synthèse IA) :\n")
+        curated.firstOrNull()?.let{f->
+            result.append("\n📚 MedRebuild, Tome ").append(f.tome)
+                .append(" · ").append(f.sourceTitle.take(80))
+                .append("\nRepère Google Docs : ").append(f.sourceLocator.take(90))
+                .append("\n").append(CardioCurriculum.excerpt(f,question,380))
+        }
+        pdf.firstOrNull()?.let{p->
+            result.append("\n\n📄 PDF : ").append(p.title.take(100))
+                .append(" · page ").append(p.page).append(" (").append(p.method).append(")")
+                .append("\n").append(p.text.replace(Regex("\\s+")," ").trim().take(350))
+        }
+        return result.toString()
+    }
     /** Useful offline-first output while slow neural synthesis is pending. */
     fun quickEvidence(topic:String,passages:List<Passage>):String{
         if(passages.isEmpty())return "Aucun passage indexé suffisamment pertinent pour cette notion."

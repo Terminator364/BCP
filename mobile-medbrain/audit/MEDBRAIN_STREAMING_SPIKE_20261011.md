@@ -18,3 +18,7 @@ Branch: feat/medbrain-native-streaming-spike-20261011. This experiment must NOT 
 - Added `SafeStreamBuffer`: only same request_id + provider-asserted safe_output may be displayed, recent text limited to 2500 chars, refresh <= approx. 3 times/s. Wrong-thread/unsafe private text cannot reach Chat preview.
 - Activity wires PARTIAL IPC into request-specific progress callback and queues it with the original request; opening another thread does not cause its tokens to render there. Final REPLY continues to be cleaned, persisted and committed as before.
 - Critical: current BlockingVendorBackend emits ZERO PARTIAL messages. This code alone does not improve time to first token; it safely prepares the UI for a truly streaming, hard-nonthinking native model.
+
+## Immediate evidence UX independent of generation
+- While the current blocking Qwen backend is running, Chat now shows an original MedRebuild excerpt (Google Docs locator) and/or an indexed PDF passage with real page and extraction method, explicitly marked not synthesized by IA. This is a source preview, not a model answer.
+- No fake citation is constructed; both curated and scanned data only originate from the existing verified source objects. Tests cover real course, PDF page, and empty no-source path.

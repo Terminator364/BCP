@@ -897,10 +897,7 @@ class MainActivity:ComponentActivity() {
             KnowledgeStore(this).use{it.addChat("assistant",why+DialoguePlanner.fallback(evidence,route.followUp,authored,question),sources,threadId)}
             render(3);return
         }
-        evidencePreviewByThread[threadId]=if(evidence.isEmpty()&&authored.isEmpty())"" else
-            "📖 Références retrouvées : "+
-                (authored.take(1).map{"MedRebuild · "+it.title}+
-                 evidence.take(2).map{it.title+" (p. "+it.page+")"}).joinToString(" ; ")
+        evidencePreviewByThread[threadId]=StudyEngine.immediatePreview(question,authored,evidence)
         generatingChatThreads.add(threadId)
         render(3)
         val plan=AnswerContinuationPolicy.plan(question,battery)
