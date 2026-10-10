@@ -587,7 +587,7 @@ class MainActivity:ComponentActivity() {
                     }
                     panel.addView(text("Cours original",14f,true))
                     panel.addView(text(item.content,14f,false,fg).apply{
-                        setLineSpacing(dp(3),1.02f)
+                        setLineSpacing(dp(3).toFloat(),1.02f)
                         setTextIsSelectable(true)
                     })
                     if(item.essential.isNotEmpty()){
