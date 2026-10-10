@@ -8,9 +8,11 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.SQLiteMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[28])
+@SQLiteMode(SQLiteMode.Mode.NATIVE)
 class UiSmokeTest {
     @Test fun allFiveSectionsAreRealAndClickable(){
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()

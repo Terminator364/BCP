@@ -44,7 +44,25 @@ jobs:
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/KnowledgeStoreTest.kt
       - name: Unit, simulated UI, migrations, lint, APK
         working-directory: mobile-medbrain
-        run: gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon --max-workers=1
+        shell: bash
+        run: |
+          set +e
+          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon --max-workers=1
+          CODE=$?
+          if [ "$CODE" -ne 0 ]; then
+            echo "=== TEST FAILURE DIAGNOSTICS ==="
+            python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          for file in Path("app/build/test-results/testDebugUnitTest").glob("TEST-*.xml"):
+              root=ET.parse(file).getroot()
+              for case in root.findall("testcase"):
+                  for failure in case.findall("failure"):
+                      print("FAILED",file.name,case.get("name"),failure.get("message"))
+                      print((failure.text or "")[:2600])
+          PY
+          fi
+          exit "$CODE"
       - name: APK package and cryptographic digest
         shell: bash
         run: |

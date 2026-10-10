@@ -68,6 +68,7 @@ class MainActivity:ComponentActivity() {
         if(uri!=null){
             try{
                 contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                getSharedPreferences("medbrain",Context.MODE_PRIVATE).edit().putString("local_tree",uri.toString()).apply()
                 val input=Data.Builder().putString("tree_uri",uri.toString()).build()
                 val request=OneTimeWorkRequestBuilder<FolderScanWorker>().setInputData(input).build()
                 WorkManager.getInstance(this).enqueueUniqueWork("folder-"+digest(uri.toString()),
@@ -123,6 +124,7 @@ class MainActivity:ComponentActivity() {
         navScroll.addView(nav)
         shell.addView(navScroll)
         setContentView(shell)
+        MaintenanceWorker.arm(this)
         render(0)
         lifecycleScope.launch{
             while(isActive){
@@ -211,6 +213,7 @@ class MainActivity:ComponentActivity() {
         })
         add(action("📁  Scanner un dossier local autorisé"){importFolder.launch(null)})
         add(action("↻  Reprendre les documents en attente"){resumeAll()})
+        add(action("Actualiser les progrès"){render(1)})
         if(answerText.isNotBlank())card("État",answerText)
         KnowledgeStore(this).use{store->
             val docs=store.documents()

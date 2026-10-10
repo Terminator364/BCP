@@ -112,7 +112,7 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         val query=tokens.joinToString(" OR "){"$it*"}
         val out=mutableListOf<Triple<Int,Passage,Int>>()
         readableDatabase.rawQuery(
-            "SELECT d.title,f.page,f.body,p.extraction_method FROM pages_fts f JOIN docs d ON d.id=f.doc_id LEFT JOIN pages p ON p.doc_id=f.doc_id AND p.page=CAST(f.page AS INTEGER) WHERE pages_fts MATCH ? LIMIT 70",
+            "SELECT d.title,f.page,f.body,p.extraction_method FROM pages_fts JOIN docs d ON d.id=pages_fts.doc_id LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id AND p.page=CAST(pages_fts.page AS INTEGER) WHERE pages_fts MATCH ? LIMIT 70",
             arrayOf(query)
         ).use {c->
             while(c.moveToNext()) {

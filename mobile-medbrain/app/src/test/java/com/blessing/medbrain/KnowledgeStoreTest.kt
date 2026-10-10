@@ -7,9 +7,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.SQLiteMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[28])
+@SQLiteMode(SQLiteMode.Mode.NATIVE)
 class KnowledgeStoreTest {
     @Test fun readsRealPageAndTracksReview(){
         val ctx=ApplicationProvider.getApplicationContext<Context>()
