@@ -43,6 +43,7 @@ class CardioChatEvidenceTest{
     @Test fun nonCardiacTopicDoesNotReceiveStaleCardioCitation(){
         val ctx=ApplicationProvider.getApplicationContext<Context>()
         assertTrue(CardioCurriculum.findRelevant(ctx,"hémorragie digestive massive",2).isEmpty())
+        assertTrue(CardioCurriculum.findRelevant(ctx,"AVC",2).isEmpty())
         assertTrue(CardioCurriculum.findRelevant(ctx,"Bonjour",2).isEmpty())
     }
 }

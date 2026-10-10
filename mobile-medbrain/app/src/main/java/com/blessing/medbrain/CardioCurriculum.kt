@@ -81,6 +81,9 @@ object CardioCurriculum {
             val titleHits=tokens.count{title.contains(it)}
             val body=SearchPolicy.normalized(f.content)
             val coverage=tokens.count{title.contains(it)||body.contains(it)}
+            // A single term mentioned only in the body of an unrelated fiche
+            // is not enough to claim this is a relevant authored lesson.
+            if(tokens.size==1 && titleHits==0)return@mapNotNull null
             // Requiring all of up to three distinct concepts avoids attributing
             // a cardiology fiche to an unrelated multi-concept medical question.
             val required=minOf(3,tokens.size)
