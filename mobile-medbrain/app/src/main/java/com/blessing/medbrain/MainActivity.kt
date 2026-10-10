@@ -131,8 +131,8 @@ class MainActivity:ComponentActivity() {
             v.setPadding(safe.left,safe.top,safe.right,safe.bottom)
             insets
         }
-        val top=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(17),dp(16),dp(17),dp(10))}
-        top.addView(text("●  MEDBRAIN",21f,true,accent))
+        val top=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(15),dp(10),dp(15),dp(6))}
+        top.addView(text("●  MEDBRAIN",19f,true,accent))
         top.addView(text("Cerveau médical personnel  •  traitement local",12f,false,muted))
         stats=text("Chargement des acquis…",12f,false,muted)
         top.addView(stats)
@@ -157,6 +157,18 @@ class MainActivity:ComponentActivity() {
                 else -> "Import GGUF : "+done+" Mio"+if(total>0)"/"+total+" Mio" else " en cours"
             }
             if(next!=importStatus){importStatus=next;if(page==4)render(4)}
+        }
+        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("medbrain-model-download").observe(this){jobs->
+            val job=jobs.firstOrNull() ?: return@observe
+            val size=job.progress.getLong("copied",0L)/1048576
+            val total=job.progress.getLong("total",-1L)/1048576
+            val next=when(job.state){
+                WorkInfo.State.SUCCEEDED -> "Modèle Qwen3 installé, empreinte vérifiée."
+                WorkInfo.State.FAILED -> "Téléchargement échoué : "+job.outputData.getString("error").orEmpty()
+                WorkInfo.State.CANCELLED -> "Téléchargement annulé."
+                else -> "Qwen3 : "+size+" Mio"+if(total>0)"/"+total+" Mio" else " — Wi-Fi ou téléchargement en attente"
+            }
+            if(next!=downloadStatus){downloadStatus=next;if(page==5)render(5)}
         }
         render(savedInstanceState?.getInt("tab") ?: 0)
         recordDiagnostic("UI_START","screenDp="+resources.configuration.screenWidthDp+" fontScale="+resources.configuration.fontScale)

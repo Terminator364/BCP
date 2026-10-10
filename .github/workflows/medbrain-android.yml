@@ -40,7 +40,8 @@ jobs:
           if grep -Eq 'MANAGE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES' "$M"; then
             echo "Broad device permission unexpectedly introduced"; exit 1
           fi
-          grep -F 'android.permission.INTERNET" tools:node="remove"' "$M"
+          grep -F 'android.permission.INTERNET"' "$M"
+          grep -F 'android.permission.ACCESS_NETWORK_STATE' "$M"
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/UiSmokeTest.kt
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/KnowledgeStoreTest.kt
           test -f mobile-medbrain/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
@@ -76,9 +77,7 @@ jobs:
           if /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$APK" | grep -q 'application-debuggable'; then
             echo "INSECURE: release APK debuggable"; exit 1
           fi
-          if /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump permissions "$APK" | grep -q 'android.permission.INTERNET'; then
-            echo "UNEXPECTED INTERNET PERMISSION"; exit 1
-          fi
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump permissions "$APK" | grep 'android.permission.INTERNET'
           python - <<'PY'
           import zipfile,sys
           p="mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk"
@@ -96,7 +95,7 @@ jobs:
           cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar mobile-medbrain/apksigner-tool.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: medbrain-personal-0-3-3-release-unsigned
+          name: medbrain-personal-0-4-0-release-unsigned
           path: |
             mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
             mobile-medbrain/apk-sha256.txt
