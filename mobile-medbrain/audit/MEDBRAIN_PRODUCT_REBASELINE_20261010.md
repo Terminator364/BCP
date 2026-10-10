@@ -75,3 +75,9 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 ## 0.5.0 internal candidate (NOT installable yet)
 - Build versionCode increments 40 (delivered 0.4.6) -> 41. Same applicationId `com.blessing.medbrain.personal`, Kotlin/SQLite migration additive. GitHub workflow verifies v41 and outputs an explicitly non-installable, unsigned engineering artifact.
 - No signing or Delivery publication until Android + BCP CI success plus clinical/multi-turn evaluation on device. Android package identity preservation alone cannot certify that local data survived an actual 0.4.6->0.5.0 upgrade.
+
+## MedRebuild native Android curriculum (read-only / offline)
+- Original source `Terminator364/ChatGPT-PC` `hotfix/med-rebuild-v193-r3-final`, `med-rebuild-study-hub/v1.5-prototype/config/cardio-fiches-v18.json` SHA blob f25dd5abc745d630fbecb20587511e09d3cad2b1.
+- Full unedited 784,894-character JSON packaged in Android assets, not recreated by Qwen; 60 source modules, 156 fiches, 47/66/43 across 3 tomes. Google Docs source titles and section locators displayed, never fabricated page numbers.
+- The Learn UI has a real 3-tome catalogue, module navigation, complete lesson content, learning objectives, essentials and active recall. Optional deeper session combines 2–3 original consecutive fiches with visible headings. Previous/next links and practice action are functional. No neuronal request is required for reading.
+- Roboelectric tests verify IDs/content/source traceability and limits. This does not imply all fiches are educationally rich: original lengths range from 147 to 9472 characters; further editorial QA is required. Reading is NOT automatic verified mastery.

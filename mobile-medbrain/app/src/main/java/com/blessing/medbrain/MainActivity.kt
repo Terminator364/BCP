@@ -416,6 +416,14 @@ class MainActivity:ComponentActivity() {
     }
     private fun study(){
         section("Mes études médicales","Comprendre, pratiquer, puis réviser avec les livres réellement indexés.")
+        if(chatPrefs().getBoolean("cardio_catalog_open",false)){
+            cardioCatalog()
+            return
+        }
+        add(action("📚 Cardiologie — 3 tomes / 156 fiches MedRebuild"){
+            chatPrefs().edit().putBoolean("cardio_catalog_open",true).apply()
+            render(2)
+        })
         val pref=chatPrefs()
         val selected=pref.getString("study_section","learn")?:"learn"
         val options=listOf("learn" to "Comprendre","practice" to "Pratiquer","review" to "Réviser")
@@ -487,6 +495,118 @@ class MainActivity:ComponentActivity() {
                 .setMessage(studySources.take(14000))
                 .setPositiveButton("Fermer",null).show()
         })
+    }
+    /**
+     * Original teaching content: no GGUF call, no Internet and no claim of mastery.
+     */
+    private fun cardioCatalog(){
+        val pref=chatPrefs()
+        add(action("← Retour aux études"){
+            pref.edit().putBoolean("cardio_catalog_open",false).apply()
+            render(2)
+        })
+        val fiches=try{CardioCurriculum.all(this)}catch(e:Exception){
+            card("Cours indisponibles","Impossible de lire les fiches : "+e.javaClass.simpleName)
+            return
+        }
+        val chosen=pref.getString("cardio_fiche_id","").orEmpty()
+        val fiche=fiches.firstOrNull{it.id==chosen}
+        if(fiche!=null){
+            add(action("← Catalogue du Tome "+fiche.tome){
+                pref.edit().remove("cardio_fiche_id").apply()
+                render(2)
+            })
+            card("Tome "+fiche.tome+" · "+fiche.moduleTitle,
+                "Module "+fiche.moduleId+" • Fiche "+fiche.id)
+            val expanded=pref.getBoolean("cardio_expanded",true)
+            add(action(if(expanded)"Lecture : session approfondie (jusqu'à 3 fiches)"
+                else "Lecture : une seule fiche"){
+                pref.edit().putBoolean("cardio_expanded",!expanded).apply()
+                render(2)
+            })
+            CardioCurriculum.session(this,fiche.id,expanded).forEach{item->
+                val panel=LinearLayout(this).apply{
+                    orientation=LinearLayout.VERTICAL
+                    setPadding(dp(14),dp(12),dp(14),dp(14))
+                    background=drawable(surface,14)
+                }
+                panel.addView(text("📚 "+item.title,18f,true))
+                if(item.objectives.isNotEmpty()){
+                    panel.addView(text("Objectifs",14f,true))
+                    panel.addView(text(item.objectives.joinToString("\n"){"• "+it},13f))
+                }
+                panel.addView(text("Cours original",14f,true))
+                panel.addView(text(item.content,14f,false,fg).apply{
+                    setLineSpacing(dp(3),1.02f)
+                    setTextIsSelectable(true)
+                })
+                if(item.essential.isNotEmpty()){
+                    panel.addView(text("Essentiels",14f,true))
+                    panel.addView(text(item.essential.joinToString("\n"){"• "+it},13f))
+                }
+                if(item.recall.isNotEmpty()){
+                    panel.addView(text("Rappel actif (sans notation automatique)",14f,true))
+                    panel.addView(text(item.recall.joinToString("\n"){"• "+it},13f))
+                }
+                panel.addView(text("Source : "+item.sourceTitle+
+                    "\nRepère : "+item.sourceLocator,11f,false,muted))
+                add(panel)
+            }
+            val tome=CardioCurriculum.forTome(this,fiche.tome)
+            val pos=tome.indexOfFirst{it.id==fiche.id}
+            val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            listOf("← Précédente" to (pos-1),"Suivante →" to (pos+1)).forEach{(label,index)->
+                nav.addView(Button(this).apply{
+                    text=label;isAllCaps=false
+                    isEnabled=index in tome.indices
+                    setOnClickListener{
+                        if(index in tome.indices){
+                            pref.edit().putString("cardio_fiche_id",tome[index].id).apply()
+                            render(2)
+                            contentScroll.scrollTo(0,0)
+                        }
+                    }
+                },LinearLayout.LayoutParams(0,dp(48),1f))
+            }
+            add(nav)
+            add(action("🩺 Pratiquer à partir de cette notion"){
+                pref.edit().putString("study_section","practice")
+                    .putString("study_draft",fiche.title)
+                    .putBoolean("cardio_catalog_open",false).apply()
+                topicText=fiche.title
+                render(2)
+            })
+            return
+        }
+        section("Cardiologie — collection pédagogique MedRebuild",
+            "Textes originaux • 60 modules • 156 fiches • utilisable hors ligne.")
+        val tome=pref.getInt("cardio_tome",1).coerceIn(1,3)
+        val counts=listOf(47,66,43)
+        val selectors=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        (1..3).forEach{t->
+            selectors.addView(Button(this).apply{
+                text="Tome "+t+" ("+counts[t-1]+")";isAllCaps=false;textSize=11f
+                setTextColor(if(t==tome)Color.WHITE else fg)
+                background=drawable(if(t==tome)accent else surface,9)
+                setOnClickListener{
+                    pref.edit().putInt("cardio_tome",t).apply()
+                    render(2)
+                }
+            },LinearLayout.LayoutParams(0,dp(48),1f))
+        }
+        add(selectors)
+        var previousModule=""
+        CardioCurriculum.forTome(this,tome).forEach{item->
+            if(previousModule!=item.moduleId){
+                previousModule=item.moduleId
+                add(text("📖 "+item.moduleTitle,15f,true))
+            }
+            add(action(item.title+" →"){
+                pref.edit().putString("cardio_fiche_id",item.id).apply()
+                render(2)
+                contentScroll.scrollTo(0,0)
+            })
+        }
     }
     private fun chatPrefs():android.content.SharedPreferences=getSharedPreferences("medbrain",Context.MODE_PRIVATE)
     private fun currentMode():String=chatPrefs().getString("chat_mode","auto")?:"auto"
