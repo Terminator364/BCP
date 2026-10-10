@@ -36,7 +36,8 @@ class MaintenanceWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx
          */
         fun enqueueBatch(ctx:Context,limit:Int=2):Int {
             val prefs=ctx.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
-            if(System.currentTimeMillis()<prefs.getLong("inference_until",0L))return 0
+            if(System.currentTimeMillis()<prefs.getLong("inference_until",0L)||
+                prefs.getBoolean("queue_repairing",false))return 0
             val eligible=KnowledgeStore(ctx).use{store->
                 store.documents().filter{it.state=="QUEUED"||it.state=="READING"}
             }

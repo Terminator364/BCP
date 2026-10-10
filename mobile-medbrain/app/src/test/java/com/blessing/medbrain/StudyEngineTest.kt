@@ -4,6 +4,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StudyEngineTest {
+    @Test fun quickEvidenceIsGroundedInActualPages(){
+        val p=Passage("Cardiologie",18,"Le coeur assure la perfusion systémique.","TEXT")
+        val text=StudyEngine.quickEvidence("physiologie cardiaque",listOf(p))
+        org.junit.Assert.assertTrue(text.contains("Cardiologie"))
+        org.junit.Assert.assertTrue(text.contains("p. 18"))
+        org.junit.Assert.assertTrue(text.contains("perfusion systémique"))
+    }
+
     private val evidence = listOf(Passage("Cardiologie Tome I",142,
         "L'examen clinique mesure notamment la fréquence cardiaque et recherche les oedèmes.","TEXT"))
     @Test fun realProvenanceInPrompts(){

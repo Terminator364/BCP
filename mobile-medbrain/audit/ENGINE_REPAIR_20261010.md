@@ -17,3 +17,11 @@ Observations du téléphone (journal du 10/10) : 491 livres ; 1534 pages indexé
 Le modèle local ne peut pas répondre instantanément à 5,7 tokens/s. La mesure sur téléphone reste nécessaire. Les anciennes 483 tâches WorkManager déjà en attente dans la version installée peuvent subsister après mise à jour; les correctifs empêchent de créer de nouvelles vagues mais ne prouvent pas l'annulation rétrospective de l'ancienne file.
 L'affichage final est borné et les pensées explicites sont masquées, mais aucun test neuronal réel de Qwen avec le wrapper Android n'est encore certifié.
 Les exceptions fournisseur ne sont pas des preuves de livres supprimés.
+
+## Suite — réparation de l'ancienne file et pédagogie offline-first
+- Worker unique de migration: annule progressivement les anciens work names learn-ID (24 par tranche, checkpoint persistant), sans supprimer les documents, pages, dialogues, modèle ou tâche de téléchargement GGUF.
+- Les nouvelles acquisitions sont suspendues durant cette migration et reprennent ensuite à hauteur de deux travaux.
+- Étudier fournit immédiatement jusqu'à 4 références indexées et paginées, même avant la synthèse locale. La synthèse rapide reste distincte des preuves.
+- Budget de sortie de fiche: 230 tokens au maximum (modèle local lent), sans le présenter comme un cours exhaustif.
+- Modèle: restauration d'un ancien fichier brain.previous ou model-download.previous si et seulement si brain.gguf est absent et le backup porte l'en-tête GGUF.
+- Les nouveaux tests et la qualification CI restent nécessaires; performances réelles non garanties avant essai sur Galaxy.

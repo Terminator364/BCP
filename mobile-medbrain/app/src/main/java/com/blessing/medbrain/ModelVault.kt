@@ -12,7 +12,23 @@ data class ModelReceipt(val bytes:Long,val sha256:String)
 
 /** Full local file integrity, rollback on failed import. Never stores weights in GitHub. */
 object ModelVault {
-    fun file(ctx:Context):File=File(ctx.filesDir,"models/brain.gguf")
+    fun file(ctx:Context):File {
+        val target=File(ctx.filesDir,"models/brain.gguf")
+        if(!target.exists()){
+            for(name in listOf("brain.previous","model-download.previous")){
+                val backup=File(target.parentFile,name)
+                val good=try{
+                    backup.isFile&&backup.length()>10_000_000L&&
+                    backup.inputStream().use{input->
+                        val header=ByteArray(4)
+                        input.read(header)==4&&String(header,Charsets.US_ASCII)=="GGUF"
+                    }
+                }catch(_:Exception){false}
+                if(good && backup.renameTo(target))break
+            }
+        }
+        return target
+    }
     suspend fun import(ctx:Context,uri:Uri,onProgress:((Long,Long)->Unit)?=null):ModelReceipt=withContext(Dispatchers.IO) {
         val target=file(ctx)
         target.parentFile?.mkdirs()

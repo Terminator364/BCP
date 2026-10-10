@@ -166,6 +166,7 @@ class MainActivity:ComponentActivity() {
         shell.addView(nav)
         setContentView(shell)
         MaintenanceWorker.arm(this)
+        LegacyQueueRepairWorker.arm(this)
         WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("medbrain-model-import").observe(this){jobs->
             val job=jobs.firstOrNull() ?: return@observe
             val done=job.progress.getLong("copied",0L)/1048576
@@ -714,9 +715,10 @@ class MainActivity:ComponentActivity() {
         val pieces=KnowledgeStore(this).use{it.retrieve(topic)}
         if(pieces.isEmpty()){studyText="Aucun extrait trouvé pour « $topic ». Importe des cours adaptés.";render(2);return}
         val quoted=StudyEngine.references(pieces)
+        val evidenceCard=StudyEngine.quickEvidence(topic,pieces)
         studySources=quoted
         if(!ModelVault.file(this).exists()){
-            studyText="Des références ont été retrouvées dans ta bibliothèque. Active le modèle neuronal dans Paramètres pour une explication structurée. Tu peux déjà consulter les passages exacts avec le bouton Sources."
+            studyText=evidenceCard+"\n\nPour une synthèse supplémentaire, active le modèle local dans Paramètres."
             render(2);return
         }
         val prompt=when(kind){
@@ -724,10 +726,13 @@ class MainActivity:ComponentActivity() {
             "questions"->StudyEngine.examPrompt(topic,pieces)
             else->StudyEngine.correctionPrompt(topic,response,pieces)
         }
-        studyText=if(busy)"Demande en file d'attente : tu peux poursuivre la navigation."
-            else "Analyse locale en cours…"
+        studyText=evidenceCard+"\n\n"+if(busy)"⏳ Synthèse neuronale en attente. Les références ci-dessus sont consultables maintenant."
+            else "⏳ Synthèse neuronale complémentaire en cours."
         render(2)
-        requestAI(prompt){out->studyText=out;if(page==2)render(2)}
+        requestAI(prompt){out->
+            studyText=evidenceCard+"\n\n🧠 Synthèse locale (à vérifier avec les sources) :\n"+out
+            if(page==2)render(2)
+        }
     }
     private fun requestAI(prompt:String,done:(String)->Unit){
         if(busy){
@@ -738,7 +743,7 @@ class MainActivity:ComponentActivity() {
         busy=true
         completion=done
         val id=++aiSerial
-        val maxTokens=if(prompt.length>4500)230 else 144
+        val maxTokens=if(prompt.startsWith("Thème :")||prompt.startsWith("Question :"))230 else 144
         chatPrefs().edit().putLong("inference_until",System.currentTimeMillis()+110_000L).apply()
         val timeout=Runnable{
             if(id!=aiSerial||!busy)return@Runnable
