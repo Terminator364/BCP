@@ -45,6 +45,33 @@ class UiSmokeTest {
         if(root is android.view.ViewGroup) for(i in 0 until root.childCount)out.addAll(allText(root.getChildAt(i)))
         return out
     }
+    @Test fun medRebuildCardiologyReaderAndOfflineRecallAreReachable(){
+        WorkManagerTestInitHelper.initializeTestWorkManager(
+            ApplicationProvider.getApplicationContext<Context>())
+        val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        allButtons(activity.window.decorView).first{
+            it.contentDescription?.toString()=="Ouvrir Étudier"
+        }.performClick()
+        allButtons(activity.window.decorView).first{
+            it.text.toString().contains("156 fiches MedRebuild")
+        }.performClick()
+        assertTrue(allText(activity.window.decorView).any{
+            it.contains("collection pédagogique MedRebuild")
+        })
+        allButtons(activity.window.decorView).first{
+            it.text.toString().contains("Sémiologie cardiovasculaire : du symptôme au syndrome")
+        }.performClick()
+        assertTrue(allText(activity.window.decorView).any{
+            it.contains("La sémiologie est")
+        })
+        allButtons(activity.window.decorView).first{
+            it.text.toString().contains("M'entraîner sans regarder")
+        }.performClick()
+        assertTrue(allText(activity.window.decorView).any{
+            it.contains("Rappel actif — sans regarder")
+        })
+        assertFalse(allText(activity.window.decorView).any{it=="Cours original"})
+    }
     @Test fun pinnedComposerRemainsOutsideScrollableContent(){
         WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()

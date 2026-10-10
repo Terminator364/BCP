@@ -524,29 +524,80 @@ class MainActivity:ComponentActivity() {
                 pref.edit().putBoolean("cardio_expanded",!expanded).apply()
                 render(2)
             })
-            CardioCurriculum.session(this,fiche.id,expanded).forEach{item->
+            val selfCheck=pref.getBoolean("cardio_selfcheck",false)
+            add(action(if(selfCheck)"📖 Retour au cours"
+                else "🎯 M'entraîner sans regarder le cours"){
+                pref.edit().putBoolean("cardio_selfcheck",!selfCheck).apply()
+                render(2)
+            })
+            val lessonItems=if(selfCheck)listOf(fiche)
+                else CardioCurriculum.session(this,fiche.id,expanded)
+            lessonItems.forEach{item->
                 val panel=LinearLayout(this).apply{
                     orientation=LinearLayout.VERTICAL
                     setPadding(dp(14),dp(12),dp(14),dp(14))
                     background=drawable(surface,14)
                 }
                 panel.addView(text("📚 "+item.title,18f,true))
-                if(item.objectives.isNotEmpty()){
-                    panel.addView(text("Objectifs",14f,true))
-                    panel.addView(text(item.objectives.joinToString("\n"){"• "+it},13f))
-                }
-                panel.addView(text("Cours original",14f,true))
-                panel.addView(text(item.content,14f,false,fg).apply{
-                    setLineSpacing(dp(3),1.02f)
-                    setTextIsSelectable(true)
-                })
-                if(item.essential.isNotEmpty()){
-                    panel.addView(text("Essentiels",14f,true))
-                    panel.addView(text(item.essential.joinToString("\n"){"• "+it},13f))
-                }
-                if(item.recall.isNotEmpty()){
-                    panel.addView(text("Rappel actif (sans notation automatique)",14f,true))
-                    panel.addView(text(item.recall.joinToString("\n"){"• "+it},13f))
+                if(selfCheck){
+                    panel.addView(text("Rappel actif — sans regarder le cours",15f,true))
+                    panel.addView(text(item.recall.joinToString("\n"){"• "+it},14f))
+                    val key="cardio_answer_"+item.id
+                    val answer=field(pref.getString(key,"")?:"",
+                        "Formule ta réponse avant de consulter la correction",4)
+                    answer.addTextChangedListener(object:android.text.TextWatcher{
+                        override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
+                        override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){
+                            pref.edit().putString(key,s?.toString().orEmpty().take(3500)).apply()
+                        }
+                        override fun afterTextChanged(s:android.text.Editable?){}
+                    })
+                    panel.addView(answer)
+                    val revealKey="cardio_reveal_"+item.id
+                    panel.addView(Button(this).apply{
+                        text=if(pref.getBoolean(revealKey,false))
+                            "Masquer les repères du cours" else "Afficher les repères du cours"
+                        isAllCaps=false
+                        setOnClickListener{
+                            pref.edit().putBoolean(revealKey,
+                                !pref.getBoolean(revealKey,false)).apply()
+                            render(2)
+                        }
+                    })
+                    if(pref.getBoolean(revealKey,false)){
+                        panel.addView(text("Correction comparative — non notée",14f,true))
+                        panel.addView(text(item.essential.joinToString("\n"){"• "+it},13f))
+                        panel.addView(text("Compare ta réponse aux passages originaux. Ce contrôle ne certifie pas la maîtrise clinique.",12f,false,muted))
+                        panel.addView(Button(this).apply{
+                            text="Enregistrer : à revoir";isAllCaps=false
+                            setOnClickListener{
+                                KnowledgeStore(this@MainActivity).use{
+                                    it.review(item.id,"A_REVOIR")
+                                }
+                                Toast.makeText(this@MainActivity,
+                                    "Révision enregistrée, sans note automatique.",
+                                    Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    }
+                }else{
+                    if(item.objectives.isNotEmpty()){
+                        panel.addView(text("Objectifs",14f,true))
+                        panel.addView(text(item.objectives.joinToString("\n"){"• "+it},13f))
+                    }
+                    panel.addView(text("Cours original",14f,true))
+                    panel.addView(text(item.content,14f,false,fg).apply{
+                        setLineSpacing(dp(3),1.02f)
+                        setTextIsSelectable(true)
+                    })
+                    if(item.essential.isNotEmpty()){
+                        panel.addView(text("Essentiels",14f,true))
+                        panel.addView(text(item.essential.joinToString("\n"){"• "+it},13f))
+                    }
+                    if(item.recall.isNotEmpty()){
+                        panel.addView(text("Rappel actif (sans notation automatique)",14f,true))
+                        panel.addView(text(item.recall.joinToString("\n"){"• "+it},13f))
+                    }
                 }
                 panel.addView(text("Source : "+item.sourceTitle+
                     "\nRepère : "+item.sourceLocator,11f,false,muted))

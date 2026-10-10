@@ -81,3 +81,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - Full unedited 784,894-character JSON packaged in Android assets, not recreated by Qwen; 60 source modules, 156 fiches, 47/66/43 across 3 tomes. Google Docs source titles and section locators displayed, never fabricated page numbers.
 - The Learn UI has a real 3-tome catalogue, module navigation, complete lesson content, learning objectives, essentials and active recall. Optional deeper session combines 2–3 original consecutive fiches with visible headings. Previous/next links and practice action are functional. No neuronal request is required for reading.
 - Roboelectric tests verify IDs/content/source traceability and limits. This does not imply all fiches are educationally rich: original lengths range from 147 to 9472 characters; further editorial QA is required. Reading is NOT automatic verified mastery.
+
+## Offline recall path without overstated scoring
+- Added source-derived free-answer self-check within the original cardiology fiche reader. Course hidden during recall; answer draft persists by fiche ID; user reveals original essential points for comparison and can mark `A_REVOIR`. No fake AI grade or automatic mastery proof.
+- Expanded Robolectric UI smoke test: from `Étudier` to actual cardiology fiche source text, then switch to recall without showing answer content.
