@@ -9,8 +9,8 @@ android {
         applicationId 'com.blessing.medbrain.personal'
         minSdk 26
         targetSdk 35
-        versionCode 37
-        versionName '0.4.3-personal'
+        versionCode 38
+        versionName '0.4.4-personal'
         ndk { abiFilters 'arm64-v8a' }
     }
     buildTypes {

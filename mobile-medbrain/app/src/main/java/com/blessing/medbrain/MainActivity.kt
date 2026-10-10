@@ -527,7 +527,7 @@ class MainActivity:ComponentActivity() {
             catch(e:Exception){recordDiagnostic("PICKER_MODEL_ERROR",e.message?:"?");answerText="Sélecteur indisponible : "+e.message;render(4)}
         }
         card("Données et appareil",diagnostic())
-        card("Incidents précédents",CrashReporter.summary(this))
+        card("Incidents précédents",CrashReporter.headline(this))
         add(action("Auto-test : espace disponible pour le GGUF"){
             val dir=File(filesDir,"models").apply{mkdirs()}
             val free=StatFs(dir.absolutePath).availableBytes/1048576
@@ -538,7 +538,7 @@ class MainActivity:ComponentActivity() {
         add(action("Exporter les diagnostics en texte"){exportReport.launch("MedBrain_diagnostic.txt")})
         add(action("Relancer tous les traitements incomplets"){resumeAll()})
         if(answerText.isNotBlank())card("Dernière opération",answerText)
-        card("Autorisations","Import explicite par Android. Aucun accès global aux fichiers, aucune suppression silencieuse, aucune connexion Internet automatique. Google Drive distant exige un document sélectionné ou une future autorisation dédiée.")
+        card("Autorisations","Les documents sont sélectionnés avec Android. Une connexion Internet explicite est utilisée uniquement pour télécharger un modèle GGUF après confirmation. La connexion à tout un Drive nécessite une autorisation Google dédiée.")
     }
     private fun settings(){
         section("Paramètres","Un contrôle réel de MedBrain, pas des boutons décoratifs.")

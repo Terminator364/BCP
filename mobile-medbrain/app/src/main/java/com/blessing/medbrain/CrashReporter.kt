@@ -29,6 +29,19 @@ object CrashReporter {
             ready=true
         }
     }
+    fun headline(ctx:Context):String {
+        val log=summary(ctx)
+        if(log.startsWith("Aucun crash"))return "Aucun arrêt inattendu enregistré dans l'application."
+        val lines=log.lines()
+        val last=lines.lastOrNull { line ->
+            line.contains("OutOfMemoryError") || line.contains("FATAL EXCEPTION") ||
+            line.contains("Exception:") || line.contains("Error:") 
+        }?.trim()
+        val main=last?:lines.lastOrNull{it.contains(" [") && it.contains("] ")}?.trim()
+        return if(main.isNullOrBlank())"Incident enregistré. Tu peux exporter le journal complet pour analyse."
+            else ("Dernier incident détecté : "+main.take(235)+
+                "\\nUne reprise et le rapport complet sont disponibles ci-dessous.")
+    }
     fun summary(ctx:Context):String {
         return try {
             val f=File(ctx.filesDir,"crash-receipt.log")
