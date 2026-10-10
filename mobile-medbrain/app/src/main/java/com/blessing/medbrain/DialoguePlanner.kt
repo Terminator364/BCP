@@ -12,7 +12,8 @@ object DialoguePlanner {
         "complication","complications","pronostic","physiopathologie","mecanisme",
         "mecanismes","formes","stade","stades","etapes","point","points",
         "surveillance","details","detail","suite","risques","consequences",
-        "parle","precise","explique","decris","developpe","role","choix","quand")
+        "parle","precise","preciser","explique","decris","developpe",
+        "role","choix","quand","facteur","facteurs","risque")
     private val referential=setOf(
         "son","sa","ses","leur","leurs","celui","celle","ceux","celles",
         "ce","cet","cette","ces","cela","ca","ceci","lui","elle","elles",
@@ -28,6 +29,8 @@ object DialoguePlanner {
         val q=SearchPolicy.normalized(raw).replace(Regex("[^a-z0-9 ]+")," ")
             .replace(Regex("\\s+")," ").trim()
         if(q.isBlank()||q.length>180)return false
+        if(q.startsWith("et chez ")||q.startsWith("et pour ")||
+            q.startsWith("qu en est il chez "))return true
         val words=q.split(" ")
         val concepts=SearchPolicy.terms(q).filterNot{it in genericClinicalFacets}
         val deictic=words.any{it in referential}
