@@ -1,78 +1,94 @@
 package com.blessing.medbrain
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
-import androidx.work.CoroutineWorker
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkerParameters
+import androidx.work.*
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.rendering.PDFRenderer
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
+import java.io.FileNotFoundException
 
-/** Bounded, restartable ingestion. A retry processes the next 8 pages. */
-class IngestWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val uriString = inputData.getString("uri") ?: return@withContext Result.failure()
-        val id = inputData.getString("id") ?: return@withContext Result.failure()
-        val uri = Uri.parse(uriString)
-        val store = KnowledgeStore(applicationContext)
+/** Resumable batches. Scan-only pages use bundled offline OCR; graphics still need visual review. */
+class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,params) {
+    override suspend fun doWork():Result = withContext(Dispatchers.IO) {
+        val id=inputData.getString("id")?:return@withContext Result.failure()
+        val store=KnowledgeStore(applicationContext)
+        val record=store.document(id)?:return@withContext Result.failure()
         try {
-            val offset = store.start(id)
-            val mime = applicationContext.contentResolver.getType(uri).orEmpty().lowercase()
-            if (mime == "application/pdf" || store.title(id).lowercase().endsWith(".pdf")) {
-                PDFBoxResourceLoader.init(applicationContext)
-                applicationContext.contentResolver.openInputStream(uri).use { stream ->
-                    requireNotNull(stream) { "Cannot open document" }
-                    PDDocument.load(stream).use { pdf ->
-                        val total = pdf.numberOfPages
-                        val last = minOf(total,offset+8)
-                        for (page in offset+1..last) {
-                            val stripper = PDFTextStripper().apply { startPage = page; endPage = page }
-                            val text = stripper.getText(pdf).trim()
-                            store.save(id,page,text,page,total,if (page==total) "TEXT_DONE" else "READING")
-                        }
-                        if (last < total) {
-                            val next = OneTimeWorkRequestBuilder<IngestWorker>()
-                                .setInputData(inputData).build()
-                            WorkManager.getInstance(applicationContext).enqueueUniqueWork(
-                                "learn-$id", ExistingWorkPolicy.APPEND_OR_REPLACE, next
-                            )
-                        } else {
-                            val hasText = store.indexedPages(id) > 0
-                            store.markState(id, if(hasText) "TEXT_DONE" else "OCR_REQUIRED")
-                        }
-                        return@withContext Result.success()
+            val path=Uri.parse(record.uri)
+            val mime=applicationContext.contentResolver.getType(path).orEmpty().lowercase()
+            if(record.title.endsWith(".pdf",true)||mime=="application/pdf") ingestPdf(store,record,path)
+            else if(mime.startsWith("image/") || record.title.endsWith(".jpg",true) ||record.title.endsWith(".png",true)) ingestImage(store,record,path)
+            else ingestText(store,record,path)
+        } catch(e:Throwable) {
+            store.markState(id,if(e is SecurityException||e is FileNotFoundException) "NEEDS_ACCESS" else "ERROR",e.javaClass.simpleName+": "+(e.message?:""))
+            if(e is OutOfMemoryError) return@withContext Result.failure()
+            if(e is SecurityException || e is FileNotFoundException) return@withContext Result.failure()
+            if(runAttemptCount<2) Result.retry() else Result.failure()
+        } finally {store.close()}
+    }
+    private suspend fun ocr(bitmap:Bitmap):String {
+        val recognizer=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        return try {recognizer.process(InputImage.fromBitmap(bitmap,0)).await().text.trim()}
+        finally {recognizer.close()}
+    }
+    private suspend fun ingestPdf(store:KnowledgeStore,record:DocumentRecord,uri:Uri):Result {
+        PDFBoxResourceLoader.init(applicationContext)
+        val offset=record.done
+        applicationContext.contentResolver.openInputStream(uri).use {stream ->
+            requireNotNull(stream){"Impossible d'ouvrir le document"}
+            PDDocument.load(stream).use {pdf ->
+                val total=pdf.numberOfPages
+                val end=minOf(total,offset+4)
+                if (offset>=total) {store.markState(record.id,"INDEXED");return Result.success()}
+                for(page in offset+1..end) {
+                    val text=PDFTextStripper().apply {startPage=page;endPage=page}.getText(pdf).trim()
+                    var found=text
+                    var method="TEXT"
+                    if(text.length<65) {
+                        val bitmap=PDFRenderer(pdf).renderImageWithDPI(page-1,100f)
+                        try { val scanned=ocr(bitmap);if(scanned.length>text.length){found=scanned;method="OCR"} }
+                        finally {bitmap.recycle()}
                     }
+                    store.save(record.id,page,found,page,total,if(page==total)"INDEXED" else "READING",method)
                 }
-            } else {
-                applicationContext.contentResolver.openInputStream(uri).use { stream ->
-                    requireNotNull(stream) { "Cannot open document" }
-                    // Text import bounded to prevent accidentally exhausting RAM.
-                    val buffer=ByteArray(2_000_000+1)
-                    var n=0
-                    while(n<buffer.size) {
-                        val r=stream.read(buffer,n,buffer.size-n)
-                        if(r<0) break
-                        n+=r
-                    }
-                    if(n==buffer.size) throw IllegalArgumentException("Text >2 MB: import by smaller parts")
-                    val text=String(buffer,0,n,Charsets.UTF_8)
-                    val chunks=text.chunked(5000)
-                    chunks.forEachIndexed { i, part -> store.save(id,i+1,part,i+1,chunks.size,"TEXT_DONE") }
-                    Result.success()
+                if(end<total) {
+                    val next=OneTimeWorkRequestBuilder<IngestWorker>().setInputData(inputData).build()
+                    WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+                        "learn-${record.id}",ExistingWorkPolicy.APPEND_OR_REPLACE,next)
+                } else {
+                    store.markState(record.id,if(store.indexedPages(record.id)>0)"INDEXED" else "OCR_REQUIRED")
                 }
+                return Result.success()
             }
-        } catch (ex: Exception) {
-            android.util.Log.e("MedBrain","Ingestion failed for "+id,ex)
-            // Retain checkpoint and distinguish temporary failures from actual expertise.
-            if (runAttemptCount<3) Result.retry() else {
-                store.save(id,0,"",store.start(id),0,"FAILED: ${ex.javaClass.simpleName}")
-                Result.failure()
-            }
-        } finally { store.close() }
+        }
+    }
+    private suspend fun ingestImage(store:KnowledgeStore,record:DocumentRecord,uri:Uri):Result {
+        val image=InputImage.fromFilePath(applicationContext,uri)
+        val r=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        try{
+            val body=r.process(image).await().text
+            store.save(record.id,1,body,1,1,if(body.isBlank())"VISUAL_REVIEW" else "INDEXED","OCR_IMAGE")
+        } finally {r.close()}
+        return Result.success()
+    }
+    private fun ingestText(store:KnowledgeStore,record:DocumentRecord,uri:Uri):Result {
+        applicationContext.contentResolver.openInputStream(uri).use {stream->
+            requireNotNull(stream)
+            val bytes=stream.readBytes()
+            require(bytes.size<=4_000_000){"Fichier texte >4 Mo"}
+            val content=String(bytes,Charsets.UTF_8)
+            val chunks=content.chunked(3500)
+            for(i in record.done until chunks.size)store.save(record.id,i+1,chunks[i],i+1,chunks.size,if(i==chunks.lastIndex)"INDEXED" else "READING")
+        }
+        return Result.success()
     }
 }
