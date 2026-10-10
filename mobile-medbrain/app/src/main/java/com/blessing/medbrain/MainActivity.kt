@@ -130,8 +130,10 @@ class MainActivity:ComponentActivity() {
         val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
         ViewCompat.setOnApplyWindowInsetsListener(shell){v,insets->
             val safe=insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            v.setPadding(safe.left,safe.top,safe.right,safe.bottom)
-            if(::nav.isInitialized)nav.visibility=if(insets.isVisible(WindowInsetsCompat.Type.ime()))View.GONE else View.VISIBLE
+            val ime=insets.getInsets(WindowInsetsCompat.Type.ime())
+            val keyboardVisible=insets.isVisible(WindowInsetsCompat.Type.ime())
+            v.setPadding(safe.left,safe.top,safe.right,if(keyboardVisible)maxOf(safe.bottom,ime.bottom) else safe.bottom)
+            if(::nav.isInitialized)nav.visibility=if(keyboardVisible)View.GONE else View.VISIBLE
             insets
         }
         val top=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(15),dp(5),dp(15),dp(4))}
@@ -255,7 +257,7 @@ class MainActivity:ComponentActivity() {
         entries.forEach{(destination,symbol,label)->
             val selected=if(destination<0)tab>=4 else destination==tab
             val b=Button(this).apply{
-                text="$symbol\\n$label".replace("\\n","\n")
+                text="$symbol\n$label"
                 setTextColor(if(selected)accent else fg)
                 textSize=10f
                 isAllCaps=false
@@ -461,8 +463,16 @@ class MainActivity:ComponentActivity() {
         }
         if(!hasModel){
             val msg=if(evidence.isEmpty())
-                "Je n'ai pas encore de modèle neuronal local actif pour répondre librement à cette question. Va dans Paramètres pour activer Qwen3, ou utilise la bibliothèque pour consulter tes pages."
-                else "J'ai retrouvé des passages que tu peux consulter grâce au bouton Sources. Je ne peux pas encore les synthétiser avec un modèle neuronal tant que Qwen3 n'est pas activé."
+                "Je n'ai pas encore de modèle neuronal local actif pour répondre librement à cette question. Ouvre Paramètres pour activer Qwen3. Tu peux continuer à consulter ta bibliothèque."
+                else {
+                    val passages=evidence.take(2).mapNotNull { item ->
+                        val clean=item.text.replace(Regex("\\s+")," ").trim()
+                        if(clean.isBlank()) null else "• "+clean.take(280).trimEnd()+"… ("+item.title+", p. "+item.page+")"
+                    }
+                    "Voici les passages les plus pertinents retrouvés dans tes livres. Ce sont des extraits, pas une synthèse produite par le modèle :\n\n"+
+                        passages.joinToString("\n\n")+
+                        "\n\nPour approfondir dans une conversation, active le modèle dans Paramètres."
+                }
             KnowledgeStore(this).use{it.addChat("assistant",msg,sources)}
             render(3);return
         }
