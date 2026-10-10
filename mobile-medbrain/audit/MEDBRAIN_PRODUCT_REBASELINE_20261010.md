@@ -50,3 +50,9 @@ Decision: separate InferenceAdapter from UI; benchmark official llama.cpp Androi
 `ffmpegkit-maintained/llama-android` main `library/src/main/jni/llama_jni.cpp` lines 173-175 calls `llama_memory_clear(llama_get_memory(h->ctx), true)` for *every* `Llama.complete()` request. Warm GGUF weights do NOT preserve chat KV. Lines 192-199 terminate after `maxTokens` even if answer is unfinished. Public code: https://github.com/ffmpegkit-maintained/llama-android/blob/main/library/src/main/jni/llama_jni.cpp
 The vendor `LlamaResult` already exposes tokensGenerated, promptEvalTimeMs, generateTimeMs, and tokensPerSecond, which had been discarded by MedBrain. Diagnostic metadata now collects them (no user prompts in log), and a token-cap termination displays a visible incomplete-answer notice.
 These changes make failure observable, not solved. The native streaming/KV-backed replacement remains P0, field-unproven.
+
+## Inference partial-response repair (source implementation; requires Android CI and field)
+- New `AnswerContinuationPolicy`: choose 144 default or 160 tokens x up to 2 for explicit detailed questions on battery>=25%; if first reply is *proven budget cut-off*, expose the first useful part immediately and issue one bounded continuation request, with citations retained only from initial evidence.
+- Model KV is not preserved by current vendor; second pass uses short original context and tail, not native token-level continuation; 2-part limit cannot guarantee an exhaustive answer.
+- Explicit incomplete label remains after the second token-limit; never turn an inference failure into a false completed clinical recommendation.
+- Cover limits, no duplicate cutoff notices, battery, failure and long prompts in deterministic tests. Genuine native GGUF streaming remains a separate field gate.

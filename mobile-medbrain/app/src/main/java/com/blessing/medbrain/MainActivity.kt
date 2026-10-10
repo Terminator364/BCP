@@ -680,17 +680,27 @@ class MainActivity:ComponentActivity() {
             }
         generatingChatThreads.add(threadId)
         render(3)
-        requestAI(prompt){generated->
+        val plan=AnswerContinuationPolicy.plan(question,battery)
+        fun commitReply(out:String){
             generatingChatThreads.remove(threadId)
             evidencePreviewByThread.remove(threadId)
-            val failed=generated.isBlank() ||
-                generated.startsWith("Le moteur local n'a pas terminé") ||
-                generated.startsWith("Inférence indisponible") ||
-                generated.startsWith("Le moteur local a été interrompu") ||
-                generated==ModelOutputPolicy.NO_FINAL
-            val response=if(failed)DialoguePlanner.fallback(evidence,route.followUp) else generated
+            val response=if(AnswerContinuationPolicy.isFailure(out))
+                DialoguePlanner.fallback(evidence,route.followUp) else out
             KnowledgeStore(this).use{it.addChat("assistant",response,sources,threadId)}
             if(page==3 && currentThreadId()==threadId)render(3)
+        }
+        requestAI(prompt,plan.chunkTokens){first->
+            if(AnswerContinuationPolicy.shouldContinue(first,1,plan) &&
+                System.currentTimeMillis()>=chatPrefs().getLong("inference_cooldown_until",0L)){
+                // Show useful first chunk while generating one bounded continuation.
+                evidencePreviewByThread[threadId]="🧠 Première partie :\n"+
+                    AnswerContinuationPolicy.stripNotice(first).take(900)
+                if(page==3 && currentThreadId()==threadId)render(3)
+                requestAI(AnswerContinuationPolicy.continuationPrompt(prompt,first),
+                    plan.chunkTokens){next->
+                    commitReply(AnswerContinuationPolicy.combine(first,next))
+                }
+            }else commitReply(first)
         }
     }
     private fun system(){
@@ -859,7 +869,7 @@ class MainActivity:ComponentActivity() {
             if(page==2)render(2)
         }
     }
-    private fun requestAI(prompt:String,done:(String)->Unit){
+    private fun requestAI(prompt:String,maxTokensOverride:Int?=null,done:(String)->Unit){
         if(busy){
             if(aiQueue.size>=2)done("Deux tâches déjà en attente. Essaie après la réponse en cours.")
             else aiQueue.addLast(prompt to done)
@@ -868,7 +878,8 @@ class MainActivity:ComponentActivity() {
         busy=true
         completion=done
         val id=++aiSerial
-        val maxTokens=if(prompt.startsWith("Thème :")||prompt.startsWith("Question :"))160 else 96
+        val maxTokens=(maxTokensOverride ?:
+            if(prompt.startsWith("Thème :")||prompt.startsWith("Question :"))160 else 144).coerceIn(64,230)
         chatPrefs().edit().putLong("inference_until",System.currentTimeMillis()+110_000L).apply()
         val timeout=Runnable{
             if(id!=aiSerial||!busy)return@Runnable
