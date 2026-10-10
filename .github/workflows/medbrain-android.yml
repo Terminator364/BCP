@@ -1,7 +1,7 @@
 name: MedBrain Android qualification
 on:
   push:
-    branches: ["feat/mobile-medbrain-v0-1-20261010"]
+    branches: ["feat/mobile-medbrain-v0-1-20261010", "feat/medbrain-native-streaming-spike-20261011"]
     paths:
       - "mobile-medbrain/**"
       - ".github/workflows/medbrain-android.yml"

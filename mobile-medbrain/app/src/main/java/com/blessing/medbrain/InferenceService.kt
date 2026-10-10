@@ -1,23 +1,18 @@
 package com.blessing.medbrain
 
-import android.app.ActivityManager
 import android.app.Service
 import android.content.Intent
 import android.os.*
-import dev.ffmpegkit.llama.Llama
-import dev.ffmpegkit.llama.LlamaConfig
-import dev.ffmpegkit.llama.LlamaModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /** Isolated native inference; keep a single warm GGUF while the Activity is bound. */
 class InferenceService:Service() {
-    companion object { const val REQUEST=51; const val REPLY=52; const val CANCEL=53 }
+    companion object { const val REQUEST=51; const val REPLY=52; const val CANCEL=53; const val PARTIAL=54 }
     private val scope=CoroutineScope(SupervisorJob()+Dispatchers.IO)
     private val serial=Mutex()
-    private var cached:LlamaModel?=null
-    private var cacheKey=""
+    private var backend:InferenceBackend?=null
     private val messenger=Messenger(object:Handler(Looper.getMainLooper()){
         override fun handleMessage(msg:Message) {
             if(msg.what==CANCEL){
@@ -41,26 +36,26 @@ class InferenceService:Service() {
                         val pref=getSharedPreferences("medbrain",MODE_PRIVATE)
                         val ctx=pref.getInt("context_size",2048).coerceIn(1024,2048)
                         val threads=pref.getInt("cpu_threads",4).coerceIn(2,4)
-                        val key=model.absolutePath+":"+model.length()+":"+model.lastModified()+":"+ctx+":"+threads
-                        if(cached==null||key!=cacheKey){
-                            val memory=(getSystemService(ACTIVITY_SERVICE) as ActivityManager).let{
-                                ActivityManager.MemoryInfo().also{info->it.getMemoryInfo(info)}
+                        val engine=backend ?: BlockingVendorBackend(this@InferenceService)
+                            .also{backend=it}
+                        val request=NeuralRequest(model.absolutePath,model.length(),
+                            model.lastModified(),ctx,threads,prompt+"\n/no_think",
+                            instruction+" Réponds directement en français sans raisonnement interne affiché.",budget)
+                        val result=engine.complete(request){delta->
+                            if(engine.capabilities.safeStreaming && delta.isNotEmpty()){
+                                callback.send(Message.obtain(null,PARTIAL).apply{
+                                    data=Bundle().apply{
+                                        putInt("request_id",requestId)
+                                        putBoolean("safe_output",true)
+                                        putString("delta",delta.take(500))
+                                    }
+                                })
                             }
-                            require(!memory.lowMemory){"Mémoire Android insuffisante pour charger Qwen."}
-                            cached?.let{Llama.releaseModel(it)}
-                            cached=null
-                            cached=Llama.loadModel(model.absolutePath,
-                                LlamaConfig(contextSize=ctx,threads=threads,gpuLayers=0,temperature=0.15f))
-                            cacheKey=key
                         }
-                        val result=Llama.complete(requireNotNull(cached),
-                            prompt=prompt+"\n/no_think",
-                            systemPrompt=instruction+" Réponds directement en français sans raisonnement interne affiché.",
-                            maxTokens=budget)
                         answer=GenerationDiagnostics.annotate(
-                            ModelOutputPolicy.clean(result.text),result.tokensGenerated,budget)
-                        metric=GenerationDiagnostics.summary(result.tokensGenerated,budget,
-                            result.promptEvalTimeMs,result.generateTimeMs,result.tokensPerSecond)
+                            ModelOutputPolicy.clean(result.text),result.tokens,budget)
+                        metric=GenerationDiagnostics.summary(result.tokens,budget,
+                            result.prefillMs,result.decodeMs,result.tokensPerSecond)
                     }
                 }catch(e:Throwable){error=e.javaClass.simpleName+": "+(e.message?:"inférence indisponible")}
                 try{
@@ -79,8 +74,8 @@ class InferenceService:Service() {
     override fun onBind(intent:Intent?):IBinder=messenger.binder
     override fun onDestroy(){
         scope.cancel()
-        try{cached?.let{Llama.releaseModel(it)}}catch(_:Throwable){}
-        cached=null
+        try{backend?.release()}catch(_:Throwable){}
+        backend=null
         super.onDestroy()
     }
 }
