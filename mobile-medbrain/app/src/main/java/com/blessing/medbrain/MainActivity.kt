@@ -46,6 +46,8 @@ class MainActivity:ComponentActivity() {
     private lateinit var body:LinearLayout
     private lateinit var stats:TextView
     private lateinit var nav:LinearLayout
+    private lateinit var composerDock:LinearLayout
+    private lateinit var contentScroll:ScrollView
     private var page=0
     private var busy=false
     private var questionText=""
@@ -129,20 +131,30 @@ class MainActivity:ComponentActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(shell){v,insets->
             val safe=insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             v.setPadding(safe.left,safe.top,safe.right,safe.bottom)
+            if(::nav.isInitialized)nav.visibility=if(insets.isVisible(WindowInsetsCompat.Type.ime()))View.GONE else View.VISIBLE
             insets
         }
-        val top=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(15),dp(10),dp(15),dp(6))}
-        top.addView(text("●  MEDBRAIN",19f,true,accent))
-        top.addView(text("Cerveau médical personnel  •  traitement local",12f,false,muted))
-        stats=text("Chargement des acquis…",12f,false,muted)
+        val top=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(15),dp(5),dp(15),dp(4))}
+        top.addView(text("◉  MedBrain",19f,true,accent))
+        stats=text("Lecture locale en cours",10f,false,muted)
         top.addView(stats)
         shell.addView(top)
-        nav=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(surface);setPadding(dp(8),dp(2),dp(8),dp(4))}
+        contentScroll=ScrollView(this).apply{isFillViewport=false;isVerticalScrollBarEnabled=true}
+        body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(8),dp(13),dp(12))}
+        contentScroll.addView(body)
+        shell.addView(contentScroll,LinearLayout.LayoutParams(-1,0,1f))
+        composerDock=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(12),dp(4),dp(12),dp(6))
+            setBackgroundColor(surface)
+        }
+        shell.addView(composerDock)
+        nav=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL
+            setBackgroundColor(surface)
+            setPadding(dp(5),dp(3),dp(5),dp(2))
+        }
         shell.addView(nav)
-        val scroll=ScrollView(this).apply{isFillViewport=false;isVerticalScrollBarEnabled=true}
-        body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(8),dp(16),dp(22))}
-        scroll.addView(body)
-        shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         setContentView(shell)
         MaintenanceWorker.arm(this)
         WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("medbrain-model-import").observe(this){jobs->
@@ -170,7 +182,7 @@ class MainActivity:ComponentActivity() {
             }
             if(next!=downloadStatus){downloadStatus=next;if(page==5)render(5)}
         }
-        render(savedInstanceState?.getInt("tab") ?: 0)
+        render(savedInstanceState?.getInt("tab") ?: 3)
         recordDiagnostic("UI_START","screenDp="+resources.configuration.screenWidthDp+" fontScale="+resources.configuration.fontScale)
         lifecycleScope.launch{
             while(isActive){
@@ -229,31 +241,42 @@ class MainActivity:ComponentActivity() {
         page=tab
         if(!::body.isInitialized)return
         body.removeAllViews()
+        composerDock.removeAllViews()
         nav.removeAllViews()
-        val menu=arrayOf("Accueil","Bibliothèque","Étudier","Discussion","Diagnostic","Paramètres")
-        val wide=resources.configuration.screenWidthDp>=600
-        val groups=if(wide)listOf(listOf(0,1,2,3,4,5))else listOf(listOf(0,1,2),listOf(3,4,5))
-        groups.forEach{group->
-            val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-            group.forEach{i->
-                val title=menu[i]
-                val btn=Button(this).apply{
-                    text=title;contentDescription="Ouvrir "+title;isAllCaps=false
-                    textSize=if(resources.configuration.fontScale>1.25f)10f else 11.5f
-                    setTextColor(if(i==tab)Color.WHITE else fg)
-                    background=drawable(if(i==tab)accent else surface,9)
-                    setPadding(dp(2),0,dp(2),0)
-                    minHeight=dp(44)
-                    setOnClickListener{render(i)}
-                }
-                row.addView(btn,LinearLayout.LayoutParams(0,dp(46),1f).apply{setMargins(dp(2),dp(2),dp(2),dp(2))})
+        chatComposer=null
+        if(::stats.isInitialized)stats.visibility=if(tab==3)View.GONE else View.VISIBLE
+        val entries=listOf(
+            Triple(0,"⌂","Accueil"),
+            Triple(3,"✦","Discuter"),
+            Triple(1,"▤","Livres"),
+            Triple(2,"◇","Étudier"),
+            Triple(-1,"☰","Plus")
+        )
+        entries.forEach{(destination,symbol,label)->
+            val selected=if(destination<0)tab>=4 else destination==tab
+            val b=Button(this).apply{
+                text="$symbol\\n$label".replace("\\n","\n")
+                setTextColor(if(selected)accent else fg)
+                textSize=10f
+                isAllCaps=false
+                setPadding(0,0,0,0)
+                background=drawable(if(selected)accent and 0x20FFFFFF else surface,11)
+                contentDescription=if(destination<0)"Menu complet" else "Ouvrir $label"
+                setOnClickListener{if(destination<0)showMoreMenu() else render(destination)}
             }
-            nav.addView(row,LinearLayout.LayoutParams(-1,-2))
+            nav.addView(b,LinearLayout.LayoutParams(0,dp(54),1f).apply{setMargins(dp(1),0,dp(1),0)})
         }
         refreshSummary()
         when(tab){
             0->home();1->library();2->study();3->brain();4->system();else->settings()
         }
+    }
+    private fun showMoreMenu(){
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Espaces MedBrain")
+            .setItems(arrayOf("⚙ Paramètres","◉ Diagnostic et incidents","📚 Bibliothèque","🎓 Étudier","💬 Discussion")){_,which->
+                render(when(which){0->5;1->4;2->1;3->2;else->3})
+            }.setNegativeButton("Fermer",null).show()
     }
     private fun refreshSummary(){
         if(!::stats.isInitialized)return
@@ -308,7 +331,7 @@ class MainActivity:ComponentActivity() {
     private fun chatPrefs():android.content.SharedPreferences=getSharedPreferences("medbrain",Context.MODE_PRIVATE)
     private fun currentMode():String=chatPrefs().getString("chat_mode","auto")?:"auto"
     private fun brain(){
-        section("Mon IA · Discussion","Conversation persistante • connaissances générales et bibliothèque sourcée")
+        section("Discussion","Questions, explications et tes sources. Mode au choix.")
         val mode=currentMode()
         val modes=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
         listOf("auto" to "Auto","general" to "Général","sources" to "Mes sources").forEach{(value,title)->
@@ -368,11 +391,8 @@ class MainActivity:ComponentActivity() {
         if(busy||activeChatGeneration){
             historyPanel.addView(text("⏳ Réflexion locale en cours… La réponse arrivera ici.",13f,false,muted))
         }
-        chatHistoryScroll=ScrollView(this).apply{
-            isVerticalScrollBarEnabled=true
-            addView(historyPanel)
-        }
-        add(chatHistoryScroll!!)
+        chatHistoryScroll=null
+        add(historyPanel)
         val composerLine=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
         val q=field("","Écris un message…",2).apply{maxLines=5}
         chatComposer=q
@@ -385,9 +405,8 @@ class MainActivity:ComponentActivity() {
             setOnClickListener{sendChat(q.text.toString())}
         }
         composerLine.addView(send,LinearLayout.LayoutParams(dp(54),dp(57)).apply{leftMargin=dp(7)})
-        add(composerLine)
-        add(text(if(ModelVault.file(this).exists())"● Modèle neuronal local disponible" else "○ Modèle non installé : conversation limitée, activation possible dans Paramètres",11f,false,muted))
-        chatHistoryScroll?.post{chatHistoryScroll?.fullScroll(View.FOCUS_DOWN)}
+        composerDock.addView(composerLine,LinearLayout.LayoutParams(-1,-2))
+        contentScroll.post{if(page==3)contentScroll.fullScroll(View.FOCUS_DOWN)}
     }
     private fun sendChat(raw:String) {
         val question=raw.trim()
@@ -633,8 +652,10 @@ class MainActivity:ComponentActivity() {
         return "Version 0.4 • Android ${Build.VERSION.RELEASE}\nRAM libre : ${info.availMem/1048576} Mio • Alerte système : ${info.lowMemory}\nBatterie : $percent %\n"+ModelVault.status(this)+"\n"+docs
     }
     override fun onConfigurationChanged(config:Configuration){
+        val draft=chatComposer?.text?.toString().orEmpty()
         super.onConfigurationChanged(config)
         render(page)
+        if(page==3 && draft.isNotEmpty())chatComposer?.setText(draft)
     }
     override fun onDestroy(){unbindAI();super.onDestroy()}
 }
