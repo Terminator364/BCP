@@ -13,6 +13,56 @@ import org.robolectric.annotation.SQLiteMode
 @Config(sdk=[28])
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class KnowledgeStoreTest {
+    @Test fun independentConversationThreadsPreserveMessages(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        KnowledgeStore(ctx).use{store->
+            val first=store.createThread()
+            val second=store.createThread()
+            store.addChat("user","ECG et intervalle PR",threadId=first)
+            store.addChat("assistant","Durée habituelle de l'intervalle PR.",threadId=first)
+            store.addChat("user","Physiologie rénale",threadId=second)
+            assertEquals(2,store.messages(first).size)
+            assertEquals(1,store.messages(second).size)
+            assertTrue(store.threads().any{it.id==first&&it.title.contains("ECG")})
+            assertTrue(store.threads().any{it.id==second&&it.title.contains("Physiologie")})
+        }
+        KnowledgeStore(ctx).use{store->
+            assertEquals(2,store.threads().size)
+            val renal=store.threads().first{it.title.contains("Physiologie")}
+            val cardiac=store.threads().first{it.title.contains("ECG")}
+            store.clearChat(renal.id)
+            assertTrue(store.messages(renal.id).isEmpty())
+            assertEquals(2,store.messages(cardiac.id).size)
+            store.deleteThread(renal.id)
+            assertEquals(1,store.threads().size)
+            assertEquals(2,store.messages(cardiac.id).size)
+        }
+    }
+    @Test fun schemaFourMigratesChatsAndIndexedBooksWithoutLoss(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        // Create the full legacy v4 schema first using SQLite upgrade from v3.
+        val old=ctx.openOrCreateDatabase("medbrain-v1.sqlite",Context.MODE_PRIVATE,null)
+        old.execSQL("CREATE TABLE docs(id TEXT PRIMARY KEY,title TEXT NOT NULL,uri TEXT NOT NULL,processed INTEGER NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'QUEUED',error TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL DEFAULT 0)")
+        old.execSQL("CREATE TABLE pages(doc_id TEXT NOT NULL,page INTEGER NOT NULL,body TEXT NOT NULL,extraction_method TEXT NOT NULL DEFAULT 'TEXT',PRIMARY KEY(doc_id,page))")
+        old.execSQL("CREATE TABLE chats(id INTEGER PRIMARY KEY AUTOINCREMENT,thread_id TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,source_refs TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL)")
+        old.execSQL("INSERT INTO docs(id,title,uri,processed,total,state) VALUES('biology','Biologie clinique','content://biology',1,1,'INDEXED')")
+        old.execSQL("INSERT INTO pages(doc_id,page,body) VALUES('biology',1,'Une valeur de laboratoire doit être interprétée avec le contexte clinique.')")
+        old.execSQL("INSERT INTO chats(thread_id,kind,body,created_at) VALUES('default','user','Parle-moi de la biologie clinique',100)")
+        old.execSQL("INSERT INTO chats(thread_id,kind,body,created_at) VALUES('default','assistant','Début de l’explication',200)")
+        old.version=4
+        old.close()
+        KnowledgeStore(ctx).use{store->
+            assertEquals("Biologie clinique",store.document("biology")!!.title)
+            assertEquals(1,store.indexedPages("biology"))
+            assertEquals(2,store.messages("default").size)
+            assertTrue(store.threads().any{it.id=="default"})
+            val id=store.createThread()
+            store.addChat("user","Autre conversation",threadId=id)
+            assertEquals(2,store.messages("default").size)
+        }
+    }
     @Test fun readsRealPageAndTracksReview(){
         val ctx=ApplicationProvider.getApplicationContext<Context>()
         ctx.deleteDatabase("medbrain-v1.sqlite")

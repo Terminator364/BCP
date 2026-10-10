@@ -60,8 +60,32 @@ class MainActivity:ComponentActivity() {
     private var downloadStatus=""
     private var chatComposer:EditText?=null
     private var chatHistoryScroll:ScrollView?=null
-    private var activeChatGeneration=false
-    private var chatEvidencePreview=""
+    private val generatingChatThreads=mutableSetOf<String>()
+    private val evidencePreviewByThread=mutableMapOf<String,String>()
+    private fun currentThreadId():String=chatPrefs().getString("current_chat_thread","default")?:"default"
+    private fun selectChatThread(id:String){
+        chatPrefs().edit().putString("current_chat_thread",id).apply()
+        render(3)
+    }
+    private fun newChatThread(){
+        val id=KnowledgeStore(this).use{it.createThread()}
+        selectChatThread(id)
+    }
+    private fun showChatHistory(){
+        val threads=KnowledgeStore(this).use{it.threads(70)}
+        if(threads.isEmpty()){
+            android.app.AlertDialog.Builder(this).setMessage("Aucune conversation enregistrée.")
+                .setPositiveButton("Fermer",null).show()
+            return
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Historique des conversations")
+            .setItems(threads.map{it.title.ifBlank{"Conversation"}+"  · "+it.id.take(5)}.toTypedArray()){_,index->
+                selectChatThread(threads[index].id)
+            }
+            .setNegativeButton("Fermer",null)
+            .show()
+    }
     private var serviceConnection:ServiceConnection?=null
     private var serviceMessenger:Messenger?=null
     private var completion:((String)->Unit)?=null
@@ -425,7 +449,22 @@ class MainActivity:ComponentActivity() {
     private fun chatPrefs():android.content.SharedPreferences=getSharedPreferences("medbrain",Context.MODE_PRIVATE)
     private fun currentMode():String=chatPrefs().getString("chat_mode","auto")?:"auto"
     private fun brain(){
-        section("Discussion","Questions, explications et tes sources. Mode au choix.")
+        section("Discussion","Conversations séparées, historique et références médicales.")
+        val activeId=currentThreadId()
+        val threadBar=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        listOf("＋ Nouvelle conversation" to {newChatThread()},
+            "☷ Historique" to {showChatHistory()}).forEach{(label,callback)->
+            threadBar.addView(Button(this).apply{
+                text=label;isAllCaps=false;textSize=12f
+                setOnClickListener{callback()}
+            },LinearLayout.LayoutParams(0,dp(48),1f))
+        }
+        add(threadBar)
+        val activeTitle=KnowledgeStore(this).use{store->
+            store.ensureThread(activeId)
+            store.threads(100).firstOrNull{it.id==activeId}?.title ?: "Nouvelle conversation"
+        }
+        add(text("💬 "+activeTitle.take(70),14f,true))
         val mode=currentMode()
         val modes=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
         listOf("auto" to "Auto","general" to "Général","sources" to "Mes sources").forEach{(value,title)->
@@ -446,7 +485,7 @@ class MainActivity:ComponentActivity() {
             background=drawable(if(night)Color.rgb(13,26,43) else Color.rgb(232,241,247))
         }
         val chatLimit=if(chatPrefs().getBoolean("full_chat",false))70 else 18
-        val messages=KnowledgeStore(this).use{it.messages(limit=chatLimit)}
+        val messages=KnowledgeStore(this).use{it.messages(threadId=activeId,limit=chatLimit)}
         if(messages.size>=chatLimit){
             val older=Button(this).apply{
                 text=if(chatLimit==18)"↑ Afficher davantage d'historique" else "↓ Afficher moins"
@@ -494,29 +533,30 @@ class MainActivity:ComponentActivity() {
             line.addView(bubble,LinearLayout.LayoutParams(-1,-2).apply{leftMargin=if(user)dp(42) else dp(2);rightMargin=if(user)dp(2) else dp(42);bottomMargin=dp(11)})
             historyPanel.addView(line)
         }
-        if(activeChatGeneration){
+        if(generatingChatThreads.contains(activeId)){
+            val preview=evidencePreviewByThread[activeId].orEmpty()
             historyPanel.addView(text(
-                (if(chatEvidencePreview.isBlank())"⏳ Réponse locale en préparation…"
-                 else chatEvidencePreview)+"\n\n⏳ Synthèse locale en cours…",
-                13f,false,muted))
+                (if(preview.isBlank())"⏳ Réponse locale en préparation…"
+                 else preview)+"\n\n⏳ Synthèse locale en cours…",13f,false,muted))
         }
         chatHistoryScroll=null
         add(historyPanel)
         val composerLine=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-        val q=field(chatPrefs().getString("draft","")?:"","Écris un message…",2).apply{maxLines=5}
+        val draftKey="draft_"+activeId
+        val q=field(chatPrefs().getString(draftKey,"")?:"","Écris un message…",2).apply{maxLines=5}
         q.addTextChangedListener(object:android.text.TextWatcher{
             override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
             override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){
-                chatPrefs().edit().putString("draft",s?.toString().orEmpty().take(2000)).apply()
+                chatPrefs().edit().putString(draftKey,s?.toString().orEmpty().take(2000)).apply()
             }
             override fun afterTextChanged(s:android.text.Editable?){}
         })
         chatComposer=q
         composerLine.addView(q,LinearLayout.LayoutParams(0,-2,1f))
         val send=Button(this).apply{
-            text=if(activeChatGeneration)"…" else "➤";isAllCaps=false;textSize=19f
+            text=if(generatingChatThreads.contains(activeId))"…" else "➤";isAllCaps=false;textSize=19f
             setTextColor(Color.WHITE);background=drawable(accent,12)
-            isEnabled=!activeChatGeneration
+            isEnabled=!generatingChatThreads.contains(activeId)
             contentDescription="Envoyer le message"
             setOnClickListener{sendChat(q.text.toString())}
         }
@@ -526,34 +566,35 @@ class MainActivity:ComponentActivity() {
     }
     private fun sendChat(raw:String) {
         val question=raw.trim()
-        if(question.isBlank()||activeChatGeneration)return
+        val threadId=currentThreadId()
+        if(question.isBlank()||generatingChatThreads.contains(threadId))return
+        chatComposer?.setText("")
+        chatPrefs().edit().remove("draft_"+threadId).apply()
         if(ConversationPolicy.isUrgent(question)){
             val reply=ConversationPolicy.firstAid(question)
-            KnowledgeStore(this).use{it.addChat("user",question);it.addChat("assistant",reply)}
+            KnowledgeStore(this).use{it.addChat("user",question,threadId=threadId);it.addChat("assistant",reply,threadId=threadId)}
             render(3);return
         }
-        chatComposer?.setText("")
-        chatPrefs().edit().remove("draft").apply()
-        KnowledgeStore(this).use{it.addChat("user",question)}
+        KnowledgeStore(this).use{it.addChat("user",question,threadId=threadId)}
         val lower=SearchPolicy.normalized(question)
         val greeting=ConversationPolicy.isGreeting(question)
         if(ConversationPolicy.isModelQuestion(question)){
-            KnowledgeStore(this).use{it.addChat("assistant",ConversationPolicy.modelExplanation(ModelVault.file(this).exists()))}
+            KnowledgeStore(this).use{it.addChat("assistant",ConversationPolicy.modelExplanation(ModelVault.file(this).exists()),threadId=threadId)}
             render(3);return
         }
         if(greeting){
             val txt=if(ModelVault.file(this).exists())
                 "Salut ! 🧠 Je suis prête. Tu peux me poser une question, me demander une explication médicale ou chercher dans ta bibliothèque."
                 else "Salut ! 🧠 Ta bibliothèque s'enrichit déjà. Pour une conversation neuronale complète, ouvre Paramètres et active un modèle local. Tu peux aussi consulter tes documents sans modèle."
-            KnowledgeStore(this).use{it.addChat("assistant",txt)}
+            KnowledgeStore(this).use{it.addChat("assistant",txt,threadId=threadId)}
             render(3);return
         }
         val mode=currentMode()
-        val previous=KnowledgeStore(this).use{it.messages(limit=18).dropLast(1)}
+        val previous=KnowledgeStore(this).use{it.messages(threadId=threadId,limit=18).dropLast(1)}
         val route=DialoguePlanner.route(question,previous)
         if(route.followUp && !route.hasHistory){
             KnowledgeStore(this).use{it.addChat("assistant",
-                "Je n'ai pas de réponse précédente exploitable à reprendre. Précise le sujet ou l'étape souhaitée.")}
+                "Je n'ai pas de réponse précédente exploitable à reprendre. Précise le sujet ou l'étape souhaitée.",threadId=threadId)}
             render(3);return
         }
         // Deictic follow-ups must never be treated as FTS queries.
@@ -563,7 +604,7 @@ class MainActivity:ComponentActivity() {
         val hasModel=ModelVault.file(this).exists()
         if(mode=="sources"&&evidence.isEmpty()&&!route.followUp){
             KnowledgeStore(this).use{it.addChat("assistant",
-                "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.")}
+                "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.",threadId=threadId)}
             render(3);return
         }
         if(!hasModel){
@@ -578,7 +619,7 @@ class MainActivity:ComponentActivity() {
                         passages.joinToString("\n\n")+
                         "\n\nPour approfondir dans une conversation, active le modèle dans Paramètres."
                 }
-            KnowledgeStore(this).use{it.addChat("assistant",msg,sources)}
+            KnowledgeStore(this).use{it.addChat("assistant",msg,sources,threadId)}
             render(3);return
         }
         val prompt=DialoguePlanner.prompt(question,previous,evidence,mode)
@@ -589,26 +630,26 @@ class MainActivity:ComponentActivity() {
             val why=if(battery in 1..14)
                 "⚡ Batterie faible ("+battery+" %) : génération lourde suspendue. Recharge le téléphone.\n\n"
             else "⏳ Le moteur a récemment expiré : nouvelle tentative neuronale temporairement suspendue.\n\n"
-            KnowledgeStore(this).use{it.addChat("assistant",why+DialoguePlanner.fallback(evidence,route.followUp),sources)}
+            KnowledgeStore(this).use{it.addChat("assistant",why+DialoguePlanner.fallback(evidence,route.followUp),sources,threadId)}
             render(3);return
         }
-        chatEvidencePreview=if(evidence.isEmpty())"" else
+        evidencePreviewByThread[threadId]=if(evidence.isEmpty())"" else
             "📖 Preuves retrouvées : "+evidence.take(2).joinToString(" ; ") {
                 it.title+" (p. "+it.page+")"
             }
-        activeChatGeneration=true
+        generatingChatThreads.add(threadId)
         render(3)
         requestAI(prompt){generated->
-            activeChatGeneration=false
-            chatEvidencePreview=""
+            generatingChatThreads.remove(threadId)
+            evidencePreviewByThread.remove(threadId)
             val failed=generated.isBlank() ||
                 generated.startsWith("Le moteur local n'a pas terminé") ||
                 generated.startsWith("Inférence indisponible") ||
                 generated.startsWith("Le moteur local a été interrompu") ||
                 generated==ModelOutputPolicy.NO_FINAL
             val response=if(failed)DialoguePlanner.fallback(evidence,route.followUp) else generated
-            KnowledgeStore(this).use{it.addChat("assistant",response,sources)}
-            if(page==3)render(3)
+            KnowledgeStore(this).use{it.addChat("assistant",response,sources,threadId)}
+            if(page==3 && currentThreadId()==threadId)render(3)
         }
     }
     private fun system(){
@@ -687,9 +728,20 @@ class MainActivity:ComponentActivity() {
         card("Confidentialité","Les livres, les conversations et les modèles restent dans le stockage de l'application. Seul le téléchargement explicite du modèle nécessite Internet.")
         add(action("Effacer mon historique de chat (avec confirmation)"){
             android.app.AlertDialog.Builder(this).setTitle("Effacer le chat ?")
-                .setMessage("Les messages seront supprimés. Les livres indexés seront conservés.")
+                .setMessage("Les messages de cette conversation seulement seront supprimés. Les autres conversations et les livres seront conservés.")
                 .setNegativeButton("Non",null)
-                .setPositiveButton("Effacer"){_,_->KnowledgeStore(this).use{it.clearChat()};render(5)}.show()
+                .setPositiveButton("Effacer"){_,_->KnowledgeStore(this).use{it.clearChat(currentThreadId())};render(5)}.show()
+        })
+        add(action("Supprimer cette conversation (avec confirmation)"){
+            val current=currentThreadId()
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Supprimer cette conversation ?")
+                .setMessage("Cette action supprimera uniquement les messages de cette conversation. Les autres discussions et les livres resteront intacts.")
+                .setNegativeButton("Annuler",null)
+                .setPositiveButton("Supprimer"){_,_->
+                    KnowledgeStore(this).use{it.deleteThread(current)}
+                    newChatThread()
+                }.show()
         })
         if(downloadStatus.isNotBlank())card("Téléchargement du modèle",downloadStatus)
     }

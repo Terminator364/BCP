@@ -6,12 +6,13 @@ import android.database.sqlite.SQLiteOpenHelper
 import java.text.Normalizer
 
 data class DocumentRecord(val id:String,val title:String,val uri:String,val done:Int,val total:Int,val state:String,val error:String)
+data class ChatThread(val id:String,val title:String,val updatedAt:Long)
 data class Passage(val title:String,val page:Int,val text:String,val method:String) {
     fun citation() = "$title — page $page ($method)"
 }
 
 /** Owns persistent evidence and checkpoints; schema 2 upgrades alpha v1 without data loss. */
-class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null,4),java.io.Closeable {
+class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null,5),java.io.Closeable {
     override fun onCreate(db:SQLiteDatabase) {
         db.execSQL("CREATE TABLE docs(id TEXT PRIMARY KEY,title TEXT NOT NULL,uri TEXT NOT NULL,processed INTEGER NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'QUEUED',error TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL DEFAULT 0)")
         db.execSQL("CREATE TABLE pages(doc_id TEXT NOT NULL,page INTEGER NOT NULL,body TEXT NOT NULL,extraction_method TEXT NOT NULL DEFAULT 'TEXT',PRIMARY KEY(doc_id,page))")
@@ -22,6 +23,7 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         db.execSQL("CREATE TABLE scan_nodes(tree_uri TEXT NOT NULL,node_uri TEXT NOT NULL,depth INTEGER NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',PRIMARY KEY(tree_uri,node_uri))")
         db.execSQL("CREATE TABLE chats(id INTEGER PRIMARY KEY AUTOINCREMENT,thread_id TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,source_refs TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL)")
         db.execSQL("CREATE INDEX chat_thread_idx ON chats(thread_id,id)")
+        db.execSQL("CREATE TABLE chat_threads(id TEXT PRIMARY KEY,title TEXT NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)")
     }
     override fun onUpgrade(db:SQLiteDatabase,oldVersion:Int,newVersion:Int) {
         if(oldVersion<=1 && newVersion>=2) {
@@ -39,6 +41,11 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         if(oldVersion<=3 && newVersion>=4){
             db.execSQL("CREATE TABLE IF NOT EXISTS chats(id INTEGER PRIMARY KEY AUTOINCREMENT,thread_id TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,source_refs TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL)")
             db.execSQL("CREATE INDEX IF NOT EXISTS chat_thread_idx ON chats(thread_id,id)")
+        }
+        if(oldVersion<=4 && newVersion>=5){
+            db.execSQL("CREATE TABLE IF NOT EXISTS chat_threads(id TEXT PRIMARY KEY,title TEXT NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)")
+            // Legacy messages stay byte-for-byte; only a new metadata row is added.
+            db.execSQL("INSERT OR IGNORE INTO chat_threads(id,title,created_at,updated_at) SELECT thread_id, 'Conversation précédente', MIN(created_at), MAX(created_at) FROM chats GROUP BY thread_id")
         }
     }
     fun register(id:String,title:String,uri:String) {
@@ -151,11 +158,64 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         readableDatabase.rawQuery("SELECT COUNT(*) FROM reviews",null).use {if(it.moveToFirst())n=it.getInt(0)}
         return "$n révisions enregistrées"
     }
+    /** Conversation metadata: messages are never copied or erased when switching threads. */
+    fun createThread():String {
+        val id=java.util.UUID.randomUUID().toString()
+        val now=System.currentTimeMillis()
+        writableDatabase.execSQL(
+            "INSERT INTO chat_threads(id,title,created_at,updated_at) VALUES(?,?,?,?)",
+            arrayOf(id,"Nouvelle conversation",now,now))
+        return id
+    }
+    fun threads(limit:Int=50):List<ChatThread> {
+        val results=mutableListOf<ChatThread>()
+        readableDatabase.rawQuery(
+            "SELECT id,title,updated_at FROM chat_threads ORDER BY updated_at DESC LIMIT ?",
+            arrayOf(limit.coerceIn(1,100).toString())).use{cursor->
+            while(cursor.moveToNext())results.add(ChatThread(
+                cursor.getString(0),cursor.getString(1),cursor.getLong(2)))
+        }
+        return results
+    }
+    fun renameThread(id:String,title:String){
+        val name=title.trim().take(90)
+        if(name.isNotBlank())writableDatabase.execSQL(
+            "UPDATE chat_threads SET title=? WHERE id=?",arrayOf(name,id))
+    }
+    fun deleteThread(id:String){
+        val db=writableDatabase
+        db.beginTransaction()
+        try{
+            db.execSQL("DELETE FROM chats WHERE thread_id=?",arrayOf(id))
+            db.execSQL("DELETE FROM chat_threads WHERE id=?",arrayOf(id))
+            db.setTransactionSuccessful()
+        }finally{db.endTransaction()}
+        // Deliberate action only, caller must obtain explicit user confirmation.
+    }
+    fun ensureThread(id:String){
+        val now=System.currentTimeMillis()
+        writableDatabase.execSQL(
+            "INSERT OR IGNORE INTO chat_threads(id,title,created_at,updated_at) VALUES(?,?,?,?)",
+            arrayOf(id,if(id=="default")"Conversation précédente" else "Nouvelle conversation",now,now))
+    }
     data class ChatMessage(val id:Long,val kind:String,val body:String,val sources:String,val timestamp:Long)
     fun addChat(kind:String,body:String,sources:String="",threadId:String="default"){
-        writableDatabase.execSQL("INSERT INTO chats(thread_id,kind,body,source_refs,created_at) VALUES(?,?,?,?,?)",
-            arrayOf(threadId,kind.take(20),body.take(25000),sources.take(15000),System.currentTimeMillis()))
-        writableDatabase.execSQL("DELETE FROM chats WHERE id NOT IN (SELECT id FROM chats ORDER BY id DESC LIMIT 1000)")
+        val db=writableDatabase
+        val now=System.currentTimeMillis()
+        db.beginTransaction()
+        try{
+            db.execSQL("INSERT OR IGNORE INTO chat_threads(id,title,created_at,updated_at) VALUES(?,?,?,?)",
+                arrayOf(threadId,if(threadId=="default")"Conversation précédente" else "Nouvelle conversation",now,now))
+            db.execSQL("INSERT INTO chats(thread_id,kind,body,source_refs,created_at) VALUES(?,?,?,?,?)",
+                arrayOf(threadId,kind.take(20),body.take(25000),sources.take(15000),now))
+            if(kind=="user"){
+                db.execSQL("UPDATE chat_threads SET title=? WHERE id=? AND title='Nouvelle conversation'",
+                    arrayOf(body.trim().replace(Regex("\\s+")," ").take(64),threadId))
+            }
+            db.execSQL("UPDATE chat_threads SET updated_at=? WHERE id=?",arrayOf(now,threadId))
+            db.setTransactionSuccessful()
+        }finally{db.endTransaction()}
+        // Retention must not silently erase older user conversations.
     }
     fun messages(threadId:String="default",limit:Int=70):List<ChatMessage>{
         val out=ArrayList<ChatMessage>()
