@@ -32,10 +32,10 @@ object AnswerContinuationPolicy {
         return ("Suite d'une réponse en français. Utilise le contexte factuel ci-dessous; "+
             "aucune citation non fournie. Termine la phrase ou l'étape interrompue. "+
             "Ne répète pas ce qui a déjà été dit.\n"+
-            "Demande et références initiales :\n"+originalPrompt.take(820)+"\n"+
-            "Texte déjà affiché (fin) :\n"+clean.takeLast(470)+"\n"+
+            "Demande et références initiales :\n"+originalPrompt.take(610)+"\n"+
+            "Texte déjà affiché (fin) :\n"+clean.takeLast(340)+"\n"+
             "Continue directement la réponse, sans introduction ni raisonnement interne. /no_think"
-        ).take(1550)
+        )
     }
     fun combine(first:String,next:String):String {
         val a=stripNotice(first)
