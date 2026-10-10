@@ -14,7 +14,7 @@ object ConversationPolicy {
         return Regex("^(bonjour|salut|hello|coucou|bonsoir|hey|eo)(\\s+(medbrain|ia|mon ami|bonjour|a toi|comment vas tu))?$").matches(clean)
     }
     fun isModelQuestion(question:String):Boolean {
-        val clean=SearchPolicy.normalized(question)
+        val clean=SearchPolicy.normalized(question).replace(Regex("[-_]+")," ")
         return clean.contains("quel modele")||clean.contains("comment tu fonctionnes")||
             clean.contains("tu sais faire quoi")||clean.contains("que peux tu faire")
     }
