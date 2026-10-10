@@ -376,7 +376,19 @@ class MainActivity:ComponentActivity() {
             setPadding(dp(8),dp(8),dp(8),dp(8))
             background=drawable(if(night)Color.rgb(13,26,43) else Color.rgb(232,241,247))
         }
-        val messages=KnowledgeStore(this).use{it.messages()}
+        val chatLimit=if(chatPrefs().getBoolean("full_chat",false))70 else 18
+        val messages=KnowledgeStore(this).use{it.messages(limit=chatLimit)}
+        if(messages.size>=chatLimit){
+            val older=Button(this).apply{
+                text=if(chatLimit==18)"↑ Afficher davantage d'historique" else "↓ Afficher moins"
+                isAllCaps=false;textSize=12f
+                setOnClickListener{
+                    chatPrefs().edit().putBoolean("full_chat",chatLimit==18).apply()
+                    render(3)
+                }
+            }
+            historyPanel.addView(older)
+        }
         if(messages.isEmpty()){
             historyPanel.addView(text("Bienvenue dans ton espace IA 🧠",18f,true))
             historyPanel.addView(text("Je conserve notre discussion. En mode Auto, les questions médicales chercheront des références ; les messages ordinaires restent une conversation.",13f,false,muted))
@@ -419,7 +431,14 @@ class MainActivity:ComponentActivity() {
         chatHistoryScroll=null
         add(historyPanel)
         val composerLine=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-        val q=field("","Écris un message…",2).apply{maxLines=5}
+        val q=field(chatPrefs().getString("draft","")?:"","Écris un message…",2).apply{maxLines=5}
+        q.addTextChangedListener(object:android.text.TextWatcher{
+            override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
+            override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){
+                chatPrefs().edit().putString("draft",s?.toString().orEmpty().take(2000)).apply()
+            }
+            override fun afterTextChanged(s:android.text.Editable?){}
+        })
         chatComposer=q
         composerLine.addView(q,LinearLayout.LayoutParams(0,-2,1f))
         val send=Button(this).apply{
@@ -442,6 +461,7 @@ class MainActivity:ComponentActivity() {
             render(3);return
         }
         chatComposer?.setText("")
+        chatPrefs().edit().remove("draft").apply()
         KnowledgeStore(this).use{it.addChat("user",question)}
         val lower=SearchPolicy.normalized(question)
         val greeting=ConversationPolicy.isGreeting(question)
