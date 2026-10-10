@@ -17,20 +17,21 @@ import org.robolectric.annotation.SQLiteMode
 @Config(sdk=[28])
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class UiSmokeTest {
-    @Test fun allFiveSectionsAreRealAndClickable(){
+    @Test fun allPrimarySpacesAreReachable(){
         WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val pages=mapOf("Accueil" to "Tableau de bord",
-            "Bibliothèque" to "Bibliothèque vivante",
+            "Livres" to "Bibliothèque vivante",
             "Étudier" to "Apprendre et s'évaluer",
-            "Discussion" to "Mon IA · Discussion",
-            "Diagnostic" to "Diagnostic et contrôle",
-            "Paramètres" to "Paramètres")
+            "Discuter" to "Discussion")
         pages.forEach{ (tab,expected)->
-            val button=allButtons(activity.window.decorView).first{it.text.toString()==tab}
+            val button=allButtons(activity.window.decorView).first{it.contentDescription?.toString()=="Ouvrir "+tab}
             button.performClick()
-            assertTrue(allText(activity.window.decorView).any{it.contains(expected)})
+            assertTrue("Unreachable $tab",allText(activity.window.decorView).any{it.contains(expected)})
         }
+        val more=allButtons(activity.window.decorView).first{it.contentDescription?.toString()=="Menu complet"}
+        more.performClick()
+        assertNotNull(org.robolectric.shadows.ShadowAlertDialog.getLatestAlertDialog())
     }
     private fun allButtons(root:android.view.View):List<Button> {
         val out=mutableListOf<Button>()
@@ -44,15 +45,15 @@ class UiSmokeTest {
         if(root is android.view.ViewGroup) for(i in 0 until root.childCount)out.addAll(allText(root.getChildAt(i)))
         return out
     }
-    @Test fun navigationIsAboveContentAndDoesNotHideBehindSystemBottomBar(){
+    @Test fun pinnedComposerRemainsOutsideScrollableContent(){
         WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val root=activity.window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
         val shell=root.getChildAt(0) as android.widget.LinearLayout
-        assertTrue(shell.getChildAt(1) is android.widget.LinearLayout)
-        assertTrue(shell.getChildAt(2) is android.widget.ScrollView)
-        assertEquals(6,allButtons(shell.getChildAt(1)).count{it.text.toString() in
-            listOf("Accueil","Bibliothèque","Étudier","Discussion","Diagnostic","Paramètres")})
+        assertTrue(shell.getChildAt(1) is android.widget.ScrollView)
+        assertTrue(shell.getChildAt(2) is android.widget.LinearLayout)
+        assertTrue(shell.getChildAt(3) is android.widget.LinearLayout)
+        assertEquals(5,allButtons(shell.getChildAt(3)).size)
+        assertTrue(allButtons(shell.getChildAt(2)).any{it.contentDescription?.toString()=="Envoyer le message"})
     }
-
 }

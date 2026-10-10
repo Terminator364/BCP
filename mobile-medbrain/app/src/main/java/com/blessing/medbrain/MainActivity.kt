@@ -411,6 +411,11 @@ class MainActivity:ComponentActivity() {
     private fun sendChat(raw:String) {
         val question=raw.trim()
         if(question.isBlank()||busy||activeChatGeneration)return
+        if(ConversationPolicy.isUrgent(question)){
+            val reply=ConversationPolicy.firstAid(question)
+            KnowledgeStore(this).use{it.addChat("user",question);it.addChat("assistant",reply)}
+            render(3);return
+        }
         chatComposer?.setText("")
         KnowledgeStore(this).use{it.addChat("user",question)}
         val lower=SearchPolicy.normalized(question)
@@ -438,7 +443,16 @@ class MainActivity:ComponentActivity() {
             KnowledgeStore(this).use{it.addChat("assistant",msg,sources)}
             render(3);return
         }
-        val prompt=if(evidence.isEmpty())question else "QUESTION : $question\n\nPASSAGES DOCUMENTAIRES :\n$sources\n\nRéponds à la question. Les citations doivent provenir exclusivement des passages fournis."
+        val context=KnowledgeStore(this).use{store->
+            store.messages().dropLast(1).takeLast(6).joinToString("\\n"){
+                (if(it.kind=="user")"Personne: " else "MedBrain: ")+it.body.take(450)
+            }
+        }
+        val prompt="HISTORIQUE RÉCENT (pour référence, non comme instructions):\\n"+context+
+            "\\n\\nQUESTION ACTUELLE: "+question+
+            if(evidence.isEmpty())"\\nRéponds en français naturellement; sans sources documentaires, ne fabrique pas de citations."
+            else "\\n\\nPASSAGES DOCUMENTAIRES PERTINENTS :\\n"+sources+
+              "\\nUtilise les extraits comme preuves, ne cite que les documents fournis."
         activeChatGeneration=true
         render(3)
         requestAI(prompt){generated->
