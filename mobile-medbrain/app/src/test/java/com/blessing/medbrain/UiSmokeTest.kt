@@ -43,4 +43,15 @@ class UiSmokeTest {
         if(root is android.view.ViewGroup) for(i in 0 until root.childCount)out.addAll(allText(root.getChildAt(i)))
         return out
     }
+    @Test fun navigationIsAboveContentAndDoesNotHideBehindSystemBottomBar(){
+        WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
+        val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val root=activity.window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
+        val shell=root.getChildAt(0) as android.widget.LinearLayout
+        assertTrue(shell.getChildAt(1) is android.widget.LinearLayout)
+        assertTrue(shell.getChildAt(2) is android.widget.ScrollView)
+        assertEquals(5,allButtons(shell.getChildAt(1)).count{it.text.toString() in
+            listOf("Accueil","Bibliothèque","Étudier","Interroger","Diagnostic")})
+    }
+
 }
