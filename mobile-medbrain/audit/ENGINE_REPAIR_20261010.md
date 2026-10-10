@@ -25,3 +25,10 @@ Les exceptions fournisseur ne sont pas des preuves de livres supprimés.
 - Budget de sortie de fiche: 230 tokens au maximum (modèle local lent), sans le présenter comme un cours exhaustif.
 - Modèle: restauration d'un ancien fichier brain.previous ou model-download.previous si et seulement si brain.gguf est absent et le backup porte l'en-tête GGUF.
 - Les nouveaux tests et la qualification CI restent nécessaires; performances réelles non garanties avant essai sur Galaxy.
+
+## Candidate de livraison 0.4.6 (non signée)
+- Identité inchangée: com.blessing.medbrain.personal ; versionCode 40 (strictement >39) ; versionName 0.4.6-personal-rc.
+- Ancien raisonnement sauvegardé reste présent dans SQLite mais n'est plus réinjecté dans le contexte du modèle.
+- Pendant le Chat, les titres et pages sources pertinents apparaissent immédiatement avant la synthèse.
+- Le moteur de bibliothèque dev.ffmpegkit-maintained:llama-android:0.1.1 open source gratuit ne fournit ni streaming natif des tokens ni GPU Vulkan. Le meilleur rendu de fluidité absolue impose une autre voie JNI/backend, non certifiée dans cette release.
+- AUCUN BINAIRE NON SIGNÉ OU SIGNÉ AVEC UNE NOUVELLE CLÉ NE DOIT ÊTRE INSTALLÉ EN PLACE DE 0.4.5. Le gate signature stable et Galaxy S21 FE reste ouvert.
