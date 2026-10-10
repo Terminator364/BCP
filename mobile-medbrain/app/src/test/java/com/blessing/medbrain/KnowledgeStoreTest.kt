@@ -140,6 +140,12 @@ class KnowledgeStoreTest {
             store.save("cardiology",1,
                 "La taille du coeur adulte varie avec la morphologie et les dimensions cardiaques.",
                 1,1,"INDEXED")
+            assertTrue("The adult cardiac passage must have a positive relevance score",
+                SearchPolicy.score("taille du coeur","Anatomie cardiovasculaire",
+                    "La taille du coeur adulte varie avec la morphologie et les dimensions cardiaques.")>0)
+            assertTrue("The search plan needs an ungrouped FTS4 OR fallback",
+                SearchPolicy.candidateQueries("taille du coeur").last()
+                    .startsWith("taille* OR coeur*"))
             val hits=store.retrieve("taille du coeur",4)
             assertTrue("Cardiac adult reference missing after FTS noise: $hits",
                 hits.any { it.title=="Anatomie cardiovasculaire" })

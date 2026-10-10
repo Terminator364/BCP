@@ -17,3 +17,8 @@ Le RAG utilisait une recherche FTS4 avec disjonction des termes et `LIMIT 180`. 
 - `AND` FTS4 et tri doivent être validés par Robolectric/CI. Le téléphone S21 FE, ses 91 livres historiques, GGUF et les migrations in-place requièrent encore preuve terrain.
 - Les 1 000 variantes du test de routage antérieur ne sont pas 1 000 scénarios médicaux distincts.
 - Pas d'APK publiée par ce commit; garder 0.4.5 et toute base existante.
+
+## Retour du premier CI sur ce correctif
+- Run 38085668936 : compilation Kotlin OK, 18/19 tests réussis, régression volumétrique échouée (résultat vide).
+- Contre-correction : expression OR non parenthésée comme dans le moteur FTS4 initial, en secours des requêtes AND ; test de score et contrat de requête ajoutés.
+- La correction demeure NON qualifiée jusqu'au résultat du nouveau CI.

@@ -39,7 +39,8 @@ object SearchPolicy {
         if(groups.size==1)return groups
         val strict=groups.take(3).joinToString(" AND ")
         val pair=groups.take(2).joinToString(" AND ")
-        val broad=groups.joinToString(" OR ")
+        // Plain FTS4 OR fallback preserves compatibility with Android's SQLite tokenizer.
+        val broad=expand(terms(question).take(6)).distinct().joinToString(" OR ") { "$it*" }
         return listOf(strict,pair,broad).distinct()
     }
     fun firstPosition(terms:List<String>,text:String):Int{
