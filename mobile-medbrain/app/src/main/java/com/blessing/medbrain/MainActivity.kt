@@ -31,7 +31,12 @@ import java.security.MessageDigest
  */
 class MainActivity:ComponentActivity() {
     private val night by lazy {
-        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES
+        val pref=getSharedPreferences("medbrain",Context.MODE_PRIVATE).getString("theme","system")
+        when(pref) {
+            "dark" -> true
+            "light" -> false
+            else -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES
+        }
     }
     private val bg by lazy {if(night)Color.rgb(9,18,33) else Color.rgb(246,249,252)}
     private val surface by lazy {if(night)Color.rgb(22,36,55) else Color.WHITE}
@@ -49,6 +54,10 @@ class MainActivity:ComponentActivity() {
     private var studyText=""
     private var studentResponse=""
     private var importStatus=""
+    private var downloadStatus=""
+    private var chatComposer:EditText?=null
+    private var chatHistoryScroll:ScrollView?=null
+    private var activeChatGeneration=false
     private var serviceConnection:ServiceConnection?=null
 
     private val importDocs=registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->
@@ -170,7 +179,7 @@ class MainActivity:ComponentActivity() {
         GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
     private fun text(t:String,size:Float=15f,bold:Boolean=false,color:Int=fg):TextView=
         TextView(this).apply{
-            this.text=t;this.textSize=size;setTextColor(color);setPadding(0,dp(4),0,dp(5))
+            this.text=t;this.textSize=size*getSharedPreferences("medbrain",Context.MODE_PRIVATE).getFloat("font_scale",1f);setTextColor(color);setPadding(0,dp(4),0,dp(5))
             if(bold)setTypeface(typeface,Typeface.BOLD)
             setTextIsSelectable(t.length>140)
         }
@@ -209,9 +218,9 @@ class MainActivity:ComponentActivity() {
         if(!::body.isInitialized)return
         body.removeAllViews()
         nav.removeAllViews()
-        val menu=arrayOf("Accueil","Bibliothèque","Étudier","Interroger","Diagnostic")
+        val menu=arrayOf("Accueil","Bibliothèque","Étudier","Discussion","Diagnostic","Paramètres")
         val wide=resources.configuration.screenWidthDp>=600
-        val groups=if(wide)listOf(listOf(0,1,2,3,4))else listOf(listOf(0,1,2),listOf(3,4))
+        val groups=if(wide)listOf(listOf(0,1,2,3,4,5))else listOf(listOf(0,1,2),listOf(3,4,5))
         groups.forEach{group->
             val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
             group.forEach{i->
@@ -231,7 +240,7 @@ class MainActivity:ComponentActivity() {
         }
         refreshSummary()
         when(tab){
-            0->home();1->library();2->study();3->brain();else->system()
+            0->home();1->library();2->study();3->brain();4->system();else->settings()
         }
     }
     private fun refreshSummary(){
@@ -244,7 +253,7 @@ class MainActivity:ComponentActivity() {
         val store=KnowledgeStore(this)
         val c=try{store.counts()}finally{store.close()}
         card("📚  Bibliothèque","$c\nOuvre Bibliothèque pour voir les documents et les pages traitées.","Voir les livres"){render(1)}
-        card("🧠  Moteur neuronal",ModelVault.status(this)+"\nLe modèle est déchargé après chaque réponse pour économiser la mémoire.","Interroger"){render(3)}
+        card("🧠  Conversation","Discute avec ton IA et consulte les sources médicales pertinentes. Le modèle est déchargé après chaque réponse.","Ouvrir le chat"){render(3)}
         card("🎓  Entraînement personnel","Fiches sourcées, questions ouvertes, corrections et suivi de tes révisions.","Étudier"){render(2)}
         card("🔄  Reprise automatique","Les pages sont sauvegardées au fur et à mesure. Les traitements interrompus peuvent reprendre sans réindexer les pages terminées.","Relancer les livres incomplets"){resumeAll()}
         if(answerText.isNotBlank())card("Dernier message",answerText)
@@ -284,16 +293,129 @@ class MainActivity:ComponentActivity() {
         add(action("↺  Thème à revoir"){saveReview(topic.text.toString(),"À_REVOIR")})
         KnowledgeStore(this).use{store->card("Répétition et suivi",store.reviewCounts())}
     }
+    private fun chatPrefs():android.content.SharedPreferences=getSharedPreferences("medbrain",Context.MODE_PRIVATE)
+    private fun currentMode():String=chatPrefs().getString("chat_mode","auto")?:"auto"
     private fun brain(){
-        section("Interroger mon IA","Le modèle ne reçoit que des extraits issus des documents sélectionnés et une instruction pédagogique.")
-        val q=field(questionText,"Pose ta question médicale",3)
-        add(q)
-        add(action(if(busy)"Traitement en cours…" else "Rechercher et expliquer"){
-            questionText=q.text.toString().trim()
-            if(questionText.isNotBlank())ask(questionText)
-        })
-        if(answerText.isNotBlank())card("Réponse / sources",answerText)
-        card("Source et limites","Les numéros de page affichés proviennent des documents traités. En l'absence de preuve suffisante, la réponse doit signaler cette limite.")
+        section("Mon IA · Discussion","Conversation persistante • connaissances générales et bibliothèque sourcée")
+        val mode=currentMode()
+        val modes=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        listOf("auto" to "Auto","general" to "Général","sources" to "Mes sources").forEach{(value,title)->
+            modes.addView(Button(this).apply{
+                text=title;isAllCaps=false;textSize=11f
+                setTextColor(if(mode==value)Color.WHITE else fg)
+                background=drawable(if(mode==value)accent else surface,9)
+                setOnClickListener{
+                    chatPrefs().edit().putString("chat_mode",value).apply()
+                    render(3)
+                }
+            },LinearLayout.LayoutParams(0,dp(43),1f))
+        }
+        add(modes)
+        val historyPanel=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(8),dp(8),dp(8),dp(8))
+            background=drawable(if(night)Color.rgb(13,26,43) else Color.rgb(232,241,247))
+        }
+        val messages=KnowledgeStore(this).use{it.messages()}
+        if(messages.isEmpty()){
+            historyPanel.addView(text("Bienvenue dans ton espace IA 🧠",18f,true))
+            historyPanel.addView(text("Je conserve notre discussion. En mode Auto, les questions médicales chercheront des références ; les messages ordinaires restent une conversation.",13f,false,muted))
+            listOf("Salut !","Quelle est la taille normale du cœur ?","Résume les causes de l'insuffisance cardiaque").forEach{example->
+                val actionButton=Button(this).apply{
+                    text=example;textSize=12f;isAllCaps=false
+                    setOnClickListener{chatComposer?.setText(example);sendChat(example)}
+                }
+                historyPanel.addView(actionButton)
+            }
+        }
+        messages.forEach{message->
+            val user=message.kind=="user"
+            val line=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            val bubble=LinearLayout(this).apply{
+                orientation=LinearLayout.VERTICAL
+                background=drawable(if(user)accent else surface,14)
+                setPadding(dp(13),dp(9),dp(13),dp(10))
+            }
+            bubble.addView(text(if(user)"TOI" else "MEDBRAIN",10f,true,if(user)Color.WHITE else accent))
+            bubble.addView(text(message.body,15f,false,if(user)Color.WHITE else fg))
+            if(!user && message.sources.isNotBlank()){
+                val more=Button(this).apply{
+                    text="📚 Voir les passages sources";isAllCaps=false;textSize=12f
+                    setOnClickListener{
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle("Sources consultées (titre et page)")
+                            .setMessage(message.sources.take(10000))
+                            .setPositiveButton("Fermer",null).show()
+                    }
+                }
+                bubble.addView(more)
+            }
+            line.addView(bubble,LinearLayout.LayoutParams(-1,-2).apply{leftMargin=if(user)dp(42) else dp(2);rightMargin=if(user)dp(2) else dp(42);bottomMargin=dp(11)})
+            historyPanel.addView(line)
+        }
+        if(busy||activeChatGeneration){
+            historyPanel.addView(text("⏳ Réflexion locale en cours… La réponse arrivera ici.",13f,false,muted))
+        }
+        chatHistoryScroll=ScrollView(this).apply{
+            isVerticalScrollBarEnabled=true
+            addView(historyPanel)
+        }
+        add(chatHistoryScroll!!)
+        val composerLine=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        val q=field("","Écris un message…",2).apply{maxLines=5}
+        chatComposer=q
+        composerLine.addView(q,LinearLayout.LayoutParams(0,-2,1f))
+        val send=Button(this).apply{
+            text=if(busy)"…" else "➤";isAllCaps=false;textSize=19f
+            setTextColor(Color.WHITE);background=drawable(accent,12)
+            isEnabled=!busy
+            contentDescription="Envoyer le message"
+            setOnClickListener{sendChat(q.text.toString())}
+        }
+        composerLine.addView(send,LinearLayout.LayoutParams(dp(54),dp(57)).apply{leftMargin=dp(7)})
+        add(composerLine)
+        add(text(if(ModelVault.file(this).exists())"● Modèle neuronal local disponible" else "○ Modèle non installé : conversation limitée, activation possible dans Paramètres",11f,false,muted))
+        chatHistoryScroll?.post{chatHistoryScroll?.fullScroll(View.FOCUS_DOWN)}
+    }
+    private fun sendChat(raw:String) {
+        val question=raw.trim()
+        if(question.isBlank()||busy||activeChatGeneration)return
+        chatComposer?.setText("")
+        KnowledgeStore(this).use{it.addChat("user",question)}
+        val lower=SearchPolicy.normalized(question)
+        val greeting=lower in setOf("salut","bonjour","bonsoir","hello","coucou","eo")
+        if(greeting){
+            val txt=if(ModelVault.file(this).exists())
+                "Salut ! 🧠 Je suis prête. Tu peux me poser une question, me demander une explication médicale ou chercher dans ta bibliothèque."
+                else "Salut ! 🧠 Ta bibliothèque s'enrichit déjà. Pour une conversation neuronale complète, ouvre Paramètres et active un modèle local. Tu peux aussi consulter tes documents sans modèle."
+            KnowledgeStore(this).use{it.addChat("assistant",txt)}
+            render(3);return
+        }
+        val mode=currentMode()
+        val evidence=if(mode=="general")emptyList() else KnowledgeStore(this).use{it.retrieve(question,4)}
+        val sources=StudyEngine.references(evidence)
+        val hasModel=ModelVault.file(this).exists()
+        if(mode=="sources"&&evidence.isEmpty()){
+            KnowledgeStore(this).use{it.addChat("assistant",
+                "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.")}
+            render(3);return
+        }
+        if(!hasModel){
+            val msg=if(evidence.isEmpty())
+                "Je n'ai pas encore de modèle neuronal local actif pour répondre librement à cette question. Va dans Paramètres pour activer Qwen3, ou utilise la bibliothèque pour consulter tes pages."
+                else "J'ai retrouvé des passages que tu peux consulter grâce au bouton Sources. Je ne peux pas encore les synthétiser avec un modèle neuronal tant que Qwen3 n'est pas activé."
+            KnowledgeStore(this).use{it.addChat("assistant",msg,sources)}
+            render(3);return
+        }
+        val prompt=if(evidence.isEmpty())question else "QUESTION : $question\n\nPASSAGES DOCUMENTAIRES :\n$sources\n\nRéponds à la question. Les citations doivent provenir exclusivement des passages fournis."
+        activeChatGeneration=true
+        render(3)
+        requestAI(prompt){generated->
+            activeChatGeneration=false
+            val response=if(generated.isBlank())"Aucune réponse produite par le modèle. Vérifie Diagnostics et retente la question." else generated
+            KnowledgeStore(this).use{it.addChat("assistant",response,sources)}
+            if(page==3)render(3)
+        }
     }
     private fun system(){
         section("Diagnostic et contrôle","Chaque incident est visible. Aucune réinstallation ou capture répétée n'est nécessaire pour connaître l'état.")
@@ -315,6 +437,75 @@ class MainActivity:ComponentActivity() {
         add(action("Relancer tous les traitements incomplets"){resumeAll()})
         if(answerText.isNotBlank())card("Dernière opération",answerText)
         card("Autorisations","Import explicite par Android. Aucun accès global aux fichiers, aucune suppression silencieuse, aucune connexion Internet automatique. Google Drive distant exige un document sélectionné ou une future autorisation dédiée.")
+    }
+    private fun settings(){
+        section("Paramètres","Un contrôle réel de MedBrain, pas des boutons décoratifs.")
+        val prefs=chatPrefs()
+        card("🧠 Modèle neuronal",ModelVault.status(this)+"\n"+importStatus,"Importer un GGUF déjà présent"){importModel.launch(arrayOf("application/octet-stream","*/*"))}
+        card("📥 Activation automatique","Qwen3-1.7B Q4_K_M (~1,28 Go). Téléchargement facultatif, uniquement après confirmation, via Wi-Fi non facturé ; l'apprentissage des livres ne nécessite pas cette opération.","Préparer le téléchargement"){
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Télécharger environ 1,28 Go ?")
+                .setMessage("Le modèle sera téléchargé seulement sur un réseau Wi-Fi non facturé. Cette opération peut être longue. Il sera vérifié par SHA-256 avant installation. Confirmer ?")
+                .setNegativeButton("Annuler",null)
+                .setPositiveButton("Oui, sur Wi-Fi"){_,_->startModelDownload()}
+                .show()
+        }
+        card("Réseau et connexion Google","Aucun accès complet à ton autre compte Drive n'est encore configuré. Tu peux autoriser un dossier avec l'explorateur Android ; un accès automatique à tout un compte nécessite un consentement Google dédié.")
+        card("Automatisation","Les livres déjà autorisés sont explorés en arrière-plan, dans les limites d'Android. Le téléchargement d'un modèle n'est jamais lancé sans accord.","Voir la progression"){render(1)}
+        val scale=prefs.getFloat("font_scale",1f)
+        card("Taille du texte","Échelle actuelle : "+(scale*100).toInt()+" %")
+        val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        listOf(0.9f to "Petit",1f to "Normal",1.15f to "Grand").forEach{(factor,label)->
+            row.addView(Button(this).apply{
+                text=label;textSize=11f;isAllCaps=false
+                setOnClickListener{prefs.edit().putFloat("font_scale",factor).apply();render(5)}
+            },LinearLayout.LayoutParams(0,dp(47),1f))
+        }
+        add(row)
+        card("Apparence","Respecter le thème du téléphone ou choisir clair/sombre.")
+        val themes=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        listOf("system" to "Système","light" to "Clair","dark" to "Sombre").forEach{(value,label)->
+            themes.addView(Button(this).apply{
+                text=label;isAllCaps=false;textSize=11f
+                setOnClickListener{prefs.edit().putString("theme",value).apply();recreate()}
+            },LinearLayout.LayoutParams(0,dp(47),1f))
+        }
+        add(themes)
+        card("Configuration de l'IA","Mémoire contextuelle et threads CPU. Préférences conservées, adaptées à ton S21 FE.")
+        val contexts=listOf(1024,2048)
+        val currentCtx=prefs.getInt("context_size",2048)
+        val choose=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        contexts.forEach{x->choose.addView(Button(this).apply{
+            text="$x contexte";isAllCaps=false;textSize=11f
+            background=drawable(if(currentCtx==x)accent else surface,9)
+            setTextColor(if(currentCtx==x)Color.WHITE else fg)
+            setOnClickListener{prefs.edit().putInt("context_size",x).apply();render(5)}
+        },LinearLayout.LayoutParams(0,dp(47),1f))}
+        add(choose)
+        val threadRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        listOf(2,4).forEach{x->threadRow.addView(Button(this).apply{
+            text="$x cœurs CPU";isAllCaps=false;textSize=11f
+            background=drawable(if(prefs.getInt("cpu_threads",4)==x)accent else surface,9)
+            setTextColor(if(prefs.getInt("cpu_threads",4)==x)Color.WHITE else fg)
+            setOnClickListener{prefs.edit().putInt("cpu_threads",x).apply();render(5)}
+        },LinearLayout.LayoutParams(0,dp(47),1f))}
+        add(threadRow)
+        card("Confidentialité","Les livres, les conversations et les modèles restent dans le stockage de l'application. Seul le téléchargement explicite du modèle nécessite Internet.")
+        add(action("Effacer mon historique de chat (avec confirmation)"){
+            android.app.AlertDialog.Builder(this).setTitle("Effacer le chat ?")
+                .setMessage("Les messages seront supprimés. Les livres indexés seront conservés.")
+                .setNegativeButton("Non",null)
+                .setPositiveButton("Effacer"){_,_->KnowledgeStore(this).use{it.clearChat()};render(5)}.show()
+        })
+        if(downloadStatus.isNotBlank())card("Téléchargement du modèle",downloadStatus)
+    }
+    private fun startModelDownload(){
+        val constraint=Constraints.Builder().setRequiredNetworkType(NetworkType.UNMETERED).setRequiresStorageNotLow(true).build()
+        val req=OneTimeWorkRequestBuilder<ModelDownloadWorker>()
+            .setConstraints(constraint).build()
+        WorkManager.getInstance(this).enqueueUniqueWork("medbrain-model-download",ExistingWorkPolicy.KEEP,req)
+        Toast.makeText(this,"Téléchargement mis en attente du Wi-Fi non facturé.",Toast.LENGTH_LONG).show()
+        render(5)
     }
     private fun displayName(uri:Uri):String{
         contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use {
@@ -360,21 +551,6 @@ class MainActivity:ComponentActivity() {
         }
         studyText="Analyse en cours…";render(2)
         requestAI(prompt){out->studyText=out+"\n\nSources vérifiables :\n$quoted";if(page==2)render(2)}
-    }
-    private fun ask(question:String){
-        val pieces=KnowledgeStore(this).use{it.retrieve(question)}
-        if(pieces.isEmpty()){
-            answerText="Aucun passage pertinent retrouvé. La bibliothèque indexée est peut-être incomplète."
-            render(3);return
-        }
-        val sources=StudyEngine.references(pieces)
-        if(!ModelVault.file(this).exists()){
-            answerText="Passages retrouvés :\n$sources\n\nPour une réponse neuronale, importe ton GGUF dans Diagnostic."
-            render(3);return
-        }
-        answerText="Analyse locale en cours…";render(3)
-        val prompt="QUESTION : $question\n\nPASSAGES :\n$sources\n\nRéponds d'après ces seuls extraits et cite les pages."
-        requestAI(prompt){out->answerText=out+"\n\nSources :\n$sources";if(page==3)render(3)}
     }
     private fun requestAI(prompt:String,done:(String)->Unit){
         if(busy){done("Une génération est déjà en cours.");return}
