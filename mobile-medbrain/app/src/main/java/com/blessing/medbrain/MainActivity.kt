@@ -884,6 +884,8 @@ class MainActivity:ComponentActivity() {
             override fun handleMessage(msg:Message){
                 if(msg.what!=InferenceService.REPLY||msg.data.getInt("request_id")!=id)return
                 val error=msg.data.getString("error").orEmpty()
+                val metric=msg.data.getString("metric").orEmpty()
+                if(metric.isNotBlank())recordDiagnostic("INFERENCE_METRIC",metric.take(220))
                 if(error.isNotBlank())recordDiagnostic("INFERENCE_ERROR",error.take(180))
                 finishAI(id,if(error.isBlank())msg.data.getString("result").orEmpty()
                     else "Inférence indisponible : "+error)

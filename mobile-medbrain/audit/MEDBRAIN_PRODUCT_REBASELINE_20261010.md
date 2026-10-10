@@ -45,3 +45,8 @@ Streaming JNI/Vulkan-backed adapter and Qwen reasoning mode benchmark versus alt
 - Google LiteRT-LM Kotlin API streams but uses the LiteRT model ecosystem; existing user GGUF needs migration or a separate backend: https://developers.google.com/edge/litert-lm/android
 - Qwen3 official documentation supports hard `enable_thinking=false` when applying the chat template, whereas `/no_think` is a softer preference that cannot guarantee suppressing internal thinking under every wrapper: https://github.com/QwenLM/Qwen3/blob/main/docs/source/getting_started/quickstart.md
 Decision: separate InferenceAdapter from UI; benchmark official llama.cpp Android with same GGUF on charged S21 FE, report time to first token and total P50/P95, memory and power; retain existing signed installation until proven. No paid backend dependence.
+
+## Vendor native audit — concrete remaining root cause
+`ffmpegkit-maintained/llama-android` main `library/src/main/jni/llama_jni.cpp` lines 173-175 calls `llama_memory_clear(llama_get_memory(h->ctx), true)` for *every* `Llama.complete()` request. Warm GGUF weights do NOT preserve chat KV. Lines 192-199 terminate after `maxTokens` even if answer is unfinished. Public code: https://github.com/ffmpegkit-maintained/llama-android/blob/main/library/src/main/jni/llama_jni.cpp
+The vendor `LlamaResult` already exposes tokensGenerated, promptEvalTimeMs, generateTimeMs, and tokensPerSecond, which had been discarded by MedBrain. Diagnostic metadata now collects them (no user prompts in log), and a token-cap termination displays a visible incomplete-answer notice.
+These changes make failure observable, not solved. The native streaming/KV-backed replacement remains P0, field-unproven.

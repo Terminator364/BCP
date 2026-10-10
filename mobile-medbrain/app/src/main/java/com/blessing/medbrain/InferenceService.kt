@@ -33,6 +33,7 @@ class InferenceService:Service() {
             scope.launch {
                 var answer=""
                 var error=""
+                var metric=""
                 try{
                     serial.withLock {
                         val model=ModelVault.file(this@InferenceService)
@@ -56,7 +57,10 @@ class InferenceService:Service() {
                             prompt=prompt+"\n/no_think",
                             systemPrompt=instruction+" Réponds directement en français sans raisonnement interne affiché.",
                             maxTokens=budget)
-                        answer=ModelOutputPolicy.clean(result.text)
+                        answer=GenerationDiagnostics.annotate(
+                            ModelOutputPolicy.clean(result.text),result.tokensGenerated,budget)
+                        metric=GenerationDiagnostics.summary(result.tokensGenerated,budget,
+                            result.promptEvalTimeMs,result.generateTimeMs,result.tokensPerSecond)
                     }
                 }catch(e:Throwable){error=e.javaClass.simpleName+": "+(e.message?:"inférence indisponible")}
                 try{
@@ -65,6 +69,7 @@ class InferenceService:Service() {
                             putInt("request_id",requestId)
                             putString("result",answer)
                             putString("error",error)
+                            putString("metric",metric)
                         }
                     })
                 }catch(_:RemoteException){}
