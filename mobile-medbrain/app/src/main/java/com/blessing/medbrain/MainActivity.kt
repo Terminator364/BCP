@@ -1049,11 +1049,7 @@ class MainActivity:ComponentActivity() {
             studyText=when(kind){
                 "questions"->CardioPractice.questions(linked)
                 "correction"->CardioPractice.comparison(linked,response)
-                else->"Cours original — "+linked.title+"
-
-"+linked.content+"
-
-"+studySources
+                else->"Cours original — "+linked.title+"\n\n"+linked.content+"\n\n"+studySources
             }
             render(2);return
         }

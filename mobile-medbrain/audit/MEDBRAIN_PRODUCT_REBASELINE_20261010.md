@@ -90,3 +90,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - Practise from a cardiology lesson now binds the exact original fiche ID and checks that its title remains the user's active topic.
 - Generated questions and answer-comparison references are the original recall/essentials from the source, instantly usable offline. This is explicitly NOT automated student grading.
 - Returning to the full original fiche works; switching topic clears source match, preventing stale-document attribution. Robolectric smoke covers course→practice→questions.
+
+## OCR/GGUF contention fix
+- Existing worker checked inference activity only when the job began; a four-page PDFBox + ML Kit OCR batch could continue consuming RAM and CPU after the user sent a chat message. The PDF worker now rechecks before each individual page and yields with `Result.retry()` if inference takes priority; its already committed SQLite pages and source cache remain intact.
+- On cancellation, the worker no longer incorrectly marks a book ERROR; scheduling/resumption remains owned by WorkManager. Deterministic time-boundary tests added. Physical concurrent OCR/Chat benchmark still required.

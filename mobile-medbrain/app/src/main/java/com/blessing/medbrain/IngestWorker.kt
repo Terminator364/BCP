@@ -23,7 +23,8 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
         val store=KnowledgeStore(applicationContext)
         val record=store.document(id)?:return@withContext Result.failure().also{store.close()}
         val pref=applicationContext.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
-        if(System.currentTimeMillis()<pref.getLong("inference_until",0L)){
+        if(IngestConcurrency.shouldYield(System.currentTimeMillis(),
+                pref.getLong("inference_until",0L))){
             store.close()
             return@withContext Result.retry()
         }
@@ -35,6 +36,7 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
             else if(mime.startsWith("image/") || record.title.endsWith(".jpg",true) ||record.title.endsWith(".png",true)) ingestImage(store,record,path)
             else ingestText(store,record,path)
         } catch(e:Throwable) {
+            if(e is kotlinx.coroutines.CancellationException)throw e
             store.markState(id,if(e is SecurityException||e is FileNotFoundException) "NEEDS_ACCESS" else "ERROR",e.javaClass.simpleName+": "+(e.message?:""))
             if(e is OutOfMemoryError) return@withContext Result.failure()
             if(e is SecurityException || e is FileNotFoundException) return@withContext Result.failure()
@@ -60,7 +62,15 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
                 val total=pdf.numberOfPages
                 val end=minOf(total,offset+4)
                 if (offset>=total) {store.markState(record.id,"INDEXED");return Result.success()}
+                val prefs=applicationContext.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
                 for(page in offset+1..end) {
+                    // WorkManager may have started this job just before the user opened Chat.
+                    // Yield between pages; already persisted pages and PDF cache remain intact.
+                    if(isStopped || IngestConcurrency.shouldYield(System.currentTimeMillis(),
+                            prefs.getLong("inference_until",0L))){
+                        store.event("INGEST_PAUSED","La génération neuronale est prioritaire; reprise page "+page)
+                        return Result.retry()
+                    }
                     val text=PDFTextStripper().apply {startPage=page;endPage=page}.getText(pdf).trim()
                     var found=text
                     var method="TEXT"
