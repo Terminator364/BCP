@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(label("MEDBRAIN  ·  apprentissage local",23f))
         root.addView(label("Prototype alpha • aucune donnée envoyée à un serveur"))
-        stats=label();root.addView(stats)
+        stats=label("");root.addView(stats)
         action("Importer un PDF ou texte (Drive / téléphone)") {
             importDocument.launch(arrayOf("application/pdf","text/plain","text/markdown"))
         }
