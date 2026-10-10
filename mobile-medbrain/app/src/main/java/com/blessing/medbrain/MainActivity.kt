@@ -74,7 +74,7 @@ class MainActivity:ComponentActivity() {
             try{
                 contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 getSharedPreferences("medbrain",Context.MODE_PRIVATE).edit().putString("local_tree",uri.toString()).apply()
-                val input=Data.Builder().putString("tree_uri",uri.toString()).build()
+                val input=Data.Builder().putString("tree_uri",uri.toString()).putBoolean("rescan",true).build()
                 val request=OneTimeWorkRequestBuilder<FolderScanWorker>().setInputData(input).build()
                 WorkManager.getInstance(this).enqueueUniqueWork("folder-"+digest(uri.toString()),
                     ExistingWorkPolicy.REPLACE,request)
@@ -113,7 +113,7 @@ class MainActivity:ComponentActivity() {
     private val exportReport=registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")){uri->
         if(uri!=null){
             try{
-                contentResolver.openOutputStream(uri,"w")!!.bufferedWriter().use{it.write(diagnostic())}
+                contentResolver.openOutputStream(uri,"w")!!.bufferedWriter().use{it.write(diagnostic()+"\n\nCRASH REPORTS\n"+CrashReporter.summary(this))}
                 Toast.makeText(this,"Diagnostic exporté",Toast.LENGTH_SHORT).show()
             }catch(e:Exception){Toast.makeText(this,"Export impossible : ${e.message}",Toast.LENGTH_LONG).show()}
         }
@@ -142,6 +142,7 @@ class MainActivity:ComponentActivity() {
         scroll.addView(body)
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         setContentView(shell)
+        CrashReporter.install(this)
         MaintenanceWorker.arm(this)
         render(savedInstanceState?.getInt("tab") ?: 0)
         recordDiagnostic("UI_START","screenDp="+resources.configuration.screenWidthDp+" fontScale="+resources.configuration.fontScale)
@@ -251,6 +252,7 @@ class MainActivity:ComponentActivity() {
         add(action("📁  Surveiller un dossier local autorisé"){importFolder.launch(null)})
         card("Google Drive","Choisis plusieurs PDF depuis ton compte Drive. Le choix de la racine Drive est limité par Android ; la synchronisation intégrale exige une connexion Google dédiée.")
         add(action("↻  Reprendre les documents en attente"){resumeAll()})
+        KnowledgeStore(this).use{store->card("Exploration automatique des dossiers",store.scanSummary()+"\nSurveillance en arrière-plan ; la récupération Drive peut prendre plus de temps.")}
         add(action("Actualiser les progrès"){render(1)})
         if(answerText.isNotBlank())card("État",answerText)
         KnowledgeStore(this).use{store->
@@ -296,6 +298,7 @@ class MainActivity:ComponentActivity() {
             catch(e:Exception){recordDiagnostic("PICKER_MODEL_ERROR",e.message?:"?");answerText="Sélecteur indisponible : "+e.message;render(4)}
         }
         card("Données et appareil",diagnostic())
+        card("Incidents précédents",CrashReporter.summary(this))
         add(action("Auto-test : espace disponible pour le GGUF"){
             val dir=File(filesDir,"models").apply{mkdirs()}
             val free=StatFs(dir.absolutePath).availableBytes/1048576
@@ -413,7 +416,7 @@ class MainActivity:ComponentActivity() {
         val battery=getSystemService(BATTERY_SERVICE) as BatteryManager
         val percent=battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val docs=KnowledgeStore(this).use{it.counts()+"\n"+it.lastEvents()}
-        return "Version 0.2 • Android ${Build.VERSION.RELEASE}\nRAM libre : ${info.availMem/1048576} Mio • Alerte système : ${info.lowMemory}\nBatterie : $percent %\n"+ModelVault.status(this)+"\n"+docs
+        return "Version 0.3 RC • Android ${Build.VERSION.RELEASE}\nRAM libre : ${info.availMem/1048576} Mio • Alerte système : ${info.lowMemory}\nBatterie : $percent %\n"+ModelVault.status(this)+"\n"+docs
     }
     override fun onDestroy(){unbindAI();super.onDestroy()}
 }

@@ -25,7 +25,7 @@ class MaintenanceWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx
             val now=System.currentTimeMillis()
             if(folder!=null&&now-prefs.getLong("last_tree_scan",0)>6*60*60*1000L){
                 val scan=OneTimeWorkRequestBuilder<FolderScanWorker>().setInputData(
-                    Data.Builder().putString("tree_uri",folder).build()).build()
+                    Data.Builder().putString("tree_uri",folder).putBoolean("rescan",true).build()).build()
                 WorkManager.getInstance(applicationContext).enqueueUniqueWork(
                     "tree-check",ExistingWorkPolicy.KEEP,scan)
                 prefs.edit().putLong("last_tree_scan",now).apply()
