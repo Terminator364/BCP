@@ -37,9 +37,10 @@ jobs:
           M=mobile-medbrain/app/src/main/AndroidManifest.xml
           grep -F 'android:process=":inference"' "$M"
           grep -F 'android:exported="false"' "$M"
-          if grep -Eq 'android.permission.INTERNET|MANAGE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES' "$M"; then
-            echo "Broad network or device permission unexpectedly introduced"; exit 1
+          if grep -Eq 'MANAGE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES' "$M"; then
+            echo "Broad device permission unexpectedly introduced"; exit 1
           fi
+          grep -F 'android.permission.INTERNET" tools:node="remove"' "$M"
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/UiSmokeTest.kt
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/KnowledgeStoreTest.kt
           test -f mobile-medbrain/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
