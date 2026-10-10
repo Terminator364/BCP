@@ -574,6 +574,15 @@ class MainActivity:ComponentActivity() {
             line.addView(bubble,LinearLayout.LayoutParams(-1,-2).apply{leftMargin=if(user)dp(42) else dp(2);rightMargin=if(user)dp(2) else dp(42);bottomMargin=dp(11)})
             historyPanel.addView(line)
         }
+        val unfinished=ConversationRecoveryPolicy.pending(messages,
+            generatingChatThreads.contains(activeId))
+        if(unfinished!=null){
+            historyPanel.addView(Button(this).apply{
+                text="↻ Reprendre la réponse interrompue";isAllCaps=false;textSize=13f
+                setOnClickListener{sendChat(unfinished.body,recoverPending=true)}
+            })
+            historyPanel.addView(text("La dernière question est conservée. Elle n'a pas reçu de réponse enregistrée; une nouvelle tentative n'effacera pas ton message.",12f,false,muted))
+        }
         if(generatingChatThreads.contains(activeId)){
             val preview=evidencePreviewByThread[activeId].orEmpty()
             historyPanel.addView(text(
@@ -605,18 +614,25 @@ class MainActivity:ComponentActivity() {
         composerDock.addView(composerLine,LinearLayout.LayoutParams(-1,-2))
         contentScroll.post{if(page==3)contentScroll.fullScroll(View.FOCUS_DOWN)}
     }
-    private fun sendChat(raw:String) {
+    private fun sendChat(raw:String,recoverPending:Boolean=false) {
         val question=raw.trim()
         val threadId=currentThreadId()
         if(question.isBlank()||generatingChatThreads.contains(threadId))return
+        if(recoverPending){
+            val last=KnowledgeStore(this).use{it.messages(threadId,1).lastOrNull()}
+            if(!ConversationRecoveryPolicy.canRetry(last,question))return
+        }
         chatComposer?.setText("")
         chatPrefs().edit().remove("draft_"+threadId).apply()
         if(ConversationPolicy.isUrgent(question)){
             val reply=ConversationPolicy.firstAid(question)
-            KnowledgeStore(this).use{it.addChat("user",question,threadId=threadId);it.addChat("assistant",reply,threadId=threadId)}
+            KnowledgeStore(this).use{
+                if(!recoverPending)it.addChat("user",question,threadId=threadId)
+                it.addChat("assistant",reply,threadId=threadId)
+            }
             render(3);return
         }
-        KnowledgeStore(this).use{it.addChat("user",question,threadId=threadId)}
+        if(!recoverPending)KnowledgeStore(this).use{it.addChat("user",question,threadId=threadId)}
         val lower=SearchPolicy.normalized(question)
         val greeting=ConversationPolicy.isGreeting(question)
         if(ConversationPolicy.isModelQuestion(question)){

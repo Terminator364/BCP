@@ -56,3 +56,8 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - Model KV is not preserved by current vendor; second pass uses short original context and tail, not native token-level continuation; 2-part limit cannot guarantee an exhaustive answer.
 - Explicit incomplete label remains after the second token-limit; never turn an inference failure into a false completed clinical recommendation.
 - Cover limits, no duplicate cutoff notices, battery, failure and long prompts in deterministic tests. Genuine native GGUF streaming remains a separate field gate.
+
+## Lifecycle continuity — recovery from interrupted Android process
+- If the latest message in a selected thread is an unanswered user turn (not an in-progress generation), Chat shows `Reprendre la réponse interrompue`.
+- Retry validates the same stored last question and does not append a duplicate user message; any generated answer stays associated with its original thread.
+- Covers death/restart during native generation, manual thread changes, and urgent response branch, with deterministic unit tests; NO background service or false promise of continuing generation while Android is killed.
