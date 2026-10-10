@@ -2,12 +2,43 @@ package com.blessing.medbrain
 
 /** Fast, bounded routing before any model call. Clinical red flags never get buried behind retrieval. */
 object ConversationPolicy {
+    /**
+     * Urgent personal symptom ≠ mention of a pathology in an academic question.
+     * Preserve immediate first-aid replies for actual red flags.
+     */
     fun isUrgent(question:String):Boolean{
-        val q=SearchPolicy.normalized(question)
-        val dangerous=listOf("je saigne beaucoup","je saigne","hemorragie","saignement abondant",
-            "douleur thoracique intense","je ne respire","difficulte a respirer",
-            "je perds connaissance","perte de connaissance","avc","empoisonnement")
-        return dangerous.any{q.contains(it)}
+        val q=SearchPolicy.normalized(question).replace(Regex("[^a-z0-9 ]+")," ")
+            .replace(Regex("\\s+")," ").trim()
+        if(q.isBlank())return false
+        val personalDanger=listOf(
+            "je saigne","je perds connaissance","je ne respire",
+            "je suffoque","j etouffe","j ai du mal a respirer",
+            "mon frere saigne","ma soeur saigne","mon enfant saigne",
+            "ma mere saigne","mon pere saigne","mon ami saigne",
+            "je suis en train de faire un avc","je crois faire un avc")
+            .any{q.contains(it)}
+        if(personalDanger)return true
+        val lessonMarkers=Regex(
+            "\\b(cours|fiche|revision|reviser|examens?|examen de medecine|devoir|"+
+            "definition|definis|explique|physiopathologie|etiologie|"+
+            "cas clinique|hypothetique|simulation|simule|theorique|"+
+            "diagnostic differentiel|quelles? sont|quelle est|"+
+            "parle moi|conduite a tenir|en stage)\\b")
+        if(lessonMarkers.containsMatchIn(q))return false
+        val clearAcute=listOf(
+            "douleur thoracique intense","saignement abondant",
+            "ne respire plus","perd connaissance","difficulte severe a respirer")
+            .any{q.contains(it)}
+        if(clearAcute)return true
+        val now=Regex(
+            "\\b(maintenant|en ce moment|tout de suite|actuellement|"+
+            "devant moi|a l instant|vient de|urgence reelle)\\b"
+        ).containsMatchIn(q)
+        val critical=listOf(
+            "hemorragie","saignement","saigne","avc",
+            "empoisonnement","detresse respiratoire","douleur thoracique")
+            .any{q.contains(it)}
+        return now&&critical
     }
     fun isGreeting(question:String):Boolean {
         val clean=SearchPolicy.normalized(question).trim().replace(Regex("[!?.,;:]+"),"").trim()

@@ -94,3 +94,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 ## OCR/GGUF contention fix
 - Existing worker checked inference activity only when the job began; a four-page PDFBox + ML Kit OCR batch could continue consuming RAM and CPU after the user sent a chat message. The PDF worker now rechecks before each individual page and yields with `Result.retry()` if inference takes priority; its already committed SQLite pages and source cache remain intact.
 - On cancellation, the worker no longer incorrectly marks a book ERROR; scheduling/resumption remains owned by WorkManager. Deterministic time-boundary tests added. Physical concurrent OCR/Chat benchmark still required.
+
+## Critical medical chat safety / academic context 2026-10-11
+- The former `isUrgent()` used `q.contains("hemorragie")` and `q.contains("avc")`: *any course question* about these medical topics bypassed the neuronal/RAG engine with a canned first-aid reply. This explains the user's clinical-learning screenshot.
+- New routing distinguishes first-person/personal red flags and current clinical emergencies from explicit academic scenarios; both branches have regression tests. It is a conservative lexical guard, not a triage device. Real symptom presentations still receive immediate help guidance.
