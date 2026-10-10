@@ -5,6 +5,9 @@ import android.widget.TextView
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.work.testing.WorkManagerTestInitHelper
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -15,6 +18,7 @@ import org.robolectric.annotation.SQLiteMode
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class UiSmokeTest {
     @Test fun allFiveSectionsAreRealAndClickable(){
+        WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val pages=mapOf("Accueil" to "Tableau de bord",
             "Bibliothèque" to "Bibliothèque vivante",
