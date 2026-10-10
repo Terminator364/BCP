@@ -11,7 +11,7 @@ data class Passage(val title:String,val page:Int,val text:String,val method:Stri
 }
 
 /** Owns persistent evidence and checkpoints; schema 2 upgrades alpha v1 without data loss. */
-class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null,3),java.io.Closeable {
+class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null,4),java.io.Closeable {
     override fun onCreate(db:SQLiteDatabase) {
         db.execSQL("CREATE TABLE docs(id TEXT PRIMARY KEY,title TEXT NOT NULL,uri TEXT NOT NULL,processed INTEGER NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'QUEUED',error TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL DEFAULT 0)")
         db.execSQL("CREATE TABLE pages(doc_id TEXT NOT NULL,page INTEGER NOT NULL,body TEXT NOT NULL,extraction_method TEXT NOT NULL DEFAULT 'TEXT',PRIMARY KEY(doc_id,page))")
@@ -20,6 +20,8 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         db.execSQL("CREATE INDEX page_doc_idx ON pages(doc_id,page)")
         db.execSQL("CREATE VIRTUAL TABLE pages_fts USING fts4(doc_id,page,body,tokenize=unicode61)")
         db.execSQL("CREATE TABLE scan_nodes(tree_uri TEXT NOT NULL,node_uri TEXT NOT NULL,depth INTEGER NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',PRIMARY KEY(tree_uri,node_uri))")
+        db.execSQL("CREATE TABLE chats(id INTEGER PRIMARY KEY AUTOINCREMENT,thread_id TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,source_refs TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL)")
+        db.execSQL("CREATE INDEX chat_thread_idx ON chats(thread_id,id)")
     }
     override fun onUpgrade(db:SQLiteDatabase,oldVersion:Int,newVersion:Int) {
         if(oldVersion<=1 && newVersion>=2) {
@@ -33,6 +35,10 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         }
         if(oldVersion<=2 && newVersion>=3){
             db.execSQL("CREATE TABLE IF NOT EXISTS scan_nodes(tree_uri TEXT NOT NULL,node_uri TEXT NOT NULL,depth INTEGER NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',PRIMARY KEY(tree_uri,node_uri))")
+        }
+        if(oldVersion<=3 && newVersion>=4){
+            db.execSQL("CREATE TABLE IF NOT EXISTS chats(id INTEGER PRIMARY KEY AUTOINCREMENT,thread_id TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL,source_refs TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS chat_thread_idx ON chats(thread_id,id)")
         }
     }
     fun register(id:String,title:String,uri:String) {
@@ -145,25 +151,48 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         readableDatabase.rawQuery("SELECT COUNT(*) FROM reviews",null).use {if(it.moveToFirst())n=it.getInt(0)}
         return "$n révisions enregistrées"
     }
+    data class ChatMessage(val id:Long,val kind:String,val body:String,val sources:String,val timestamp:Long)
+    fun addChat(kind:String,body:String,sources:String="",threadId:String="default"){
+        writableDatabase.execSQL("INSERT INTO chats(thread_id,kind,body,source_refs,created_at) VALUES(?,?,?,?,?)",
+            arrayOf(threadId,kind.take(20),body.take(25000),sources.take(15000),System.currentTimeMillis()))
+        writableDatabase.execSQL("DELETE FROM chats WHERE id NOT IN (SELECT id FROM chats ORDER BY id DESC LIMIT 1000)")
+    }
+    fun messages(threadId:String="default",limit:Int=70):List<ChatMessage>{
+        val out=ArrayList<ChatMessage>()
+        readableDatabase.rawQuery("SELECT id,kind,body,source_refs,created_at FROM chats WHERE thread_id=? ORDER BY id DESC LIMIT ?",arrayOf(threadId,limit.coerceIn(1,200).toString())).use{c->
+            while(c.moveToNext())out.add(ChatMessage(c.getLong(0),c.getString(1),c.getString(2),c.getString(3),c.getLong(4)))
+        }
+        return out.asReversed()
+    }
+    fun clearChat(threadId:String="default"){
+        writableDatabase.execSQL("DELETE FROM chats WHERE thread_id=?",arrayOf(threadId))
+        event("CHAT_CLEAR","User confirmed chat history deletion")
+    }
+    /** Precision-first retrieval: no obstetrics snippets for a cardiac anatomy query. */
     fun retrieve(question:String,limit:Int=5):List<Passage> {
-        val tokens=Regex("[\\p{L}\\p{N}]{4,}").findAll(question.lowercase()).map{it.value}.distinct().take(7).toList()
-        if(tokens.isEmpty())return emptyList()
-        val query=tokens.joinToString(" OR "){"$it*"}
-        val out=mutableListOf<Triple<Int,Passage,Int>>()
+        val tokens=SearchPolicy.terms(question)
+        if(tokens.isEmpty()) return emptyList()
+        // Normalize search terms to FTS unicode61, allow spelling variants only from known word families.
+        val queries=SearchPolicy.expand(tokens).distinct().take(14)
+        val match=queries.joinToString(" OR "){"\"$it\"*"}
+        val ranked=ArrayList<Pair<Double,Passage>>()
         readableDatabase.rawQuery(
-            "SELECT d.title,pages_fts.page,pages_fts.body,p.extraction_method FROM pages_fts JOIN docs d ON d.id=pages_fts.doc_id LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id AND p.page=CAST(pages_fts.page AS INTEGER) WHERE pages_fts MATCH ? LIMIT 70",
-            arrayOf(query)
-        ).use {c->
-            while(c.moveToNext()) {
-                val text=c.getString(2)
-                val score=tokens.count{text.contains(it,ignoreCase=true)}
-                val ix=tokens.map{text.indexOf(it,ignoreCase=true)}.filter{it>=0}.minOrNull() ?: 0
-                val begin=(ix-180).coerceAtLeast(0)
-                val snippet=text.substring(begin,minOf(text.length,begin+1150))
-                out.add(Triple(score,Passage(c.getString(0),c.getInt(1),snippet,c.getString(3)?:"TEXT"),ix))
+            "SELECT d.title,pages_fts.page,pages_fts.body,p.extraction_method FROM pages_fts JOIN docs d ON d.id=pages_fts.doc_id LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id AND p.page=CAST(pages_fts.page AS INTEGER) WHERE pages_fts MATCH ? LIMIT 180",
+            arrayOf(match)
+        ).use{c->
+            while(c.moveToNext()){
+                val title=c.getString(0)
+                val body=c.getString(2)
+                val score=SearchPolicy.score(question,title,body)
+                if(score>0){
+                    val offset=SearchPolicy.firstPosition(tokens,body)
+                    val begin=(offset-150).coerceAtLeast(0)
+                    val excerpt=body.substring(begin,minOf(body.length,begin+950))
+                    ranked.add(score to Passage(title,c.getInt(1),excerpt,c.getString(3)?:"TEXT"))
+                }
             }
         }
-        return out.sortedWith(compareByDescending<Triple<Int,Passage,Int>>{it.first}.thenBy{it.third}).take(limit).map{it.second}
+        return ranked.sortedByDescending{it.first}.take(limit.coerceIn(1,8)).map{it.second}
     }
     fun passages(question:String,limit:Int=5):String = retrieve(question,limit).joinToString("\n\n"){
         "[${it.citation()}]\n${it.text}"
