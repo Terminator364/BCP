@@ -61,3 +61,8 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - If the latest message in a selected thread is an unanswered user turn (not an in-progress generation), Chat shows `Reprendre la réponse interrompue`.
 - Retry validates the same stored last question and does not append a duplicate user message; any generated answer stays associated with its original thread.
 - Covers death/restart during native generation, manual thread changes, and urgent response branch, with deterministic unit tests; NO background service or false promise of continuing generation while Android is killed.
+
+## Evidence diversity and observable ingestion coverage
+- The homepage now appends the percentage of declared pages genuinely indexed (recomputed from SQLite); 491 discovered books are NOT 491 semantically understood books.
+- FTS retrieval reserves up to two pages per actual book when other matching books are present; remaining free slots are filled by original rank. No new citations are invented and no content is thrown away.
+- New Robolectric regression builds 3 indexed cardiology books, tests distinct citation diversity and explicit coverage.

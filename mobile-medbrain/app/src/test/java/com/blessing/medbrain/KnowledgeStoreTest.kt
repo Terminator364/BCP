@@ -68,6 +68,29 @@ class KnowledgeStoreTest {
             assertEquals(2,store.messages("default").size)
         }
     }
+    @Test fun medicalReferencesPreferSeveralBooksWhenTheyAreAvailable(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        KnowledgeStore(ctx).use{store->
+            val titles=listOf("Atlas Cardio A","Cours Cardio B","Sémiologie Cardio C")
+            titles.forEachIndexed{index,title->
+                val id="source$index"
+                store.register(id,title,"content://source$index")
+                val pages=if(index==0)4 else 1
+                (1..pages).forEach {page->
+                    store.save(id,page,"Le myocarde et la circulation cardiaque sont présentés en contexte clinique.",
+                        page,pages,if(page==pages)"INDEXED" else "READING","TEXT")
+                }
+            }
+            val hits=store.retrieve("myocarde",4)
+            assertEquals(4,hits.size)
+            assertTrue("Citation must include more than one real book",
+                hits.map{it.title}.toSet().size>=2)
+            assertTrue("Avoid source A crowding out the others",
+                hits.count{it.title=="Atlas Cardio A"}<=2)
+            assertTrue(store.counts().contains("pages recensées indexées"))
+        }
+    }
     @Test fun readsRealPageAndTracksReview(){
         val ctx=ApplicationProvider.getApplicationContext<Context>()
         ctx.deleteDatabase("medbrain-v1.sqlite")

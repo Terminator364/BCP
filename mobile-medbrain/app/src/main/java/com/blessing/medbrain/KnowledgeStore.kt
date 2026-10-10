@@ -100,7 +100,8 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         val n=d.sumOf{it.done}; val all=d.sumOf{it.total}
         var withText=0
         readableDatabase.rawQuery("SELECT COUNT(*) FROM pages",null).use {if(it.moveToFirst())withText=it.getInt(0)}
-        return "${d.size} livres • $n/$all pages analysées • $withText pages indexées"
+        val pct=if(all>0) " • "+((100L*withText)/all).coerceIn(0L,100L)+" % des pages recensées indexées" else ""
+        return "${d.size} livres • $n/$all pages analysées • $withText pages indexées"+pct
     }
     fun progress():String = documents().take(6).joinToString("\n"){"${it.title.take(42)} • ${it.done}/${it.total} • ${it.state}"}
     fun event(kind:String,detail:String) {
@@ -285,10 +286,27 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
             // Collect a small diversity reserve, then avoid a potentially noisy OR scan.
             if(evidence.size>=cap*3)break
         }
-        return evidence.values.sortedWith(
+        val ranked=evidence.values.sortedWith(
             compareByDescending<Pair<Double,Passage>>{it.first}
                 .thenBy{it.second.title}.thenBy{it.second.page}
-        ).take(cap).map{it.second}
+        )
+        // Reserve room for different books before taking more than two pages from one title.
+        // This does not claim consensus: only actually retrieved pages may be cited.
+        val selected=ArrayList<Pair<Double,Passage>>()
+        val titleUse=HashMap<String,Int>()
+        for(candidate in ranked){
+            if(selected.size==cap)break
+            val title=candidate.second.title
+            if((titleUse[title]?:0)<2){
+                selected.add(candidate)
+                titleUse[title]=(titleUse[title]?:0)+1
+            }
+        }
+        if(selected.size<cap)for(candidate in ranked){
+            if(selected.size==cap)break
+            if(candidate !in selected)selected.add(candidate)
+        }
+        return selected.map{it.second}
     }
     fun passages(question:String,limit:Int=5):String = retrieve(question,limit).joinToString("\n\n"){
         "[${it.citation()}]\n${it.text}"
