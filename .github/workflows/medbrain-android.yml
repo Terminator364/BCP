@@ -47,7 +47,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon --max-workers=1
+          gradle :app:testDebugUnitTest :app:lintRelease :app:assembleRelease --no-daemon --max-workers=1
           CODE=$?
           if [ "$CODE" -ne 0 ]; then
             echo "=== TEST FAILURE DIAGNOSTICS ==="
@@ -67,13 +67,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK=mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk
+          APK=mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
           test -s "$APK"
           /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$APK" | head -n 4
           sha256sum "$APK" | tee mobile-medbrain/apk-sha256.txt
+          if /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging "$APK" | grep -q 'application-debuggable'; then
+            echo "INSECURE: release APK debuggable"; exit 1
+          fi
+          if /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump permissions "$APK" | grep -q 'android.permission.INTERNET'; then
+            echo "UNEXPECTED INTERNET PERMISSION"; exit 1
+          fi
           python - <<'PY'
           import zipfile,sys
-          p="mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk"
+          p="mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk"
           with zipfile.ZipFile(p) as z:
               libs=[x for x in z.namelist() if x.startswith("lib/") and x.endswith(".so")]
               assert libs and any("arm64-v8a" in x for x in libs), "missing arm64 native inference"
@@ -83,14 +89,14 @@ jobs:
       - name: Record the side-by-side package identity
         shell: bash
         run: |
-          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'"
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'"
           test -f /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar
           cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar mobile-medbrain/apksigner-tool.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: medbrain-personal-0-3-1-unsigned-for-stable-resign
+          name: medbrain-personal-0-3-2-release-unsigned
           path: |
-            mobile-medbrain/app/build/outputs/apk/debug/app-debug.apk
+            mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
             mobile-medbrain/apk-sha256.txt
             mobile-medbrain/apksigner-tool.jar
             mobile-medbrain/app/build/test-results/testDebugUnitTest/*.xml
