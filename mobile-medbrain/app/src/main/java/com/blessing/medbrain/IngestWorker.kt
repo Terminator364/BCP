@@ -3,6 +3,9 @@ package com.blessing.medbrain
 import android.content.Context
 import android.net.Uri
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
@@ -32,7 +35,17 @@ class IngestWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx
                             val text = stripper.getText(pdf).trim()
                             store.save(id,page,text,page,total,if (page==total) "TEXT_DONE" else "READING")
                         }
-                        return@withContext if(last<total) Result.retry() else Result.success()
+                        if (last < total) {
+                            val next = OneTimeWorkRequestBuilder<IngestWorker>()
+                                .setInputData(inputData).build()
+                            WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+                                "learn-$id", ExistingWorkPolicy.APPEND_OR_REPLACE, next
+                            )
+                        } else {
+                            val hasText = store.indexedPages(id) > 0
+                            store.markState(id, if(hasText) "TEXT_DONE" else "OCR_REQUIRED")
+                        }
+                        return@withContext Result.success()
                     }
                 }
             } else {

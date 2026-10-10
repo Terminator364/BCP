@@ -44,6 +44,14 @@ class KnowledgeStore(ctx: Context) : SQLiteOpenHelper(ctx, "medbrain-v1.sqlite",
             db.setTransactionSuccessful()
         } finally { db.endTransaction() }
     }
+    fun indexedPages(id: String): Int {
+        readableDatabase.rawQuery("SELECT COUNT(*) FROM pages WHERE doc_id=?",arrayOf(id)).use {
+            return if(it.moveToFirst()) it.getInt(0) else 0
+        }
+    }
+    fun markState(id: String, state: String) {
+        writableDatabase.execSQL("UPDATE docs SET state=? WHERE id=?",arrayOf(state,id))
+    }
     fun counts(): String {
         var docs = 0; var pages = 0; var all = 0
         readableDatabase.rawQuery(
