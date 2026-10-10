@@ -79,8 +79,14 @@ object CardioCurriculum {
         return all(context).mapNotNull{f->
             val title=SearchPolicy.normalized(f.title)
             val titleHits=tokens.count{title.contains(it)}
+            val body=SearchPolicy.normalized(f.content)
+            val coverage=tokens.count{title.contains(it)||body.contains(it)}
+            // Requiring all of up to three distinct concepts avoids attributing
+            // a cardiology fiche to an unrelated multi-concept medical question.
+            val required=minOf(3,tokens.size)
             val relevance=SearchPolicy.score(query,f.title,f.content)
-            if(relevance<=0.0)null else (titleHits*12.0+relevance) to f
+            if(coverage<required||relevance<=0.0)null
+            else (titleHits*12.0+relevance) to f
         }.sortedWith(compareByDescending<Pair<Double,Fiche>>{it.first}
             .thenBy{it.second.tome}.thenBy{it.second.id})
             .take(limit.coerceIn(1,3)).map{it.second}
