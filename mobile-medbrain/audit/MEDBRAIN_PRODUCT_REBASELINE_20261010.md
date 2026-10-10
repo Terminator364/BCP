@@ -113,3 +113,8 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - Chat follow-ups such as `continue` or `donc` no longer search unrelated PDFs and do not drop *verified* original MedRebuild source IDs: they resolve only the exact fiche IDs recorded on the prior assistant turn (never infer from an arbitrary similar topic).
 - The bounded Qwen prompt now includes a source excerpt from that same original fiche while retaining the last valid assistant response. On model failure, it may display the original source with an explicit caveat that it is NOT a generated continuation.
 - Tests confirm topic continuity across stored citations, rejection of invented fiche IDs and PDF-only references. General multi-turn streaming/stateful inference is still outstanding.
+
+## Formative correction of original MedRebuild lesson exercises
+- Previously the practice correction simply printed `essential_points`. Now it adds a conservative per-criterion lexical alignment with two groups: possibly mentioned vs not clearly detected, with all original source criteria still visible.
+- Under no circumstances does this issue a numeric grade or call a negative statement medically correct: lexical overlap does not validate reasoning, negation, synonyms, or physiology. Separate tests cover full citation, omissions, and false positives under negation.
+- To approach robust student correction, later gates still require semantic equivalence and contradiction testing against real authored case rubrics, with explicit clinician/examiner calibration.

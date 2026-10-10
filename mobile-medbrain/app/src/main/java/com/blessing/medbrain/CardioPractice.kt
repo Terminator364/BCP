@@ -20,6 +20,7 @@ object CardioPractice {
         return "Comparaison documentaire : "+f.title+"\nTa réponse :\n"+
             answer.take(2500)+"\n\nRepères du cours original :\n"+
             f.essential.take(8).joinToString("\n"){"• "+it}+
+            "\n\n"+EvidenceRubric.compare(f.essential,answer)+
             "\n\nCeci est une grille de comparaison, pas une correction automatique ni une note clinique."
     }
 }
