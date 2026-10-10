@@ -53,10 +53,7 @@ class FolderScanWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,
                             val id=MessageDigest.getInstance("SHA-256").digest(node.uri.toByteArray())
                                 .joinToString(""){"%02x".format(it)}
                             store.register(id,name,node.uri)
-                            val work=OneTimeWorkRequestBuilder<IngestWorker>().setInputData(
-                                Data.Builder().putString("id",id).build()).build()
-                            WorkManager.getInstance(applicationContext).enqueueUniqueWork(
-                                "learn-$id",ExistingWorkPolicy.KEEP,work)
+                            // Document discovery is persisted. Only the bounded scheduler starts OCR.
                             imported++
                         }
                         store.scanNodeDone(raw,node.uri)
@@ -76,7 +73,10 @@ class FolderScanWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,
                     .joinToString(""){"%02x".format(it)}
                 WorkManager.getInstance(applicationContext).enqueueUniqueWork(
                     "folder-$key",ExistingWorkPolicy.APPEND_OR_REPLACE,more)
-            }else if(pending==0){store.event("SCAN_COMPLETE","Parcours terminé; "+store.scanSummary())}
+            }else if(pending==0){
+                store.event("SCAN_COMPLETE","Parcours terminé; "+store.scanSummary())
+                MaintenanceWorker.enqueueBatch(applicationContext,2)
+            }
             Result.success()
         }catch(e:Exception){
             store.event("SCAN_ERROR",e.javaClass.simpleName+": "+(e.message?:"").take(150))

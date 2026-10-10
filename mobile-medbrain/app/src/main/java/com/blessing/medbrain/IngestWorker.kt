@@ -22,6 +22,11 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
         val id=inputData.getString("id")?:return@withContext Result.failure()
         val store=KnowledgeStore(applicationContext)
         val record=store.document(id)?:return@withContext Result.failure().also{store.close()}
+        val pref=applicationContext.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
+        if(System.currentTimeMillis()<pref.getLong("inference_until",0L)){
+            store.close()
+            return@withContext Result.retry()
+        }
         IngestConcurrency.gate.acquire()
         try {
             val path=Uri.parse(record.uri)
@@ -34,7 +39,13 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
             if(e is OutOfMemoryError) return@withContext Result.failure()
             if(e is SecurityException || e is FileNotFoundException) return@withContext Result.failure()
             if(runAttemptCount<2) Result.retry() else Result.failure()
-        } finally {store.close();IngestConcurrency.gate.release()}
+        } finally {
+            // A single completed book opens exactly one additional document slot.
+            val completed=try{store.document(id)?.state=="INDEXED"}catch(_:Exception){false}
+            store.close()
+            IngestConcurrency.gate.release()
+            if(completed)MaintenanceWorker.enqueueBatch(applicationContext,1)
+        }
     }
     private suspend fun ocr(bitmap:Bitmap):String {
         val recognizer=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)

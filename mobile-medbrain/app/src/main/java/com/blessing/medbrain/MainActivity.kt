@@ -79,12 +79,12 @@ class MainActivity:ComponentActivity() {
                         val name=displayName(uri)
                         val id=digest(uri.toString())
                         store.register(id,name,uri.toString())
-                        schedule(id)
                         count++
                     }catch(e:Exception){store.event("IMPORT_ERROR",e.javaClass.simpleName)}
                 }
             }
-            answerText="$count documents ajoutés à la file. Appuie sur Bibliothèque pour suivre."
+            MaintenanceWorker.enqueueBatch(this,2)
+            answerText="$count documents enregistrés. Acquisition limitée à deux fichiers simultanés ; tu peux suivre Bibliothèque."
             render(1)
         }
     }
@@ -692,10 +692,11 @@ class MainActivity:ComponentActivity() {
     private fun resumeAll(){
         var n=0
         KnowledgeStore(this).use{store->
-            store.documents().filter{it.state !in setOf("INDEXED","VISUAL_REVIEW")}.forEach{schedule(it.id);n++}
-            store.event("RESUME","$n demandes envoyées à WorkManager")
+            val remaining=store.documents().count{it.state=="QUEUED"||it.state=="READING"}
+            store.event("RESUME_LIMIT","$remaining en attente. Reprise de deux fichiers maximum.")
         }
-        answerText="$n livres transmis à la reprise automatique."
+        n=MaintenanceWorker.enqueueBatch(this,2)
+        answerText="$n acquisition(s) priorisées. Les documents NEEDS_ACCESS exigent une nouvelle autorisation Android ; aucune donnée indexée n'est supprimée."
         render(page)
     }
     private fun saveReview(topic:String,grade:String){
