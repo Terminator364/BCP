@@ -284,13 +284,36 @@ class MainActivity:ComponentActivity() {
         catch(e:Exception){stats.text="Diagnostic de mémoire nécessaire : ${e.message}"}
     }
     private fun home(){
-        section("Tableau de bord","Acquisition réelle, provenance et reprise. Aucune page n'est considérée assimilée sans extraction.")
-        val store=KnowledgeStore(this)
-        val c=try{store.counts()}finally{store.close()}
-        card("📚  Bibliothèque","$c\nOuvre Bibliothèque pour voir les documents et les pages traitées.","Voir les livres"){render(1)}
-        card("🧠  Conversation","Discute avec ton IA et consulte les sources médicales pertinentes. Le modèle est déchargé après chaque réponse.","Ouvrir le chat"){render(3)}
-        card("🎓  Entraînement personnel","Fiches sourcées, questions ouvertes, corrections et suivi de tes révisions.","Étudier"){render(2)}
-        card("🔄  Reprise automatique","Les pages sont sauvegardées au fur et à mesure. Les traitements interrompus peuvent reprendre sans réindexer les pages terminées.","Relancer les livres incomplets"){resumeAll()}
+        section("Aujourd'hui","Ton cerveau médical progresse même lorsque tu fermes l'application.")
+        val report=KnowledgeStore(this).use { store ->
+            val records=store.documents()
+            val pages=records.sumOf{it.done}
+            val known=records.sumOf{it.total}
+            val finished=records.count{it.state=="INDEXED"}
+            Triple(records.size,if(known>0)pages.toFloat()/known else 0f,finished)
+        }
+        val progress=(report.second*100).toInt().coerceIn(0,100)
+        val top=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(17),dp(15),dp(17),dp(15))
+            background=drawable(if(night)Color.rgb(19,57,79) else Color.rgb(224,240,250),17)
+        }
+        top.addView(text("🧠  Ta bibliothèque vivante",18f,true))
+        top.addView(text("${report.first} livres enregistrés  •  ${report.third} terminés",13f,false,muted))
+        val bar=ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{
+            max=100;this.progress=progress;progressTintList=android.content.res.ColorStateList.valueOf(accent)
+        }
+        top.addView(bar,LinearLayout.LayoutParams(-1,dp(10)).apply{topMargin=dp(11);bottomMargin=dp(5)})
+        top.addView(text("$progress % des pages déjà découvertes ont été analysées (estimation provisoire)",11f,false,muted))
+        add(top)
+        card("💬  Continuer ta conversation","Retrouve tes questions précédentes, tes documents consultés et les réponses sauvegardées.",
+            "Ouvrir mon IA"){render(3)}
+        card("🎓  Ma prochaine séance","Comprendre un concept, pratiquer sur un cas, puis réviser sans confondre lecture et maîtrise.",
+            "Commencer à étudier"){render(2)}
+        card("📚  Acquisition en cours","Les livres restent disponibles localement et sont analysés par petites unités pour préserver les ressources.",
+            "Voir la bibliothèque"){render(1)}
+        card("⚙  Mon espace personnel","Apparence, modèle neuronal, paramètres d'étude et accès aux dossiers.",
+            "Ouvrir les réglages"){render(5)}
         if(answerText.isNotBlank())card("Dernier message",answerText)
     }
     private fun library(){

@@ -21,7 +21,8 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
     override suspend fun doWork():Result = withContext(Dispatchers.IO) {
         val id=inputData.getString("id")?:return@withContext Result.failure()
         val store=KnowledgeStore(applicationContext)
-        val record=store.document(id)?:return@withContext Result.failure()
+        val record=store.document(id)?:return@withContext Result.failure().also{store.close()}
+        IngestConcurrency.gate.acquire()
         try {
             val path=Uri.parse(record.uri)
             val mime=applicationContext.contentResolver.getType(path).orEmpty().lowercase()
@@ -33,7 +34,7 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
             if(e is OutOfMemoryError) return@withContext Result.failure()
             if(e is SecurityException || e is FileNotFoundException) return@withContext Result.failure()
             if(runAttemptCount<2) Result.retry() else Result.failure()
-        } finally {store.close()}
+        } finally {store.close();IngestConcurrency.gate.release()}
     }
     private suspend fun ocr(bitmap:Bitmap):String {
         val recognizer=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
