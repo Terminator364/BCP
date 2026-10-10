@@ -130,7 +130,8 @@ class MainActivity:ComponentActivity() {
     private var serviceConnection:ServiceConnection?=null
     private var serviceMessenger:Messenger?=null
     private var completion:((String)->Unit)?=null
-    private data class PendingAi(val prompt:String,val maxTokens:Int?,val done:(String)->Unit)
+    private data class PendingAi(val prompt:String,val maxTokens:Int?,
+        val progress:((String)->Unit)?,val done:(String)->Unit)
     private val aiQueue=ArrayDeque<PendingAi>()
     private var aiSerial=0
     private val aiHandler=Handler(Looper.getMainLooper())
@@ -911,7 +912,12 @@ class MainActivity:ComponentActivity() {
             KnowledgeStore(this).use{it.addChat("assistant",response,sources,threadId)}
             if(page==3 && currentThreadId()==threadId)render(3)
         }
-        requestAI(prompt,plan.chunkTokens){first->
+        requestAI(prompt,plan.chunkTokens,{partial->
+            if(generatingChatThreads.contains(threadId)){
+                evidencePreviewByThread[threadId]="🧠 Réponse locale en cours :\n"+partial.takeLast(1400)
+                if(page==3 && currentThreadId()==threadId)render(3)
+            }
+        }){first->
             if(AnswerContinuationPolicy.shouldContinue(first,1,plan) &&
                 System.currentTimeMillis()>=chatPrefs().getLong("inference_cooldown_until",0L)){
                 // Show useful first chunk while generating one bounded continuation.
@@ -1103,10 +1109,11 @@ class MainActivity:ComponentActivity() {
             if(page==2)render(2)
         }
     }
-    private fun requestAI(prompt:String,maxTokensOverride:Int?=null,done:(String)->Unit){
+    private fun requestAI(prompt:String,maxTokensOverride:Int?=null,
+                          onProgress:((String)->Unit)?=null,done:(String)->Unit){
         if(busy){
             if(aiQueue.size>=2)done("Deux tâches déjà en attente. Essaie après la réponse en cours.")
-            else aiQueue.addLast(PendingAi(prompt,maxTokensOverride,done))
+            else aiQueue.addLast(PendingAi(prompt,maxTokensOverride,onProgress,done))
             return
         }
         busy=true
@@ -1125,9 +1132,17 @@ class MainActivity:ComponentActivity() {
         }
         aiTimeout=timeout
         aiHandler.postDelayed(timeout,70_000L)
+        val stream=SafeStreamBuffer(id)
         val reply=Messenger(object:Handler(Looper.getMainLooper()){
             override fun handleMessage(msg:Message){
-                if(msg.what!=InferenceService.REPLY||msg.data.getInt("request_id")!=id)return
+                if(msg.data.getInt("request_id")!=id||id!=aiSerial||!busy)return
+                if(msg.what==InferenceService.PARTIAL){
+                    val visible=stream.accept(id,msg.data.getBoolean("safe_output"),
+                        msg.data.getString("delta").orEmpty(),SystemClock.uptimeMillis())
+                    if(visible!=null)onProgress?.invoke(visible)
+                    return
+                }
+                if(msg.what!=InferenceService.REPLY)return
                 val error=msg.data.getString("error").orEmpty()
                 val metric=msg.data.getString("metric").orEmpty()
                 if(metric.isNotBlank())recordDiagnostic("INFERENCE_METRIC",metric.take(220))
@@ -1182,7 +1197,7 @@ class MainActivity:ComponentActivity() {
         callback?.invoke(out)
         if(aiQueue.isNotEmpty()){
             val next=aiQueue.removeFirst()
-            aiHandler.post{requestAI(next.prompt,next.maxTokens,next.done)}
+            aiHandler.post{requestAI(next.prompt,next.maxTokens,next.progress,next.done)}
         }
     }
     private fun unbindAI(){

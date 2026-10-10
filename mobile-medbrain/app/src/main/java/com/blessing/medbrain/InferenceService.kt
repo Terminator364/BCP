@@ -43,13 +43,17 @@ class InferenceService:Service() {
                             instruction+" Réponds directement en français sans raisonnement interne affiché.",budget)
                         val result=engine.complete(request){delta->
                             if(engine.capabilities.safeStreaming && delta.isNotEmpty()){
-                                callback.send(Message.obtain(null,PARTIAL).apply{
-                                    data=Bundle().apply{
-                                        putInt("request_id",requestId)
-                                        putBoolean("safe_output",true)
-                                        putString("delta",delta.take(500))
-                                    }
-                                })
+                                try{
+                                    callback.send(Message.obtain(null,PARTIAL).apply{
+                                        data=Bundle().apply{
+                                            putInt("request_id",requestId)
+                                            putBoolean("safe_output",true)
+                                            putString("delta",delta.take(500))
+                                        }
+                                    })
+                                }catch(_:RemoteException){
+                                    // UI went away; never invalidate an otherwise valid inference.
+                                }
                             }
                         }
                         answer=GenerationDiagnostics.annotate(
