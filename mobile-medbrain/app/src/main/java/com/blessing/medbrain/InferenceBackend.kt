@@ -26,7 +26,7 @@ interface InferenceBackend {
      * Deltas only when safeStreaming=true. Blocking backends MUST NOT fake progress.
      * A future llama.cpp backend implements token callbacks and hard non-thinking mode.
      */
-    fun complete(request:NeuralRequest,onDelta:(String)->Unit):NeuralResult
+    suspend fun complete(request:NeuralRequest,onDelta:(String)->Unit):NeuralResult
     fun release()
 }
 /** Exact existing native vendor, preserved to keep 0.5.0 output parity. */
@@ -35,7 +35,7 @@ class BlockingVendorBackend(private val ctx:Context):InferenceBackend {
         tokenDeltas=false,hardNonThinking=false,persistentKv=false)
     private var model:LlamaModel?=null
     private var key=""
-    override fun complete(request:NeuralRequest,onDelta:(String)->Unit):NeuralResult{
+    override suspend fun complete(request:NeuralRequest,onDelta:(String)->Unit):NeuralResult{
         val signature=request.modelPath+":"+request.modelLength+":"+
             request.modelModified+":"+request.contextSize+":"+request.threads
         if(model==null||signature!=key){
