@@ -4,11 +4,23 @@ package com.blessing.medbrain
 object ConversationPolicy {
     fun isUrgent(question:String):Boolean{
         val q=SearchPolicy.normalized(question)
-        val dangerous=listOf("je saigne beaucoup","hemorragie","saignement abondant",
+        val dangerous=listOf("je saigne beaucoup","je saigne","hemorragie","saignement abondant",
             "douleur thoracique intense","je ne respire","difficulte a respirer",
             "je perds connaissance","perte de connaissance","avc","empoisonnement")
         return dangerous.any{q.contains(it)}
     }
+    fun isGreeting(question:String):Boolean {
+        val clean=SearchPolicy.normalized(question).trim().replace(Regex("[!?.,;:]+"),"").trim()
+        return Regex("^(bonjour|salut|hello|coucou|bonsoir|hey|eo)(\\s+(medbrain|ia|mon ami|bonjour|a toi|comment vas tu))?$").matches(clean)
+    }
+    fun isModelQuestion(question:String):Boolean {
+        val clean=SearchPolicy.normalized(question)
+        return clean.contains("quel modele")||clean.contains("comment tu fonctionnes")||
+            clean.contains("tu sais faire quoi")||clean.contains("que peux tu faire")
+    }
+    fun modelExplanation(available:Boolean):String =
+        if(available) "Je suis MedBrain, ton assistant local. Je peux discuter, étudier tes références et citer les pages récupérées. Je suis un petit modèle : mes réponses peuvent être inexactes, surtout en médecine."
+        else "Je suis MedBrain. J'indexe tes documents et je peux retrouver des passages cités. Pour générer librement du texte, il faut importer ou activer le modèle GGUF dans Paramètres. Je ne prétends pas connaître ce que je n'ai pas lu."
     fun firstAid(question:String):String {
         val q=SearchPolicy.normalized(question)
         return if(q.contains("saign")||q.contains("hemorrag")){

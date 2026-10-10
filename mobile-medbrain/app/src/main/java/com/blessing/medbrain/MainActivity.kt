@@ -444,7 +444,11 @@ class MainActivity:ComponentActivity() {
         chatComposer?.setText("")
         KnowledgeStore(this).use{it.addChat("user",question)}
         val lower=SearchPolicy.normalized(question)
-        val greeting=lower in setOf("salut","bonjour","bonsoir","hello","coucou","eo")
+        val greeting=ConversationPolicy.isGreeting(question)
+        if(ConversationPolicy.isModelQuestion(question)){
+            KnowledgeStore(this).use{it.addChat("assistant",ConversationPolicy.modelExplanation(ModelVault.file(this).exists()))}
+            render(3);return
+        }
         if(greeting){
             val txt=if(ModelVault.file(this).exists())
                 "Salut ! 🧠 Je suis prête. Tu peux me poser une question, me demander une explication médicale ou chercher dans ta bibliothèque."

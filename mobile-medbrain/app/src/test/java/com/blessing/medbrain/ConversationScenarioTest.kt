@@ -15,8 +15,17 @@ class ConversationScenarioTest {
         }
         assertEquals(1000,verified)
     }
+    @Test fun greetingsAndMetaQuestionsAreHumanized(){
+        listOf("salut","Salut !","Bonjour MedBrain","coucou","Eo","hello").forEach{
+            assertTrue("Missed greeting $it",ConversationPolicy.isGreeting(it))
+        }
+        assertFalse(ConversationPolicy.isGreeting("Salut, explique le cœur"))
+        assertTrue(ConversationPolicy.isModelQuestion("Que peux-tu faire ?"))
+        assertTrue(ConversationPolicy.modelExplanation(false).contains("GGUF"))
+    }
     @Test fun urgentMessagesDoNotWaitForDocumentSearch(){
         assertTrue(ConversationPolicy.isUrgent("Je saigne beaucoup, que faire ?"))
+        assertTrue(ConversationPolicy.isUrgent("je saigne que faire ?"))
         assertTrue(ConversationPolicy.isUrgent("Douleur thoracique intense"))
         assertFalse(ConversationPolicy.isUrgent("Conduite à tenir devant un patient qui tousse en stage"))
         assertTrue(ConversationPolicy.firstAid("Je saigne beaucoup").contains("pression directe"))
