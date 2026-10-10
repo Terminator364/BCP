@@ -45,6 +45,8 @@ jobs:
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/UiSmokeTest.kt
           test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/KnowledgeStoreTest.kt
           test -f mobile-medbrain/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -f mobile-medbrain/app/src/test/java/com/blessing/medbrain/SearchPolicyTest.kt
+          test -f mobile-medbrain/app/src/main/java/com/blessing/medbrain/ModelDownloadWorker.kt
       - name: Unit, simulated UI, migrations, lint, APK
         working-directory: mobile-medbrain
         shell: bash

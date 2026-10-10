@@ -88,4 +88,40 @@ class KnowledgeStoreTest {
         }
     }
 
+    @Test fun chatHistorySurvivesDatabaseCloseAndReopen(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        KnowledgeStore(ctx).use {
+            it.addChat("user","Salut !")
+            it.addChat("assistant","Bonjour, je suis MedBrain.")
+        }
+        KnowledgeStore(ctx).use {
+            val history=it.messages()
+            assertEquals(2,history.size)
+            assertEquals("Salut !",history[0].body)
+            assertEquals("assistant",history[1].kind)
+            assertTrue(it.documents().isEmpty())
+        }
+    }
+    @Test fun versionThreeDataMigratesToConversationalFour(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        val db=ctx.openOrCreateDatabase("medbrain-v1.sqlite",Context.MODE_PRIVATE,null)
+        db.execSQL("CREATE TABLE docs(id TEXT PRIMARY KEY,title TEXT NOT NULL,uri TEXT NOT NULL,processed INTEGER NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'QUEUED',error TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL DEFAULT 0)")
+        db.execSQL("CREATE TABLE pages(doc_id TEXT NOT NULL,page INTEGER NOT NULL,body TEXT NOT NULL,extraction_method TEXT NOT NULL DEFAULT 'TEXT',PRIMARY KEY(doc_id,page))")
+        db.execSQL("CREATE TABLE events(id INTEGER PRIMARY KEY AUTOINCREMENT,ts INTEGER NOT NULL,kind TEXT NOT NULL,detail TEXT NOT NULL)")
+        db.execSQL("CREATE TABLE reviews(id INTEGER PRIMARY KEY AUTOINCREMENT,ts INTEGER NOT NULL,topic TEXT NOT NULL,grade TEXT NOT NULL)")
+        db.execSQL("CREATE TABLE scan_nodes(tree_uri TEXT NOT NULL,node_uri TEXT NOT NULL,depth INTEGER NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',PRIMARY KEY(tree_uri,node_uri))")
+        db.execSQL("CREATE VIRTUAL TABLE pages_fts USING fts4(doc_id,page,body,tokenize=unicode61)")
+        db.execSQL("INSERT INTO docs(id,title,uri,processed,total,state) VALUES('keep','Cardiologie','content://cardio',1,1,'INDEXED')")
+        db.execSQL("INSERT INTO pages(doc_id,page,body) VALUES('keep',1,'Le myocarde assure la contraction cardiaque.')")
+        db.execSQL("INSERT INTO pages_fts(doc_id,page,body) VALUES('keep',1,'Le myocarde assure la contraction cardiaque.')")
+        db.version=3
+        db.close()
+        KnowledgeStore(ctx).use {
+            assertEquals("Cardiologie",it.document("keep")!!.title)
+            it.addChat("user","Explique la physiologie du myocarde")
+            assertEquals(1,it.messages().size)
+        }
+    }
 }

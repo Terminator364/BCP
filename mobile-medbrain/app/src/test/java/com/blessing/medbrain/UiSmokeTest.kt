@@ -23,8 +23,9 @@ class UiSmokeTest {
         val pages=mapOf("Accueil" to "Tableau de bord",
             "Bibliothèque" to "Bibliothèque vivante",
             "Étudier" to "Apprendre et s'évaluer",
-            "Interroger" to "Interroger mon IA",
-            "Diagnostic" to "Diagnostic et contrôle")
+            "Discussion" to "Mon IA · Discussion",
+            "Diagnostic" to "Diagnostic et contrôle",
+            "Paramètres" to "Paramètres")
         pages.forEach{ (tab,expected)->
             val button=allButtons(activity.window.decorView).first{it.text.toString()==tab}
             button.performClick()
@@ -50,8 +51,8 @@ class UiSmokeTest {
         val shell=root.getChildAt(0) as android.widget.LinearLayout
         assertTrue(shell.getChildAt(1) is android.widget.LinearLayout)
         assertTrue(shell.getChildAt(2) is android.widget.ScrollView)
-        assertEquals(5,allButtons(shell.getChildAt(1)).count{it.text.toString() in
-            listOf("Accueil","Bibliothèque","Étudier","Interroger","Diagnostic")})
+        assertEquals(6,allButtons(shell.getChildAt(1)).count{it.text.toString() in
+            listOf("Accueil","Bibliothèque","Étudier","Discussion","Diagnostic","Paramètres")})
     }
 
 }
