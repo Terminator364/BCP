@@ -37,3 +37,11 @@ Reuse preexisting `chats.thread_id`: schema-v5 metadata only (titles/timestamps)
 
 ## Outstanding architecture choices
 Streaming JNI/Vulkan-backed adapter and Qwen reasoning mode benchmark versus alternate small nonthinking models, semantic retrieval that can be used offline within device limits, structured student progress ledger, live Drive OAuth explicit scopes. No claim that all 491 PDFs became neuron weights; RAG retrieval != training.
+
+## Backend spike 2026-10-10 — candidates researched, not installed
+- Vendor AAR current `dev.ffmpegkit-maintained:llama-android:0.1.1` supports blocking completion/embeddings in free release but no streaming, Vulkan, or multiconversation KV cache: https://github.com/ffmpegkit-maintained/llama-android
+- Official upstream GGUF `ggml-org/llama.cpp` Android Studio example offers Kotlin Flow streaming: https://github.com/ggml-org/llama.cpp/blob/master/docs/android.md
+- `hokanosekai/llama.kt` exposes streaming and chat templating, session/KV cache, CPU and potentially GPU but build/ABI need field verification on S21 FE; no measured gains for MedBrain: https://github.com/hokanosekai/llama.kt
+- Google LiteRT-LM Kotlin API streams but uses the LiteRT model ecosystem; existing user GGUF needs migration or a separate backend: https://developers.google.com/edge/litert-lm/android
+- Qwen3 official documentation supports hard `enable_thinking=false` when applying the chat template, whereas `/no_think` is a softer preference that cannot guarantee suppressing internal thinking under every wrapper: https://github.com/QwenLM/Qwen3/blob/main/docs/source/getting_started/quickstart.md
+Decision: separate InferenceAdapter from UI; benchmark official llama.cpp Android with same GGUF on charged S21 FE, report time to first token and total P50/P95, memory and power; retain existing signed installation until proven. No paid backend dependence.

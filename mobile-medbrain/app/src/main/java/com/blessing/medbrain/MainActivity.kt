@@ -83,8 +83,49 @@ class MainActivity:ComponentActivity() {
             .setItems(threads.map{it.title.ifBlank{"Conversation"}+"  · "+it.id.take(5)}.toTypedArray()){_,index->
                 selectChatThread(threads[index].id)
             }
+            .setPositiveButton("🔎 Rechercher"){_,_->showThreadSearch()}
+            .setNeutralButton("Renommer"){_,_->renameCurrentThread()}
             .setNegativeButton("Fermer",null)
             .show()
+    }
+    private fun showThreadSearch(){
+        val entry=EditText(this).apply{
+            hint="Mot du titre ou des messages"
+            setSingleLine(true)
+            setPadding(dp(18),dp(10),dp(18),dp(10))
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Rechercher une conversation")
+            .setView(entry)
+            .setPositiveButton("Rechercher"){_,_->
+                val matches=KnowledgeStore(this).use{it.findThreads(entry.text.toString(),50)}
+                if(matches.isEmpty()){
+                    android.app.AlertDialog.Builder(this)
+                        .setMessage("Aucune conversation enregistrée ne correspond à cette recherche.")
+                        .setPositiveButton("Fermer",null).show()
+                }else{
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Conversations trouvées ("+matches.size+")")
+                        .setItems(matches.map{it.title}.toTypedArray()){_,index->
+                            selectChatThread(matches[index].id)
+                        }.setNegativeButton("Fermer",null).show()
+                }
+            }
+            .setNegativeButton("Annuler",null).show()
+    }
+    private fun renameCurrentThread(){
+        val id=currentThreadId()
+        val original=KnowledgeStore(this).use{store->
+            store.threads(100).firstOrNull{it.id==id}?.title.orEmpty()
+        }
+        val entry=EditText(this).apply{
+            setText(original);setSingleLine(true);selectAll()
+        }
+        android.app.AlertDialog.Builder(this).setTitle("Renommer la conversation")
+            .setView(entry).setPositiveButton("Enregistrer"){_,_->
+                KnowledgeStore(this).use{it.renameThread(id,entry.text.toString())}
+                if(page==3 && currentThreadId()==id)render(3)
+            }.setNegativeButton("Annuler",null).show()
     }
     private var serviceConnection:ServiceConnection?=null
     private var serviceMessenger:Messenger?=null

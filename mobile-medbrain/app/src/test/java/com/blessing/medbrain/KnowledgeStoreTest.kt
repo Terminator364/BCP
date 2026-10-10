@@ -26,6 +26,11 @@ class KnowledgeStoreTest {
             assertEquals(1,store.messages(second).size)
             assertTrue(store.threads().any{it.id==first&&it.title.contains("ECG")})
             assertTrue(store.threads().any{it.id==second&&it.title.contains("Physiologie")})
+            assertEquals(1,store.findThreads("intervalle PR").size)
+            assertEquals(first,store.findThreads("intervalle PR").single().id)
+            assertEquals(second,store.findThreads("rénale").single().id)
+            store.renameThread(second,"Rénal — physiologie")
+            assertEquals(second,store.findThreads("Rénal — physiologie").single().id)
         }
         KnowledgeStore(ctx).use{store->
             assertEquals(2,store.threads().size)

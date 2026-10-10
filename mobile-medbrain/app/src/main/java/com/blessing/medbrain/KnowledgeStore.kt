@@ -177,6 +177,24 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         }
         return results
     }
+    /** Search stored chat titles and texts, using bound SQL parameters. */
+    fun findThreads(query:String,limit:Int=40):List<ChatThread>{
+        val term=query.trim().take(80)
+        if(term.isBlank())return threads(limit)
+        val pattern="%"+term.replace("\\","\\\\").replace("%","\\%")
+            .replace("_","\\_")+"%"
+        val results=mutableListOf<ChatThread>()
+        readableDatabase.rawQuery(
+            "SELECT t.id,t.title,t.updated_at FROM chat_threads t "+
+            "WHERE t.title LIKE ? ESCAPE '\\' OR EXISTS "+
+            "(SELECT 1 FROM chats c WHERE c.thread_id=t.id AND c.body LIKE ? ESCAPE '\\') "+
+            "ORDER BY t.updated_at DESC LIMIT ?",
+            arrayOf(pattern,pattern,limit.coerceIn(1,100).toString())).use{cursor->
+            while(cursor.moveToNext())results.add(ChatThread(
+                cursor.getString(0),cursor.getString(1),cursor.getLong(2)))
+        }
+        return results
+    }
     fun renameThread(id:String,title:String){
         val name=title.trim().take(90)
         if(name.isNotBlank())writableDatabase.execSQL(
