@@ -9,7 +9,9 @@ object SearchPolicy {
         "dans","avec","sans","entre","quelle","taille","combien","avoir","peux","peut","vous",
         "nous","leur","leurs","cette","celui","celle","donne","dites","moi","notre","votre",
         "deux","pour","fait","fais","plus","moins","chez","tout","tous","une","des","les",
-        "son","ses","sur","par","que","qui","quoi","quelques","cest","estce","jai")
+        "son","ses","sur","par","que","qui","quoi","quelques","cest","estce","jai",
+        "explique","expliquer","parle","parler","detail","details","developpe",
+        "description","decris","notion","cours","fiche","resume","resumer")
     fun normalized(s:String):String=Normalizer.normalize(s.lowercase(Locale.ROOT)
         .replace("œ","oe").replace("æ","ae"),Normalizer.Form.NFD)
         .replace(Regex("\\p{M}+"),"")

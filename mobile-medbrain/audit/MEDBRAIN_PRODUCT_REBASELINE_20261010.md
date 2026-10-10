@@ -98,3 +98,9 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 ## Critical medical chat safety / academic context 2026-10-11
 - The former `isUrgent()` used `q.contains("hemorragie")` and `q.contains("avc")`: *any course question* about these medical topics bypassed the neuronal/RAG engine with a canned first-aid reply. This explains the user's clinical-learning screenshot.
 - New routing distinguishes first-person/personal red flags and current clinical emergencies from explicit academic scenarios; both branches have regression tests. It is a conservative lexical guard, not a triage device. Real symptom presentations still receive immediate help guidance.
+
+## Source-first cardiology chat retrieval
+- The 156 authored MedRebuild teaching fiches become a distinct *offline* source for Chat even if no PDF import succeeded. Search weighs actual topic title and source text; top one original excerpt enters a bounded model prompt, alongside at most one genuinely indexed PDF page.
+- Source strings are explicitly labeled Google Docs with tome, fiche, original document title and section locator, NOT synthetic PDF page numbers.
+- Without GGUF, the chat displays the original MedRebuild excerpt immediately rather than falsely saying nothing exists; noncardiac questions must not inherit a cardiology source. This is retrieval over authored lessons, not learning neural weights.
+- Added tests for actual cardiac query lookup, source labels, prompt budget, noncardiac specificity.

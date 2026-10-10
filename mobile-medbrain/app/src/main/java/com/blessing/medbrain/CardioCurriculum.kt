@@ -71,4 +71,29 @@ object CardioCurriculum {
         val start=tome.indexOfFirst{it.id==id}
         return if(start<0)emptyList() else tome.drop(start).take(3)
     }
+
+    /** Query the complete authored MedRebuild course independently of PDF ingestion. */
+    fun findRelevant(context:Context,query:String,limit:Int=2):List<Fiche>{
+        val tokens=SearchPolicy.terms(query).take(6)
+        if(tokens.isEmpty())return emptyList()
+        return all(context).mapNotNull{f->
+            val title=SearchPolicy.normalized(f.title)
+            val titleHits=tokens.count{title.contains(it)}
+            val relevance=SearchPolicy.score(query,f.title,f.content)
+            if(relevance<=0.0)null else (titleHits*12.0+relevance) to f
+        }.sortedWith(compareByDescending<Pair<Double,Fiche>>{it.first}
+            .thenBy{it.second.tome}.thenBy{it.second.id})
+            .take(limit.coerceIn(1,3)).map{it.second}
+    }
+    fun references(fiches:List<Fiche>):String = fiches.take(2).joinToString("\n\n"){f->
+        "[MedRebuild, Google Docs, Tome "+f.tome+", fiche "+f.id+"]\n"+
+            "Document : "+f.sourceTitle+"\nRepère : "+f.sourceLocator
+    }
+    fun excerpt(f:Fiche,query:String,cap:Int=400):String{
+        val terms=SearchPolicy.terms(query)
+        val at=SearchPolicy.firstPosition(terms,f.content).coerceIn(0,f.content.length)
+        val start=(at-90).coerceAtLeast(0)
+        return f.content.substring(start,minOf(f.content.length,start+cap.coerceIn(100,600)))
+            .replace(Regex("\\s+")," ").trim()
+    }
 }

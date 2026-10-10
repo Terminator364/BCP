@@ -64,7 +64,8 @@ object DialoguePlanner {
         return Route(follow,previous,if(follow)null else question)
     }
     fun prompt(question:String,history:List<KnowledgeStore.ChatMessage>,
-               evidence:List<Passage>,mode:String):String {
+               evidence:List<Passage>,mode:String,
+               curated:List<CardioCurriculum.Fiche> = emptyList()):String {
         val route=route(question,history)
         val prior=history.asReversed()
         val assistant=prior.firstOrNull {
@@ -83,10 +84,17 @@ object DialoguePlanner {
                 "Reprends exactement le fil. Si le contexte manque, dis-le. Ne répète pas les points précédents. Français, réponse directe. /no_think"
             ).take(1350)
         }
-        val sources=if(mode=="general")"" else evidence.take(2).joinToString("\n") {
-            "["+it.title.take(72)+", p. "+it.page+"] "+
+        val pdf=if(mode=="general")emptyList() else
+            evidence.take(if(curated.isEmpty())2 else 1).map{
+                "["+it.title.take(72)+", p. "+it.page+"] "+
                 it.text.replace(Regex("\\s+")," ").take(330)
+            }
+        val curatedRefs=if(mode=="general")emptyList() else curated.take(1).map{f->
+            "[MedRebuild · Google Docs · Tome "+f.tome+" · "+f.title.take(60)+
+                " · repère : "+f.sourceLocator.take(70)+"] "+
+                CardioCurriculum.excerpt(f,question,345)
         }
+        val sources=(curatedRefs+pdf).joinToString("\n")
         return (("Question: "+question.take(260)+"\n")+
             if(sources.isBlank())
                 "Aucune source documentaire pertinente vérifiée. Réponds sans inventer de citation."

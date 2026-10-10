@@ -843,15 +843,24 @@ class MainActivity:ComponentActivity() {
         // Deictic follow-ups must never be treated as FTS queries.
         val evidence=if(mode=="general"||route.searchQuery==null)emptyList()
             else KnowledgeStore(this).use{it.retrieve(route.searchQuery,4)}
-        val sources=StudyEngine.references(evidence)
+        val authored=if(mode=="general"||route.searchQuery==null)emptyList()
+            else CardioCurriculum.findRelevant(this,route.searchQuery,2)
+        val sources=listOf(CardioCurriculum.references(authored),
+            StudyEngine.references(evidence)).filter{it.isNotBlank()}.joinToString("\n\n")
         val hasModel=ModelVault.file(this).exists()
-        if(mode=="sources"&&evidence.isEmpty()&&!route.followUp){
+        if(mode=="sources"&&evidence.isEmpty()&&authored.isEmpty()&&!route.followUp){
             KnowledgeStore(this).use{it.addChat("assistant",
                 "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.",threadId=threadId)}
             render(3);return
         }
         if(!hasModel){
-            val msg=if(evidence.isEmpty())
+            val msg=if(authored.isNotEmpty())
+                "Voici du contenu original retrouvé dans MedRebuild (sans synthèse générée) :\n\n"+
+                    authored.take(2).joinToString("\n\n"){f->
+                        f.title+" — "+f.sourceTitle+"\n"+
+                            CardioCurriculum.excerpt(f,question,550)
+                    }+"\n\nTu peux consulter la fiche intégrale dans Étudier."
+                else if(evidence.isEmpty())
                 "Je n'ai pas encore de modèle neuronal local actif pour répondre librement à cette question. Ouvre Paramètres pour activer Qwen3. Tu peux continuer à consulter ta bibliothèque."
                 else {
                     val passages=evidence.take(2).mapNotNull { item ->
@@ -865,7 +874,7 @@ class MainActivity:ComponentActivity() {
             KnowledgeStore(this).use{it.addChat("assistant",msg,sources,threadId)}
             render(3);return
         }
-        val prompt=DialoguePlanner.prompt(question,previous,evidence,mode)
+        val prompt=DialoguePlanner.prompt(question,previous,evidence,mode,authored)
         val cooldown=chatPrefs().getLong("inference_cooldown_until",0L)
         val battery=(getSystemService(BATTERY_SERVICE) as BatteryManager)
             .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
@@ -876,10 +885,10 @@ class MainActivity:ComponentActivity() {
             KnowledgeStore(this).use{it.addChat("assistant",why+DialoguePlanner.fallback(evidence,route.followUp),sources,threadId)}
             render(3);return
         }
-        evidencePreviewByThread[threadId]=if(evidence.isEmpty())"" else
-            "📖 Preuves retrouvées : "+evidence.take(2).joinToString(" ; ") {
-                it.title+" (p. "+it.page+")"
-            }
+        evidencePreviewByThread[threadId]=if(evidence.isEmpty()&&authored.isEmpty())"" else
+            "📖 Références retrouvées : "+
+                (authored.take(1).map{"MedRebuild · "+it.title}+
+                 evidence.take(2).map{it.title+" (p. "+it.page+")"}).joinToString(" ; ")
         generatingChatThreads.add(threadId)
         render(3)
         val plan=AnswerContinuationPolicy.plan(question,battery)
