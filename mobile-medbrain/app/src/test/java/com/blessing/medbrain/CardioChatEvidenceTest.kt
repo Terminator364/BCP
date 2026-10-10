@@ -38,7 +38,8 @@ class CardioChatEvidenceTest{
         assertTrue(out.contains(sources.first().sourceTitle))
         assertTrue(out.contains("sans numéro de page PDF"))
         val follow=DialoguePlanner.fallback(emptyList(),true,sources,"donc")
-        assertFalse(follow.contains(sources.first().sourceTitle))
+        assertTrue(follow.contains(sources.first().sourceTitle))
+        assertTrue(follow.contains("pas la suite rédigée par l'IA"))
     }
     @Test fun nonCardiacTopicDoesNotReceiveStaleCardioCitation(){
         val ctx=ApplicationProvider.getApplicationContext<Context>()

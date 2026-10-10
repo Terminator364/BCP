@@ -22,6 +22,7 @@ class CardioFollowUpSourcesTest{
             KnowledgeStore.ChatMessage(2,"assistant","Voici les causes et symptômes.",sources,200)
         )
         val prompt=DialoguePlanner.prompt("Continue, parle du traitement",previous,emptyList(),"auto",matched)
+        assertTrue(DialoguePlanner.isFollowUp("Continue, parle du traitement"))
         assertTrue(prompt.contains("Référence confirmée"))
         assertTrue(prompt.contains(f.sourceLocator.take(60)))
         assertTrue(prompt.contains("Continue, parle du traitement"))

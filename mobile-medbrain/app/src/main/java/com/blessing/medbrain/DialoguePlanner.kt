@@ -13,7 +13,9 @@ object DialoguePlanner {
         "mecanismes","formes","stade","stades","etapes","point","points",
         "surveillance","details","detail","suite","risques","consequences",
         "parle","precise","preciser","explique","decris","developpe",
-        "role","choix","quand","facteur","facteurs","risque")
+        "role","choix","quand","facteur","facteurs","risque",
+        "continue","continues","poursuis","reprends","donc","alors",
+        "ensuite","puis","reviens","arrete","arret","encore")
     private val referential=setOf(
         "son","sa","ses","leur","leurs","celui","celle","ceux","celles",
         "ce","cet","cette","ces","cela","ca","ceci","lui","elle","elles",
@@ -78,13 +80,13 @@ object DialoguePlanner {
         }?.body.orEmpty()
         if(route.followUp){
             return ("Conversation suivie. Ne cherche pas un nouveau sujet documentaire.\n"+
-                "Question antérieure : "+topic.take(170)+"\n"+
-                "Dernière réponse utile (fin) : "+assistant.takeLast(if(curated.isEmpty())650 else 370)+"\n"+
+                "Question antérieure : "+topic.take(125)+"\n"+
+                "Dernière réponse utile (fin) : "+assistant.takeLast(if(curated.isEmpty())650 else 235)+"\n"+
                 (if(curated.isEmpty())"" else {
                     val f=curated.first()
                     "Référence confirmée dans la discussion : MedRebuild Google Docs, Tome "+
-                        f.tome+", "+f.sourceLocator.take(80)+". Extrait original : "+
-                        CardioCurriculum.excerpt(f,topic.ifBlank{f.title},320)+"\n"
+                        f.tome+", "+f.sourceLocator.take(60)+". Extrait original : "+
+                        CardioCurriculum.excerpt(f,topic.ifBlank{f.title},180)+"\n"
                 })+
                 "Demande actuelle : "+question.take(175)+"\n"+
                 "Reprends exactement le fil. Si le contexte manque, dis-le. Ne répète pas les points précédents. Français, réponse directe. /no_think"

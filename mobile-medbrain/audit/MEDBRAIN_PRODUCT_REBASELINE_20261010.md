@@ -118,3 +118,7 @@ These changes make failure observable, not solved. The native streaming/KV-backe
 - Previously the practice correction simply printed `essential_points`. Now it adds a conservative per-criterion lexical alignment with two groups: possibly mentioned vs not clearly detected, with all original source criteria still visible.
 - Under no circumstances does this issue a numeric grade or call a negative statement medically correct: lexical overlap does not validate reasoning, negation, synonyms, or physiology. Separate tests cover full citation, omissions, and false positives under negation.
 - To approach robust student correction, later gates still require semantic equivalence and contradiction testing against real authored case rubrics, with explicit clinician/examiner calibration.
+
+## Regression resolution, grounded clinical followups
+- Unit tests on the previous candidate found `Continue, parle du traitement` was incorrectly routed as a new topic because the verb `continue` survived concept filtering. The planner now treats continuation verbs as structural dialogue words rather than pathologies and budgets historical context *before* composing the final prompt, leaving space for the user's actual question and instructions.
+- The source-retention regression test was updated to assert the new expected behavior: valid preceding MedRebuild citations are reused, while the fallback explicitly disclaims that the text was generated as an AI continuation.
