@@ -12,13 +12,17 @@ object DialoguePlanner {
         return q.length<=110 && followUpPattern.containsMatchIn(q)
     }
     fun failedAnswer(text:String):Boolean {
-        val t=SearchPolicy.normalized(text)
+        val t=SearchPolicy.normalized(text).replace(Regex("[^a-z0-9 ]+")," ")
+            .replace(Regex("\\s+")," ").trim()
         return t.contains("moteur local n a pas termine") ||
             t.contains("inference indisponible") ||
             t.contains("modele n a pas fourni de reponse finale") ||
             t.contains("le moteur local a ete interrompu") ||
             t.contains("service neuronal non disponible") ||
-            t.contains("aucune reponse produite par le modele")
+            t.contains("aucune reponse produite par le modele") ||
+            t.contains("je n ai pas reussi a produire la suite") ||
+            t.contains("le moteur neuronal n est pas disponible") ||
+            t.contains("batterie faible")
     }
     fun route(question:String,history:List<KnowledgeStore.ChatMessage>):Route {
         val follow=isFollowUp(question)

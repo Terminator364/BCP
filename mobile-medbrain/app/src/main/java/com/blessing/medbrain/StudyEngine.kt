@@ -12,13 +12,22 @@ object StudyEngine {
                 "\n"+(index+1)+". "+p.title+" · p. "+p.page+" ("+p.method+")\n"+excerpt
             }.joinToString("\n")
     }
+    /**
+     * Bound model input independently of the full set of sources displayed in the UI.
+     * Large multi-page prompts (4-5 k characters) repeatedly timed out on the phone.
+     */
+    fun compactEvidence(passages:List<Passage>):String =
+        passages.take(2).joinToString("\n") {
+            "["+it.title.take(75)+", p. "+it.page+"] "+
+                it.text.replace(Regex("\\s+")," ").take(335)
+        }
     fun summaryPrompt(topic:String,passages:List<Passage>):String =
-        "Thème : $topic\n\nSources vérifiées (ne pas inventer de page) :\n"+references(passages)+
-        "\n\nRédige une fiche médicale structurée en français (définition, mécanismes, clinique, diagnostic, prise en charge selon les sources), signale explicitement les informations manquantes."
+        "Thème : $topic\n\nSources vérifiées (ne pas inventer de page) :\n"+compactEvidence(passages)+
+        "\n\nFournis un complément médical bref et précis en français, limité aux données présentes. Signale les informations manquantes; les extraits détaillés sont affichés séparément."
     fun examPrompt(topic:String,passages:List<Passage>):String =
-        "Thème : $topic\n\nSources :\n"+references(passages)+
+        "Thème : $topic\n\nSources :\n"+compactEvidence(passages)+
         "\n\nPose 5 questions ouvertes progressives et donne un corrigé séparé, appuyé exclusivement sur les passages. Pas de recommandations cliniques individuelles."
     fun correctionPrompt(question:String,response:String,passages:List<Passage>):String =
-        "Question : $question\nRéponse de l'étudiant : $response\nDocuments :\n"+references(passages)+
+        "Question : "+question.take(200)+"\nRéponse de l'étudiant : "+response.take(550)+"\nDocuments :\n"+compactEvidence(passages)+
         "\n\nCorrige point par point. Donne les éléments exacts, les omissions, les erreurs, les limites des documents. Cite les sources. N'attribue pas de score numérique s'il manque un barème."
 }

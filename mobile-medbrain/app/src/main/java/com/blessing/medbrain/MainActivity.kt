@@ -561,7 +561,7 @@ class MainActivity:ComponentActivity() {
             else KnowledgeStore(this).use{it.retrieve(route.searchQuery,4)}
         val sources=StudyEngine.references(evidence)
         val hasModel=ModelVault.file(this).exists()
-        if(mode=="sources"&&evidence.isEmpty()){
+        if(mode=="sources"&&evidence.isEmpty()&&!route.followUp){
             KnowledgeStore(this).use{it.addChat("assistant",
                 "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.")}
             render(3);return

@@ -30,6 +30,13 @@ class DialoguePlannerTest {
         assertFalse(prompt.contains("ACCIDENTS DES ANTICOAGULANTS"))
         assertTrue(prompt.length<=1350)
     }
+    @Test fun failedFallbackIsExcludedFromFollowupContext(){
+        val h=history+msg("assistant",
+            "Je n'ai pas réussi à produire la suite avec le modèle local.")
+        val prompt=DialoguePlanner.prompt("donc ?",h,emptyList(),"auto")
+        assertTrue(prompt.contains("pression directe"))
+        assertFalse(prompt.contains("pas réussi"))
+    }
     @Test fun timeoutNotRepeatedAsLastUsefulAnswer() {
         val h=history+msg("assistant","Le moteur local n'a pas terminé en 95 secondes. Il a été relancé sans toucher à tes données.")
         val p=DialoguePlanner.prompt("donc?",h,emptyList(),"auto")
