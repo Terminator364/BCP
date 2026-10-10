@@ -22,7 +22,7 @@ class UiSmokeTest {
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val pages=mapOf("Accueil" to "Aujourd\'hui",
             "Livres" to "Bibliothèque vivante",
-            "Étudier" to "Apprendre et s'évaluer",
+            "Étudier" to "Mes études médicales",
             "Discuter" to "Discussion")
         pages.forEach{ (tab,expected)->
             val button=allButtons(activity.window.decorView).first{it.contentDescription?.toString()=="Ouvrir "+tab}

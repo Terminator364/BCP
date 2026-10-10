@@ -699,6 +699,7 @@ class MainActivity:ComponentActivity() {
         render(2)
     }
     private fun studyTask(kind:String,topic:String,response:String){
+        if(busy){studyText="Le modèle traite déjà une demande. Patiente ou consulte Diagnostics.";render(2);return}
         if(topic.isBlank())return
         val pieces=KnowledgeStore(this).use{it.retrieve(topic)}
         if(pieces.isEmpty()){studyText="Aucun extrait trouvé pour « $topic ». Importe des cours adaptés.";render(2);return}
