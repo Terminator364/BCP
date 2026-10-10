@@ -48,6 +48,7 @@ class MainActivity:ComponentActivity() {
     private var answerText=""
     private var studyText=""
     private var studentResponse=""
+    private var importStatus=""
     private var serviceConnection:ServiceConnection?=null
 
     private val importDocs=registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){uris->
@@ -90,23 +91,12 @@ class MainActivity:ComponentActivity() {
                 answerText="Fichier refusé : sélectionne un modèle GGUF."
                 render(4)
             }else {
-                busy=true
+                try { contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch(_:SecurityException){}
                 recordDiagnostic("MODEL_IMPORT_STARTED","file selected")
-                answerText="Import GGUF : préparation. Ne ferme pas MedBrain."
+                val work=OneTimeWorkRequestBuilder<ModelImportWorker>().setInputData(Data.Builder().putString("uri",uri.toString()).build()).build()
+                WorkManager.getInstance(this).enqueueUniqueWork("medbrain-model-import",ExistingWorkPolicy.REPLACE,work)
+                answerText="Import GGUF lancé en arrière-plan. Le progrès apparaît dans Diagnostic ; la copie survit à la rotation."
                 render(4)
-                lifecycleScope.launch{
-                    try{
-                        val receipt=ModelVault.import(this@MainActivity,uri) { copied,total ->
-                            runOnUiThread {
-                                answerText="Import GGUF : ${copied/1048576} Mio"+if(total>0)"/${total/1048576} Mio" else ""
-                                if(page==4 && copied%(128L*1048576)<65536)render(4)
-                            }
-                        }
-                        answerText="GGUF importé (${receipt.bytes/1048576} Mio). Empreinte SHA-256 : ${receipt.sha256.take(18)}…"
-                        KnowledgeStore(this@MainActivity).use{it.event("MODEL_IMPORTED",receipt.sha256.take(20))}
-                    }catch(e:Throwable){recordDiagnostic("MODEL_IMPORT_FAILED",e.javaClass.simpleName+": "+e.message);answerText="Import refusé : ${e.message}"}
-                    finally{busy=false;render(4)}
-                }
             }
         }
     }
@@ -120,6 +110,7 @@ class MainActivity:ComponentActivity() {
     }
     override fun onCreate(savedInstanceState:Bundle?){
         super.onCreate(savedInstanceState)
+        CrashReporter.install(this)
         WindowCompat.setDecorFitsSystemWindows(window,false)
         window.statusBarColor=Color.TRANSPARENT
         window.navigationBarColor=Color.TRANSPARENT
@@ -142,8 +133,20 @@ class MainActivity:ComponentActivity() {
         scroll.addView(body)
         shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         setContentView(shell)
-        CrashReporter.install(this)
         MaintenanceWorker.arm(this)
+        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData("medbrain-model-import").observe(this){jobs->
+            val job=jobs.firstOrNull() ?: return@observe
+            val done=job.progress.getLong("copied",0L)/1048576
+            val total=job.progress.getLong("total",-1L)/1048576
+            val error=job.outputData.getString("error").orEmpty()
+            val next=when(job.state){
+                WorkInfo.State.SUCCEEDED -> "Import GGUF terminé et validé."
+                WorkInfo.State.FAILED -> "Import GGUF interrompu : "+error
+                WorkInfo.State.CANCELLED -> "Import annulé."
+                else -> "Import GGUF : "+done+" Mio"+if(total>0)"/"+total+" Mio" else " en cours"
+            }
+            if(next!=importStatus){importStatus=next;if(page==4)render(4)}
+        }
         render(savedInstanceState?.getInt("tab") ?: 0)
         recordDiagnostic("UI_START","screenDp="+resources.configuration.screenWidthDp+" fontScale="+resources.configuration.fontScale)
         lifecycleScope.launch{
@@ -292,7 +295,7 @@ class MainActivity:ComponentActivity() {
     }
     private fun system(){
         section("Diagnostic et contrôle","Chaque incident est visible. Aucune réinstallation ou capture répétée n'est nécessaire pour connaître l'état.")
-        card("Modèle neuronal",ModelVault.status(this)+"\nChoisis un modèle GGUF déjà téléchargé dans Documents ou Téléchargements.", "Sélectionner mon GGUF"){
+        card("Modèle neuronal",ModelVault.status(this)+"\n"+importStatus+"\nChoisis un modèle GGUF déjà téléchargé dans Documents ou Téléchargements.", "Sélectionner mon GGUF"){
             recordDiagnostic("PICKER_MODEL_OPEN","user")
             try{importModel.launch(arrayOf("application/octet-stream","*/*"))}
             catch(e:Exception){recordDiagnostic("PICKER_MODEL_ERROR",e.message?:"?");answerText="Sélecteur indisponible : "+e.message;render(4)}
