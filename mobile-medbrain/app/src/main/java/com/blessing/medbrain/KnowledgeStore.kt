@@ -174,7 +174,7 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         if(tokens.isEmpty()) return emptyList()
         // Normalize search terms to FTS unicode61, allow spelling variants only from known word families.
         val queries=SearchPolicy.expand(tokens).distinct().take(14)
-        val match=queries.joinToString(" OR "){"\"$it\"*"}
+        val match=queries.joinToString(" OR "){"$it*"}
         val ranked=ArrayList<Pair<Double,Passage>>()
         readableDatabase.rawQuery(
             "SELECT d.title,pages_fts.page,pages_fts.body,p.extraction_method FROM pages_fts JOIN docs d ON d.id=pages_fts.doc_id LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id AND p.page=CAST(pages_fts.page AS INTEGER) WHERE pages_fts MATCH ? LIMIT 180",
