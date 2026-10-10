@@ -20,7 +20,7 @@ class UiSmokeTest {
     @Test fun allPrimarySpacesAreReachable(){
         WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext<Context>())
         val activity=Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        val pages=mapOf("Accueil" to "Tableau de bord",
+        val pages=mapOf("Accueil" to "Aujourd\'hui",
             "Livres" to "Bibliothèque vivante",
             "Étudier" to "Apprendre et s'évaluer",
             "Discuter" to "Discussion")
