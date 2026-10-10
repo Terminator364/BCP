@@ -54,6 +54,7 @@ class MainActivity:ComponentActivity() {
     private var topicText="insuffisance cardiaque"
     private var answerText=""
     private var studyText=""
+    private var studySources=""
     private var studentResponse=""
     private var importStatus=""
     private var downloadStatus=""
@@ -340,18 +341,78 @@ class MainActivity:ComponentActivity() {
         }
     }
     private fun study(){
-        section("Apprendre et s'évaluer","Fiches et correction construites à partir de passages réellement indexés, jamais de références inventées.")
-        val topic=field(topicText,"Thème médical")
+        section("Mes études médicales","Comprendre, pratiquer, puis réviser avec les livres réellement indexés.")
+        val pref=chatPrefs()
+        val selected=pref.getString("study_section","learn")?:"learn"
+        val options=listOf("learn" to "Comprendre","practice" to "Pratiquer","review" to "Réviser")
+        val tabs=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        options.forEach{(key,name)->
+            tabs.addView(Button(this).apply{
+                text=name;isAllCaps=false;textSize=11f
+                setTextColor(if(selected==key)Color.WHITE else fg)
+                background=drawable(if(selected==key)accent else surface,11)
+                setOnClickListener{
+                    val entered=chatPrefs().getString("study_draft",topicText)
+                    topicText=entered?:topicText
+                    pref.edit().putString("study_section",key).apply()
+                    render(2)
+                }
+            },LinearLayout.LayoutParams(0,dp(49),1f))
+        }
+        add(tabs)
+        val topic=field(pref.getString("study_draft",topicText)?:topicText,"Notion : par ex. insuffisance cardiaque")
+        topic.addTextChangedListener(object:android.text.TextWatcher{
+            override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
+            override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){
+                pref.edit().putString("study_draft",s?.toString().orEmpty().take(250)).apply()
+            }
+            override fun afterTextChanged(s:android.text.Editable?){}
+        })
         add(topic)
-        val response=field(studentResponse,"Ta réponse pour une correction ouverte",3)
-        add(response)
-        add(action("Générer une fiche sourcée"){topicText=topic.text.toString();studyTask("fiche",topicText,"")})
-        add(action("Créer des questions ouvertes"){topicText=topic.text.toString();studyTask("questions",topicText,"")})
-        add(action("Corriger ma réponse"){topicText=topic.text.toString();studentResponse=response.text.toString();studyTask("correction",topicText,studentResponse)})
+        when(selected){
+            "learn"->{
+                card("📚 Cours guidé","Génération structurée : objectifs, mécanisme, sémiologie, diagnostic, synthèse et vérification. L'application indique les sources et leurs pages.")
+                add(action("Construire une fiche approfondie"){
+                    topicText=topic.text.toString()
+                    studyTask("fiche",topicText,"")
+                })
+                card("🧠 Un concept à la fois","La présence d'un texte dans la bibliothèque ne signifie pas que tu maîtrises le concept. Utilise l'entraînement pour le vérifier.")
+            }
+            "practice"->{
+                card("🩺 Questions et raisonnement","Questions ouvertes et situations basées sur tes références. Les réponses devront être confrontées aux connaissances retrouvées.")
+                add(action("Générer des questions de pratique"){
+                    topicText=topic.text.toString()
+                    studyTask("questions",topicText,"")
+                })
+                val response=field(studentResponse,"Ta réponse à corriger",4)
+                add(response)
+                add(action("Analyser et corriger ma réponse"){
+                    topicText=topic.text.toString()
+                    studentResponse=response.text.toString()
+                    if(studentResponse.isBlank())Toast.makeText(this,"Rédige une réponse avant de corriger.",Toast.LENGTH_SHORT).show()
+                    else studyTask("correction",topicText,studentResponse)
+                })
+            }
+            else->{
+                KnowledgeStore(this).use{store->
+                    card("📈 Mémoire et révisions",store.reviewCounts())
+                }
+                card("↻ Révision active","Rappelle les informations sans regarder le cours avant de te noter. Ceci est une auto-évaluation, pas une preuve automatique de maîtrise.")
+                add(action("J'ai compris cette notion (auto-évaluation)"){
+                    saveReview(topic.text.toString(),"COMPRIS_AUTO")
+                })
+                add(action("À revoir prochainement"){
+                    saveReview(topic.text.toString(),"A_REVOIR")
+                })
+            }
+        }
         if(studyText.isNotBlank())card("Résultat pédagogique",studyText)
-        add(action("✓  J'ai maîtrisé ce thème"){saveReview(topic.text.toString(),"MAÎTRISÉ")})
-        add(action("↺  Thème à revoir"){saveReview(topic.text.toString(),"À_REVOIR")})
-        KnowledgeStore(this).use{store->card("Répétition et suivi",store.reviewCounts())}
+        if(studySources.isNotBlank())add(action("📑 Consulter les sources de cette activité"){
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Passages réellement consultés")
+                .setMessage(studySources.take(14000))
+                .setPositiveButton("Fermer",null).show()
+        })
     }
     private fun chatPrefs():android.content.SharedPreferences=getSharedPreferences("medbrain",Context.MODE_PRIVATE)
     private fun currentMode():String=chatPrefs().getString("chat_mode","auto")?:"auto"
@@ -642,8 +703,9 @@ class MainActivity:ComponentActivity() {
         val pieces=KnowledgeStore(this).use{it.retrieve(topic)}
         if(pieces.isEmpty()){studyText="Aucun extrait trouvé pour « $topic ». Importe des cours adaptés.";render(2);return}
         val quoted=StudyEngine.references(pieces)
+        studySources=quoted
         if(!ModelVault.file(this).exists()){
-            studyText="Sources disponibles :\n$quoted\n\nCharge ton GGUF pour produire une fiche ou un corrigé structuré."
+            studyText="Des références ont été retrouvées dans ta bibliothèque. Active le modèle neuronal dans Paramètres pour une explication structurée. Tu peux déjà consulter les passages exacts avec le bouton Sources."
             render(2);return
         }
         val prompt=when(kind){
@@ -652,7 +714,7 @@ class MainActivity:ComponentActivity() {
             else->StudyEngine.correctionPrompt(topic,response,pieces)
         }
         studyText="Analyse en cours…";render(2)
-        requestAI(prompt){out->studyText=out+"\n\nSources vérifiables :\n$quoted";if(page==2)render(2)}
+        requestAI(prompt){out->studyText=out;if(page==2)render(2)}
     }
     private fun requestAI(prompt:String,done:(String)->Unit){
         if(busy)return
