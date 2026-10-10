@@ -43,9 +43,8 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
     private suspend fun ingestPdf(store:KnowledgeStore,record:DocumentRecord,uri:Uri):Result {
         PDFBoxResourceLoader.init(applicationContext)
         val offset=record.done
-        applicationContext.contentResolver.openInputStream(uri).use {stream ->
-            requireNotNull(stream){"Impossible d'ouvrir le document"}
-            PDDocument.load(stream).use {pdf ->
+        val local=SourceCache.getOrFetch(applicationContext,record.id,uri)
+        PDDocument.load(local).use {pdf ->
                 val total=pdf.numberOfPages
                 val end=minOf(total,offset+4)
                 if (offset>=total) {store.markState(record.id,"INDEXED");return Result.success()}
@@ -67,8 +66,8 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
                 } else {
                     store.markState(record.id,if(store.indexedPages(record.id)>0)"INDEXED" else "OCR_REQUIRED")
                 }
+                if(end>=total)SourceCache.release(applicationContext,record.id)
                 return Result.success()
-            }
         }
     }
     private suspend fun ingestImage(store:KnowledgeStore,record:DocumentRecord,uri:Uri):Result {

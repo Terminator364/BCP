@@ -39,4 +39,20 @@ class KnowledgeStoreTest {
             assertEquals(1,store.retrieve("myocarde").size)
         }
     }
+    @Test fun oldAlphaDataSurvivesVersionTwo(){
+        val ctx=ApplicationProvider.getApplicationContext<Context>()
+        ctx.deleteDatabase("medbrain-v1.sqlite")
+        val db=ctx.openOrCreateDatabase("medbrain-v1.sqlite",Context.MODE_PRIVATE,null)
+        db.execSQL("CREATE TABLE docs(id TEXT PRIMARY KEY,title TEXT NOT NULL,uri TEXT NOT NULL,processed INTEGER NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'QUEUED')")
+        db.execSQL("CREATE TABLE pages(doc_id TEXT NOT NULL,page INTEGER NOT NULL,body TEXT NOT NULL,PRIMARY KEY(doc_id,page))")
+        db.execSQL("INSERT INTO docs(id,title,uri,processed,total,state) VALUES('old','Ancien cours','content://old',1,1,'TEXT_DONE')")
+        db.execSQL("INSERT INTO pages(doc_id,page,body) VALUES('old',1,'Les signes cliniques sont répertoriés.')")
+        db.version=1
+        db.close()
+        KnowledgeStore(ctx).use { store ->
+            assertEquals("Ancien cours",store.document("old")!!.title)
+            assertEquals(1,store.retrieve("cliniques").size)
+            assertEquals(1,store.indexedPages("old"))
+        }
+    }
 }

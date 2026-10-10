@@ -2,7 +2,7 @@ package com.blessing.medbrain
 
 /** Evidence-first study material, no invented claims when a local LLM is absent. */
 object StudyEngine {
-    fun references(passages:List<Passage>)=passages.joinToString("\n\n"){"[${it.citation()}]\n${it.text}"}
+    fun references(passages:List<Passage>)=passages.take(4).joinToString("\n\n"){"[${it.citation()}]\n${it.text.take(850)}"}
     fun summaryPrompt(topic:String,passages:List<Passage>):String =
         "Thème : $topic\n\nSources vérifiées (ne pas inventer de page) :\n"+references(passages)+
         "\n\nRédige une fiche médicale structurée en français (définition, mécanismes, clinique, diagnostic, prise en charge selon les sources), signale explicitement les informations manquantes."
