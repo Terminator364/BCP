@@ -870,10 +870,11 @@ class MainActivity:ComponentActivity() {
             route.searchQuery!=null&&searchBooks->CardioCurriculum.findRelevant(this,route.searchQuery,2)
             else->emptyList()
         }
+        val trustedEvidence=SourceVerification.trusted(evidence)
         val sources=listOf(CardioCurriculum.references(authored),
-            StudyEngine.references(evidence)).filter{it.isNotBlank()}.joinToString("\n\n")
+            StudyEngine.references(trustedEvidence)).filter{it.isNotBlank()}.joinToString("\n\n")
         val hasModel=ModelVault.file(this).exists()
-        if(mode=="sources"&&evidence.isEmpty()&&authored.isEmpty()&&!route.followUp){
+        if(mode=="sources"&&trustedEvidence.isEmpty()&&authored.isEmpty()&&!route.followUp){
             KnowledgeStore(this).use{it.addChat("assistant",
                 "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.",threadId=threadId)}
             render(3);return
@@ -1091,6 +1092,11 @@ class MainActivity:ComponentActivity() {
         if(pieces.isEmpty()){studyText="Aucun extrait trouvé pour « $topic ». Importe des cours adaptés.";render(2);return}
         val quoted=StudyEngine.references(pieces)
         val evidenceCard=StudyEngine.quickEvidence(topic,pieces)
+        if(SourceVerification.trusted(pieces).isEmpty()){
+            studySources=quoted
+            studyText=evidenceCard+"\n\nAucun texte suffisamment vérifié pour une synthèse. Vérifie les pages OCR originales dans ta bibliothèque."
+            render(2);return
+        }
         studySources=quoted
         val battery=(getSystemService(BATTERY_SERVICE) as BatteryManager)
             .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
