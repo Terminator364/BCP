@@ -874,9 +874,9 @@ class MainActivity:ComponentActivity() {
         val sources=listOf(CardioCurriculum.references(authored),
             StudyEngine.references(trustedEvidence)).filter{it.isNotBlank()}.joinToString("\n\n")
         val hasModel=ModelVault.file(this).exists()
-        if(mode=="sources"&&trustedEvidence.isEmpty()&&authored.isEmpty()&&!route.followUp){
+        if((mode=="sources"||evidence.isNotEmpty())&&trustedEvidence.isEmpty()&&authored.isEmpty()&&!route.followUp){
             KnowledgeStore(this).use{it.addChat("assistant",
-                "Je n'ai pas trouvé de passage suffisamment pertinent dans les pages déjà indexées. Ce n'est pas une preuve que l'information est absente des livres : l'indexation est encore progressive. Essaie un terme plus précis ou passe en mode Auto.",threadId=threadId)}
+                if(evidence.isEmpty()) "Aucune page suffisamment pertinente n’est encore indexée pour cette recherche." else "J’ai trouvé des pages OCR non vérifiées. Je ne produis pas de synthèse automatique à partir de ce texte. Consulte les passages originaux pour les contrôler.",StudyEngine.references(evidence),threadId)}
             render(3);return
         }
         if(!hasModel){
