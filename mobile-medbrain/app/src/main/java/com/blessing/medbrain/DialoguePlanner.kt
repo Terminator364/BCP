@@ -33,7 +33,7 @@ object DialoguePlanner {
         "ca change quoi|et si c est|et si on|a quoi cela sert|"+
         "comment en tenir compte|je veux un exemple|"+
         "donne moi un exemple|illustre avec un exemple|"+
-        "resume ce qu on vient|rappelle moi ce qu on a dit)(?:\b|$)"
+        "resume ce qu on vient|rappelle moi ce qu on a dit)(?:\\b|$)"
     )
     /**
      * Interpret references to the ACTIVE conversation. This is a small open grammar,
