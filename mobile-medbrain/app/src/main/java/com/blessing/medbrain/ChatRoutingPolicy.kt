@@ -39,6 +39,7 @@ object ChatRoutingPolicy {
                 (if(modelAvailable)"Qwen GGUF local installé" else "moteur GGUF non actif")+
                 ". Je ne suis pas ChatGPT. Mes livres sont indexés dans une bibliothèque "+
                 "distincte : le modèle neuronal ne les mémorise pas dans ses poids."
+        if(modelAvailable)return null // Let the actual conversation model interpret social turns.
         return when(q) {
             "hein","hein quoi","cad","c a d","donc quoi","tu sais quoi",
             "oft tu sais quoi","bref","ok","d accord","merci","merci beaucoup" ->

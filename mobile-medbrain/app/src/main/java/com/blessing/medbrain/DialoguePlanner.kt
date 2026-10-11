@@ -23,6 +23,18 @@ object DialoguePlanner {
     private val sentenceOpeners=Regex(
         "^(?:et |mais |alors |ensuite |maintenant )?(?:quel|quels|quelle|quelles|comment|pourquoi|peux|peut|explique|decris|precise|et |dis |les )"
     )
+    // User utterances that explicitly depend on the previous turn. These are
+    // discourse forms, not canned answer templates.
+    private val contextualPhrases=Regex(
+        "^(?:pourquoi(?: donc)?|je n ai pas compris|explique le autrement|"+
+        "explique ca autrement|reformule|redis autrement|"+
+        "peux tu m en parler|peux tu m expliquer|"+
+        "fais une synthese de ce|fais moi une synthese de ce|"+
+        "ca change quoi|et si c est|et si on|a quoi cela sert|"+
+        "comment en tenir compte|je veux un exemple|"+
+        "donne moi un exemple|illustre avec un exemple|"+
+        "resume ce qu on vient|rappelle moi ce qu on a dit)(?:\b|$)"
+    )
     /**
      * Interpret references to the ACTIVE conversation. This is a small open grammar,
      * not a table of canned medical responses; explicit topics win over ellipses.
@@ -31,10 +43,12 @@ object DialoguePlanner {
         val q=SearchPolicy.normalized(raw).replace(Regex("[^a-z0-9 ]+")," ")
             .replace(Regex("\\s+")," ").trim()
         if(q.isBlank()||q.length>180)return false
-        if(q.startsWith("et pour ")){
+        if(contextualPhrases.containsMatchIn(q))return true
+        if(q.startsWith("et pour ")||q.startsWith("mais pour ")||q.startsWith("sinon pour ")){
             // "Et pour la pneumonie ?" starts a new diagnosis rather than continuing
             // the previous conversation. "Et pour le traitement ?" is a follow-up.
-            val tail=q.removePrefix("et pour ").trim()
+            val tail=q.removePrefix("et pour ").removePrefix("mais pour ")
+                .removePrefix("sinon pour ").trim()
             val topical=SearchPolicy.terms(tail).filterNot{it in genericClinicalFacets}
             val population=Regex("\\b(enfant|enfants|adulte|adultes|femme|femmes|"+
                 "patient|patiente|nourrisson|grossesse|personnes agees)\\b")
@@ -43,7 +57,8 @@ object DialoguePlanner {
                 return false
             return true
         }
-        if(q.startsWith("et chez ")||q.startsWith("qu en est il chez "))return true
+        if(q.startsWith("et chez ")||q.startsWith("mais chez ")||
+            q.startsWith("sinon chez ")||q.startsWith("qu en est il chez "))return true
         val words=q.split(" ")
         val concepts=SearchPolicy.terms(q).filterNot{it in genericClinicalFacets}
         val deictic=words.any{it in referential}
@@ -91,10 +106,16 @@ object DialoguePlanner {
             it.kind=="assistant"&&!failedAnswer(it.body)&&
                 ModelOutputPolicy.clean(it.body)!=ModelOutputPolicy.NO_FINAL
         }?.body.orEmpty()
-        val topic=prior.firstOrNull {
-            it.kind=="user"&&!isFollowUp(it.body)&&
-                SearchPolicy.terms(it.body).isNotEmpty()
-        }?.body.orEmpty()
+        val priorTopics=prior.filter{it.kind=="user"&&!isFollowUp(it.body)&&
+            SearchPolicy.terms(it.body).isNotEmpty()&&
+            !ConversationPolicy.isModelQuestion(it.body)&&
+            !ConversationPolicy.isGreeting(it.body)&&
+            ChatRoutingPolicy.quickPersonalResponse(it.body,"",false)==null}
+        // For clinical follow-ups, retain the last explicitly named clinical
+        // topic instead of letting "Merci" or an app-version query become the anchor.
+        val topic=(priorTopics.firstOrNull{
+            ChatRoutingPolicy.searchDocuments(it.body,"auto",false)}
+            ?:priorTopics.firstOrNull())?.body.orEmpty()
         if(route.followUp){
             return ("Conversation suivie. Ne cherche pas un nouveau sujet documentaire.\n"+
                 "Question antérieure : "+topic.take(125)+"\n"+
