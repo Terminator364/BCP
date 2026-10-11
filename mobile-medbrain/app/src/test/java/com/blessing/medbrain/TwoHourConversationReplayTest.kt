@@ -31,7 +31,7 @@ class TwoHourConversationReplayTest {
       "Anticoagulants","Physiopathologie de l'hémorragie",
       "Biochimie clinique","Syndrome néphrotique","Méningite",
       "Paludisme","ECG","Tétanos","Appendicite","Glycémie","Pédiatrie","Tension artérielle")
-   var wrong=0
+   val wrongCases=mutableListOf<String>()
    repeat(120){minute->
     val phase=minute%30
     val cycle=minute/30
@@ -55,13 +55,13 @@ class TwoHourConversationReplayTest {
     val search=ChatRoutingPolicy.searchDocuments(q,"auto",follow)
     val wants=phase==0||phase==5||phase>=16
     if(search!=wants || (phase==5 && follow) ||
-       (phase in listOf(1,2,6) && !follow))wrong++
+       (phase in listOf(1,2,6) && !follow))wrongCases.add("minute=$minute cycle=$cycle phase=$phase q=$q follow=$follow search=$search expected=$wants")
     if(!search && phase==3)assertTrue(store.retrieve("version").isNotEmpty())
     store.addChat("user",q,threadId=thread)
     // Explicit routing ACK, not simulated model-generated medical content.
     store.addChat("assistant",if(search)"[RETRIEVAL]" else "[CONVERSATION]",threadId=thread)
    }
-   assertEquals("Wrong routes during two-hour replay",0,wrong)
+   assertTrue("Wrong routes during two-hour replay: "+wrongCases.joinToString(" | "),wrongCases.isEmpty())
    assertEquals(2,ids.size)
    assertEquals(2,store.documents().size)
    assertEquals(120,ids.sumOf{store.messages(it,200).size}/2)
