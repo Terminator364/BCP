@@ -6,7 +6,7 @@ object ChatRoutingPolicy {
         "\\b(anatomie|anemie|hemorragie|saignement|avc|cardiaque|coeur|"+
         "poumon|pulmonaire|dyspnee|insuffisance|hypertension|"+
         "tension arterielle|hypotension|tachycardie|ecg|"+
-        "pharmacologie|medicament|antibiotique|anticoagulant|"+
+        "pharmacologie|medicament|medicaments|antibiotique|antibiotiques|anticoagulant|anticoagulants|"+
         "biochimie|biologie clinique|hematologie|glycemie|diabete|"+
         "thyroide|meningite|appendicite|peritonite|pancreatite|"+
         "hepatite|renal|renale|rein|syndrome nephrotique|paludisme|"+

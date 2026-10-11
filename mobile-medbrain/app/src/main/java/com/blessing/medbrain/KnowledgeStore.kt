@@ -265,7 +265,7 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
                     "JOIN docs d ON d.id=pages_fts.doc_id " +
                     "LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id " +
                     "AND p.page=CAST(pages_fts.page AS INTEGER) " +
-                    "WHERE pages_fts MATCH ? LIMIT 150",
+                    "WHERE pages_fts MATCH ? LIMIT 360",
                 arrayOf(match)
             ).use { c->
                 while(c.moveToNext()) {

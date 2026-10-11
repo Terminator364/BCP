@@ -29,6 +29,8 @@ class ChatUiRegressionTest {
   val ctx=ApplicationProvider.getApplicationContext<Context>()
   ctx.deleteDatabase("medbrain-v1.sqlite")
   WorkManagerTestInitHelper.initializeTestWorkManager(ctx)
+  ctx.getSharedPreferences("medbrain",Context.MODE_PRIVATE).edit()
+      .putString("current_chat_thread","default").apply()
   KnowledgeStore(ctx).use{store->
    store.register("unrelated","Biochimie en 84 fiches","content://bio")
    store.save("unrelated",10,
