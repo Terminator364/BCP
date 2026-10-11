@@ -11,6 +11,14 @@ class ChatRealScenarioTest{
    assertNotNull(q,out);assertTrue(out!!.contains("0.5.0"))
   }
  }
+ @Test fun versionOfClinicalGuidelineIsNotAnAppVersionQuestion(){
+  listOf("Quelle version du protocole d'AVC ?",
+    "Quelle version des recommandations d'anticoagulation ?",
+    "Quelle version de la classification en cardiologie ?").forEach{
+     assertFalse(it,ConversationPolicy.isModelQuestion(it))
+     assertNull(ChatRoutingPolicy.quickPersonalResponse(it,"0.5.1",true))
+  }
+ }
  @Test fun socialDialogueDoesNotRunFts(){
   listOf("salut","hein","tu sais quoi","oft tu sais quoi","ca va","merci",
    "qu'en penses-tu ?","raconte une histoire","j'ai une idée",

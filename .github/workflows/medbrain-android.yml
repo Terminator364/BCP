@@ -93,12 +93,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'" | grep "versionCode='41'"
+          /usr/local/lib/android/sdk/build-tools/35.0.0/aapt dump badging mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk | grep '^package:' | grep "name='com.blessing.medbrain.personal'" | grep "versionCode='42'"
           test -f /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar
           cp /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar mobile-medbrain/apksigner-tool.jar
       - uses: actions/upload-artifact@v4
         with:
-          name: medbrain-personal-0-5-0-internal-unsigned
+          name: medbrain-personal-0-5-1-field-rc-unsigned
           path: |
             mobile-medbrain/app/build/outputs/apk/release/app-release-unsigned.apk
             mobile-medbrain/apk-sha256.txt

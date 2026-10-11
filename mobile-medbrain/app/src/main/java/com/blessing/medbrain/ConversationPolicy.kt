@@ -48,9 +48,10 @@ object ConversationPolicy {
         val clean=SearchPolicy.normalized(question).replace(Regex("[-_]+")," ")
         return clean.contains("quel modele")||clean.contains("comment tu fonctionnes")||
             clean.contains("tu sais faire quoi")||clean.contains("que peux tu faire")||
-            Regex("\\b(quelle version|quel version|ta version|version de medbrain|"+
-                "tu es quelle version|tu es quel version|t es quelle version|"+
-                "tu es en quelle version|quel est ton modele)\\b").containsMatchIn(clean)
+            Regex("\\b(tu es|t es|es tu) (quelle|quel) version\\b").containsMatchIn(clean)||
+            clean.contains("ta version")||clean.contains("version de medbrain")||
+            Regex("^(quel|quelle) version[?!., ]*$").matches(clean)||
+            clean.contains("quel est ton modele")
     }
     fun modelExplanation(available:Boolean):String =
         if(available) "Je suis MedBrain, ton assistant local. Je peux discuter, étudier tes références et citer les pages récupérées. Je suis un petit modèle : mes réponses peuvent être inexactes, surtout en médecine."

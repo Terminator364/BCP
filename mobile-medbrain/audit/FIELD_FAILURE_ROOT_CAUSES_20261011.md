@@ -3,3 +3,5 @@ User screenshots: “tu es quelle version ?” fetched irrelevant biochemistry p
 Causes: unclassified general dialogue went to FTS; raw full FTS bodies loaded hundreds of pages; chat UI rendered too many full Span widgets; PDFBox/MLKit loaded 4 PDF pages and 100-DPI bitmaps without Java heap reserve.
 Corrections: classify social/medical queries before FTS, direct version answer, read bounded SQLite FTS snippets (150 candidates), render 12/32 bounded chat messages with full-body popup; PDFBox scratch disk, 1 page per job, OCR 72 DPI and heap thresholds >=96/128 MiB. All SQLite texts remain intact, no global cleanup.
 Open: physical 491-book tests, on-device RAM/CPU/latency, semantic OCR quality, genuine native token-streaming, signed upgrade. CI evidence is simulated not a claim of clinical certainty.
+
+Release candidate packaging: package unchanged (com.blessing.medbrain.personal), versionCode 42 (formerly 41), versionName 0.5.1-field-rc; same signing certificate required and a dedicated Android CI gate must PASS before signing. Current Qwen synchronous vendor remains a known failure/latency risk.
