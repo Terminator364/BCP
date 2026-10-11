@@ -15,9 +15,9 @@ object StudyEngine {
                 .append("\n").append(CardioCurriculum.excerpt(f,question,380))
         }
         pdf.firstOrNull()?.let{p->
-            result.append("\n\n📄 PDF : ").append(p.title.take(100))
+            result.append("\n\n📄 Source PDF consultable : ").append(p.title.take(100))
                 .append(" · page ").append(p.page).append(" (").append(p.method).append(")")
-                .append("\n").append(p.text.replace(Regex("\\s+")," ").trim().take(350))
+                .append("\nContenu non synthétisé, à ouvrir dans les sources.")
         }
         return result.toString()
     }

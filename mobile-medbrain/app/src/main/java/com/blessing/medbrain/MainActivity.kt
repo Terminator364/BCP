@@ -888,13 +888,10 @@ class MainActivity:ComponentActivity() {
                 else if(evidence.isEmpty())
                 "Je n'ai pas encore de modèle neuronal local actif pour répondre librement à cette question. Ouvre Paramètres pour activer Qwen3. Tu peux continuer à consulter ta bibliothèque."
                 else {
-                    val passages=evidence.take(2).mapNotNull { item ->
-                        val clean=item.text.replace(Regex("\\s+")," ").trim()
-                        if(clean.isBlank()) null else "• "+clean.take(280).trimEnd()+"… ("+item.title+", p. "+item.page+")"
-                    }
-                    "Voici les passages les plus pertinents retrouvés dans tes livres. Ce sont des extraits, pas une synthèse produite par le modèle :\n\n"+
-                        passages.joinToString("\n\n")+
-                        "\n\nPour approfondir dans une conversation, active le modèle dans Paramètres."
+                    "Je ne peux pas générer une réponse sans modèle neuronal. "+
+                        "J'ai trouvé "+evidence.size+" passage(s) potentiellement pertinents. "+
+                        "Utilise « Voir les passages sources » pour les lire à leur page d'origine. "+
+                        "Un extrait brut n'est pas une explication médicale; active Qwen pour une synthèse."
                 }
             KnowledgeStore(this).use{it.addChat("assistant",msg,sources,threadId)}
             render(3);return

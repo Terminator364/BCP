@@ -27,7 +27,8 @@ class ImmediateEvidencePreviewTest{
         val text=StudyEngine.immediatePreview("signes",emptyList(),listOf(item))
         assertTrue(text.contains("page 18"))
         assertTrue(text.contains("Cours de clinique.pdf"))
-        assertTrue(text.contains("signes et symptômes"))
+        assertTrue(text.contains("à ouvrir dans les sources"))
+        assertFalse(text.contains("Les signes et symptômes sont décrits"))
     }
     @Test fun noneAvailableDoesNotFakeSources(){
         assertEquals("",StudyEngine.immediatePreview("bonjour",emptyList(),emptyList()))

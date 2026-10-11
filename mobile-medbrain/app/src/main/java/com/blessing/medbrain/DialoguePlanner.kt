@@ -121,11 +121,13 @@ object DialoguePlanner {
                 "\nDocument Google Docs, sans numéro de page PDF."
         }
         if(evidence.isNotEmpty()&&!followUp) {
-            val refs=evidence.take(2).joinToString("\n\n") {
-                "• "+it.text.replace(Regex("\\s+")," ").take(330).trim()+
-                    " — "+it.title+", p. "+it.page
+            val refs=evidence.take(2).joinToString("\n") {
+                "• "+it.title.take(90)+", p. "+it.page+
+                    if(it.method.startsWith("OCR"))" (texte OCR à vérifier)" else ""
             }
-            return "Le modèle neuronal n'est pas disponible maintenant. Voici des passages réellement indexés, sans synthèse inventée :\n\n"+refs
+            return "Le modèle neuronal n'a pas produit de réponse fiable. "+
+                "Les références originales restent consultables avec le bouton « Voir les passages sources » :\n"+refs+
+                "\nJe ne vais pas remplacer une réponse par des paragraphes OCR isolés."
         }
         return if(followUp && curated.isNotEmpty()){
             val f=curated.first()
