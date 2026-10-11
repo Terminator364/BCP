@@ -120,7 +120,17 @@ object DialoguePlanner {
                 CardioCurriculum.excerpt(f,question,345)
         }
         val sources=(curatedRefs+pdf).joinToString("\n")
-        return (("Question: "+question.take(260)+"\n")+
+        // General conversation must see recent turns even when the user does not
+        // utter an explicit "continue" or a clinical follow-up. Never mix unrelated
+        // conversation into a newly requested medical source synthesis.
+        val recent=if(mode=="general")history.takeLast(10)
+            .filter{it.kind=="user"||(it.kind=="assistant"&&!failedAnswer(it.body))}
+            .joinToString("\n"){m->
+                (if(m.kind=="user")"Utilisateur: " else "MedBrain: ")+
+                    m.body.replace(Regex("\\s+")," ").take(if(m.kind=="user")140 else 170)
+            }.takeLast(700) else ""
+        return (((if(recent.isBlank())"" else "Contexte du dialogue récent:\n"+recent+"\n")+
+            "Question: "+question.take(260)+"\n")+
             if(sources.isBlank())
                 "Aucune source documentaire pertinente vérifiée. Réponds sans inventer de citation."
             else "Extraits retrouvés (citer uniquement ces documents, sans inventer de pages Google Docs):\n"+sources+
