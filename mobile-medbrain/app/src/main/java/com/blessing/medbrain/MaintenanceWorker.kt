@@ -10,7 +10,7 @@ class MaintenanceWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx
     override suspend fun doWork():Result {
         val store=KnowledgeStore(applicationContext)
         return try {
-            val launched=enqueueBatch(applicationContext,2)
+            val launched=enqueueBatch(applicationContext,1)
             val prefs=applicationContext.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
             val folder=prefs.getString("local_tree",null)
             val now=System.currentTimeMillis()
@@ -37,13 +37,14 @@ class MaintenanceWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx
         fun enqueueBatch(ctx:Context,limit:Int=2):Int {
             val prefs=ctx.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
             if(System.currentTimeMillis()<prefs.getLong("inference_until",0L)||
-                prefs.getBoolean("queue_repairing",false))return 0
+                prefs.getBoolean("queue_repairing",false)||
+                !ProcessingBudget.mayOpenPdf(ProcessingBudget.heapHeadroom(),false))return 0
             val eligible=KnowledgeStore(ctx).use{store->
                 store.documents().filter{it.state=="QUEUED"||it.state=="READING"}
             }
             if(eligible.isEmpty())return 0
             val start=Math.floorMod(prefs.getInt("ingest_cursor",0),eligible.size)
-            val picked=(0 until minOf(limit.coerceIn(1,2),eligible.size))
+            val picked=(0 until minOf(limit.coerceIn(1,1),eligible.size))
                 .map{eligible[(start+it)%eligible.size]}
             prefs.edit().putInt("ingest_cursor",(start+picked.size)%eligible.size).apply()
             for(doc in picked) {

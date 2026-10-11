@@ -9,6 +9,8 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.io.MemoryUsageSetting
+import android.app.ActivityManager
 import com.tom_roush.pdfbox.rendering.PDFRenderer
 import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +27,13 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
         val pref=applicationContext.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
         if(IngestConcurrency.shouldYield(System.currentTimeMillis(),
                 pref.getLong("inference_until",0L))){
+            store.close()
+            return@withContext Result.retry()
+        }
+        val manager=applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val memory=ActivityManager.MemoryInfo().also{manager.getMemoryInfo(it)}
+        if(ProcessingBudget.yieldIngestion(ProcessingBudget.heapHeadroom(),memory.lowMemory,false)){
+            store.event("INGEST_HEAP_PAUSED","Mémoire Java insuffisante; reprise ultérieure")
             store.close()
             return@withContext Result.retry()
         }
@@ -58,9 +67,9 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
         PDFBoxResourceLoader.init(applicationContext)
         val offset=record.done
         val local=SourceCache.getOrFetch(applicationContext,record.id,uri)
-        PDDocument.load(local).use {pdf ->
+        PDDocument.load(local,MemoryUsageSetting.setupTempFileOnly()).use {pdf ->
                 val total=pdf.numberOfPages
-                val end=minOf(total,offset+4)
+                val end=minOf(total,offset+1) // one PDF page per batch
                 if (offset>=total) {store.markState(record.id,"INDEXED");return Result.success()}
                 val prefs=applicationContext.getSharedPreferences("medbrain",Context.MODE_PRIVATE)
                 for(page in offset+1..end) {
@@ -75,7 +84,13 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
                     var found=text
                     var method="TEXT"
                     if(text.length<65) {
-                        val bitmap=PDFRenderer(pdf).renderImageWithDPI(page-1,100f)
+                        val mgr=applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                        val sys=ActivityManager.MemoryInfo().also{mgr.getMemoryInfo(it)}
+                        if(!ProcessingBudget.mayRenderOcr(ProcessingBudget.heapHeadroom(),sys.lowMemory)){
+                            store.event("OCR_HEAP_PAUSED","Page "+page+" différée; index intact")
+                            return Result.retry()
+                        }
+                        val bitmap=PDFRenderer(pdf).renderImageWithDPI(page-1,72f)
                         try { val scanned=ocr(bitmap);if(scanned.length>text.length){found=scanned;method="OCR"} }
                         finally {bitmap.recycle()}
                     }

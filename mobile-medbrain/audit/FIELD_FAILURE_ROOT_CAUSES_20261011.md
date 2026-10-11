@@ -1,0 +1,5 @@
+# MedBrain 0.5.0 — field failures and corrective gates — 2026-10-11
+User screenshots: “tu es quelle version ?” fetched irrelevant biochemistry p10 + unrelated history p34; casual text fetched garbled pharmacology OCR and English cardiology. Diagnostic: 491 books; 3408/18577 processed; 3353 indexed; GGUF 1223 MiB; timed-out inference at 70 seconds; repeated OOM with Java heap ceiling 268435456 bytes.
+Causes: unclassified general dialogue went to FTS; raw full FTS bodies loaded hundreds of pages; chat UI rendered too many full Span widgets; PDFBox/MLKit loaded 4 PDF pages and 100-DPI bitmaps without Java heap reserve.
+Corrections: classify social/medical queries before FTS, direct version answer, read bounded SQLite FTS snippets (150 candidates), render 12/32 bounded chat messages with full-body popup; PDFBox scratch disk, 1 page per job, OCR 72 DPI and heap thresholds >=96/128 MiB. All SQLite texts remain intact, no global cleanup.
+Open: physical 491-book tests, on-device RAM/CPU/latency, semantic OCR quality, genuine native token-streaming, signed upgrade. CI evidence is simulated not a claim of clinical certainty.
