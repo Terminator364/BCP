@@ -29,21 +29,26 @@ class TwoHourConversationReplayTest {
       "j'ai une idée","tu sais quoi ?","hein ?","raconte une histoire")
    val clinic=listOf("Insuffisance cardiaque","Prééclampsie",
       "Anticoagulants","Physiopathologie de l'hémorragie",
-      "Biochimie clinique","Syndrome néphrotique","Méningite")
+      "Biochimie clinique","Syndrome néphrotique","Méningite",
+      "Paludisme","ECG","Tétanos","Appendicite","Glycémie","Pédiatrie","Tension artérielle")
    var wrong=0
    repeat(120){minute->
     val phase=minute%30
-    val thread=ids[(minute/30)%2]
+    val cycle=minute/30
+    val thread=ids[cycle%2]
     val q=when(phase){
-      0->"Explique l'insuffisance cardiaque"
+      0->listOf("Explique l'insuffisance cardiaque","Explique la prééclampsie",
+       "Parle-moi du paludisme","Explique le diabète")[cycle]
       1->"Et ses signes ?"
       2->"Continue au point 4"
       3->"tu es quelle version ?"
       4->"tu sais quoi ?"
-      5->"Et pour la pneumonie ?"
+      5->listOf("Et pour la pneumonie ?","Et pour la méningite ?",
+       "Et pour la tuberculose ?","Et pour la bronchite ?")[cycle]
       6->"Ses complications ?"
-      in 7..15->social[(phase-7)%social.size]
-      else->clinic[(phase-16+clinic.size)%clinic.size]
+      in 7..15->social[(phase-7+cycle*2)%social.size]
+      else->listOf("Explique","Résume","Je veux comprendre","Parle-moi de")[cycle]+
+       " "+clinic[phase-16]
     }
     val history=store.promptContext(thread)
     val follow=DialoguePlanner.route(q,history).followUp
