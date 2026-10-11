@@ -110,7 +110,7 @@ object DialoguePlanner {
             ).take(1350)
         }
         val pdf=if(mode=="general")emptyList() else
-            evidence.take(if(curated.isEmpty())2 else 1).map{
+            SourceVerification.trusted(evidence).take(if(curated.isEmpty())2 else 1).map{
                 "["+it.title.take(72)+", p. "+it.page+"] "+
                 it.text.replace(Regex("\\s+")," ").take(330)
             }
