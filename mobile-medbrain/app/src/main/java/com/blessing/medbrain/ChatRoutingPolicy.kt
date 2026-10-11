@@ -13,7 +13,7 @@ object ChatRoutingPolicy {
         "asthme|bronchite|appendicite|peritonite|pancreatite|"+
         "hepatite|renal|renale|rein|syndrome nephrotique|paludisme|"+
         "obstetrique|gynecologie|grossesse|preeclampsie|eclampsie|"+
-        "pediatrie|vaccin|tetanus|choc septique|sepsis|"+
+        "pediatrie|vaccin|tetanus|tetanos|choc septique|sepsis|"+
         "anamnese|auscultation|spirometrie|hemoglobine|"+
         "bilirubine|creatinine|uremie|hypoxemie|hyperkaliemie|"+
         "diagnostic|semiologie|physiopathologie|therapeutique|"+
