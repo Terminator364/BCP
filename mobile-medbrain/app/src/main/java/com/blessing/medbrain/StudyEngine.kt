@@ -35,7 +35,7 @@ object StudyEngine {
      * Large multi-page prompts (4-5 k characters) repeatedly timed out on the phone.
      */
     fun compactEvidence(passages:List<Passage>):String =
-        passages.take(2).joinToString("\n") {
+        SourceVerification.trusted(passages).take(2).joinToString("\n") {
             "["+it.title.take(75)+", p. "+it.page+"] "+
                 it.text.replace(Regex("\\s+")," ").take(335)
         }
