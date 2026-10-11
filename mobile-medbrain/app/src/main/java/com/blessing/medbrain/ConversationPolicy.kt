@@ -18,6 +18,12 @@ object ConversationPolicy {
             "je suis en train de faire un avc","je crois faire un avc")
             .any{q.contains(it)}
         if(personalDanger)return true
+        // Explicit real-person symptoms must never wait for GGUF inference.
+        val realPerson=Regex("\\b(je|j ai|ma mere|mon pere|ma soeur|mon frere|mon enfant|mon ami|ma femme|mon mari)\\b")
+            .containsMatchIn(q)
+        val acute=Regex("\\b(douleur thoracique|hemorragie|convulse|convulsion|ne respire|ne repond plus|paralyse|paralysie|un cote du corps|saignement abondant)\\b")
+            .containsMatchIn(q)
+        if(realPerson&&acute)return true
         val lessonMarkers=Regex(
             "\\b(cours|fiche|revision|reviser|examens?|examen de medecine|devoir|"+
             "definition|definis|explique|physiopathologie|etiologie|"+
