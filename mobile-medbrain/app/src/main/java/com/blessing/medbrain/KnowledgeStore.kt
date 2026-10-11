@@ -259,12 +259,13 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         val evidence=LinkedHashMap<String,Pair<Double,Passage>>()
         for(match in stages) {
             readableDatabase.rawQuery(
-                "SELECT pages_fts.doc_id,d.title,pages_fts.page,pages_fts.body," +
+                "SELECT pages_fts.doc_id,d.title,pages_fts.page," +
+                     "snippet(pages_fts,'','',' ... ',-1,42)," +
                     "COALESCE(p.extraction_method,'TEXT') FROM pages_fts " +
                     "JOIN docs d ON d.id=pages_fts.doc_id " +
                     "LEFT JOIN pages p ON p.doc_id=pages_fts.doc_id " +
                     "AND p.page=CAST(pages_fts.page AS INTEGER) " +
-                    "WHERE pages_fts MATCH ? LIMIT 360",
+                    "WHERE pages_fts MATCH ? LIMIT 150",
                 arrayOf(match)
             ).use { c->
                 while(c.moveToNext()) {

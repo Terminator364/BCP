@@ -712,14 +712,14 @@ class MainActivity:ComponentActivity() {
             setPadding(dp(8),dp(8),dp(8),dp(8))
             background=drawable(if(night)Color.rgb(13,26,43) else Color.rgb(232,241,247))
         }
-        val chatLimit=if(chatPrefs().getBoolean("full_chat",false))70 else 18
+        val chatLimit=if(chatPrefs().getBoolean("full_chat",false))32 else 12
         val messages=KnowledgeStore(this).use{it.messages(threadId=activeId,limit=chatLimit)}
         if(messages.size>=chatLimit){
             val older=Button(this).apply{
-                text=if(chatLimit==18)"↑ Afficher davantage d'historique" else "↓ Afficher moins"
+                text=if(chatLimit==12)"↑ Afficher davantage d'historique" else "↓ Afficher moins"
                 isAllCaps=false;textSize=12f
                 setOnClickListener{
-                    chatPrefs().edit().putBoolean("full_chat",chatLimit==18).apply()
+                    chatPrefs().edit().putBoolean("full_chat",chatLimit==12).apply()
                     render(3)
                 }
             }
@@ -745,8 +745,17 @@ class MainActivity:ComponentActivity() {
                 setPadding(dp(13),dp(9),dp(13),dp(10))
             }
             bubble.addView(text(if(user)"TOI" else "MEDBRAIN",10f,true,if(user)Color.WHITE else accent))
-            bubble.addView(text(message.body,15f,false,if(user)Color.WHITE else fg).apply{
-                if(!user)this.text=MedicalMarkdown.render(message.body)
+            val visible=ChatWindowPolicy.preview(message.body)
+            bubble.addView(text(visible,15f,false,if(user)Color.WHITE else fg).apply{
+                if(!user)this.text=MedicalMarkdown.render(visible)
+            })
+            if(message.body.length>1700)bubble.addView(Button(this).apply{
+                text="📖 Voir le message complet";isAllCaps=false;textSize=12f
+                setOnClickListener{
+                    android.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle(if(user)"Mon message" else "Réponse MedBrain complète")
+                        .setMessage(message.body).setPositiveButton("Fermer",null).show()
+                }
             })
             if(!user && message.sources.isNotBlank()){
                 val more=Button(this).apply{
@@ -824,8 +833,11 @@ class MainActivity:ComponentActivity() {
         if(!recoverPending)KnowledgeStore(this).use{it.addChat("user",question,threadId=threadId)}
         val lower=SearchPolicy.normalized(question)
         val greeting=ConversationPolicy.isGreeting(question)
-        if(ConversationPolicy.isModelQuestion(question)){
-            KnowledgeStore(this).use{it.addChat("assistant",ConversationPolicy.modelExplanation(ModelVault.file(this).exists()),threadId=threadId)}
+        val version=try{packageManager.getPackageInfo(packageName,0).versionName?:"inconnue"}
+            catch(_:Exception){"inconnue"}
+        val personal=ChatRoutingPolicy.quickPersonalResponse(question,version,ModelVault.file(this).exists())
+        if(personal!=null){
+            KnowledgeStore(this).use{it.addChat("assistant",personal,threadId=threadId)}
             render(3);return
         }
         if(greeting){
@@ -844,7 +856,8 @@ class MainActivity:ComponentActivity() {
             render(3);return
         }
         // Deictic follow-ups must never be treated as FTS queries.
-        val evidence=if(mode=="general"||route.searchQuery==null)emptyList()
+        val searchBooks=ChatRoutingPolicy.searchDocuments(question,mode,route.followUp)
+        val evidence=if(!searchBooks||route.searchQuery==null)emptyList()
             else KnowledgeStore(this).use{it.retrieve(route.searchQuery,4)}
         val authored=when {
             mode=="general"->emptyList()
@@ -854,7 +867,7 @@ class MainActivity:ComponentActivity() {
                 CardioCurriculum.fromPreviousReferences(
                     this,previousAnswer?.sources.orEmpty())
             }
-            route.searchQuery!=null->CardioCurriculum.findRelevant(this,route.searchQuery,2)
+            route.searchQuery!=null&&searchBooks->CardioCurriculum.findRelevant(this,route.searchQuery,2)
             else->emptyList()
         }
         val sources=listOf(CardioCurriculum.references(authored),
@@ -886,7 +899,8 @@ class MainActivity:ComponentActivity() {
             KnowledgeStore(this).use{it.addChat("assistant",msg,sources,threadId)}
             render(3);return
         }
-        val prompt=DialoguePlanner.prompt(question,previous,evidence,mode,authored)
+        val prompt=DialoguePlanner.prompt(question,previous,evidence,
+            if(searchBooks)mode else "general",authored)
         val cooldown=chatPrefs().getLong("inference_cooldown_until",0L)
         val battery=(getSystemService(BATTERY_SERVICE) as BatteryManager)
             .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
