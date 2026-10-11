@@ -848,7 +848,7 @@ class MainActivity:ComponentActivity() {
             render(3);return
         }
         val mode=currentMode()
-        val previous=KnowledgeStore(this).use{it.messages(threadId=threadId,limit=18).dropLast(1)}
+        val previous=KnowledgeStore(this).use{it.promptContext(threadId=threadId,limit=180).dropLast(1)}
         val route=DialoguePlanner.route(question,previous)
         if(route.followUp && !route.hasHistory){
             KnowledgeStore(this).use{it.addChat("assistant",

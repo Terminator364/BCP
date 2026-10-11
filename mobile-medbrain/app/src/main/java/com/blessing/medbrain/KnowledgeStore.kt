@@ -243,6 +243,25 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
         }
         return out.asReversed()
     }
+    /**
+     * Long-term conversational context without loading 25k-character messages into
+     * the limited 256 MiB Java heap. Retains old turns and thread boundaries.
+     * This is not a model-generated summary or an excuse to invent facts.
+     */
+    fun promptContext(threadId:String,limit:Int=180):List<ChatMessage>{
+        val items=ArrayList<ChatMessage>()
+        val cap=limit.coerceIn(1,240)
+        readableDatabase.rawQuery(
+            "SELECT id,kind,CASE WHEN kind='assistant' THEN substr(body,-800) "+
+                "ELSE substr(body,1,230) END,substr(source_refs,1,400),created_at "+
+                "FROM chats WHERE thread_id=? ORDER BY id DESC LIMIT ?",
+            arrayOf(threadId,cap.toString())
+        ).use{c->
+            while(c.moveToNext())items.add(ChatMessage(c.getLong(0),c.getString(1),
+                c.getString(2),c.getString(3),c.getLong(4)))
+        }
+        return items.asReversed()
+    }
     fun clearChat(threadId:String="default"){
         writableDatabase.execSQL("DELETE FROM chats WHERE thread_id=?",arrayOf(threadId))
         event("CHAT_CLEAR","User confirmed chat history deletion")

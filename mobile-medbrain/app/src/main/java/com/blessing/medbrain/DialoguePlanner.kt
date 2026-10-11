@@ -31,8 +31,19 @@ object DialoguePlanner {
         val q=SearchPolicy.normalized(raw).replace(Regex("[^a-z0-9 ]+")," ")
             .replace(Regex("\\s+")," ").trim()
         if(q.isBlank()||q.length>180)return false
-        if(q.startsWith("et chez ")||q.startsWith("et pour ")||
-            q.startsWith("qu en est il chez "))return true
+        if(q.startsWith("et pour ")){
+            // "Et pour la pneumonie ?" starts a new diagnosis rather than continuing
+            // the previous conversation. "Et pour le traitement ?" is a follow-up.
+            val tail=q.removePrefix("et pour ").trim()
+            val topical=SearchPolicy.terms(tail).filterNot{it in genericClinicalFacets}
+            val population=Regex("\\b(enfant|enfants|adulte|adultes|femme|femmes|"+
+                "patient|patiente|nourrisson|grossesse|personnes agees)\\b")
+            if(topical.isNotEmpty()&&!population.containsMatchIn(tail)&&
+                !Regex("\\b(ce|cet|cette|ces|son|sa|ses|leur|leurs)\\b").containsMatchIn(tail))
+                return false
+            return true
+        }
+        if(q.startsWith("et chez ")||q.startsWith("qu en est il chez "))return true
         val words=q.split(" ")
         val concepts=SearchPolicy.terms(q).filterNot{it in genericClinicalFacets}
         val deictic=words.any{it in referential}
@@ -50,7 +61,8 @@ object DialoguePlanner {
     fun failedAnswer(text:String):Boolean {
         val t=SearchPolicy.normalized(text).replace(Regex("[^a-z0-9 ]+")," ")
             .replace(Regex("\\s+")," ").trim()
-        return t.contains("moteur local n a pas termine") ||
+        return t.contains("le modele neuronal n a pas produit de reponse fiable") ||
+            t.contains("moteur local n a pas termine") ||
             t.contains("inference indisponible") ||
             t.contains("modele n a pas fourni de reponse finale") ||
             t.contains("le moteur local a ete interrompu") ||
