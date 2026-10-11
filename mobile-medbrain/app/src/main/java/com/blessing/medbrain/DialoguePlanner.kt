@@ -25,10 +25,18 @@ object DialoguePlanner {
     )
     // User utterances that explicitly depend on the previous turn. These are
     // discourse forms, not canned answer templates.
+    private val explicitlyNamedDisease=Regex(
+        "\\b(pneumonie|tuberculose|paludisme|meningite|hemorragie|"+
+        "preeclampsie|eclampsie|appendicite|diabete|insuffisance cardiaque|"+
+        "avc|accident vasculaire|anticoagulants?|endocardite|"+
+        "sepsis|tetanos|hepatite|pancreatite|bronchiolite|asthme|"+
+        "syndrome nephrotique|hypertension|fracture|embolie|"+
+        "insuffisance renale)\\b")
     private val contextualPhrases=Regex(
         "^(?:pourquoi(?: donc)?|je n ai pas compris|explique le autrement|"+
         "explique ca autrement|reformule|redis autrement|"+
         "peux tu m en parler|peux tu m expliquer|"+
+        "peux tu me donner|tu peux me donner|parle moi du traitement|"+
         "fais une synthese de ce|fais moi une synthese de ce|"+
         "ca change quoi|et si c est|et si on|a quoi cela sert|"+
         "comment en tenir compte|je veux un exemple|"+
@@ -43,7 +51,8 @@ object DialoguePlanner {
         val q=SearchPolicy.normalized(raw).replace(Regex("[^a-z0-9 ]+")," ")
             .replace(Regex("\\s+")," ").trim()
         if(q.isBlank()||q.length>180)return false
-        if(contextualPhrases.containsMatchIn(q))return true
+        if(contextualPhrases.containsMatchIn(q))
+            return !explicitlyNamedDisease.containsMatchIn(q)
         if(q.startsWith("et pour ")||q.startsWith("mais pour ")||q.startsWith("sinon pour ")){
             // "Et pour la pneumonie ?" starts a new diagnosis rather than continuing
             // the previous conversation. "Et pour le traitement ?" is a follow-up.
@@ -102,10 +111,17 @@ object DialoguePlanner {
                curated:List<CardioCurriculum.Fiche> = emptyList()):String {
         val route=route(question,history)
         val prior=history.asReversed()
-        val assistant=prior.firstOrNull {
+        val usableAssistant=prior.filter {
             it.kind=="assistant"&&!failedAnswer(it.body)&&
                 ModelOutputPolicy.clean(it.body)!=ModelOutputPolicy.NO_FINAL
-        }?.body.orEmpty()
+        }
+        // Fast acknowledgements are not the useful clinical explanation of a
+        // previous topic. Keep the last substantive answer when possible.
+        val assistant=(usableAssistant.firstOrNull{
+            val t=SearchPolicy.normalized(it.body).trim()
+            !t.startsWith("je suis medbrain") && !t.startsWith("avec plaisir") &&
+                !t.startsWith("je t ecoute") && !t.startsWith("de rien")
+        }?:usableAssistant.firstOrNull())?.body.orEmpty()
         val priorTopics=prior.filter{it.kind=="user"&&!isFollowUp(it.body)&&
             SearchPolicy.terms(it.body).isNotEmpty()&&
             !ConversationPolicy.isModelQuestion(it.body)&&

@@ -17,3 +17,5 @@ Cycle A:
 - Topic anchoring excludes product metadata, greetings and social acknowledgements.
 - Automated tests are not a simulated Qwen conversation. They prove only deterministic
   routing, document isolation, UI/SQLite and prompt-construction contracts.
+
+Cycle B — 14 near-identical topic-switch/context cases and substantive-answer anchoring: medical names override contextual prefixes, but generic treatment/age/example questions remain tied to prior medical subject. Social fast acknowledgements are not used as the last substantive clinical explanation. No response quality claims beyond deterministic simulations.
