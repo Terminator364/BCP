@@ -10,7 +10,7 @@ object ModelOutputPolicy {
         if(out.contains("<think>",true))return NO_FINAL
         if(out.contains("</think>",true))out=out.substringAfterLast("</think>").trim()
         out=out.replace(Regex("<\\|(?:im_start|im_end|endoftext|fim_suffix)\\|>"),"").trim()
-        if(Regex("(?i)^(first,? i should|wait,? the user|also,? the user|i need to|let me (think|structure)|i should (outline|make sure))").containsMatchIn(out))
+        if(Regex("(?i)\\b(first,? i should|wait,? the user|also,? the user|i need to|let me (think|structure)|i should (outline|make sure)|the user might be)\\b").containsMatchIn(out.take(450)))
             return NO_FINAL
         return out.ifBlank{NO_FINAL}
     }
