@@ -8,10 +8,14 @@ object ChatRoutingPolicy {
         "tension arterielle|hypotension|tachycardie|ecg|"+
         "pharmacologie|medicament|medicaments|antibiotique|antibiotiques|anticoagulant|anticoagulants|"+
         "biochimie|biologie clinique|hematologie|glycemie|diabete|"+
-        "thyroide|meningite|appendicite|peritonite|pancreatite|"+
+        "nfs|numeration formule sanguine|ionogramme|hypoglycemie|hyperglycemie|"+
+        "thyroide|meningite|pneumonie|tuberculose|bronchiolite|pneumothorax|"+
+        "asthme|bronchite|appendicite|peritonite|pancreatite|"+
         "hepatite|renal|renale|rein|syndrome nephrotique|paludisme|"+
         "obstetrique|gynecologie|grossesse|preeclampsie|eclampsie|"+
         "pediatrie|vaccin|tetanus|choc septique|sepsis|"+
+        "anamnese|auscultation|spirometrie|hemoglobine|"+
+        "bilirubine|creatinine|uremie|hypoxemie|hyperkaliemie|"+
         "diagnostic|semiologie|physiopathologie|therapeutique|"+
         "chirurgie|fracture|maladie|maladies|pathologie|pathologies|"+
         "symptome|symptomes|traitement|traitements|cas clinique)\\b")

@@ -54,7 +54,12 @@ object DialoguePlanner {
             return false
         if(followUpPattern.containsMatchIn(q))return true
         if(words.size>25)return false
-        if(deictic && concepts.size<=1 && sentenceOpeners.containsMatchIn(q))return true
+        if(deictic && concepts.size<=1 &&
+            (sentenceOpeners.containsMatchIn(q)||
+             Regex("^(?:et |mais |alors )?(?:ses|son|sa|leurs|leur|ces|ce|cette|cet) "+
+                 "(?:signes|symptomes|complications|causes|traitement|pronostic|"+
+                 "diagnostic|risques|examens|mecanismes|surveillance)\\b").containsMatchIn(q)))
+            return true
         val pureFacet=SearchPolicy.terms(q).isNotEmpty() && concepts.isEmpty()
         return pureFacet && sentenceOpeners.containsMatchIn(q)
     }

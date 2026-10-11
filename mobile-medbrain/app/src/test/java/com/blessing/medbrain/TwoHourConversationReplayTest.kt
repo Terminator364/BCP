@@ -49,7 +49,8 @@ class TwoHourConversationReplayTest {
     val follow=DialoguePlanner.route(q,history).followUp
     val search=ChatRoutingPolicy.searchDocuments(q,"auto",follow)
     val wants=phase==0||phase==5||phase>=16
-    if(search!=wants || (phase==5 && follow))wrong++
+    if(search!=wants || (phase==5 && follow) ||
+       (phase in listOf(1,2,6) && !follow))wrong++
     if(!search && phase==3)assertTrue(store.retrieve("version").isNotEmpty())
     store.addChat("user",q,threadId=thread)
     // Explicit routing ACK, not simulated model-generated medical content.
