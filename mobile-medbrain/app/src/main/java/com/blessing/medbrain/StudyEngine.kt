@@ -26,7 +26,7 @@ object StudyEngine {
         if(passages.isEmpty())return "Aucun passage indexé suffisamment pertinent pour cette notion."
         return "📖 Références immédiatement disponibles — "+topic+"\n"+
             passages.take(4).mapIndexed{index,p->
-                val excerpt=p.text.replace(Regex("\\s+")," ").take(460).trim()
+                val excerpt=if(p.method=="TEXT") p.text.replace(Regex("\\s+")," ").take(460).trim() else "Extraction OCR non vérifiée : consulte la page originale."
                 "\n"+(index+1)+". "+p.title+" · p. "+p.page+" ("+p.method+")\n"+excerpt
             }.joinToString("\n")
     }
