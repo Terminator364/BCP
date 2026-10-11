@@ -19,3 +19,5 @@ Cycle A:
   routing, document isolation, UI/SQLite and prompt-construction contracts.
 
 Cycle B — 14 near-identical topic-switch/context cases and substantive-answer anchoring: medical names override contextual prefixes, but generic treatment/age/example questions remain tied to prior medical subject. Social fast acknowledgements are not used as the last substantive clinical explanation. No response quality claims beyond deterministic simulations.
+
+Cycle D — rolling-context failure (>90 user/assistant turns): restore a single substantive question from earlier SQLite rows via bounded 230-character user-only scan, without loading whole historical answers. Keep max 180 prompt messages and strict thread ID. Last meaningful topic wins (a new general topic replaces earlier cardiology); meta questions and thanks do not displace it. Simulated with a second thread to check cross-thread contamination.

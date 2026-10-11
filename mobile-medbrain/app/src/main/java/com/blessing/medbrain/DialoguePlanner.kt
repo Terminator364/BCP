@@ -101,6 +101,12 @@ object DialoguePlanner {
             t.contains("le moteur neuronal n est pas disponible") ||
             t.contains("batterie faible")
     }
+    /** A substantive topic anchor is distinct from an acknowledgement or a continuation. */
+    fun isTopicBearing(raw:String):Boolean =
+        !isFollowUp(raw) && !ConversationPolicy.isGreeting(raw) &&
+        !ConversationPolicy.isModelQuestion(raw) &&
+        ChatRoutingPolicy.quickPersonalResponse(raw,"",false)==null &&
+        SearchPolicy.terms(raw).isNotEmpty()
     fun route(question:String,history:List<KnowledgeStore.ChatMessage>):Route {
         val follow=isFollowUp(question)
         val previous=history.any { it.kind=="assistant"&&!failedAnswer(it.body) }
@@ -122,16 +128,11 @@ object DialoguePlanner {
             !t.startsWith("je suis medbrain") && !t.startsWith("avec plaisir") &&
                 !t.startsWith("je t ecoute") && !t.startsWith("de rien")
         }?:usableAssistant.firstOrNull())?.body.orEmpty()
-        val priorTopics=prior.filter{it.kind=="user"&&!isFollowUp(it.body)&&
-            SearchPolicy.terms(it.body).isNotEmpty()&&
-            !ConversationPolicy.isModelQuestion(it.body)&&
-            !ConversationPolicy.isGreeting(it.body)&&
-            ChatRoutingPolicy.quickPersonalResponse(it.body,"",false)==null}
-        // For clinical follow-ups, retain the last explicitly named clinical
-        // topic instead of letting "Merci" or an app-version query become the anchor.
-        val topic=(priorTopics.firstOrNull{
-            ChatRoutingPolicy.searchDocuments(it.body,"auto",false)}
-            ?:priorTopics.firstOrNull())?.body.orEmpty()
+        // The last substantive subject wins, whether medical or general.
+        // A newer philosophy/novel topic must never be overwritten by older cardiology.
+        val topic=prior.firstOrNull{
+            it.kind=="user"&&isTopicBearing(it.body)
+        }?.body.orEmpty()
         if(route.followUp){
             return ("Conversation suivie. Ne cherche pas un nouveau sujet documentaire.\n"+
                 "Question antérieure : "+topic.take(125)+"\n"+

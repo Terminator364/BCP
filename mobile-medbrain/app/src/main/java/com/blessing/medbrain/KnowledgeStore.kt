@@ -260,7 +260,35 @@ class KnowledgeStore(ctx:Context):SQLiteOpenHelper(ctx,"medbrain-v1.sqlite",null
             while(c.moveToNext())items.add(ChatMessage(c.getLong(0),c.getString(1),
                 c.getString(2),c.getString(3),c.getLong(4)))
         }
-        return items.asReversed()
+
+        val recent=items.asReversed().toMutableList()
+        if(cap>=12 && recent.size==cap && recent.none{
+                it.kind=="user"&&DialoguePlanner.isTopicBearing(it.body)
+            }){
+            // Read at most 500 SHORT user questions, never full 25k-character replies.
+            // A two-hour session can exceed the rolling window without losing its topic.
+            val cutoff=recent.first().id
+            var earlier:ChatMessage?=null
+            readableDatabase.rawQuery(
+                "SELECT id,substr(body,1,230),created_at FROM chats "+
+                    "WHERE thread_id=? AND kind='user' AND id<? "+
+                    "ORDER BY id DESC LIMIT 500",
+                arrayOf(threadId,cutoff.toString())
+            ).use{c->
+                while(c.moveToNext()){
+                    val body=c.getString(1)
+                    if(DialoguePlanner.isTopicBearing(body)){
+                        earlier=ChatMessage(c.getLong(0),"user",body,"",c.getLong(2))
+                        break
+                    }
+                }
+            }
+            if(earlier!=null){
+                recent.removeAt(0)
+                recent.add(0,requireNotNull(earlier))
+            }
+        }
+        return recent
     }
     fun clearChat(threadId:String="default"){
         writableDatabase.execSQL("DELETE FROM chats WHERE thread_id=?",arrayOf(threadId))
