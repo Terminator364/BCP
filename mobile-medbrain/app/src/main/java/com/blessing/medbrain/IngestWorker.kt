@@ -46,6 +46,11 @@ class IngestWorker(ctx:Context,params:WorkerParameters):CoroutineWorker(ctx,para
             else ingestText(store,record,path)
         } catch(e:Throwable) {
             if(e is kotlinx.coroutines.CancellationException)throw e
+            if(e is OutOfMemoryError){
+                try{store.markState(id,"READING","Mémoire insuffisante; reprise automatique différée")}
+                catch(_:Throwable){}
+                return@withContext Result.retry()
+            }
             store.markState(id,if(e is SecurityException||e is FileNotFoundException) "NEEDS_ACCESS" else "ERROR",e.javaClass.simpleName+": "+(e.message?:""))
             if(e is OutOfMemoryError) return@withContext Result.failure()
             if(e is SecurityException || e is FileNotFoundException) return@withContext Result.failure()
