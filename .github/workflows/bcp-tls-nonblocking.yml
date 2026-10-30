@@ -1,0 +1,23 @@
+name: BCP TLS Accept Nonblocking
+on:
+  push:
+    branches: [feat/universal-remote-transport-20261030]
+    paths:
+      - 'universal-remote/windows/g2_tls_bridge.py'
+      - 'universal-remote/tests/g2_tls_accept_unit_test.py'
+      - '.github/workflows/bcp-tls-nonblocking.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tls-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Compile and test actual server class with stalled first client
+        run: |
+          python -m py_compile universal-remote/windows/g2_tls_bridge.py
+          python -u universal-remote/tests/g2_tls_accept_unit_test.py
