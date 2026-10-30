@@ -295,6 +295,9 @@ class Center:
 
 def main():
     if show_existing_window():return
-    Center().run()
+    app=Center()
+    if "--minimized" in sys.argv[1:]:
+        app.root.after(120,app.root.iconify)
+    app.run()
 
 if __name__=="__main__":main()
