@@ -115,6 +115,8 @@ public final class MainActivity extends Activity {
         String saved=getSharedPreferences(PREFS,MODE_PRIVATE).getString(LAST_SCREEN,"HOME");
         showScreen(saved);
         refreshSetupState();
+        // One automatic secure connection on launch, no Connect button needed.
+        mainHandler.postDelayed(()->connectUniversal(false),900);
         localHint.setText("Réseau du téléphone : "+LocalLinkInspector.summary());
         BCPAutoUpdater.schedule(this);
     }
@@ -168,13 +170,14 @@ public final class MainActivity extends Activity {
         state.addView(status);
         explanation=value(RescueAdvisor.problem("USB_UNAVAILABLE"),14,muted,false);
         state.addView(explanation);
-        primary(state,"Connecter mon PC (Wi-Fi / Tailscale)",()->connectUniversal(false));
-        secondary(state,"Diagnostic G2",()->connectUniversal(true));
-        secondary(state,"Secours USB",()->connectOneTap(false));
+        secondary(state,"Relancer la connexion",()->connectUniversal(false));
         LinearLayout guide=card();
         guide.addView(smallCaps("CONNEXION EN 3 ÉTAPES"));
         guide.addView(value("1. Sur le PC, ouvre BCP - Appairer mon telephone pour obtenir un code de 8 chiffres.\n2. Dans Réglages, saisis-le une seule fois.\n3. Ensuite BCP privilégie le Wi-Fi local, puis Tailscale, avec USB en secours.",14,ink,false));
         secondary(guide,"Ouvrir les réglages réseau Android",this::openUsbSettings);
+        try{
+            if(SecurePairingStore.load(this)!=null)guide.setVisibility(View.GONE);
+        }catch(Exception ignored){}
         LinearLayout network=card();
         network.addView(smallCaps("INDICE RÉSEAU LOCAL"));
         localHint=value("Analyse locale disponible à l'ouverture",13,muted,false);
@@ -204,7 +207,12 @@ public final class MainActivity extends Activity {
         return v;
     }
     private View buildFiles() {
-        ScrollView v=newPage("BCP / G4 WINDOWS", "Mes fichiers Windows", "Lecture sécurisée et créations limitées par une autorisation temporaire Windows.");
+        ScrollView v=newPage("BCP / G4 WINDOWS", "Mes fichiers Windows", "Envoi et consultation sécurisés après l'autorisation unique.");
+        LinearLayout mainFiles=card();
+        mainFiles.addView(smallCaps("MON PC ET MES FICHIERS"));
+        mainFiles.addView(value("Connexion propriétaire automatique ; un seul accord initial sur MBMPC.",14,ink,false));
+        primary(mainFiles,"Reconnaître mon téléphone",()->startActivity(new Intent(this,BCPG4EnrollmentActivity.class)));
+        secondary(mainFiles,"Envoyer un document à MBMPC",()->startActivity(new Intent(this,BCPG4FileTransferActivity.class)));
         LinearLayout windows=card();
         windows.addView(smallCaps("G4 · MON PC WINDOWS"));
         windows.addView(value("Accès par Wi-Fi ou Tailscale, toujours chiffré et authentifié. Les consultations sont libres après appairage ; toute création exige une autorisation Windows temporaire limitée.",13,muted,false));
@@ -221,8 +229,7 @@ public final class MainActivity extends Activity {
         g4Result=value("Sélectionne une opération. La liaison sécurisée sera vérifiée automatiquement.",13,ink,false);
         g4Result.setTextIsSelectable(true);
         windows.addView(g4Result);
-        secondary(windows,"Identité propriétaire G4",()->startActivity(new Intent(this,BCPG4EnrollmentActivity.class)));
-        secondary(windows,"Envoyer fichier vers Windows G4",()->startActivity(new Intent(this,BCPG4FileTransferActivity.class)));
+        windows.setVisibility(View.GONE);
         LinearLayout scoped=card();
         scoped.addView(smallCaps("G4 · AUTORISATION DE SESSION"));
         scoped.addView(value("Une seule confirmation sur MBMPC pour 30 minutes et 20 créations maximum, uniquement dans le dossier choisi. Aucune suppression, écrasement ni commande Windows.",13,muted,false));
@@ -252,7 +259,14 @@ public final class MainActivity extends Activity {
         fileContent.setMinLines(4);
         secondary(actions,"Lire le fichier",this::readFile);
         primary(actions,"Écrire avec confirmation",this::confirmWrite);
-        text("Ce module n'expose pas tous les fichiers du PC : les chemins restent limités à l'espace de test.",12,muted,false);
+        scoped.setVisibility(View.GONE);
+        actions.setVisibility(View.GONE);
+        secondary(mainFiles,"Afficher les outils historiques",()->{
+            int next=windows.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE;
+            windows.setVisibility(next);
+            scoped.setVisibility(next);
+            actions.setVisibility(next);
+        });
         return v;
     }
     private View buildSettings() {
@@ -306,7 +320,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 1.3.0 · G4 sessions autorisées",12,muted,false);
+        text("BCP Universal Remote · Connexion automatique sécurisée",12,muted,false);
         return v;
     }
 
@@ -334,7 +348,7 @@ public final class MainActivity extends Activity {
         try { key=SecurePairingStore.load(this); }catch(Exception ignored){}
         if(key!=null && key.matches("[0-9a-fA-F]{64}")){
             status.setText("Appairage enregistré");
-            explanation.setText("Ton téléphone possède la clé protégée. Appuie sur Connecter mon PC pour vérifier Wi-Fi/Tailscale.");
+            explanation.setText("Appairage mémorisé. La liaison Wi-Fi/Tailscale se vérifie automatiquement.");
         }else{
             status.setText("Appairage initial nécessaire");
             explanation.setText("Sur MBMPC, double-clique « BCP - Appairer mon telephone ». Dans Réglages, entre le code à 8 chiffres affiché. Aucun réglage d'adresse IP n'est nécessaire.");
