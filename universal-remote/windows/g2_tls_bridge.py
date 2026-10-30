@@ -30,6 +30,7 @@ G4_READ={
     "/v1/g4/owner/status":"owner_status",
     "/v1/g4/universal/inventory":"owner_inventory",
     "/v1/g4/device/enroll/request":"device_enroll_request",
+    "/v1/g4/owner/files":"owner_files",
 }
 G4_APPROVED={
     "/v1/g4/changes/prepare":"prepare",
@@ -95,6 +96,23 @@ g4_init_lock = threading.Lock()
 g4_instance = None
 g4_device_registry = None
 g4_device_registry_lock = threading.Lock()
+g4_owner_file_rpc = None
+g4_owner_file_rpc_lock = threading.Lock()
+
+def get_owner_file_rpc():
+    """Only call after TWO request signatures have been verified."""
+    global g4_owner_file_rpc
+    if g4_owner_file_rpc is None:
+        with g4_owner_file_rpc_lock:
+            if g4_owner_file_rpc is None:
+                from g4_owner_file_rpc import OwnerFileRpc
+                from g4_owner_gateway import load_policy
+                registry=get_device_registry()
+                policy=load_policy()
+                g4_owner_file_rpc=OwnerFileRpc(
+                    ROOT/"private-state"/"g4"/"owner-files",policy,registry)
+    return g4_owner_file_rpc
+
 
 def get_device_registry():
     """Single ACL-protected device registry for the whole G2 process."""
@@ -166,7 +184,8 @@ def friendly_handler_factory(bridge,g4_provider=None):
                 nonce=self.headers.get("X-Bridge-Nonce","")
                 try:
                     size=int(self.headers.get("Content-Length","-1"))
-                    limit=80*1024 if path=="/v1/g4/changes/prepare" else 8192
+                    limit=(120*1024 if path=="/v1/g4/owner/files"
+                           else 80*1024 if path=="/v1/g4/changes/prepare" else 8192)
                     if not (1<=size<=limit):
                         return self.response(413,{"ok":False,"reason":"G4_BODY_TOO_LARGE"},nonce)
                     body=self.rfile.read(size)
@@ -177,6 +196,8 @@ def friendly_handler_factory(bridge,g4_provider=None):
                         bridge.record("g4_"+G4_ENDPOINTS[path],"DENIED",nonce[:80])
                         return self.response(401,{"ok":False,"reason":"UNAUTHORIZED"},nonce)
                     payload=json.loads(body.decode("utf8"))
+                    if not isinstance(payload,dict):
+                        raise ValueError("INVALID_JSON_OBJECT")
                     if path=="/v1/g4/device/enroll/request":
                         # Legacy G2 authentication permits only an UNTRUSTED
                         # pending proposal; local Windows approval is mandatory.
@@ -184,7 +205,7 @@ def friendly_handler_factory(bridge,g4_provider=None):
                         value=registry.request_enrollment(
                             payload.get("device_id"),payload.get("device_secret"),
                             payload.get("label"))
-                    elif path=="/v1/g4/universal/inventory":
+                    elif path in ("/v1/g4/universal/inventory","/v1/g4/owner/files"):
                         # A shared G2 key is never sufficient for owner access.
                         from g4_device_identity import IdentityError
                         from g4_owner_gateway import inventory_query
@@ -208,7 +229,14 @@ def friendly_handler_factory(bridge,g4_provider=None):
                         except IdentityError:
                             return self.response(401,{"ok":False,
                                 "reason":"INDIVIDUAL_DEVICE_AUTH_REQUIRED"},nonce)
-                        value=inventory_query(payload,device_id=device)
+                        if path=="/v1/g4/owner/files":
+                            # Entirely separate from the legacy G4 bounded
+                            # permissions. Requires individual device HMAC and
+                            # a durable, locally confirmed owner profile.
+                            value=get_owner_file_rpc().dispatch(
+                                device,payload.get("action"),payload.get("args"))
+                        else:
+                            value=inventory_query(payload,device_id=device)
                     elif path=="/v1/g4/owner/status":
                         from g4_owner_gateway import public_status
                         value=public_status()
@@ -218,6 +246,10 @@ def friendly_handler_factory(bridge,g4_provider=None):
                         value={**value,"phase":"G4_PRODUCTION_LOCAL_WINDOWS_APPROVAL"}
                     bridge.record("g4_"+G4_ENDPOINTS[path],"SUCCESS",nonce)
                     return self.response(200,{"ok":True,"result":value},nonce)
+                except PermissionError:
+                    bridge.record("g4_"+G4_ENDPOINTS[path],"DENIED",nonce[:80])
+                    return self.response(403,{"ok":False,
+                        "reason":"OWNER_DEVICE_PERMISSION_DENIED"},nonce)
                 except (OSError,ValueError,UnicodeError,TypeError) as exc:
                     bridge.record("g4_"+G4_ENDPOINTS[path],"REJECTED",nonce[:80])
                     return self.response(400,{"ok":False,
