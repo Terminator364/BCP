@@ -1,0 +1,39 @@
+name: BCP G2 Fast Recovery Safety Gate
+on:
+  push:
+    branches: [feat/universal-remote-transport-20261030]
+    paths:
+      - 'universal-remote/windows/g2_autostart_fast.py'
+      - '.github/workflows/bcp-g2-fast-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-fast-start:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and public-IP rejection, no production listener
+        shell: pwsh
+        run: |
+          python -m py_compile universal-remote/windows/g2_autostart_fast.py
+          if ($LASTEXITCODE -ne 0) { throw 'Python syntax invalid' }
+          @'
+          import importlib.util
+          from pathlib import Path
+          p=Path("universal-remote/windows/g2_autostart_fast.py")
+          spec=importlib.util.spec_from_file_location("bcp_fast",p)
+          m=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(m)
+          assert m.local_ip("127.0.0.1")
+          assert not m.local_ip("8.8.8.8")
+          assert not m.local_ip("256.256.256.256")
+          assert not m.local_ip("0.0.0.0")
+          assert not m.local_ip("2001:db8::1")
+          print("BCP_FAST_RECOVERY_SECURITY_LAB=PASS")
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Fast launcher security regression' }
