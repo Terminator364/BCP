@@ -92,7 +92,9 @@ class OwnerFileService:
             self._owner(device_id,transfer)
             _,item=self.fileengine._metadata(transfer)
             return {"upload_id":transfer,"state":item["state"],
-                    "offset":item["uploaded"],"path":item["destination"]}
+                    "offset":item["uploaded"],"bytes":item["uploaded"],
+                    "path":item["destination"],
+                    "sha256":item.get("result_sha256") if item["state"]=="COMMITTED" else None}
     def commit(self,device_id,transfer,sha256):
         with self.lock:
             self._owner(device_id,transfer)
