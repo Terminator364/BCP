@@ -20,7 +20,8 @@
     "universal-remote/BCP_G4_DEVICE_IDENTITY_CHECKPOINT_20261030.md",
     "universal-remote/BCP_G4_1_V140_PRODUCTION_HANDOFF_20261030.md",
     "universal-remote/G5_CHATGPT_NATIVE_MCP_ARCHITECTURE_20261030.md",
-    "universal-remote/BCP_G4_1_FILE_RPC_V15_G6_CHECKPOINT_20261030.md"
+    "universal-remote/BCP_G4_1_FILE_RPC_V15_G6_CHECKPOINT_20261030.md",
+    "universal-remote/BCP_URGENT_RECOVERY_20261030.md"
   ],
   "canonical_constraints": {
     "no_restart": true,
@@ -45,22 +46,23 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "LIVE: G2 HTTPS/HMAC + real Samsung v1.4 code18 installed and authenticated phone telemetry 2026-10-30T21:49:26.526731Z (wifi, app visible, update current)",
+    "G2": "INCIDENT ACTIVE: last MBMPC TCP probe 127.0.0.1:8898 returned FALSE after hung backend deployment; automatic recovery attempts not proven. Prior G2 working is HISTORICAL only. Stable Android v1.4 code18 remains published.",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
-    "G4": "LIVE: per-device authenticated owner inventory and owner-file RPC; committed digest readback; 105/105 preflight synthetic + 16/16 G4 production-negative + 12/12 live file denial; no real owner enrolled, no phone positive owner transaction",
+    "G4": "G4 previously live/verified, but current endpoint health UNVERIFIED because G2 local port down. Identity 34/34, inventory17, owner transactions16, RPC13, positive TLS30 pass LOCAL TESTS. New idempotent owner enrollment source not yet verified deployed.",
     "G5": "Local-only idempotency 21/21; native custom MCP plugin not connected; private Secure MCP Tunnel architecture prepared, account/workspace write-access gating; existing Desktop Commander connected",
     "G6": "Deterministic transport policy 19/19 + memory governor 24/24 native RAM sample + durable real process resource-aware 26/26; no physical USB/Bluetooth verified",
     "owner_profile": "NOT_ENROLLED",
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "Verify whether a pending Samsung individual enrollment request exists; never invent an enrollment or local owner confirmation",
-    "Owner action: in Samsung BCP v1.4 Fichiers > Identité propriétaire G4 request six-digit code, on MBMPC open BCP - Profil proprietaire and approve; then test genuine phone-signed G4 inventory",
-    "Validate and package v1.5 Android SAF resumable file upload; repair Gradle dependency resolution safely, keep stable v1.4 untouched until signed upgrade tested",
-    "Continue resource-aware G6 and owner-scoped durable Windows jobs work in independent lanes",
-    "Direct ChatGPT G5 MCP through Secure MCP Tunnel only if account/workspace supports write tools; existing Desktop Commander works as fallback; no public Funnel"
+    "Check pending Remote Desktop Commander writes and device responsiveness without duplicate calls",
+    "Verify fast G2 starter latest file + start local server + test 127.0.0.1:8898 signed TLS/HMAC + Tailscale",
+    "Apply backed-up lightweight autostart wrapper to avoid hanging Get-NetTCPConnection",
+    "Verify new idempotent owner enrollment live; NO bypass of local owner consent",
+    "Only after G2 healthy promote signed v1.5 code19 to stable with rollback, then observe real Samsung update telemetry",
+    "Validate actual one-window UI visible; no desktop duplicate shortcuts"
   ],
-  "stage": "G4 owner-file API + lost-ACK receipt deployed; real Samsung v1.4 (18) installed; awaiting single local owner approval. Android v1.5 file transfer Java PASS, Gradle package blocked. G6 memory/resource tests PASS; G5 native MCP not installed",
+  "stage": "G2 outage unresolved on overloaded MBMPC; one desktop BCP launcher installed; v1.5 signed but unpublished; prioritize stable G2 recovery and authenticated health before Android promotion",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -95,11 +97,22 @@
       "real_samsung_write": "NOT_PROVEN",
       "boundaries": "No unapproved legacy G2 key may write; no user files changed by deployment"
     },
-    "android_v15": "versionCode19 source, Android Java17 compile GitHub run 41135627880 SUCCESS; Gradle APK blocked by upstream kotlin-stdlib-jdk8:1.9.20 dependency fetch after one retry; not signed, published, or installed",
+    "android_v15": "FULL Android CI BUILD SUCCESS run 41140142876; signed locally with legacy cert v1.5 code19, bytes78583 SHA256 d66725f11ebdd86b96b86d6f57834d86c82fe8bcb131d5c8bfd2377d555263bf; stable publisher STAGED but NOT RUN; v1.4 stable18 retained due G2 outage.",
     "file_receipt_upgrade": "G4 live endpoint updated and verified with committed SHA receipt after lost ACK, 105 predeployment assertions + 16/16 owner-negative + 12/12 owner-file-negative; rollback backup %LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_230328; process exit 0",
     "owner_enrollment_pending_count_last_checked": 0,
     "windows_owner_shortcut": "BCP - Profil proprietaire.lnk exists",
     "G6_real_sample": "3738 MiB usable RAM, 437 MiB free; memory guard tests 24/24 PASS, real durable job execution resource-aware 26/26 PASS",
-    "g3_probe": "adb not on PATH, PnP Bluetooth inventory stalled; no proven USB or Bluetooth session"
+    "g3_probe": "adb not on PATH, PnP Bluetooth inventory stalled; no proven USB or Bluetooth session",
+    "desktop_one_button": {
+      "status": "DESKTOP_MIGRATION_DONE",
+      "launcher": "Desktop\\BCP - OUVRIR.lnk",
+      "archive": "Desktop\\_Projets et outils\\BCP - anciens raccourcis",
+      "archived_count": 5,
+      "startup": "Startup\\BCP - Centre de contrôle.lnk",
+      "backup": "%LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\ONE_BUTTON_20261030_234048",
+      "visual_UI_field_proof": "NOT_CONFIRMED",
+      "latest_UI_file_refresh": "PENDING_REMOTE_WRITE"
+    },
+    "g2_recovery": "ACTIVE: last proven G2_8898_LISTENER=False; fast launcher authored, one root copy attempted but startup unverified; two newer root writes pending (IDs in urgent recovery markdown); do not claim resolved."
   }
 }
