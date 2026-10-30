@@ -99,6 +99,26 @@ with tempfile.TemporaryDirectory(prefix="bcp-full-files-") as tmp:
     denied("abort_cannot_continue",lambda:engine.append(pending,0,"YQ=="))
     denied("path_must_be_absolute",lambda:engine.begin("relative.txt"))
     check("server_state_only_test_files",len(list((root/"state/files/uploads").glob("*.json")))>26)
+    # Simulate power loss after atomic rename but before updating the journal.
+    import json
+    previous=root/"state/files/uploads"/(tx+".json")
+    saved=json.loads(previous.read_text("utf8"))
+    saved["state"]="COMMITTING"
+    previous.write_text(json.dumps(saved),encoding="utf8")
+    result=engine.reconcile()
+    check("power_loss_post_rename_reconciled",result["commit_confirmed"]>=1)
+    check("power_loss_did_not_duplicate_data",dst.read_bytes()==replacement)
+    # A suspected pre-rename crash must not replay an unapproved write.
+    crash_dest=second/"simulate-unfinished.txt"
+    crash_id=engine.begin(str(crash_dest))["upload_id"]
+    engine.append(crash_id,0,base64.b64encode(b"unconfirmed").decode())
+    crash_record=root/"state/files/uploads"/(crash_id+".json")
+    crash_data=json.loads(crash_record.read_text("utf8"))
+    crash_data["state"]="COMMITTING"
+    crash_record.write_text(json.dumps(crash_data),encoding="utf8")
+    after=engine.reconcile()
+    check("power_loss_ambiguous_requires_review",after["recovery_required"]>=1)
+    check("power_loss_never_replays_unfinished",not crash_dest.exists())
 print({"schema":"BCP_G4_FULL_FILES_REGRESSION",
        "passed":sum(checks.values()),"checks":checks,
        "PASS":all(checks.values()),"real_user_files_modified":False,
