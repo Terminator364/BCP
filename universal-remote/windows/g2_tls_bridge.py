@@ -53,6 +53,15 @@ class BoundedTLSHTTPServer(ThreadingHTTPServer):
     """
     daemon_threads=True
     request_queue_size=16
+    # Python's default SO_REUSEADDR allows competing 8898 listeners on
+    # Windows. Each retry previously created another live G2 process.
+    allow_reuse_address=False
+    allow_reuse_port=False
+
+    def server_bind(self):
+        if os.name=="nt" and hasattr(socket,"SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+        return super().server_bind()
 
     def __init__(self,address,handler,context):
         self.tls_context=context
@@ -542,7 +551,31 @@ def friendly_handler_factory(bridge,g4_provider=None):
                 "client_app_connected":False})
     return FriendlyHandler
 
+_singleton_handle=None
+
+def acquire_windows_singleton():
+    """Kernel-enforced one G2 server per Windows login session."""
+    global _singleton_handle
+    if os.name!="nt":return True
+    import ctypes
+    from ctypes import wintypes
+    kernel=ctypes.WinDLL("kernel32",use_last_error=True)
+    kernel.CreateMutexW.argtypes=[ctypes.c_void_p,wintypes.BOOL,wintypes.LPCWSTR]
+    kernel.CreateMutexW.restype=wintypes.HANDLE
+    kernel.CloseHandle.argtypes=[wintypes.HANDLE]
+    name="Local\\BCP-Universal-Remote-G2-8898"
+    handle=kernel.CreateMutexW(None,False,name)
+    if not handle:raise OSError(ctypes.get_last_error(),"G2_SINGLETON_CREATE_FAILED")
+    if ctypes.get_last_error()==183:
+        kernel.CloseHandle(handle)
+        return False
+    _singleton_handle=handle
+    return True
+
 def main():
+    if not acquire_windows_singleton():
+        print("G2_ALREADY_RUNNING_MUTEX=true",flush=True)
+        return
     p = argparse.ArgumentParser()
     p.add_argument("--bind", action="append", default=[])
     p.add_argument("--port", type=int, default=PORT)
