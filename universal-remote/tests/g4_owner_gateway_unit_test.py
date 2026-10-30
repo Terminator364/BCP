@@ -33,7 +33,7 @@ try:
         p=trust.OwnerTrust(root/"profiles",key)
         device=hashlib.sha256(("BCP_DEVICE_V1:"+device_id).encode('ascii')).hexdigest()
         gateway.load_policy=lambda:p
-                denied("no_implicit_trust",lambda:gw(
+        denied("no_implicit_trust",lambda:gw(
             {"action":"system.volumes","args":{}}))
         p.enroll_local(device,profile="operator",confirm_local=True)
         volumes=gw({"action":"system.volumes","args":{}})
