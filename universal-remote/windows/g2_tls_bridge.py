@@ -79,6 +79,60 @@ def friendly_handler_factory(bridge):
             from datetime import datetime, timezone
             import json
             request_path = urlsplit(self.path).path[:120]
+            if request_path in ("/updates/stable.json", "/updates/stable.apk"):
+                # Private tailnet only. Recalculate SHA before each served APK.
+                expected_host="mbmpc.taild48ba2.ts.net"
+                if (self.client_address[0] not in ("127.0.0.1","::1") or
+                    self.headers.get("Host","").split(":")[0].lower()!=expected_host):
+                    return self.response(404, {"ok":False,"reason":"NOT_FOUND"})
+                try:
+                    release = json.loads((ROOT/"updates"/"stable.json").read_text("utf-8"))
+                    if (release.get("package")!="com.blessing.rescuebridge" or
+                        release.get("channel")!="stable" or
+                        not isinstance(release.get("versionCode"),int) or
+                        release["versionCode"]<8 or
+                        release.get("url")!="https://mbmpc.taild48ba2.ts.net/updates/stable.apk" or
+                        not isinstance(release.get("size"),int) or
+                        not (20000<release["size"]<30000000) or
+                        not isinstance(release.get("sha256"),str) or
+                        len(release["sha256"])!=64):
+                        raise ValueError("Invalid release manifest")
+                    apk=ROOT/"updates"/"stable.apk"
+                    if apk.stat().st_size!=release["size"]:
+                        raise ValueError("Update size mismatch")
+                    import hashlib
+                    h=hashlib.sha256()
+                    with apk.open("rb") as stream:
+                        for chunk in iter(lambda:stream.read(65536),b""):
+                            h.update(chunk)
+                    if h.hexdigest().lower()!=release["sha256"].lower():
+                        raise ValueError("Update digest mismatch")
+                except (OSError,ValueError,TypeError,KeyError):
+                    return self.response(503, {"ok":False,"reason":"UPDATE_NOT_PUBLISHED"})
+                if request_path=="/updates/stable.json":
+                    # Only current verified release metadata; not stale cached data.
+                    body=json.dumps(release,separators=(",",":")).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type","application/json; charset=utf-8")
+                    self.send_header("Content-Length",str(len(body)))
+                    self.send_header("Cache-Control","no-store")
+                    self.send_header("X-Content-Type-Options","nosniff")
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type","application/vnd.android.package-archive")
+                self.send_header("Content-Length",str(apk.stat().st_size))
+                self.send_header("Cache-Control","no-store")
+                self.send_header("X-Content-Type-Options","nosniff")
+                self.end_headers()
+                try:
+                    with apk.open("rb") as stream:
+                        for chunk in iter(lambda:stream.read(65536),b""):
+                            self.wfile.write(chunk)
+                except (BrokenPipeError,ConnectionResetError):
+                    pass
+                return
             if request_path == "/download/BCP-Universal-G2.apk":
                 # Signed APK only; never expose an arbitrary filesystem path.
                 expected_host = "mbmpc.taild48ba2.ts.net"

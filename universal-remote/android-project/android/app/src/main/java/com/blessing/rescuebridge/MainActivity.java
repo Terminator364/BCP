@@ -42,7 +42,7 @@ public final class MainActivity extends Activity {
     private FrameLayout contentHost;
     private View homeScreen,missionsScreen,filesScreen,settingsScreen;
     private Button[] navButtons;
-    private TextView status, explanation, localHint, lastAction, console;
+    private TextView status, explanation, localHint, lastAction, console, updaterState;
     private EditText host,port,secret,fileName,fileContent;
     private String activeScreen="HOME";
 
@@ -93,16 +93,21 @@ public final class MainActivity extends Activity {
         showScreen(saved);
         refreshSetupState();
         localHint.setText("Réseau du téléphone : "+LocalLinkInspector.summary());
+        BCPAutoUpdater.schedule(this);
     }
 
     @Override protected void onResume() {
         super.onResume();
         visible=true;
+        BCPUpdateReceiver.foreground=this;
+        BCPAutoUpdater.checkForeground(this);
+        mainHandler.postDelayed(()->refreshUpdaterStatus(),2500);
         mainHandler.removeCallbacks(foregroundCheck);
         mainHandler.postDelayed(foregroundCheck,1000);
     }
     @Override protected void onPause() {
         visible=false;
+        if(BCPUpdateReceiver.foreground==this)BCPUpdateReceiver.foreground=null;
         mainHandler.removeCallbacks(foregroundCheck);
         super.onPause();
     }
@@ -202,7 +207,31 @@ public final class MainActivity extends Activity {
         safety.addView(smallCaps("SÉCURITÉ ET LIMITES"));
         safety.addView(value("Version pilote. Le canal HTTP utilise une signature HMAC mais ne chiffre pas les données. Réserve-le au réseau USB privé avec un PC de confiance. N'importe quel réseau Wi-Fi public est exclu.",14,danger,false));
         safety.addView(value("Le câble ne donne pas à ChatGPT l'autorisation d'exécuter des commandes. Les actions restent bornées par l'agent Windows et nécessitent les permissions applicables.",13,muted,false));
-        text("BCP USB Rescue · 0.3.3 pilote · Android 8+ · aucune télémétrie externe ajoutée",12,muted,false);
+        LinearLayout updateCard=card();
+        updateCard.addView(smallCaps("MISES À JOUR AUTOMATIQUES"));
+        updaterState=value(BCPAutoUpdater.status(this),14,ink,false);
+        updateCard.addView(updaterState);
+        updateCard.addView(value("BCP recherche les mises à jour sur un réseau non facturé, vérifie la signature et tente une installation automatique. Android peut exceptionnellement demander ton accord.",12,muted,false));
+        secondary(updateCard,"Vérifier la mise à jour",()->{
+            BCPAutoUpdater.checkManually(this);
+            updaterState.setText("Vérification en cours…");
+            mainHandler.postDelayed(()->refreshUpdaterStatus(),5500);
+        });
+        secondary(updateCard,"Installer si Android le demande",()->{
+            if(android.os.Build.VERSION.SDK_INT>=26 && !getPackageManager().canRequestPackageInstalls()){
+                try{
+                    Intent i=new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                       android.net.Uri.parse("package:"+getPackageName()));
+                    startActivity(i);
+                    updaterState.setText("Autorise BCP dans Android, puis reviens ici.");
+                }catch(Exception e){updaterState.setText("Autorisation requise dans les réglages Android.");}
+                return;
+            }
+            BCPUpdateReceiver.foreground=this;
+            io.execute(()->BCPAutoUpdater.installReady(this));
+            mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
+        });
+        text("BCP Universal Remote · 0.6.0 socle de mise à jour · Android 8+",12,muted,false);
         return v;
     }
 
@@ -459,6 +488,10 @@ public final class MainActivity extends Activity {
                 lastAction.setText("G2 : "+reason);
             });
         });
+    }
+
+    private void refreshUpdaterStatus(){
+        if(updaterState!=null)updaterState.setText(BCPAutoUpdater.status(this));
     }
 
     private void readFile(){execute("/read",args("path",fileName.getText().toString().trim()),false);}
