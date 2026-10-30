@@ -31,9 +31,13 @@ def listener():
 def local_ip(ip):
     try:
         value=ipaddress.ip_address(ip)
-        if value.version!=4 or not (
-                value.is_loopback or value.is_private or
-                value in ipaddress.ip_network("100.64.0.0/10")):
+        permitted=(
+            ipaddress.ip_network("127.0.0.0/8"),
+            ipaddress.ip_network("10.0.0.0/8"),
+            ipaddress.ip_network("172.16.0.0/12"),
+            ipaddress.ip_network("192.168.0.0/16"),
+            ipaddress.ip_network("100.64.0.0/10"))
+        if value.version!=4 or not any(value in net for net in permitted):
             return False
         with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
             s.bind((str(value),0))
