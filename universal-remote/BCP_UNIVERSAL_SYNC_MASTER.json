@@ -51,7 +51,7 @@
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "1. finish Android enrollment UI and verify owner Windows CI, run integrated test",
+    "1. finish Android MainActivity individual device enrollment + signed inventory interface (not committed), run Android and owner CI",
     "2. Windows per-device public-key enrollment with explicit local consent and independent revoke/rotation",
     "3. dual-safe migration: retain legacy G2 heartbeat/update; disallow legacy shared key from authorizing owner-general operations",
     "4. authorized file engine G4 route and end-to-end approval/QA",
@@ -62,13 +62,14 @@
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
-    "branch_source_through": "fafce3b58c17e1f894f3ff57fd706811afa9d235",
+    "branch_source_through": "9fe7fdab5dcd3f72904257a7c02bcc3772f640a9",
     "status": "SOURCE_ONLY_NOT_PRODUCTION",
     "security_device_identity": "29/29 local Windows tests PASS; GitHub Windows CI 41124418894 SUCCESS",
     "android_source": "New Keystore individual credential class and independent HMAC client built in Android CI; no new signed stable published",
     "owner_window": "Local code-confirmation and individual revocation UI staged; no real approval",
     "active_phone": "Signed v1.3.0 versionCode17; legacy G2 pairing still preserved",
-    "blocked": "Android main-screen enrollment UI not integrated; full isolated end-to-end staged G4.1 test not yet complete; wait for actual CI owner suite result",
-    "avoid": "Do not call any source-only code production; do not enroll the shared old G2 key"
+    "blocked": "Android MainActivity integration has not been committed; attempted editing was blocked by tool safeguards. No deployment/publishing/owner activation. Resume with review of Android app UI integration and end-to-end staging.",
+    "avoid": "Do not call any source-only code production; do not enroll the shared old G2 key",
+    "owner_core_ci": "SUCCESS GitHub Actions run 41124899649"
   }
 }
