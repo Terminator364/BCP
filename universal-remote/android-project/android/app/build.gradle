@@ -6,8 +6,8 @@ android {
         applicationId 'com.blessing.rescuebridge'
         minSdk 26
         targetSdk 34
-        versionCode 17
-        versionName '1.3.0-g4-scoped-session'
+        versionCode 18
+        versionName '1.4.0-g4-individual-identity'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
