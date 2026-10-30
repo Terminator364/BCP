@@ -62,13 +62,19 @@ def status_snapshot():
             "enrolled":enrolled,"registry_problem":registry_problem}
 
 def _start_existing_service():
-    """Attempt existing signed/local autostart, no new service or UAC."""
+    """Prefer bounded socket-based starter, no slow WMI/NetTCPConnection."""
+    flags=getattr(subprocess,"CREATE_NO_WINDOW",0)
+    fast=ROOT/"g2_autostart_fast.py"
+    if fast.is_file():
+        subprocess.Popen([sys.executable,str(fast)],cwd=str(ROOT),
+            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,creationflags=flags)
+        return True
     script=ROOT/"g2_autostart.ps1"
     if not script.is_file():return False
-    flags=getattr(subprocess,"CREATE_NO_WINDOW",0)
     subprocess.Popen(["powershell.exe","-NoProfile","-NonInteractive",
-      "-ExecutionPolicy","Bypass","-File",str(script)],
-      cwd=str(ROOT),stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
+      "-ExecutionPolicy","Bypass","-File",str(script)],cwd=str(ROOT),
+      stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,
       stderr=subprocess.DEVNULL,creationflags=flags)
     return True
 
