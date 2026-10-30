@@ -156,6 +156,46 @@ class FileTransactions:
             return {"status":"COMMITTED","path":str(dest),
                     "bytes":m["uploaded"],"sha256":m["result_sha256"],
                     "recoverable_original":bool(backup)}
+    def reconcile(self):
+        """Reconcile journal after power loss without replaying any write.
+
+        Only confirms a completed atomic rename when destination digest matches
+        and stage is absent. Ambiguous states require manual recovery.
+        """
+        counts={"receiving_resumable":0,"commit_confirmed":0,
+                "recovery_required":0,"unchanged":0}
+        with self.lock:
+            for journal in self.tasks.glob("*.json"):
+                try:
+                    m=json.loads(journal.read_text("utf8"))
+                    if m.get("id")!=journal.stem or not ID.fullmatch(journal.stem):
+                        continue
+                    stage=Path(m["stage"])
+                    dest=_path(m["destination"])
+                    state=m.get("state")
+                    if state=="RECEIVING":
+                        if stage.is_file() and stage.stat().st_size==m["uploaded"]:
+                            counts["receiving_resumable"]+=1
+                            continue
+                        m["state"]="RECOVERY_REQUIRED"
+                        _atom(journal,m)
+                        counts["recovery_required"]+=1
+                    elif state=="COMMITTING":
+                        if (not stage.exists() and dest.is_file() and
+                            digest(dest)==m.get("result_sha256")):
+                            m["state"]="COMMITTED"
+                            _atom(journal,m)
+                            counts["commit_confirmed"]+=1
+                        else:
+                            m["state"]="RECOVERY_REQUIRED"
+                            _atom(journal,m)
+                            counts["recovery_required"]+=1
+                    else:
+                        counts["unchanged"]+=1
+                except (OSError,ValueError,KeyError,TypeError):
+                    counts["recovery_required"]+=1
+        return counts
+
     def abort(self,ident):
         with self.lock:
             file,m=self._metadata(ident)
