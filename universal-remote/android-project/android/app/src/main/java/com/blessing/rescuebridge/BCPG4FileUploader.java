@@ -71,10 +71,10 @@ public final class BCPG4FileUploader {
             throw err;
         }
     }
-    private static int readChunk(InputStream in,byte[] buffer) throws IOException {
+    private static int readChunk(InputStream in,byte[] buffer,int limit) throws IOException {
         int filled=0;
-        while(filled<buffer.length){
-            int n=in.read(buffer,filled,buffer.length-filled);
+        while(filled<limit){
+            int n=in.read(buffer,filled,limit-filled);
             if(n<0)break;
             if(n>0)filled+=n;
         }
@@ -146,34 +146,39 @@ public final class BCPG4FileUploader {
         int failures=0;
         byte[] buffer=new byte[CHUNK];
         if(progress!=null)progress.onProgress(offset,fp.size);
-        while(offset<fp.size){
-            int n;
-            try(InputStream in=seekSource(ctx,source,offset)){
-                n=readChunk(in,buffer);
+        // Keep one stream open during healthy transfers. Re-open and seek
+        // only after an actual network failure: O(n) rather than O(n²)
+        // source reads, important for multi-gigabyte files and mobile power.
+        InputStream current=seekSource(ctx,source,offset);
+        try{
+            while(offset<fp.size){
+                int n=readChunk(current,buffer,(int)Math.min(CHUNK,fp.size-offset));
+                if(n<=0)throw new IOException("SOURCE_CHANGED_WHILE_UPLOADING");
+                byte[] chunk=Arrays.copyOf(buffer,n);
+                String chunkSha=hex(MessageDigest.getInstance("SHA-256").digest(chunk));
+                JSONObject args=new JSONObject()
+                    .put("upload_id",uploadId).put("offset",offset)
+                    .put("data_base64",Base64.encodeToString(chunk,Base64.NO_WRAP))
+                    .put("chunk_sha256",chunkSha);
+                try{
+                    JSONObject ack=BCPG4DeviceEnrollment.ownerFiles(ctx,"append",args);
+                    long next=ack.getLong("next_offset");
+                    if(next!=offset+n)
+                        throw new SecurityException("UPLOAD_ACK_OFFSET_INVALID");
+                    offset=next;
+                    failures=0;
+                    if(progress!=null)progress.onProgress(offset,fp.size);
+                }catch(Exception err){
+                    failures++;
+                    if(failures>3)throw err;
+                    // Server may have saved the chunk before losing its reply.
+                    // Read authoritative offset and never replay blindly.
+                    offset=confirmedOffset(ctx,uploadId,fp.size);
+                    current.close();
+                    current=seekSource(ctx,source,offset);
+                }
             }
-            if(n<=0)throw new IOException("SOURCE_CHANGED_WHILE_UPLOADING");
-            byte[] chunk=Arrays.copyOf(buffer,n);
-            String chunkSha=hex(MessageDigest.getInstance("SHA-256").digest(chunk));
-            JSONObject args=new JSONObject()
-                .put("upload_id",uploadId).put("offset",offset)
-                .put("data_base64",Base64.encodeToString(chunk,Base64.NO_WRAP))
-                .put("chunk_sha256",chunkSha);
-            try{
-                JSONObject ack=BCPG4DeviceEnrollment.ownerFiles(ctx,"append",args);
-                long next=ack.getLong("next_offset");
-                if(next!=offset+n)
-                    throw new SecurityException("UPLOAD_ACK_OFFSET_INVALID");
-                offset=next;
-                failures=0;
-                if(progress!=null)progress.onProgress(offset,fp.size);
-            }catch(Exception err){
-                failures++;
-                if(failures>3)throw err;
-                // Server may have saved the chunk before losing its reply.
-                // Read authoritative offset and never replay blindly.
-                offset=confirmedOffset(ctx,uploadId,fp.size);
-            }
-        }
+        }finally{current.close();}
         JSONObject done=BCPG4DeviceEnrollment.ownerFiles(ctx,"commit",
                 new JSONObject().put("upload_id",uploadId).put("sha256",fp.sha));
         if(!"COMMITTED".equals(done.getString("status")) ||
