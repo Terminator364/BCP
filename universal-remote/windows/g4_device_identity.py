@@ -133,9 +133,24 @@ class DeviceRegistry:
         with self.lock:
             self._prune_pending(now)
             if self._file(self.enrolled,device_id).exists():
-                raise IdentityError("DEVICE_ALREADY_REGISTERED")
+                active=self._read(self._file(self.enrolled,device_id))
+                if active.get("revoked") is False and hmac.compare_digest(
+                        active["secret"],device_secret):
+                    return {"device_id":device_id,"label":active["label"],
+                            "status":"ALREADY_ENROLLED","expires":None}
+                raise IdentityError("DEVICE_ALREADY_REGISTERED_OR_REVOKED")
             pending=self._file(self.pending,device_id)
-            if pending.exists():raise IdentityError("ENROLLMENT_ALREADY_PENDING")
+            if pending.exists():
+                existing=self._read(pending)
+                if (existing["expires"]>=now and
+                    hmac.compare_digest(existing["secret"],device_secret)):
+                    # Repeat request from the SAME handset: no duplicate
+                    # error and no extension of the approval lifetime.
+                    return {"device_id":device_id,"label":existing["label"],
+                            "verification_code":_code(device_id,device_secret),
+                            "status":"PENDING_WINDOWS_CONFIRMATION",
+                            "expires":existing["expires"]}
+                raise IdentityError("ENROLLMENT_CONFLICT")
             if len(list(self.pending.glob("*.json")))>=MAX_PENDING:
                 raise IdentityError("TOO_MANY_PENDING_ENROLLMENTS")
             item={"schema":"BCP_DEVICE_IDENTITY_V1","device_id":device_id,
@@ -164,6 +179,15 @@ class DeviceRegistry:
                             "expires":item["expires"]})
                 except (IdentityError,KeyError,ValueError):pass
             return sorted(result,key=lambda x:x["requested"])
+
+    def pending_code_local(self,device_id,now=None):
+        """Local Windows GUI ONLY. Display alongside phone code for
+        single affirmative click; never available from HTTP."""
+        now=int(time.time() if now is None else now)
+        with self.lock:
+            entry=self._read(self._file(self.pending,device_id))
+            if entry["expires"]<now:raise IdentityError("ENROLLMENT_EXPIRED")
+            return _code(device_id,entry["secret"])
 
     def approve_local(self,device_id,typed_code,local_user_confirmed=False,now=None):
         if local_user_confirmed is not True:
