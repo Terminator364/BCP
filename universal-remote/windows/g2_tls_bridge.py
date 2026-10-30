@@ -29,6 +29,7 @@ G4_READ={
     "/v1/g4/audit":"audit",
     "/v1/g4/owner/status":"owner_status",
     "/v1/g4/universal/inventory":"owner_inventory",
+    "/v1/g4/device/enroll/request":"device_enroll_request",
 }
 G4_APPROVED={
     "/v1/g4/changes/prepare":"prepare",
@@ -147,7 +148,35 @@ def friendly_handler_factory(bridge,g4_provider=None):
                         bridge.record("g4_"+G4_ENDPOINTS[path],"DENIED",nonce[:80])
                         return self.response(401,{"ok":False,"reason":"UNAUTHORIZED"},nonce)
                     payload=json.loads(body.decode("utf8"))
-                    value=g4_provider().operate(G4_ENDPOINTS[path],payload)
+                    if path=="/v1/g4/device/enroll/request":
+                        # Legacy G2 authentication permits only an UNTRUSTED
+                        # pending proposal; local Windows approval is mandatory.
+                        from g4_device_identity import DeviceRegistry
+                        registry=DeviceRegistry(ROOT/"private-state"/"g4"/"device-registry")
+                        value=registry.request_enrollment(
+                            payload.get("device_id"),payload.get("device_secret"),
+                            payload.get("label"))
+                    elif path=="/v1/g4/universal/inventory":
+                        # A shared G2 key is never sufficient for owner access.
+                        from g4_device_identity import DeviceRegistry,IdentityError
+                        from g4_owner_gateway import inventory_query
+                        registry=DeviceRegistry(ROOT/"private-state"/"g4"/"device-registry")
+                        try:
+                            device=registry.verify_request(
+                                self.headers.get("X-BCP-Device",""),
+                                "POST",path,
+                                self.headers.get("X-BCP-Device-Time",""),
+                                self.headers.get("X-BCP-Device-Nonce",""),
+                                body,self.headers.get("X-BCP-Device-Signature",""))
+                        except IdentityError:
+                            return self.response(401,{"ok":False,
+                                "reason":"INDIVIDUAL_DEVICE_AUTH_REQUIRED"},nonce)
+                        value=inventory_query(payload,device_id=device)
+                    elif path=="/v1/g4/owner/status":
+                        from g4_owner_gateway import public_status
+                        value=public_status()
+                    else:
+                        value=g4_provider().operate(G4_ENDPOINTS[path],payload)
                     if path=="/v1/g4/capabilities":
                         value={**value,"phase":"G4_PRODUCTION_LOCAL_WINDOWS_APPROVAL"}
                     bridge.record("g4_"+G4_ENDPOINTS[path],"SUCCESS",nonce)
