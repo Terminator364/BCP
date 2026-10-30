@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox
-from g4_agent import PENDING, APPROVAL_KEY, approval_seal, json_atomic, spec_fingerprint
+from g4_agent import PENDING, APPROVAL_KEY, G4Bridge, approval_seal, json_atomic, spec_fingerprint
 
 def pending():
     result=[]
@@ -69,6 +69,8 @@ def main():
             spec=item["spec"]
             label=f'{item["kind"]}  |  {str(spec.get("path") or spec.get("exe") or item["id"])[:105]}'
             tickets.insert("end",label)
+        if state["items"]:
+            tickets.selection_set(0)
         select()
     def decide(approve):
         selected=tickets.curselection()
@@ -98,9 +100,16 @@ def main():
                 current["approved_at"]=None
                 current.pop("approval_seal",None)
             json_atomic(file,current)
-            messagebox.showinfo("BCP","Demande "+("approuvée" if approve else "refusée")+
-                         ". L'agent G4 peut maintenant la traiter selon ses règles.",
-                         parent=root)
+            if approve:
+                # The confirmed, locally sealed ticket is executed once by G4
+                # under the current Windows account (never by the browser).
+                outcome=G4Bridge().commit({"ticket":ticket})
+                if outcome["status"]=="DONE":
+                    messagebox.showinfo("BCP","Action Windows exécutée et journalisée.\nTicket : "+ticket,parent=root)
+                else:
+                    messagebox.showerror("BCP","L'action a échoué : "+str(outcome.get("result",{}))[:500],parent=root)
+            else:
+                messagebox.showinfo("BCP","Demande refusée : aucune action exécutée.",parent=root)
         except (OSError,ValueError,KeyError,TypeError) as e:
             messagebox.showerror("BCP",str(e),parent=root)
         refresh()
@@ -108,7 +117,7 @@ def main():
     buttons.pack(fill="x",padx=16,pady=(0,15))
     ttk.Button(buttons,text="Actualiser",command=refresh).pack(side="left")
     ttk.Button(buttons,text="Refuser",command=lambda:decide(False)).pack(side="right",padx=(6,0))
-    ttk.Button(buttons,text="Approuver l'action sélectionnée",command=lambda:decide(True)).pack(side="right")
+    ttk.Button(buttons,text="Approuver et exécuter",command=lambda:decide(True)).pack(side="right")
     refresh()
     root.mainloop()
 
