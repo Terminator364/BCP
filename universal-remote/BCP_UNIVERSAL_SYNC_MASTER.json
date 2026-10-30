@@ -46,7 +46,7 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "INCIDENT ACTIVE: last MBMPC TCP probe 127.0.0.1:8898 returned FALSE after hung backend deployment; automatic recovery attempts not proven. Prior G2 working is HISTORICAL only. Stable Android v1.4 code18 remains published.",
+    "G2": "PARTIAL RECOVERY: real loopback TCP 8898 LIVE (BCP_G2_ALIVE=True; fast starter reported ALREADY_RUNNING); authenticated full G4 production gate TIMED OUT on /v1/g4/files/list due Windows PC slow, so stable G2 authenticated health NOT confirmed; signed Android stable v1.4 code18 remains published",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
     "G4": "G4 previously live/verified, but current endpoint health UNVERIFIED because G2 local port down. Identity 34/34, inventory17, owner transactions16, RPC13, positive TLS30 pass LOCAL TESTS. New idempotent owner enrollment source not yet verified deployed.",
     "G5": "Local-only idempotency 21/21; native custom MCP plugin not connected; private Secure MCP Tunnel architecture prepared, account/workspace write-access gating; existing Desktop Commander connected",
@@ -62,7 +62,7 @@
     "Only after G2 healthy promote signed v1.5 code19 to stable with rollback, then observe real Samsung update telemetry",
     "Validate actual one-window UI visible; no desktop duplicate shortcuts"
   ],
-  "stage": "G2 outage unresolved on overloaded MBMPC; one desktop BCP launcher installed; v1.5 signed but unpublished; prioritize stable G2 recovery and authenticated health before Android promotion",
+  "stage": "BCP Desktop one launcher installed, owner enroll source corrected, Android v1.5 signed but withheld; G2 loopback live yet full secure API health not validated under PC RAM load",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -113,6 +113,10 @@
       "visual_UI_field_proof": "NOT_CONFIRMED",
       "latest_UI_file_refresh": "PENDING_REMOTE_WRITE"
     },
-    "g2_recovery": "ACTIVE: last proven G2_8898_LISTENER=False; fast launcher authored, one root copy attempted but startup unverified; two newer root writes pending (IDs in urgent recovery markdown); do not claim resolved."
+    "g2_recovery": "Loopback recovered; official authenticated G4 negative gate times out on file list; G2 signed Tailscale test independently started pending. GUI code and fast starter root write confirmed completed; lightweight PS wrapper installation started and output pending. v1.5 signed still NOT published.",
+    "pending_processes": [
+      "Remote PowerShell fast wrapper install session 13172 output pending",
+      "G2 signed TLS serve verification session 15736 output pending"
+    ]
   }
 }
