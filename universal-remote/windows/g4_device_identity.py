@@ -9,6 +9,7 @@ call approve_local(). No legacy shared pairing token is a device identity.
 """
 from __future__ import annotations
 import hashlib
+from contextlib import contextmanager
 import hmac
 import json
 import os
@@ -88,8 +89,17 @@ class DeviceRegistry:
                        " PRIMARY KEY(device,nonce))")
         _private_file(self.dbpath)
 
+    @contextmanager
     def _db(self):
-        return sqlite3.connect(self.dbpath,timeout=12)
+        db=sqlite3.connect(self.dbpath,timeout=12)
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
     def _file(self,folder,device_id):
         return folder/(_check_device(device_id)+".json")
