@@ -42,7 +42,16 @@ public final class MainActivity extends Activity {
     private FrameLayout contentHost;
     private View homeScreen,missionsScreen,filesScreen,settingsScreen;
     private Button[] navButtons;
-    private TextView status, explanation, localHint, lastAction, console, updaterState, g4Result, g4SessionInfo;
+    private TextView status, explanation, localHint, lastAction, console, updaterState, g4Result, g4SessionInfo, ownerAutoState;
+    private volatile boolean ownerBusy=false;
+    private volatile boolean ownerApproved=false;
+    private volatile boolean ownerRequestSent=false;
+    private final Runnable ownerAutoPoll=new Runnable(){
+        @Override public void run(){
+            if(visible && !ownerApproved)autoCheckOwner();
+            if(visible && !ownerApproved)mainHandler.postDelayed(this,12000);
+        }
+    };
     private EditText host,port,secret,fileName,fileContent,pairPin,g4WindowsPath,g4ScopeRoot,g4NewPath,g4NewText;
     private String g4PendingTicket="";
     private boolean g4ApprovalPolling=false;
@@ -132,6 +141,8 @@ public final class MainActivity extends Activity {
         mainHandler.postDelayed(()->refreshUpdaterStatus(),2500);
         mainHandler.removeCallbacks(foregroundCheck);
         mainHandler.postDelayed(foregroundCheck,1000);
+        mainHandler.removeCallbacks(ownerAutoPoll);
+        mainHandler.postDelayed(ownerAutoPoll,2200);
         mainHandler.removeCallbacks(adaptiveUpdatePulse);
         mainHandler.postDelayed(adaptiveUpdatePulse,1500);
     }
@@ -139,6 +150,7 @@ public final class MainActivity extends Activity {
         visible=false;
         if(BCPUpdateReceiver.foreground==this)BCPUpdateReceiver.foreground=null;
         mainHandler.removeCallbacks(foregroundCheck);
+        mainHandler.removeCallbacks(ownerAutoPoll);
         mainHandler.removeCallbacks(adaptiveUpdatePulse);
         super.onPause();
     }
@@ -170,6 +182,9 @@ public final class MainActivity extends Activity {
         state.addView(status);
         explanation=value(RescueAdvisor.problem("USB_UNAVAILABLE"),14,muted,false);
         state.addView(explanation);
+        ownerAutoState=value("Reconnaissance propriétaire automatique en cours…",13,accent,true);
+        ownerAutoState.setTextIsSelectable(true);
+        state.addView(ownerAutoState);
         secondary(state,"Relancer la connexion",()->connectUniversal(false));
         LinearLayout guide=card();
         guide.addView(smallCaps("CONNEXION EN 3 ÉTAPES"));
@@ -342,6 +357,37 @@ public final class MainActivity extends Activity {
         getSharedPreferences(PREFS,MODE_PRIVATE).edit().putString(LAST_SCREEN,screen).apply();
     }
     private boolean isConfigured(){return host!=null && secret!=null && BridgeClient.isPrivateIpv4(host.getText().toString().trim()) && secret.getText().toString().trim().matches("[0-9a-fA-F]{64}");}
+    private void autoCheckOwner(){
+        if(ownerBusy||ownerApproved||ownerAutoState==null||!wifiInterfacePresent())return;
+        String paired=null;
+        try{paired=SecurePairingStore.load(this);}catch(Exception ignored){}
+        if(paired==null||!paired.matches("[0-9a-fA-F]{64}"))return;
+        ownerBusy=true;
+        io.execute(()->{
+            try{
+                int drives=BCPG4DeviceEnrollment.checkOwnedWindowsDrives(this);
+                ownerApproved=true;
+                runOnUiThread(()->ownerAutoState.setText(
+                    "✓ Propriétaire reconnu automatiquement · "+drives+" lecteurs Windows"));
+            }catch(Exception unapproved){
+                if(!ownerRequestSent){
+                    try{
+                        String code=BCPG4DeviceEnrollment.request(this);
+                        ownerRequestSent=true;
+                        final String message="ALREADY_ENROLLED".equals(code)
+                            ?"Identité reconnue · validation du profil Windows en attente"
+                            :"Autorisation unique : vérifie le code "+code+
+                             " dans le Centre de contrôle BCP sur MBMPC";
+                        runOnUiThread(()->ownerAutoState.setText(message));
+                    }catch(Exception err){
+                        runOnUiThread(()->ownerAutoState.setText(
+                            "BCP attend la liaison sécurisée ; nouvel essai automatique."));
+                    }
+                }
+            }finally{ownerBusy=false;}
+        });
+    }
+
     private void refreshSetupState(){
         // G2 is paired by Android Keystore, not by the legacy USB host textbox.
         String key="";
