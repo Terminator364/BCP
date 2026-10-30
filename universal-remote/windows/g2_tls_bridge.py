@@ -28,6 +28,15 @@ G4_READ={
     "/v1/g4/files/read":"read",
     "/v1/g4/audit":"audit",
 }
+G4_APPROVED={
+    "/v1/g4/changes/prepare":"prepare",
+    "/v1/g4/changes/status":"ticket_status",
+    "/v1/g4/changes/commit":"commit",
+    "/v1/g4/session/use":"session_use",
+    "/v1/g4/session/status":"session_status",
+    "/v1/g4/session/revoke":"session_revoke",
+}
+G4_ENDPOINTS={**G4_READ,**G4_APPROVED}
 
 PORT = 8898
 OPENSSL = Path(r"C:\Program Files\Git\usr\bin\openssl.exe")
@@ -98,26 +107,29 @@ def friendly_handler_factory(bridge,g4_provider=None):
         def do_POST(self):
             from urllib.parse import urlsplit
             path=urlsplit(self.path).path
-            if path in G4_READ and g4_provider is not None:
+            if path in G4_ENDPOINTS and g4_provider is not None:
                 import json
                 nonce=self.headers.get("X-Bridge-Nonce","")
                 try:
                     size=int(self.headers.get("Content-Length","-1"))
-                    if not (1<=size<=8192):
+                    limit=80*1024 if path=="/v1/g4/changes/prepare" else 8192
+                    if not (1<=size<=limit):
                         return self.response(413,{"ok":False,"reason":"G4_BODY_TOO_LARGE"},nonce)
                     body=self.rfile.read(size)
                     auth_error=bridge.authenticate("POST",path,
                         self.headers.get("X-Bridge-Time"),nonce,
                         self.headers.get("X-Bridge-Signature",""),body)
                     if auth_error:
-                        bridge.record("g4_"+G4_READ[path],"DENIED",nonce[:80])
+                        bridge.record("g4_"+G4_ENDPOINTS[path],"DENIED",nonce[:80])
                         return self.response(401,{"ok":False,"reason":"UNAUTHORIZED"},nonce)
                     payload=json.loads(body.decode("utf8"))
-                    value=g4_provider().operate(G4_READ[path],payload)
-                    bridge.record("g4_"+G4_READ[path],"SUCCESS",nonce)
+                    value=g4_provider().operate(G4_ENDPOINTS[path],payload)
+                    if path=="/v1/g4/capabilities":
+                        value={**value,"phase":"G4_PRODUCTION_LOCAL_WINDOWS_APPROVAL"}
+                    bridge.record("g4_"+G4_ENDPOINTS[path],"SUCCESS",nonce)
                     return self.response(200,{"ok":True,"result":value},nonce)
                 except (OSError,ValueError,UnicodeError,TypeError) as exc:
-                    bridge.record("g4_"+G4_READ[path],"REJECTED",nonce[:80])
+                    bridge.record("g4_"+G4_ENDPOINTS[path],"REJECTED",nonce[:80])
                     return self.response(400,{"ok":False,
                         "reason":str(exc)[:100] if isinstance(exc,ValueError)
                         else type(exc).__name__},nonce)
@@ -382,7 +394,7 @@ def main():
     print("G2_TLS_READY=true", flush=True)
     print("G2_SHA256_FINGERPRINT=" + fingerprint, flush=True)
     print("G2_BINDINGS=" + ",".join(f"{ip}:{args.port}" for ip in binds), flush=True)
-    print("G2_CAPABILITIES=G2_READONLY_PLUS_G4_SYSTEM_FILES_PROCESSES_READONLY", flush=True)
+    print("G2_CAPABILITIES=G4_AUTHENTICATED_READ_AND_LOCAL_WINDOWS_APPROVED_CHANGES", flush=True)
     try:
         threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in servers]
         for t in threads: t.start()

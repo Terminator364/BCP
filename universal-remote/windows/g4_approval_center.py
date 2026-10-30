@@ -7,7 +7,8 @@ import time
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox
-from g4_agent import PENDING, APPROVAL_KEY, G4Bridge, approval_seal, json_atomic, spec_fingerprint
+from g4_agent import PENDING, GRANTS, APPROVAL_KEY, G4Bridge, approval_seal, json_atomic, spec_fingerprint
+import g4_scoped_sessions as sessions
 
 def pending():
     result=[]
@@ -29,6 +30,14 @@ def summary(item):
         "TICKET : "+str(item["id"]),
         "EXPIRATION : "+time.strftime("%H:%M:%S",time.localtime(item["expires"])),
         "ACTION : "+str(spec.get("path") or spec.get("exe") or "(unknown)")]
+    if item["kind"]=="grant_session":
+        lines+=["DOSSIER AUTORISÉ : "+spec["root"],
+                "ACTIONS : "+", ".join(spec["actions"]),
+                "DURÉE : "+str(spec["duration_seconds"]//60)+" minutes",
+                "LIMITE : "+str(spec["max_operations"])+" opérations",
+                "BUDGET D'ÉCRITURE : "+str(spec["max_total_bytes"])+" octets",
+                "AUCUNE SUPPRESSION, COMMANDE, INSTALLATION OU MODIFICATION EXISTANTE.",
+                "CE DROIT PEUT ÊTRE RÉVOQUÉ."]
     if item["kind"]=="run":
         lines+=["ARGUMENTS : "+json.dumps(spec.get("args",[]),ensure_ascii=False)]
     if item["kind"]=="write_text":
@@ -40,7 +49,7 @@ def summary(item):
 def main():
     root=tk.Tk()
     root.title("BCP G4 — Approbation des opérations Windows")
-    root.geometry("810x510")
+    root.geometry("840x640")
     root.minsize(630,370)
     root.configure(bg="#f5f6fa")
     ttk.Label(root,text="Autorisations locales Windows — G4",
@@ -53,7 +62,10 @@ def main():
     details=tk.Text(frame,wrap="word",height=11,font=("Consolas",10))
     details.pack(fill="both",expand=True)
     details.config(state="disabled")
-    state={"items":[]}
+    ttk.Label(root,text="Autorisations temporaires actives (révocables)",font=("Segoe UI",10,"bold")).pack(anchor="w",padx=16)
+    grant_list=tk.Listbox(root,height=4,exportselection=False)
+    grant_list.pack(fill="x",padx=16,pady=(3,5))
+    state={"items":[],"grants":[]}
     def select(event=None):
         pos=tickets.curselection()
         details.config(state="normal")
@@ -72,6 +84,37 @@ def main():
         if state["items"]:
             tickets.selection_set(0)
         select()
+        state["grants"]=[]
+        grant_list.delete(0,"end")
+        if GRANTS.exists() and APPROVAL_KEY.is_file():
+            key=APPROVAL_KEY.read_bytes()
+            for file in sorted(GRANTS.glob("*.json"),key=lambda x:x.stat().st_mtime,reverse=True)[:100]:
+                try:
+                    info=sessions.status(file.stem,key,GRANTS)
+                    if info["state"]!="ACTIVE" or info["expired"]:
+                        continue
+                    state["grants"].append(info)
+                    exp=time.strftime("%H:%M:%S",time.localtime(info["expires"]))
+                    grant_list.insert("end",
+                         exp+" | "+str(info["operations_left"])+" restantes | "+info["root"])
+                except (ValueError,OSError,KeyError,TypeError):
+                    continue
+    def revoke_grant():
+        positions=grant_list.curselection()
+        if not positions or positions[0]>=len(state["grants"]):
+            messagebox.showinfo("BCP","Sélectionne une autorisation temporaire.",parent=root)
+            return
+        info=state["grants"][positions[0]]
+        if not messagebox.askyesno("Révoquer l'accès",
+                 "Révoquer maintenant cette autorisation ?\n"+info["root"],
+                 parent=root,default="no"):
+            return
+        try:
+            sessions.revoke(info["grant_id"],APPROVAL_KEY.read_bytes(),GRANTS,json_atomic)
+            messagebox.showinfo("BCP","Autorisation révoquée immédiatement.",parent=root)
+        except (OSError,ValueError,KeyError) as e:
+            messagebox.showerror("BCP","Révocation impossible : "+str(e),parent=root)
+        refresh()
     def decide(approve):
         selected=tickets.curselection()
         if not selected or selected[0]>=len(state["items"]):
@@ -116,6 +159,8 @@ def main():
     buttons=ttk.Frame(root)
     buttons.pack(fill="x",padx=16,pady=(0,15))
     ttk.Button(buttons,text="Actualiser",command=refresh).pack(side="left")
+    ttk.Button(buttons,text="Révoquer une autorisation temporaire",
+               command=revoke_grant).pack(side="left",padx=(10,0))
     ttk.Button(buttons,text="Refuser",command=lambda:decide(False)).pack(side="right",padx=(6,0))
     ttk.Button(buttons,text="Approuver et exécuter",command=lambda:decide(True)).pack(side="right")
     refresh()

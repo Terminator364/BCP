@@ -28,6 +28,7 @@ ROOT=Path(os.environ["LOCALAPPDATA"])/"BCP-Universal-Remote"
 LEGACY=Path(os.environ["LOCALAPPDATA"])/"BCP-USB-Rescue"
 sys.path.insert(0,str(LEGACY/"windows"))
 from bridge_agent import Bridge, compact  # existing HMAC, SQLite nonce anti-replay + audit
+import g4_scoped_sessions as scoped_sessions
 
 PORT=8910
 MAX_BODY=128*1024
@@ -40,6 +41,7 @@ G4=ROOT_PRIVATE/"g4"
 APPROVAL_KEY=G4/"approval-seal.key"
 PENDING=G4/"pending"
 BACKUPS=G4/"backups"
+GRANTS=G4/"grants"
 SENSITIVE={
     "private-state",".ssh",".aws",".gnupg",".kube",".git-credentials",
     "credentials","vault","login data","cookies","key4.db","signons.sqlite",
@@ -54,7 +56,10 @@ ENDPOINTS={
  "/v1/g4/changes/prepare":"prepare",
  "/v1/g4/changes/status":"ticket_status",
  "/v1/g4/changes/commit":"commit",
- "/v1/g4/audit":"audit"
+ "/v1/g4/audit":"audit",
+ "/v1/g4/session/use":"session_use",
+ "/v1/g4/session/status":"session_status",
+ "/v1/g4/session/revoke":"session_revoke"
 }
 
 def utc():
@@ -118,7 +123,7 @@ def safe_target(raw,create=False):
 
 class G4Bridge(Bridge):
     def __init__(self):
-        ensure_private(G4);ensure_private(PENDING);ensure_private(BACKUPS)
+        ensure_private(G4);ensure_private(PENDING);ensure_private(BACKUPS);ensure_private(GRANTS)
         if not APPROVAL_KEY.is_file():
             with APPROVAL_KEY.open("xb") as fp:
                 fp.write(secrets.token_bytes(32))
@@ -184,6 +189,15 @@ class G4Bridge(Bridge):
             with self.db() as db:
                 rows=db.execute("SELECT at,action,result FROM actions ORDER BY id DESC LIMIT 40").fetchall()
             return {"items":[{"unix":a,"operation":b,"result":c} for a,b,c in rows]}
+        if action=="session_use":
+            return scoped_sessions.apply(payload,self.approval_key,GRANTS,json_atomic,
+                                         safe_target,self.record)
+        if action=="session_status":
+            return scoped_sessions.status(payload.get("grant_id"),self.approval_key,GRANTS)
+        if action=="session_revoke":
+            result=scoped_sessions.revoke(payload.get("grant_id"),self.approval_key,GRANTS,json_atomic)
+            self.record("g4_session_revoke","DONE",payload.get("grant_id"))
+            return result
         if action=="prepare":
             return self.prepare(payload)
         if action=="ticket_status":
@@ -195,6 +209,8 @@ class G4Bridge(Bridge):
         raise ValueError("UNKNOWN_CAPABILITY")
     def make_spec(self,payload):
         kind=payload.get("kind")
+        if kind=="grant_session":
+            return scoped_sessions.make_grant_spec(payload,safe_target)
         if kind=="write_text":
             path=safe_target(payload.get("path"),create=True)
             txt=payload.get("text")
@@ -272,6 +288,8 @@ class G4Bridge(Bridge):
                 p=safe_target(spec["path"],create=True)
                 p.mkdir(exist_ok=False)
                 result={"created":str(p)}
+            elif spec["kind"]=="grant_session":
+                result=scoped_sessions.issue(ident,spec,self.approval_key,GRANTS,json_atomic)
             elif spec["kind"]=="run":
                 env={key:os.environ[key] for key in ("SystemRoot","WINDIR","PATH","TEMP","TMP","USERPROFILE")
                      if key in os.environ}
