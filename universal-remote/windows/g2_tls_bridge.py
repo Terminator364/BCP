@@ -108,11 +108,23 @@ def g4_background_warmup():
     # is slow on a 4 GB RAM machine. Never authorize any operation here.
     from datetime import datetime, timezone
     import json
-    try:
-        get_g4()
-        status="READY"
-    except Exception:
-        status="FAILED"
+    # G4 Windows ACL/SQLite startup may contend briefly with service
+    # restart on 4 GB RAM machines. Retry boundedly without blocking G2.
+    import time
+    status="FAILED"
+    error_type=None
+    attempts=0
+    for attempt in range(4):
+        attempts=attempt+1
+        try:
+            get_g4()
+            status="READY"
+            error_type=None
+            break
+        except Exception as exc:
+            error_type=type(exc).__name__
+            if attempt<3:
+                time.sleep(min(2**attempt,4))
     try:
         file=ROOT/"state"/"g4-startup-state.json"
         file.parent.mkdir(parents=True,exist_ok=True)
@@ -120,7 +132,9 @@ def g4_background_warmup():
             "utc":datetime.now(timezone.utc).isoformat(),
             "status":status,
             "capability":"G4_AGENT_INITIALIZATION_ONLY",
-            "owner_profile_mutated":False
+            "owner_profile_mutated":False,
+            "initialization_attempts":attempts,
+            "error_type":error_type
         }),encoding="utf8")
     except OSError:
         pass
