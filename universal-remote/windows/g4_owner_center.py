@@ -106,6 +106,26 @@ def main():
                 "\nLe système refuse les opérations sans les deux preuves.",parent=root)
         refresh()
 
+    def enable_existing_identity():
+        selected=enrolled_map.get(enrolled.get())
+        if not selected:
+            messagebox.showwarning("BCP","Sélectionne un appareil déjà identifié.",parent=root)
+            return
+        if not messagebox.askyesno("BCP : confirmation propriétaire",
+            "Activer ou réparer le profil propriétaire de ce téléphone "
+            "déjà identifié, sans lui donner de droits supplémentaires "
+            "au-delà des droits du compte Windows ?",
+            default="no",parent=root):
+            return
+        try:
+            owner.local_enroll_verified_device(selected,"operator",
+                high_risk_confirmation=high_risk.get())
+            messagebox.showinfo("BCP","Profil propriétaire confirmé et activé.",parent=root)
+        except Exception as exc:
+            messagebox.showerror("BCP","Profil non activé : "+
+                type(exc).__name__,parent=root)
+        refresh()
+
     def revoke():
         selected=enrolled_map.get(enrolled.get())
         if not selected:
@@ -125,6 +145,7 @@ def main():
     buttons=ttk.Frame(body);buttons.pack(fill="x",pady=12)
     ttk.Button(buttons,text="Approuver ce téléphone une seule fois",command=approve).pack(side="left")
     ttk.Button(buttons,text="Actualiser",command=refresh).pack(side="right")
+    ttk.Button(body,text="Activer un appareil déjà identifié",command=enable_existing_identity).pack(anchor="w",pady=5)
     ttk.Button(body,text="Révoquer l'appareil sélectionné",command=revoke).pack(anchor="w",pady=10)
     ttk.Label(body,text=("Aucune action ne s'active à l'ouverture de cette fenêtre. "
         "Les secrets individuels restent hors des conversations et du dépôt GitHub."),
