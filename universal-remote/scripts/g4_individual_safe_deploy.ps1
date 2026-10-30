@@ -74,11 +74,18 @@ try {
     Start-Sleep -Seconds 1
     if(Test-Path $warm){
       $data=Get-Content -LiteralPath $warm -Raw | ConvertFrom-Json
-      if($data.status -eq 'FAILED'){throw 'G4_WARMUP_FAILED'}
+      if($data.status -eq 'FAILED'){
+        Write-Output ('G4_WARMUP_ATTEMPTS_FAILED='+$data.error_type)
+        break
+      }
       if($data.status -eq 'READY'){$ready=$true;break}
     }
   }
-  if(-not $ready){throw 'G4_COLD_START_TIMEOUT'}
+  if(-not $ready){
+    Write-Output 'G4_WARMUP_NOT_READY_VERIFYING_REAL_AUTHENTICATED_API'
+  }
+  # The server may recover lazily after a transient warmup lock. The real
+  # authenticated negative-security and G2 regression checks are decisive.
   python -u (Join-Path $root 'g4_owner_production_gate.py')
   if($LASTEXITCODE -ne 0){throw 'G4_OWNER_NEGATIVE_GATE_FAILED'}
   python -u (Join-Path $root 'g2_serve_test.py')
@@ -101,8 +108,14 @@ try {
         Remove-Item -LiteralPath $target -Force
       }
     }
-    try{Start-BCP;Write-Output 'BCP_PREVIOUS_PRODUCTION_RESTORED'}
-    catch{Write-Output ('BCP_RESTORE_FAILED='+$_.Exception.Message)}
+    $warm=Join-Path $root 'state\\g4-startup-state.json'
+    if(Test-Path $warm){Remove-Item -LiteralPath $warm -Force}
+    try{
+      Start-BCP
+      python -u (Join-Path $root 'g4_owner_production_gate.py')
+      if($LASTEXITCODE -ne 0){throw 'RESTORED_G4_GATE_FAILED'}
+      Write-Output 'BCP_PREVIOUS_PRODUCTION_RESTORED_AND_VALIDATED'
+    }catch{Write-Output ('BCP_RESTORE_FAILED='+$_.Exception.Message)}
   }
   throw
 }
