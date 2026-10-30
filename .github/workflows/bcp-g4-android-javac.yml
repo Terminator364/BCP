@@ -1,0 +1,38 @@
+name: BCP Android Java Compile (no Gradle dependency downloads)
+on:
+  push:
+    branches:
+      - feat/universal-remote-transport-20261030
+    paths:
+      - 'universal-remote/android-project/android/app/src/main/java/**'
+      - '.github/workflows/bcp-g4-android-javac.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile-android-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+      - name: Install Android 35 API only
+        run: sdkmanager 'platforms;android-35'
+      - name: Check Android Java sources directly against Android API
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=universal-remote/android-project/android/app/src/main/java
+          mkdir -p "$RUNNER_TEMP/bcp-android-classes"
+          find "$ROOT" -name '*.java' -print0 | xargs -0 javac -source 17 -target 17 \
+            -encoding UTF-8 -cp "$ANDROID_HOME/platforms/android-35/android.jar" \
+            -d "$RUNNER_TEMP/bcp-android-classes"
+          test -s "$RUNNER_TEMP/bcp-android-classes/com/blessing/rescuebridge/BCPG4FileUploader.class"
+          test -s "$RUNNER_TEMP/bcp-android-classes/com/blessing/rescuebridge/BCPG4FileTransferActivity.class"
+          echo 'BCP_ANDROID_JAVAC_SOURCE_GATE=PASS'
