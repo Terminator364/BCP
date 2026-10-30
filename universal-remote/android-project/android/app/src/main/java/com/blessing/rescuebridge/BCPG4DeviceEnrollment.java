@@ -11,11 +11,46 @@ import org.json.JSONObject;
 public final class BCPG4DeviceEnrollment {
     private BCPG4DeviceEnrollment(){}
 
-    private static G2TransportClient transport(Context ctx) throws Exception {
+    private static boolean wifiAvailable(){
+        try{
+            java.util.Enumeration<java.net.NetworkInterface> e=
+                java.net.NetworkInterface.getNetworkInterfaces();
+            if(e==null)return false;
+            while(e.hasMoreElements()){
+                java.net.NetworkInterface iface=e.nextElement();
+                if(iface.isUp()&&!iface.isLoopback()&&
+                   iface.getName().toLowerCase(java.util.Locale.ROOT).startsWith("wlan"))
+                    return true;
+            }
+        }catch(Exception ignored){}
+        return false;
+    }
+    private static String invoke(Context ctx,String endpoint,JSONObject payload,
+                                 SecureDeviceIdentity.Credential device) throws Exception {
         String legacy=SecurePairingStore.load(ctx);
         if(legacy==null||!legacy.matches("[0-9a-fA-F]{64}"))
             throw new SecurityException("G2_PAIRING_REQUIRED");
-        return new G2TransportClient("mbmpc.taild48ba2.ts.net",443,legacy,"");
+        if(wifiAvailable()){
+            try{
+                G2TransportClient local=new G2TransportClient("192.168.168.106",8898,legacy,
+                    "66d6f13e525f517b97e1e553eebd5cc024ecb861c4ae7becfdfedaefcbc928cd");
+                return device==null?local.perform(endpoint,payload.toString()):
+                    local.performDevice(endpoint,payload.toString(),device.deviceId,device.secret);
+            }catch(SecurityException ex){
+                throw ex;
+            }catch(IllegalStateException ex){
+                // An authenticated server denial must not trigger a cellular
+                // retry; only network unavailability allows failover.
+                if(ex.getMessage()!=null&&ex.getMessage().startsWith("Server declined:"))
+                    throw ex;
+            }catch(Exception unavailable){
+                // LAN unavailable: private Tailscale HTTPS fallback.
+            }
+        }
+        G2TransportClient tailnet=new G2TransportClient(
+            "mbmpc.taild48ba2.ts.net",443,legacy,"");
+        return device==null?tailnet.perform(endpoint,payload.toString()):
+            tailnet.performDevice(endpoint,payload.toString(),device.deviceId,device.secret);
     }
 
     public static String request(Context ctx) throws Exception {
@@ -24,8 +59,7 @@ public final class BCPG4DeviceEnrollment {
             .put("device_id",ident.deviceId)
             .put("device_secret",ident.secret)
             .put("label","Samsung BCP personnel");
-        JSONObject reply=new JSONObject(transport(ctx).perform(
-            "/v1/g4/device/enroll/request",payload.toString()));
+        JSONObject reply=new JSONObject(invoke(ctx,"/v1/g4/device/enroll/request",payload,null));
         if(!reply.optBoolean("ok"))throw new SecurityException("SERVER_REJECTED");
         JSONObject value=reply.getJSONObject("result");
         String code=value.getString("verification_code");
@@ -37,9 +71,7 @@ public final class BCPG4DeviceEnrollment {
         SecureDeviceIdentity.Credential ident=SecureDeviceIdentity.getOrCreate(ctx);
         JSONObject body=new JSONObject()
             .put("action","system.volumes").put("args",new JSONObject());
-        JSONObject reply=new JSONObject(transport(ctx).performDevice(
-            "/v1/g4/universal/inventory",body.toString(),
-            ident.deviceId,ident.secret));
+        JSONObject reply=new JSONObject(invoke(ctx,"/v1/g4/universal/inventory",body,ident));
         if(!reply.optBoolean("ok"))throw new SecurityException("OWNER_ACCESS_REJECTED");
         return reply.getJSONObject("result").getJSONObject("data")
             .getJSONArray("drives").length();
