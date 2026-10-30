@@ -78,7 +78,7 @@ public final class G2TransportClient {
         return performInternal(endpoint,json,deviceId,deviceSecret);
     }
     private String performInternal(String endpoint,String json,String deviceId,String deviceSecret) throws Exception {
-        if(!endpoint.matches("(/v1/(status|diagnostics|audit|phone-state)|/v1/g4/(capabilities|system|processes|files/list|files/read|audit|changes/prepare|changes/status|session/use|session/status|session/revoke|device/enroll/request|owner/status|universal/inventory))"))throw new IllegalArgumentException("Endpoint G2 interdit");
+        if(!endpoint.matches("(/v1/(status|diagnostics|audit|phone-state)|/v1/g4/(capabilities|system|processes|files/list|files/read|audit|changes/prepare|changes/status|session/use|session/status|session/revoke|device/enroll/request|owner/status|owner/files|universal/inventory))"))throw new IllegalArgumentException("Endpoint G2 interdit");
         byte[] body=json.getBytes(StandardCharsets.UTF_8);
         if(body.length>131072)throw new IllegalArgumentException("Request too large");
         byte[] random=new byte[16];RANDOM.nextBytes(random);String nonce=hex(random);
