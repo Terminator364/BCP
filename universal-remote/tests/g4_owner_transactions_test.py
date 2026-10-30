@@ -52,6 +52,11 @@ with tempfile.TemporaryDirectory(prefix="bcp-ownerfiles-") as temp:
     deny("wrong_owner_cannot_commit",lambda:restarted.commit(b,tx,hashlib.sha256(payload).hexdigest()))
     ok("owner_a_commits",restarted.commit(a,tx,hashlib.sha256(payload).hexdigest())["status"]=="COMMITTED")
     ok("correct_file_sha",hashlib.sha256(dest.read_bytes()).digest()==hashlib.sha256(payload).digest())
+    verified=restarted.status(a,tx)
+    ok("committed_transaction_digest_readback",
+       verified["state"]=="COMMITTED" and
+       verified["sha256"]==hashlib.sha256(payload).hexdigest() and
+       verified["bytes"]==len(payload))
     deny("unauthorized_replay_refused",lambda:restarted.commit(a,tx,hashlib.sha256(payload).hexdigest()))
     queued=restarted.begin(a,str(root/"not_created.txt"))
     reg.revoke_local(a,True)
