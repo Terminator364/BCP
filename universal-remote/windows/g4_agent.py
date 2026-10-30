@@ -29,6 +29,7 @@ LEGACY=Path(os.environ["LOCALAPPDATA"])/"BCP-USB-Rescue"
 sys.path.insert(0,str(LEGACY/"windows"))
 from bridge_agent import Bridge, compact  # existing HMAC, SQLite nonce anti-replay + audit
 import g4_scoped_sessions as scoped_sessions
+import g4_owner_gateway as owner_gateway
 
 PORT=8910
 MAX_BODY=128*1024
@@ -189,6 +190,10 @@ class G4Bridge(Bridge):
             with self.db() as db:
                 rows=db.execute("SELECT at,action,result FROM actions ORDER BY id DESC LIMIT 40").fetchall()
             return {"items":[{"unix":a,"operation":b,"result":c} for a,b,c in rows]}
+        if action=="owner_inventory":
+            return owner_gateway.inventory_query(payload)
+        if action=="owner_status":
+            return owner_gateway.public_status()
         if action=="session_use":
             return scoped_sessions.apply(payload,self.approval_key,GRANTS,json_atomic,
                                          safe_target,self.record)

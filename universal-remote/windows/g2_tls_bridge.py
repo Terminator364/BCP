@@ -27,6 +27,8 @@ G4_READ={
     "/v1/g4/files/list":"list",
     "/v1/g4/files/read":"read",
     "/v1/g4/audit":"audit",
+    "/v1/g4/owner/status":"owner_status",
+    "/v1/g4/universal/inventory":"owner_inventory",
 }
 G4_APPROVED={
     "/v1/g4/changes/prepare":"prepare",

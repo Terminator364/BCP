@@ -1,0 +1,36 @@
+name: BCP G4 Owner and Windows Inventory
+on:
+  push:
+    branches:
+      - feat/universal-remote-transport-20261030
+    paths:
+      - 'universal-remote/windows/g4_owner_*.py'
+      - 'universal-remote/windows/g4_universal_inventory.py'
+      - 'universal-remote/tests/g4_owner_*.py'
+      - 'universal-remote/tests/g4_inventory_bench.py'
+      - '.github/workflows/bcp-g4-owner-core.yml'
+permissions:
+  contents: read
+jobs:
+  owner-core:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Windows owner modules
+        shell: pwsh
+        run: |
+          python -m py_compile universal-remote/windows/g4_owner_trust.py universal-remote/windows/g4_owner_gateway.py universal-remote/windows/g4_owner_center.py universal-remote/windows/g4_universal_inventory.py
+      - name: Test durable trust and unrestricted inventory
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = (Resolve-Path universal-remote/windows).Path
+          python -u universal-remote/tests/g4_owner_trust_test.py
+          if ($LASTEXITCODE -ne 0) { throw 'Owner trust failed' }
+          python -u universal-remote/tests/g4_inventory_bench.py
+          if ($LASTEXITCODE -ne 0) { throw 'Whole file pagination failed' }
+          python -u universal-remote/tests/g4_owner_gateway_unit_test.py
+          if ($LASTEXITCODE -ne 0) { throw 'Owner gateway failed' }
