@@ -53,6 +53,22 @@ public final class BCPG4DeviceEnrollment {
             tailnet.performDevice(endpoint,payload.toString(),device.deviceId,device.secret);
     }
 
+    /** All file actions require the individually signed, locally approved device. */
+    public static JSONObject ownerFiles(Context ctx,String action,JSONObject args) throws Exception {
+        if(action==null || !(
+                action.equals("begin") || action.equals("append") ||
+                action.equals("status") || action.equals("commit") ||
+                action.equals("abort")))
+            throw new SecurityException("G4_FILE_ACTION_NOT_ALLOWED");
+        if(args==null)throw new IllegalArgumentException("G4_ARGS_REQUIRED");
+        SecureDeviceIdentity.Credential ident=SecureDeviceIdentity.getOrCreate(ctx);
+        JSONObject payload=new JSONObject().put("action",action).put("args",args);
+        JSONObject response=new JSONObject(invoke(ctx,"/v1/g4/owner/files",payload,ident));
+        if(!response.optBoolean("ok"))
+            throw new SecurityException("G4_OWNER_FILE_ACTION_REFUSED");
+        return response.getJSONObject("result");
+    }
+
     public static String request(Context ctx) throws Exception {
         SecureDeviceIdentity.Credential ident=SecureDeviceIdentity.getOrCreate(ctx);
         JSONObject payload=new JSONObject()
