@@ -33,13 +33,23 @@ with tempfile.TemporaryDirectory(prefix="bcp-device-identity-") as p:
     y=reg.request_enrollment(b,kb,"Samsung B",now)
     ok("two_pending_unique",len(reg.pending_public(now))==2 and x["verification_code"]!=y["verification_code"])
     ok("no_authority_on_request",reg.enrolled_public()==[])
+    retry=reg.request_enrollment(a,ka,"Samsung A",now+30)
+    ok("same_phone_pending_idempotent",
+       retry["verification_code"]==x["verification_code"] and
+       retry["expires"]==x["expires"])
+    ok("local_challenge_matches_phone",reg.pending_code_local(a,now+30)==x["verification_code"])
+    denied("different_key_cannot_take_pending",
+           lambda:reg.request_enrollment(a,secrets.token_hex(32),"Impostor",now+35))
     denied("missing_user_confirmation",lambda:reg.approve_local(a,x["verification_code"],False,now))
     denied("wrong_code",lambda:reg.approve_local(a,"not-six",True,now))
     denied("wrong_6_digit_code",lambda:reg.approve_local(a,("%06d"%((int(x["verification_code"])+1)%1000000)),True,now))
     ok("approved_device_a",reg.approve_local(a,x["verification_code"],True,now)["owner_trust"]=="NOT_GRANTED")
     ok("device_b_still_pending",len(reg.enrolled_public())==1 and len(reg.pending_public(now))==1)
     denied("cannot_approve_twice",lambda:reg.approve_local(a,x["verification_code"],True,now))
-    denied("cannot_duplicate_registration",lambda:reg.request_enrollment(a,ka,"Duplicate",now))
+    ok("already_enrolled_same_phone_idempotent",
+       reg.request_enrollment(a,ka,"Samsung A",now)["status"]=="ALREADY_ENROLLED")
+    denied("enrolled_id_rejects_other_key",
+           lambda:reg.request_enrollment(a,secrets.token_hex(32),"Impostor",now))
     ok("second_device_approved",reg.approve_local(b,y["verification_code"],True,now)["status"]=="ENROLLED")
     t=str(now);n=secrets.token_hex(16)
     sign=lambda key,dev,ts,nonce,contents,pt=path:hmac.new(bytes.fromhex(key),
@@ -55,6 +65,8 @@ with tempfile.TemporaryDirectory(prefix="bcp-device-identity-") as p:
     denied("invalid_nonce",lambda:reg.verify_request(a,"POST",path,t,"notnonce",body,good,now))
     denied("cannot_revoke_without_local",lambda:reg.revoke_local(a,False))
     ok("revoke_a",reg.revoke_local(a,True)["status"]=="REVOKED")
+    denied("revoked_device_cannot_resubmit",
+           lambda:reg.request_enrollment(a,ka,"Samsung A",now))
     nna=secrets.token_hex(16)
     denied("revoked_device_refused",lambda:reg.verify_request(a,"POST",path,t,nna,body,sign(ka,a,t,nna,body),now))
     nnb=secrets.token_hex(16)
