@@ -54,6 +54,26 @@ public final class MainActivity extends Activity {
         }
     };
 
+    /** Development mode polling only while visible, never a stealth background service. */
+    private final Runnable adaptiveUpdatePulse=new Runnable(){
+        @Override public void run(){
+            if(!visible)return;
+            io.execute(()->{
+                int seconds=BCPAutoUpdater.recommendedForegroundSeconds(getApplicationContext());
+                if(seconds==30)BCPAutoUpdater.checkDevelopment(getApplicationContext());
+                else BCPAutoUpdater.checkForeground(getApplicationContext());
+                // After pairing, send only bounded version/update/network state to the owned PC.
+                BCPPhoneReporter.report(getApplicationContext());
+                mainHandler.post(()->{
+                    if(!visible)return;
+                    refreshUpdaterStatus();
+                    mainHandler.removeCallbacks(adaptiveUpdatePulse);
+                    mainHandler.postDelayed(adaptiveUpdatePulse,seconds*1000L);
+                });
+            });
+        }
+    };
+
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setStatusBarColor(Color.rgb(246,248,251));
@@ -107,15 +127,19 @@ public final class MainActivity extends Activity {
         mainHandler.postDelayed(()->refreshUpdaterStatus(),2500);
         mainHandler.removeCallbacks(foregroundCheck);
         mainHandler.postDelayed(foregroundCheck,1000);
+        mainHandler.removeCallbacks(adaptiveUpdatePulse);
+        mainHandler.postDelayed(adaptiveUpdatePulse,1500);
     }
     @Override protected void onPause() {
         visible=false;
         if(BCPUpdateReceiver.foreground==this)BCPUpdateReceiver.foreground=null;
         mainHandler.removeCallbacks(foregroundCheck);
+        mainHandler.removeCallbacks(adaptiveUpdatePulse);
         super.onPause();
     }
     @Override protected void onDestroy() {
         mainHandler.removeCallbacks(foregroundCheck);
+        mainHandler.removeCallbacks(adaptiveUpdatePulse);
         io.shutdownNow();
         super.onDestroy();
     }
@@ -222,6 +246,7 @@ public final class MainActivity extends Activity {
             +"\n"+BCPAutoUpdater.diagnostic(this),14,ink,false);
         updateCard.addView(updaterState);
         updateCard.addView(value("BCP recherche les mises à jour sur Wi-Fi ou données mobiles, vérifie la signature et tente une installation automatique. Android peut exceptionnellement demander ton accord.",12,muted,false));
+        updateCard.addView(value("Mode chantier automatique : 30 secondes pendant 4 heures après une modification du code ou une publication, uniquement quand BCP est ouverte. Sinon, fréquence normale 15 minutes (Android peut la différer). Après appairage, le PC reçoit uniquement version, réseau et état de mise à jour.",12,muted,false));
         secondary(updateCard,"Vérifier la mise à jour",()->{
             BCPAutoUpdater.checkManually(this);
             updaterState.setText("Vérification en cours…");
@@ -241,7 +266,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 1.0.1 · vérifications accélérées",12,muted,false);
+        text("BCP Universal Remote · 1.1.0 · mode chantier intelligent",12,muted,false);
         return v;
     }
 

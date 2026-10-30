@@ -33,7 +33,7 @@ public final class BCPAutoUpdater {
     private static final String MANIFEST=BASE+"/updates/stable.json";
     private static final int JOB_ID=0x42435021;
     private static final long INTERVAL=15L*60*1000;
-    private static final long FOREGROUND_INTERVAL=5L*60*1000;
+    private static final long FOREGROUND_INTERVAL=15L*60*1000;
     private static final long MAX_APK=30L*1024*1024;
     private static final ExecutorService POOL=Executors.newSingleThreadExecutor();
     private BCPAutoUpdater(){}
@@ -52,8 +52,11 @@ public final class BCPAutoUpdater {
                   java.util.Locale.FRANCE).format(new java.util.Date(t));
         long pending=p.getLong("pending_version",0);
         String wait=pending>0 ? " · fichier vérifié v"+pending+" en attente d'installation" : "";
+        String mode=p.getString("poll_mode","normal");
         return "Dernière vérification : "+last+
-            " · prochain contrôle : selon Android (cible 15 min)"+wait;
+            " · "+("chantier".equals(mode)
+                   ?"Mode chantier : 30 s si BCP est ouverte (4 h maximum)"
+                   :"Mode normal : cible 15 min (Android peut différer)") + wait;
     }
     static void setStatus(Context ctx,String s) {
         prefs(ctx).edit().putString("status",s).putLong("status_at",System.currentTimeMillis()).apply();
@@ -94,6 +97,30 @@ public final class BCPAutoUpdater {
     }
     public static void checkManually(Context ctx){
         POOL.execute(()->check(ctx.getApplicationContext(),true));
+    }
+    /** Foreground only; server automatically derives a four-hour development window
+     * from source changes and release publication. Normal mode is 15 minutes.
+     */
+    public static int recommendedForegroundSeconds(Context ctx){
+        HttpURLConnection req=null;
+        try{
+            req=connection(BASE+"/updates/mode.json");
+            if(req.getResponseCode()!=200)return 900;
+            byte[] buf;
+            try(InputStream in=req.getInputStream()){buf=readBounded(in,2048);}
+            JSONObject mode=new JSONObject(new String(buf,java.nio.charset.StandardCharsets.UTF_8));
+            int seconds=mode.getInt("poll_seconds");
+            long until=mode.optLong("active_until_epoch",0);
+            boolean active="development".equals(mode.optString("mode")) &&
+                seconds==30 && until>System.currentTimeMillis()/1000L &&
+                until<=System.currentTimeMillis()/1000L+4*60*60;
+            prefs(ctx).edit().putString("poll_mode",active?"chantier":"normal").apply();
+            return active?30:900;
+        }catch(Exception ignored){return 900;}
+        finally{if(req!=null)req.disconnect();}
+    }
+    public static void checkDevelopment(Context ctx){
+        POOL.execute(()->check(ctx.getApplicationContext(),false));
     }
 
     private static byte[] readBounded(InputStream in,int max) throws Exception {

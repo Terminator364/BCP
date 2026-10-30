@@ -69,6 +69,7 @@ def certificate(bindings):
     return ctx, fingerprint
 
 pairing_lock = threading.Lock()
+update_audit_lock = threading.Lock()
 
 def friendly_handler_factory(bridge):
     """A GET is only a public health probe; all protected actions remain POST + HMAC."""
@@ -76,7 +77,43 @@ def friendly_handler_factory(bridge):
     class FriendlyHandler(base):
         def do_POST(self):
             from urllib.parse import urlsplit
-            if urlsplit(self.path).path!="/pair/v1":
+            path=urlsplit(self.path).path
+            if path=="/v1/phone-state":
+                # Authenticated, privacy-minimal phone heartbeat; not a command channel.
+                from datetime import datetime,timezone
+                import json
+                nonce=self.headers.get("X-Bridge-Nonce","")
+                try:
+                    n=int(self.headers.get("Content-Length","-1"))
+                    if not (1<=n<=1024):raise ValueError("INVALID_LENGTH")
+                    body=self.rfile.read(n)
+                    auth_error=bridge.authenticate("POST",path,
+                        self.headers.get("X-Bridge-Time"),nonce,
+                        self.headers.get("X-Bridge-Signature",""),body)
+                    if auth_error:
+                        return self.response(401,{"ok":False,"reason":"UNAUTHORIZED"},nonce)
+                    data=json.loads(body.decode("utf8"))
+                    version=data.get("version_code")
+                    connection=data.get("network")
+                    update_state=data.get("update_state")
+                    if (not isinstance(version,int) or isinstance(version,bool) or
+                        not 1<=version<=100000 or
+                        connection not in ("wifi","cellular","other","offline") or
+                        update_state not in ("current","checking","pending","error","unknown")):
+                        raise ValueError("INVALID_PHONE_STATE")
+                    record={"utc":datetime.now(timezone.utc).isoformat(),
+                            "version_code":version,"network":connection,
+                            "update_state":update_state,
+                            "app_visible":True}
+                    where=ROOT/"state"/"g2-phone-status.json"
+                    where.parent.mkdir(parents=True,exist_ok=True)
+                    part=where.with_suffix(".part")
+                    part.write_text(json.dumps(record,separators=(",",":")),encoding="utf8")
+                    part.replace(where)
+                    return self.response(200,{"ok":True,"received":True},nonce)
+                except (OSError,ValueError,UnicodeDecodeError,TypeError,json.JSONDecodeError):
+                    return self.response(400,{"ok":False,"reason":"INVALID_PHONE_STATE"},nonce)
+            if path!="/pair/v1":
                 return super().do_POST()
             # Trusted Tailscale Serve HTTPS reverse proxy; never expose on LAN HTTP.
             if (self.client_address[0] not in ("127.0.0.1", "::1") or
@@ -131,12 +168,56 @@ def friendly_handler_factory(bridge):
             from datetime import datetime, timezone
             import json
             request_path = urlsplit(self.path).path[:120]
+            if request_path=="/updates/mode.json":
+                # Four hours from latest local code edit/commit or stable release.
+                # No manual toggle and no personal file contents disclosed.
+                import time
+                now=time.time()
+                repo=ROOT/"build-repo"
+                candidate_files=[
+                    ROOT/"updates"/"stable.json",
+                    repo/".git"/"refs"/"heads"/"feat"/"universal-remote-transport-20261030",
+                    repo/"universal-remote"/"android-project"/"android"/"app"/"src"/"main"/"java"/"com"/"blessing"/"rescuebridge"/"MainActivity.java",
+                    repo/"universal-remote"/"android-project"/"android"/"app"/"src"/"main"/"java"/"com"/"blessing"/"rescuebridge"/"BCPAutoUpdater.java"]
+                last=max([x.stat().st_mtime for x in candidate_files if x.exists()] or [0])
+                until=int(last)+4*3600
+                dev=now<until
+                result={"schema":"BCP_UPDATE_MODE_V1",
+                        "mode":"development" if dev else "normal",
+                        "poll_seconds":30 if dev else 900,
+                        "active_until_epoch":until if dev else 0,
+                        "foreground_only_fast":True}
+                body=json.dumps(result,separators=(",",":")).encode("utf8")
+                self.send_response(200)
+                self.send_header("Content-Type","application/json; charset=utf-8")
+                self.send_header("Content-Length",str(len(body)))
+                self.send_header("Cache-Control","no-store")
+                self.send_header("X-Content-Type-Options","nosniff")
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if request_path in ("/updates/stable.json", "/updates/stable.apk"):
                 # Private tailnet only. Recalculate SHA before each served APK.
                 expected_host="mbmpc.taild48ba2.ts.net"
                 if (self.client_address[0] not in ("127.0.0.1","::1") or
                     self.headers.get("Host","").split(":")[0].lower()!=expected_host):
                     return self.response(404, {"ok":False,"reason":"NOT_FOUND"})
+                try:
+                    # Counters for field diagnostics only; no IP, user agent,
+                    # identifier, secret, URL query or request body retained.
+                    event = {"utc":datetime.now(timezone.utc).isoformat(),
+                             "path":request_path,
+                             "client_kind":"android" if
+                                "Dalvik" in self.headers.get("User-Agent","") else "other"}
+                    audit=ROOT/"state"/"g2-update-checks.jsonl"
+                    audit.parent.mkdir(parents=True,exist_ok=True)
+                    with update_audit_lock:
+                        if audit.exists() and audit.stat().st_size>65536:
+                            audit.replace(audit.with_suffix(".old"))
+                        with audit.open("a",encoding="utf8") as a:
+                            a.write(json.dumps(event,separators=(",",":"))+"\n")
+                except OSError:
+                    pass
                 try:
                     release = json.loads((ROOT/"updates"/"stable.json").read_text("utf-8"))
                     if (release.get("package")!="com.blessing.rescuebridge" or

@@ -63,7 +63,7 @@ public final class G2TransportClient {
         return c.getSocketFactory();
     }
     public String perform(String endpoint,String json) throws Exception {
-        if(!endpoint.matches("/v1/(status|diagnostics|audit)"))throw new IllegalArgumentException("G2 read-only");
+        if(!endpoint.matches("/v1/(status|diagnostics|audit|phone-state)"))throw new IllegalArgumentException("Endpoint G2 interdit");
         byte[] body=json.getBytes(StandardCharsets.UTF_8);
         if(body.length>131072)throw new IllegalArgumentException("Request too large");
         byte[] random=new byte[16];RANDOM.nextBytes(random);String nonce=hex(random);
