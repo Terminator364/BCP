@@ -24,7 +24,7 @@ public final class G2TransportClient {
     public G2TransportClient(String host, int port, String key, String fingerprint) {
         if(host==null || !host.matches("[A-Za-z0-9.-]{4,253}"))
             throw new IllegalArgumentException("Invalid host");
-        if(port<1024 || port>65535)throw new IllegalArgumentException("Invalid port");
+        if((port!=443 && port<1024) || port>65535)throw new IllegalArgumentException("Invalid port");
         if(key==null || !key.matches("[0-9a-fA-F]{64}"))
             throw new IllegalArgumentException("Missing paired key");
         this.host=host; this.port=port; this.sharedKey=key;

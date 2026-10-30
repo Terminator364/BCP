@@ -266,7 +266,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 1.1.0 · mode chantier intelligent",12,muted,false);
+        text("BCP Universal Remote · 1.1.1 · Tailscale HTTPS corrigé",12,muted,false);
         return v;
     }
 
