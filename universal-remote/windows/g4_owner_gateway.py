@@ -88,23 +88,50 @@ def load_policy():
     return trust.OwnerTrust(POLICY,bytes.fromhex(text))
 
 def local_enroll(profile="operator",high_risk_confirmation=True):
-    """Local UI must obtain human consent before calling. No network route."""
+    # Fail closed: the old G2 shared pairing key is NOT a device identity.
+    raise trust.TrustError("LEGACY_SHARED_PAIRING_NOT_ALLOWED_FOR_OWNER")
+
+def local_enroll_verified_device(device_id,profile="operator",
+                                 high_risk_confirmation=True):
+    """Local Windows UI only, after the per-device verification code is typed."""
+    from g4_device_identity import DeviceRegistry
+    registry=DeviceRegistry(ROOT/"private-state"/"g4"/"device-registry")
+    enrolled=[p for p in registry.enrolled_public()
+              if p["device_id"]==device_id and p["revoked"] is False]
+    if len(enrolled)!=1:
+        raise trust.TrustError("INDIVIDUAL_DEVICE_NOT_ENROLLED")
     policy=local_key_init()
-    return policy.enroll_local(identity_from_existing_pairing(),
+    return policy.enroll_local(trust.hashlib.sha256(
+              ("BCP_DEVICE_V1:"+device_id).encode("ascii")).hexdigest(),
               profile=profile,confirm_local=True,
               high_risk_confirmation=high_risk_confirmation)
 
-def local_revoke():
+def local_revoke(device_id=None):
+    if device_id is None:
+        raise trust.TrustError("DEVICE_SELECTION_REQUIRED")
     policy=load_policy()
-    return policy.revoke_local(identity_from_existing_pairing(),confirm_local=True)
+    identity=trust.hashlib.sha256(("BCP_DEVICE_V1:"+device_id).encode("ascii")).hexdigest()
+    return policy.revoke_local(identity,confirm_local=True)
 
-def public_status():
+def public_status(device_id=None):
+    # Legacy G2 HMAC alone never reveals/activates a privileged owner profile.
+    if device_id is None:
+        return {"trusted":False,"profile":None,"categories":[],
+                "reason":"INDIVIDUAL_DEVICE_IDENTITY_REQUIRED"}
     try:
-        return load_policy().public_status(identity_from_existing_pairing())
+        from g4_device_identity import DeviceRegistry
+        registry=DeviceRegistry(ROOT/"private-state"/"g4"/"device-registry")
+        registered=any(x["device_id"]==device_id and not x["revoked"]
+                        for x in registry.enrolled_public())
+        if not registered:return {"trusted":False,"profile":None,"categories":[]}
+        identity=trust.hashlib.sha256(("BCP_DEVICE_V1:"+device_id).encode("ascii")).hexdigest()
+        return load_policy().public_status(identity)
     except (trust.TrustError,ValueError,OSError):
         return {"trusted":False,"profile":None,"categories":[]}
 
-def inventory_query(payload):
+def inventory_query(payload,device_id=None):
+    if device_id is None:
+        raise trust.TrustError("INDIVIDUAL_DEVICE_SIGNATURE_REQUIRED")
     if not isinstance(payload,dict) or set(payload)-{"action","args"}:
         raise ValueError("REQUEST_SHAPE_INVALID")
     action=payload.get("action")
@@ -116,7 +143,8 @@ def inventory_query(payload):
     if len(str(args))>6000:
         raise ValueError("ARGS_TOO_LONG")
     policy=load_policy()
-    device=identity_from_existing_pairing()
+    identity=trust.hashlib.sha256(("BCP_DEVICE_V1:"+device_id).encode("ascii")).hexdigest()
+    device=identity
     capability="processes" if action=="processes.list" else (
          "desktop" if action=="desktop.windows" else "files.read")
     # Window titles are metadata, not remote desktop control. Still require
