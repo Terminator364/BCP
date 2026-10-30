@@ -69,13 +69,29 @@ def certificate(bindings):
     return ctx, fingerprint
 
 def friendly_handler_factory(bridge):
-    """Keep /health canonical and accept '/' as a simple phone-ready check."""
+    """A GET is only a public health probe; all protected actions remain POST + HMAC."""
     base = handler_factory(bridge)
     class FriendlyHandler(base):
         def do_GET(self):
-            if self.path in ("/", "/health/"):
-                self.path = "/health"
-            return super().do_GET()
+            # Accept Android browser-added paths, translation and cache-busting queries.
+            # Never permit a GET to call a protected agent action.
+            from urllib.parse import urlsplit
+            from datetime import datetime, timezone
+            import json
+            request_path = urlsplit(self.path).path[:120]
+            try:
+                log_path = ROOT / "state" / "g2-browser-requests.jsonl"
+                log_path.parent.mkdir(parents=True, exist_ok=True)
+                if log_path.exists() and log_path.stat().st_size > 65536:
+                    log_path.replace(log_path.with_suffix(".old"))
+                with log_path.open("a", encoding="utf8") as f:
+                    f.write(json.dumps({"utc":datetime.now(timezone.utc).isoformat(),
+                        "request_path":request_path}, ensure_ascii=False) + "\n")
+            except OSError:
+                pass
+            return self.response(200, {"ok":True, "service":"BCP-UNIVERSAL-REMOTE",
+                "stage":"G2-LAN-TAILSCALE", "marker":"G2_ROUTE_FIX_20261030_1609",
+                "client_app_connected":False})
     return FriendlyHandler
 
 def main():
