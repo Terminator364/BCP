@@ -29,3 +29,10 @@ Status: **G2-WINDOWS-TRANSPORT-PILOT = PASS**; **G2-ANDROID-APP = PENDING FIELD 
 `%LOCALAPPDATA%\BCP-Universal-Remote\state\g2-test-report.json`
 
 Security: no SMS, email or third-party server required for LAN transport. Do not expose G2 server or its unpaired successor to public internet. Tailscale Serve only, never Funnel.
+
+## Rectification de l'erreur du navigateur Android (16 h 02)
+- Capture Samsung : `{"ok":false,"reason":"NOT_FOUND"}`; cela prouve que le serveur a répondu, mais ne prouve pas le canal HMAC depuis l'APK.
+- GET `/` n'était pas servi, à la différence de `/health`.
+- Correctif dans `g2_tls_bridge.py` uniquement : GET `/` et GET `/health/` redirigés en interne vers GET `/health` ; POST et secrets inchangés.
+- Port 8899 : les trois URL retournent 200. Après redémarrage du port 8898 : suite TLS/HMAC 9/9 PASS, POST signé via Tailscale Serve PASS (TLS 1.3, HTTP 200, HMAC réponse valide).
+- Test navigateur Samsung après correction : encore à confirmer par une nouvelle capture ou ouverture.
