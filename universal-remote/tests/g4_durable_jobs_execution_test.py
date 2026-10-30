@@ -68,6 +68,22 @@ with tempfile.TemporaryDirectory(prefix="bcp-g4-real-jobs-",ignore_cleanup_error
     ok("restart_marks_interrupted",recovered.recover()["interrupted"]==1)
     ok("interrupted_is_not_replayed",recovered.status(interrupted)["state"]=="INTERRUPTED")
     ok("restart_preserves_done",recovered.status(job)["state"]=="DONE")
+    from g6_resource_governor import ResourceGovernor,Resources,MIB
+    optional=recovered.enqueue(sys.executable,
+        ["-c","print('BCP_SAFE_OPTIONAL_JOB')"],cwd=str(root))["job_id"]
+    governor=ResourceGovernor()
+    deferred=recovered.execute_next_resource_aware(
+        governor,Resources(4096*MIB,60*MIB))
+    ok("low_memory_defers_background_job",
+       deferred["deferred"] and deferred["reason"]=="RAM_PRESSURE")
+    ok("deferred_job_not_lost",recovered.status(optional)["state"]=="QUEUED")
+    resumed=recovered.execute_next_resource_aware(
+        governor,Resources(4096*MIB,400*MIB))
+    ok("background_job_resumes_without_cap",
+       resumed["state"]=="DONE" and resumed["job_id"]==optional)
+    ok("optional_execution_output_kept",
+       b"BCP_SAFE_OPTIONAL_JOB" in base64.b64decode(
+          recovered.output(optional)["data_base64"]))
     ok("no_queued_processes_remaining",not recovered.execute_next()["executed"])
     ok("all_artifacts_inside_temporary_directory",all(f.is_relative_to(root) for f in root.rglob("*")))
 print(json.dumps({"schema":"BCP_G4_DURABLE_JOB_EXECUTION_V1","passed":sum(checks.values()),
