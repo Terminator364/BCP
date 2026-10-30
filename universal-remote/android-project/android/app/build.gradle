@@ -6,8 +6,8 @@ android {
         applicationId 'com.blessing.rescuebridge'
         minSdk 26
         targetSdk 34
-        versionCode 15
-        versionName '1.1.1-tailscale-443-fix'
+        versionCode 16
+        versionName '1.2.0-g4-readonly-windows'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

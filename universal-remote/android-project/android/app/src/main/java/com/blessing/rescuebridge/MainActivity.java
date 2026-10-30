@@ -42,8 +42,8 @@ public final class MainActivity extends Activity {
     private FrameLayout contentHost;
     private View homeScreen,missionsScreen,filesScreen,settingsScreen;
     private Button[] navButtons;
-    private TextView status, explanation, localHint, lastAction, console, updaterState;
-    private EditText host,port,secret,fileName,fileContent,pairPin;
+    private TextView status, explanation, localHint, lastAction, console, updaterState, g4Result;
+    private EditText host,port,secret,fileName,fileContent,pairPin,g4WindowsPath;
     private String activeScreen="HOME";
 
     private final Runnable foregroundCheck=new Runnable() {
@@ -201,9 +201,25 @@ public final class MainActivity extends Activity {
         return v;
     }
     private View buildFiles() {
-        ScrollView v=newPage("ESPACE ISOLÉ · USB", "Fichiers de test", "Fonctions héritées limitées au dossier de test : pas encore l'accès complet au PC.");
+        ScrollView v=newPage("BCP / G4 WINDOWS", "Mes fichiers Windows", "Accès authentifié aux dossiers et aux fichiers texte de MBMPC, en lecture uniquement.");
+        LinearLayout windows=card();
+        windows.addView(smallCaps("G4 · MON PC WINDOWS"));
+        windows.addView(value("Accès par Wi-Fi ou Tailscale, toujours chiffré et authentifié. Les dossiers protégés restent exclus. Aucune modification Windows depuis cet écran.",13,muted,false));
+        filesInputLabel(windows,"Chemin Windows absolu");
+        g4WindowsPath=input(windows,"C:\\\\Users\\\\Lenovo\\\\Documents",InputType.TYPE_CLASS_TEXT,"C:\\\\Users\\\\Lenovo");
+        secondary(windows,"Afficher les informations du PC",
+            ()->g4Request("/v1/g4/system",new JSONObject()));
+        secondary(windows,"Voir les processus Windows",
+            ()->g4Request("/v1/g4/processes",new JSONObject()));
+        primary(windows,"Lister ce dossier Windows",
+            ()->g4Request("/v1/g4/files/list",args("path",g4WindowsPath.getText().toString().trim())));
+        secondary(windows,"Lire ce fichier texte",
+            ()->g4Request("/v1/g4/files/read",args("path",g4WindowsPath.getText().toString().trim())));
+        g4Result=value("Sélectionne une opération. La liaison sécurisée sera vérifiée automatiquement.",13,ink,false);
+        g4Result.setTextIsSelectable(true);
+        windows.addView(g4Result);
         LinearLayout actions=card();
-        actions.addView(smallCaps("DOSSIER DE TEST WINDOWS"));
+        actions.addView(smallCaps("HISTORIQUE · DOSSIER USB DE TEST"));
         primary(actions,"Lister les fichiers",()->execute("/files",new JSONObject(),false));
         filesInputLabel(actions,"Chemin relatif (ex. notes/essai.txt)");
         fileName=input(actions,"demo.txt",InputType.TYPE_CLASS_TEXT,"demo.txt");
@@ -266,7 +282,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 1.1.1 · Tailscale HTTPS corrigé",12,muted,false);
+        text("BCP Universal Remote · 1.2.0 · Explorateur Windows G4 sécurisé",12,muted,false);
         return v;
     }
 
@@ -559,6 +575,40 @@ public final class MainActivity extends Activity {
                     status.setText("Code refusé ou expiré");
                     explanation.setText("Regénère le code depuis le PC et vérifie Tailscale. Aucun secret complet n'est nécessaire.");
                 });
+            }
+        });
+    }
+
+    private void g4Request(String endpoint,JSONObject payload){
+        if(g4Result==null)return;
+        String key="";
+        try{key=SecurePairingStore.load(this);}catch(Exception ignored){}
+        if(key==null || !key.matches("[0-9a-fA-F]{64}")){
+            g4Result.setText("Appairage requis dans Réglages (une seule fois).");
+            return;
+        }
+        final String paired=key;
+        g4Result.setText("Demande authentifiée en cours… MBMPC peut répondre lentement.");
+        io.execute(()->{
+            try{
+                G2TransportClient client=new G2TransportClient(
+                    "mbmpc.taild48ba2.ts.net",443,paired,"");
+                String result=client.perform(endpoint,payload.toString());
+                JSONObject parsed=new JSONObject(result);
+                if(!parsed.optBoolean("ok"))throw new IllegalStateException("G4 a refusé la requête");
+                String formatted=parsed.optJSONObject("result")!=null
+                    ?parsed.getJSONObject("result").toString(2):result;
+                if(formatted.length()>12000)formatted=formatted.substring(0,12000)+
+                    "\\n[Résultat tronqué pour protéger la mémoire du téléphone]";
+                final String message=formatted;
+                runOnUiThread(()->{
+                    g4Result.setText(message);
+                    latestResult=endpoint+"\\n"+message;
+                });
+            }catch(Exception error){
+                runOnUiThread(()->g4Result.setText(
+                    "G4 indisponible : "+error.getClass().getSimpleName()+
+                    ". Vérifie MBMPC, Tailscale et le chemin Windows saisi."));
             }
         });
     }

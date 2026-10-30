@@ -19,6 +19,15 @@ ROOT = Path(os.environ["LOCALAPPDATA"]) / "BCP-Universal-Remote"
 LEGACY = Path(os.environ["LOCALAPPDATA"]) / "BCP-USB-Rescue"
 sys.path.insert(0, str(LEGACY / "windows"))
 from bridge_agent import Bridge, handler_factory  # noqa: E402
+from g4_agent import G4Bridge  # isolated G4 capabilities, user authorization for writes
+G4_READ={
+    "/v1/g4/capabilities":"capabilities",
+    "/v1/g4/system":"system",
+    "/v1/g4/processes":"processes",
+    "/v1/g4/files/list":"list",
+    "/v1/g4/files/read":"read",
+    "/v1/g4/audit":"audit",
+}
 
 PORT = 8898
 OPENSSL = Path(r"C:\Program Files\Git\usr\bin\openssl.exe")
@@ -70,14 +79,48 @@ def certificate(bindings):
 
 pairing_lock = threading.Lock()
 update_audit_lock = threading.Lock()
+g4_init_lock = threading.Lock()
+g4_instance = None
 
-def friendly_handler_factory(bridge):
-    """A GET is only a public health probe; all protected actions remain POST + HMAC."""
+def get_g4():
+    # Must ONLY be called after HMAC authentication and replay validation.
+    global g4_instance
+    if g4_instance is None:
+        with g4_init_lock:
+            if g4_instance is None:
+                g4_instance = G4Bridge()
+    return g4_instance
+
+def friendly_handler_factory(bridge,g4_provider=None):
+    """Authenticated G2 with G4 read-only; no remote mutations without local approval."""
     base = handler_factory(bridge)
     class FriendlyHandler(base):
         def do_POST(self):
             from urllib.parse import urlsplit
             path=urlsplit(self.path).path
+            if path in G4_READ and g4_provider is not None:
+                import json
+                nonce=self.headers.get("X-Bridge-Nonce","")
+                try:
+                    size=int(self.headers.get("Content-Length","-1"))
+                    if not (1<=size<=8192):
+                        return self.response(413,{"ok":False,"reason":"G4_BODY_TOO_LARGE"},nonce)
+                    body=self.rfile.read(size)
+                    auth_error=bridge.authenticate("POST",path,
+                        self.headers.get("X-Bridge-Time"),nonce,
+                        self.headers.get("X-Bridge-Signature",""),body)
+                    if auth_error:
+                        bridge.record("g4_"+G4_READ[path],"DENIED",nonce[:80])
+                        return self.response(401,{"ok":False,"reason":"UNAUTHORIZED"},nonce)
+                    payload=json.loads(body.decode("utf8"))
+                    value=g4_provider().operate(G4_READ[path],payload)
+                    bridge.record("g4_"+G4_READ[path],"SUCCESS",nonce)
+                    return self.response(200,{"ok":True,"result":value},nonce)
+                except (OSError,ValueError,UnicodeError,TypeError) as exc:
+                    bridge.record("g4_"+G4_READ[path],"REJECTED",nonce[:80])
+                    return self.response(400,{"ok":False,
+                        "reason":str(exc)[:100] if isinstance(exc,ValueError)
+                        else type(exc).__name__},nonce)
             if path=="/v1/phone-state":
                 # Authenticated, privacy-minimal phone heartbeat; not a command channel.
                 from datetime import datetime,timezone
@@ -329,16 +372,17 @@ def main():
     binds = list(dict.fromkeys(permitted(x) for x in (args.bind or ["127.0.0.1"])))
     ctx, fingerprint = certificate(binds)
     bridge = ReadOnlyBridge(LEGACY / "private-state", LEGACY / "workspace")
+    # G4 initialization is deferred until a signed request needs it.
     servers = []
     for ip in binds:
-        server = ThreadingHTTPServer((ip, args.port), friendly_handler_factory(bridge))
+        server = ThreadingHTTPServer((ip, args.port), friendly_handler_factory(bridge,get_g4))
         server.daemon_threads = True
         server.socket = ctx.wrap_socket(server.socket, server_side=True)
         servers.append(server)
     print("G2_TLS_READY=true", flush=True)
     print("G2_SHA256_FINGERPRINT=" + fingerprint, flush=True)
     print("G2_BINDINGS=" + ",".join(f"{ip}:{args.port}" for ip in binds), flush=True)
-    print("G2_CAPABILITIES=AUTHENTICATED_STATUS_DIAGNOSTICS_AUDIT_ONLY", flush=True)
+    print("G2_CAPABILITIES=G2_READONLY_PLUS_G4_SYSTEM_FILES_PROCESSES_READONLY", flush=True)
     try:
         threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in servers]
         for t in threads: t.start()
