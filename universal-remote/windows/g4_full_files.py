@@ -142,8 +142,15 @@ class FileTransactions:
             m["state"]="COMMITTING";m["result_sha256"]=expected_final_sha256.lower()
             m["recovery"]=str(backup) if backup else None
             _atom(file,m)
-            # Same-drive stage provides an atomic rename on NTFS.
-            os.replace(stage,dest)
+            # IMPORTANT: for a new file, Windows os.rename fails if another
+            # writer created the same destination during this upload. Do NOT
+            # use os.replace here: it would overwrite without permission.
+            if m["overwrite"]:
+                os.replace(stage,dest)
+            else:
+                if dest.exists():
+                    raise FileOperationError("DESTINATION_CREATED_CONCURRENTLY")
+                os.rename(stage,dest)
             m["state"]="COMMITTED"
             _atom(file,m)
             return {"status":"COMMITTED","path":str(dest),
