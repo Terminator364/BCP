@@ -37,7 +37,7 @@ jobs:
           test -s "$APK"
           "${ANDROID_HOME}/build-tools/35.0.0/aapt" dump badging "$APK" | tee g2-badging.txt
           grep -F "name='com.blessing.rescuebridge'" g2-badging.txt
-          EXPECTED_CODE=$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\\1/p' universal-remote/android-project/android/app/build.gradle | head -1)
+          EXPECTED_CODE=$(awk '/versionCode[[:space:]]+[0-9]+/ {print $2;exit}' universal-remote/android-project/android/app/build.gradle)
           test -n "$EXPECTED_CODE"
           grep -F "versionCode='$EXPECTED_CODE'" g2-badging.txt
           sha256sum "$APK" | tee g2-unsigned-sha256.txt
