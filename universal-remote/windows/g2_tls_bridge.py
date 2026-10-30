@@ -93,6 +93,20 @@ pairing_lock = threading.Lock()
 update_audit_lock = threading.Lock()
 g4_init_lock = threading.Lock()
 g4_instance = None
+g4_device_registry = None
+g4_device_registry_lock = threading.Lock()
+
+def get_device_registry():
+    """Single ACL-protected device registry for the whole G2 process."""
+    global g4_device_registry
+    if g4_device_registry is None:
+        with g4_device_registry_lock:
+            if g4_device_registry is None:
+                from g4_device_identity import DeviceRegistry
+                g4_device_registry = DeviceRegistry(
+                    ROOT/"private-state"/"g4"/"device-registry")
+    return g4_device_registry
+
 
 def get_g4():
     # Must ONLY be called after HMAC authentication and replay validation.
@@ -165,19 +179,27 @@ def friendly_handler_factory(bridge,g4_provider=None):
                     if path=="/v1/g4/device/enroll/request":
                         # Legacy G2 authentication permits only an UNTRUSTED
                         # pending proposal; local Windows approval is mandatory.
-                        from g4_device_identity import DeviceRegistry
-                        registry=DeviceRegistry(ROOT/"private-state"/"g4"/"device-registry")
+                        registry=get_device_registry()
                         value=registry.request_enrollment(
                             payload.get("device_id"),payload.get("device_secret"),
                             payload.get("label"))
                     elif path=="/v1/g4/universal/inventory":
                         # A shared G2 key is never sufficient for owner access.
-                        from g4_device_identity import DeviceRegistry,IdentityError
+                        from g4_device_identity import IdentityError
                         from g4_owner_gateway import inventory_query
-                        registry=DeviceRegistry(ROOT/"private-state"/"g4"/"device-registry")
+                        import re
+                        claimed_id=self.headers.get("X-BCP-Device","")
+                        signature=self.headers.get("X-BCP-Device-Signature","")
+                        # Reject unauthenticated legacy-only requests BEFORE
+                        # expensive Windows ACL/SQLite device-registry init.
+                        if not (re.fullmatch(r"[0-9a-f]{32}",claimed_id) and
+                                re.fullmatch(r"[0-9a-f]{64}",signature)):
+                            return self.response(401,{"ok":False,
+                                "reason":"INDIVIDUAL_DEVICE_AUTH_REQUIRED"},nonce)
+                        registry=get_device_registry()
                         try:
                             device=registry.verify_request(
-                                self.headers.get("X-BCP-Device",""),
+                                claimed_id,
                                 "POST",path,
                                 self.headers.get("X-BCP-Device-Time",""),
                                 self.headers.get("X-BCP-Device-Nonce",""),
