@@ -21,7 +21,7 @@ def denied(name,func):
 old_load=gateway.load_policy
 old_device=gateway.identity_from_existing_pairing
 sample=Path(os.environ["LOCALAPPDATA"])/"BCP-Universal-Remote"/"G4-Staging-Workspace"
-sample.mkdir(exist_ok=True)
+sample.mkdir(parents=True,exist_ok=True)
 try:
     denied("unregistered_account_denied",lambda:gateway.inventory_query(
         {"action":"system.volumes","args":{}}))

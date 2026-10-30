@@ -16,7 +16,7 @@ from urllib.request import Request,urlopen
 from urllib.error import HTTPError
 
 ROOT=Path(os.environ["LOCALAPPDATA"])/"BCP-Universal-Remote"
-sys.path.insert(0,str(ROOT))
+sys.path.insert(0,str(ROOT/"build-repo"/"universal-remote"/"windows"))
 import g2_tls_bridge as g2
 import g4_agent as g4
 import g4_owner_gateway as gateway

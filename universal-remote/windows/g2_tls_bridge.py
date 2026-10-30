@@ -102,6 +102,28 @@ def get_g4():
                 g4_instance = G4Bridge()
     return g4_instance
 
+def g4_background_warmup():
+    # Keep G2 serving status/updates/pairing while Windows ACL initialization
+    # is slow on a 4 GB RAM machine. Never authorize any operation here.
+    from datetime import datetime, timezone
+    import json
+    try:
+        get_g4()
+        status="READY"
+    except Exception:
+        status="FAILED"
+    try:
+        file=ROOT/"state"/"g4-startup-state.json"
+        file.parent.mkdir(parents=True,exist_ok=True)
+        file.write_text(json.dumps({
+            "utc":datetime.now(timezone.utc).isoformat(),
+            "status":status,
+            "capability":"G4_AGENT_INITIALIZATION_ONLY",
+            "owner_profile_mutated":False
+        }),encoding="utf8")
+    except OSError:
+        pass
+
 def friendly_handler_factory(bridge,g4_provider=None):
     """Authenticated G2 with G4 read-only; no remote mutations without local approval."""
     base = handler_factory(bridge)
@@ -386,7 +408,10 @@ def main():
     binds = list(dict.fromkeys(permitted(x) for x in (args.bind or ["127.0.0.1"])))
     ctx, fingerprint = certificate(binds)
     bridge = ReadOnlyBridge(LEGACY / "private-state", LEGACY / "workspace")
-    # G4 initialization is deferred until a signed request needs it.
+    # Prepare G4 asynchronously: preserve existing G2 on slow startup.
+    # The warmup does not create an owner trust profile or execute actions.
+    threading.Thread(target=g4_background_warmup,daemon=True,
+                     name="BCP-G4-Warmup").start()
     servers = []
     for ip in binds:
         server = ThreadingHTTPServer((ip, args.port), friendly_handler_factory(bridge,get_g4))
