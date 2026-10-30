@@ -17,7 +17,8 @@
     "universal-remote/G4_OWNER_PRODUCTION_FILES_JOBS_CHECKPOINT_20261030.md",
     "universal-remote/G4_V130_ANDROID_SCOPED_SESSIONS_RELEASE_20261030.md",
     "universal-remote/G4_APPROVAL_POLICY_AND_FIELD_PASS_20261030.md",
-    "universal-remote/BCP_G4_DEVICE_IDENTITY_CHECKPOINT_20261030.md"
+    "universal-remote/BCP_G4_DEVICE_IDENTITY_CHECKPOINT_20261030.md",
+    "universal-remote/BCP_G4_1_V140_PRODUCTION_HANDOFF_20261030.md"
   ],
   "canonical_constraints": {
     "no_restart": true,
@@ -42,34 +43,46 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "PASS authenticated real Android app v1.3.0 versionCode17, update channel",
+    "G2": "Private TLS G2 channel + real Android v1.3.0 code17 telemetry, new signed v1.4.0 code18 PUBLISHED on stable feed but real phone installation unverified",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
-    "G4": "PARTIAL owner inventory deployed 16/16 production negative checks, owner not enrolled, streamed file engine 23/23 local tests, durable job queue 14/14 local metadata tests",
-    "G5": "NOT_YET_PASS native ChatGPT BCP integration absent, Desktop Commander only",
-    "G6": "PARTIAL rollbacks; no full failover resilience",
+    "G4": "G4.1 backend ACTIVE PRODUCTION on MBMPC (third controlled deploy PASS, 16/16 authenticated owner security checks + TLS1.3/HMAC G2 pairing); owner profile NOT ENROLLED; G4 file/job modules local lab only",
+    "G5": "21/21 local idempotency ledger tests, native ChatGPT BCP connector absent",
+    "G6": "19/19 deterministic G6 transport policy tests; no physical four-transport failover verification",
     "owner_profile": "NOT_ENROLLED",
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "1. finish Android MainActivity individual device enrollment + signed inventory interface (not committed), run Android and owner CI",
-    "2. Windows per-device public-key enrollment with explicit local consent and independent revoke/rotation",
-    "3. dual-safe migration: retain legacy G2 heartbeat/update; disallow legacy shared key from authorizing owner-general operations",
-    "4. authorized file engine G4 route and end-to-end approval/QA",
-    "5. durable jobs and tested process/kill/recovery, desktop GUI, services, installs",
-    "6. native ChatGPT action connector G5, USB/Bluetooth and G6 QA"
+    "Observe real Samsung v18 telemetry after Android has installed update (personal confirmation may be required); NEVER auto-enroll owner",
+    "Have owner confirm six-digit phone code locally on MBMPC using BCP - Profil proprietaire; verify actual phone-signed general inventory",
+    "Continue independent G4 per-phone file endpoint staging/tests with strict fail-closed identity and no older pairing privilege",
+    "Continue tested real job execution and process lifecycle server wiring behind owner controls",
+    "Design authenticated ChatGPT-native connector G5 and USB/Bluetooth fallback, resilience G6 without exposing secrets or using public Funnel",
+    "Update canonical ledger after each tested tranche, prefer moving to other lanes when one is blocked"
   ],
-  "stage": "G4.1 device identity sources built and 29 local assertions PASS; not deployed; owner disabled",
+  "stage": "G4.1 backend and signed v1.4 stable deployed, awaiting genuine individual phone owner enrollment (human), parallel G4 files/G5/G6 staging may continue",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
-    "branch_source_through": "9fe7fdab5dcd3f72904257a7c02bcc3772f640a9",
-    "status": "SOURCE_ONLY_NOT_PRODUCTION",
-    "security_device_identity": "29/29 local Windows tests PASS; GitHub Windows CI 41124418894 SUCCESS",
-    "android_source": "New Keystore individual credential class and independent HMAC client built in Android CI; no new signed stable published",
-    "owner_window": "Local code-confirmation and individual revocation UI staged; no real approval",
-    "active_phone": "Signed v1.3.0 versionCode17; legacy G2 pairing still preserved",
-    "blocked": "Android MainActivity integration has not been committed; attempted editing was blocked by tool safeguards. No deployment/publishing/owner activation. Resume with review of Android app UI integration and end-to-end staging.",
-    "avoid": "Do not call any source-only code production; do not enroll the shared old G2 key",
-    "owner_core_ci": "SUCCESS GitHub Actions run 41124899649"
+    "branch_source_through": "879ec1f55bfaf797dfcc4341a111c5c5b6c3b1af",
+    "stage": "G4.1 deployed; signed Android v1.4 stable published; human phone installation + Windows local six-digit consent next",
+    "status": "BACKEND_PROD_PASS; ANDROID_SIGNED_PUBLISHED; REAL_PHONE_V18_UNVERIFIED",
+    "backend_proof": "16/16 G4 owner negative checks PASS; signed TLS1.3 Tailscale RPC PASS; pairing probe PASS. Two previous attempts rolled back and verified",
+    "windows_rollback_backup": "%LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_222413",
+    "android": "v1.4.0-g4-individual-identity versionCode18 locally signed original R3.3 certificate, 70391B sha256 efe81bdb9658e164d848f68477c5590b97979d0f2d7458016bdec683f9d7a70c; publisher PASS",
+    "android_release_backup": "%LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_V140_STABLE_PREVIOUS",
+    "https_distribution_proof": "Private Tailscale Serve HTTPS with explicit private-IP resolver produced 70391B matching signed SHA256 and manifest code18; PC local MagicDNS lookup independently failed, no claim about phone DNS",
+    "real_phone_last_report": "versionCode17 at 2026-10-30T20:54:13Z wifi; cannot claim code18 installed",
+    "lab_checks": {
+      "individual_identity": 29,
+      "general_inventory": 17,
+      "file_transfers_recovery": 29,
+      "durable_jobs_real": 22,
+      "owner_file_transactions": 15,
+      "owner_file_rpc": 13,
+      "g6_planner": 19,
+      "g5_idempotency": 21
+    },
+    "human_gate": "Open BCP on Samsung and allow version18 install if Android requests; in Fichiers > Identité propriétaire G4 request code and on MBMPC click BCP - Profil proprietaire, enter matching six digits and approve once; then confirm phone-signed general inventory",
+    "still_not_done": "Native G5 ChatGPT connector; G3 USB/Bluetooth physical failover; actual phone v18; owner enrolment; full remote file/command/desktop capability network routes; no silent admin"
   }
 }
