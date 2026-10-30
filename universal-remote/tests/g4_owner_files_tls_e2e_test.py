@@ -148,6 +148,11 @@ with tempfile.TemporaryDirectory(prefix="bcp-e2e-owner-files-") as d:
         check("owner_a_can_commit",code==200 and reply["result"]["status"]=="COMMITTED")
         check("real_tls_file_digest_matches",hashlib.sha256(dst.read_bytes()).digest()==
               hashlib.sha256(data).digest())
+        code,committed=call("status",{"upload_id":tx},identity=auth["Samsung-A"])
+        check("verified_committed_receipt_after_network_drop",
+              code==200 and committed["result"]["state"]=="COMMITTED" and
+              committed["result"]["sha256"]==hashlib.sha256(data).hexdigest() and
+              committed["result"]["bytes"]==len(data))
         code,_=call("commit",{"upload_id":tx,"sha256":hashlib.sha256(data).hexdigest()},
                     identity=auth["Samsung-A"])
         check("cannot_commit_twice",code==400)
