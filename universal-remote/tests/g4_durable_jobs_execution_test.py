@@ -6,6 +6,7 @@ import sys
 import tempfile
 import threading
 import time
+sys.path.insert(0,str(Path(__file__).resolve().parent.parent/"windows"))
 from g4_durable_jobs import DurableJobs, JobError, CHUNK
 
 checks={}
