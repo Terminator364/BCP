@@ -15,6 +15,7 @@
             android:exported="true" />
         <receiver android:name=".BCPUpdateReceiver" android:exported="false" />
         <activity android:name=".BCPG4EnrollmentActivity" android:exported="false" />
+        <activity android:name=".BCPG4FileTransferActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="unspecified">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
