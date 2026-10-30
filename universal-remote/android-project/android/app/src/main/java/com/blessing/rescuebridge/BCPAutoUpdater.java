@@ -23,9 +23,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * BCP self-update V1: Wi-Fi/unmetered only, signed APK verified before install.
+ * BCP self-update V2: Wi-Fi and mobile data, signed APK verified before install.
  * Can request no-user-action self-update on Android 12+, but system may still prompt.
- * No third-party update services, no mobile data, no device owner privileges.
+ * No third-party update services, no mobile tethering to Windows, no device owner privileges.
  */
 public final class BCPAutoUpdater {
     public static final String PREFS="bcp_internal_updates_v1";
@@ -52,10 +52,15 @@ public final class BCPAutoUpdater {
             JobScheduler js=(JobScheduler)ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE);
             if(js==null) return;
             // Avoid replacing an existing schedule each time the app opens.
-            if(js.getPendingJob(JOB_ID)!=null) return;
+            // Replace an old unmetered-only job when upgrading from v0.7/v0.8.
+            JobInfo prior=js.getPendingJob(JOB_ID);
+            if(prior!=null){
+                if(prior.getNetworkType()==JobInfo.NETWORK_TYPE_ANY)return;
+                js.cancel(JOB_ID);
+            }
             JobInfo info=new JobInfo.Builder(JOB_ID,new ComponentName(ctx,BCPUpdateJob.class))
                 .setPeriodic(INTERVAL,INTERVAL/4)
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setPersisted(true).build();
             if(js.schedule(info)!=JobScheduler.RESULT_SUCCESS) setStatus(ctx,"Planification différée.");
         }catch(Exception ex){setStatus(ctx,"Planification indisponible.");}
@@ -68,10 +73,7 @@ public final class BCPAutoUpdater {
     public static void checkManually(Context ctx){
         POOL.execute(()->check(ctx.getApplicationContext(),true));
     }
-    static boolean unmetered(Context ctx){
-        ConnectivityManager cm=(ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
-        return cm!=null && cm.getActiveNetwork()!=null && !cm.isActiveNetworkMetered();
-    }
+
     private static byte[] readBounded(InputStream in,int max) throws Exception {
         ByteArrayOutputStream buf=new ByteArrayOutputStream();
         byte[] tmp=new byte[8192];int n;
@@ -130,13 +132,9 @@ public final class BCPAutoUpdater {
         }
         return true;
     }
-    /** Called by foreground or periodic network-unmetered Android JobScheduler. */
+    /** Called by foreground or periodic Android JobScheduler on any connected network. */
     public static void check(Context ctx,boolean manual){
         ctx=ctx.getApplicationContext();
-        if(!unmetered(ctx)){
-            setStatus(ctx,"Réseau limité : aucune mise à jour téléchargée sur forfait mobile.");
-            return;
-        }
         HttpURLConnection req=null;
         try{
             req=connection(MANIFEST);

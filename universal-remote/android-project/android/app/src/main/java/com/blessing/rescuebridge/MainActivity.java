@@ -217,7 +217,7 @@ public final class MainActivity extends Activity {
         updateCard.addView(smallCaps("MISES À JOUR AUTOMATIQUES"));
         updaterState=value(BCPAutoUpdater.status(this),14,ink,false);
         updateCard.addView(updaterState);
-        updateCard.addView(value("BCP recherche les mises à jour sur un réseau non facturé, vérifie la signature et tente une installation automatique. Android peut exceptionnellement demander ton accord.",12,muted,false));
+        updateCard.addView(value("BCP recherche les mises à jour sur Wi-Fi ou données mobiles, vérifie la signature et tente une installation automatique. Android peut exceptionnellement demander ton accord.",12,muted,false));
         secondary(updateCard,"Vérifier la mise à jour",()->{
             BCPAutoUpdater.checkManually(this);
             updaterState.setText("Vérification en cours…");
@@ -237,7 +237,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 0.8.0 · liaison G2 et mise à jour automatique",12,muted,false);
+        text("BCP Universal Remote · 0.9.0 · mises à jour Wi-Fi et données mobiles",12,muted,false);
         return v;
     }
 
