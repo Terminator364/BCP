@@ -132,6 +132,7 @@ def g4_background_warmup():
         attempts=attempt+1
         try:
             get_g4()
+            get_device_registry()
             status="READY"
             error_type=None
             break
