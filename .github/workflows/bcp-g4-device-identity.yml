@@ -1,0 +1,25 @@
+name: BCP G4 Individual Device Identity Security
+on:
+  push:
+    branches:
+      - feat/universal-remote-transport-20261030
+    paths:
+      - 'universal-remote/windows/g4_device_identity.py'
+      - 'universal-remote/tests/g4_device_identity_test.py'
+      - '.github/workflows/bcp-g4-device-identity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity-security:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile per-device registry
+        run: python -m py_compile universal-remote/windows/g4_device_identity.py universal-remote/tests/g4_device_identity_test.py
+      - name: Execute isolated device identity adversarial tests
+        run: python -u universal-remote/tests/g4_device_identity_test.py
