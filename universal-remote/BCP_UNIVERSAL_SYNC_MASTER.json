@@ -1,0 +1,63 @@
+{
+  "schema": "BCP_UNIVERSAL_SYNC_MASTER_V1",
+  "code": "BCP|UNIVERSAL|SYNC|MASTER",
+  "objective": "ChatGPT-controlled authorized personal Windows MBMPC via Android and native connector: Windows file, command, process, GUI, software, resilience; preserve Windows UAC and owner consent",
+  "authority_priority": [
+    "live verified device-state and signed releases",
+    "Git branch checkpoint and machine-readable ledger",
+    "documented field test",
+    "reported prior chat state"
+  ],
+  "repository": "Terminator364/BCP",
+  "branch": "feat/universal-remote-transport-20261030",
+  "last_independently_verified_commit": "0e4660ee43e7716ca335fb0b83e2058f335658f6",
+  "canonical_documents": [
+    "universal-remote/CAHIER_MERE_20261030.md",
+    "universal-remote/G4_OWNER_FULL_CONTROL_CANONICAL_ARCHITECTURE_20261030.md",
+    "universal-remote/G4_OWNER_PRODUCTION_FILES_JOBS_CHECKPOINT_20261030.md",
+    "universal-remote/G4_V130_ANDROID_SCOPED_SESSIONS_RELEASE_20261030.md",
+    "universal-remote/G4_APPROVAL_POLICY_AND_FIELD_PASS_20261030.md"
+  ],
+  "canonical_constraints": {
+    "no_restart": true,
+    "no_artificial_time_operation_folder_or_total_file_size_caps": true,
+    "transport_order": [
+      "WIFI_LAN",
+      "TAILSCALE_REMOTE",
+      "USB_RESCUE",
+      "BLUETOOTH_RESCUE"
+    ],
+    "no_automatic_cellular_tether_to_windows": true,
+    "android_signed_single_stable_channel": true,
+    "no_manual_install_for_backend_only_changes": true,
+    "no_key_or_signing_secret_in_repo_or_chat": true,
+    "no_silent_admin_or_UAC_bypass": true,
+    "no_sensitive_remote_control_without_individual_cryptographic_device_identity_and_local_owner_enrollment": true,
+    "low_memory_pc_4GB": true,
+    "execute_consecutive_safely_tested_steps_without_microapprovals": true,
+    "interrupt_only_for_irreplaceable_local_user_confirmation_or_blocking_external_access": true
+  },
+  "current_verified": {
+    "date": "2026-10-30",
+    "G0": "PASS historical legacy and backups",
+    "G1": "PASS Tailscale link PC/phone field",
+    "G2": "PASS authenticated real Android app v1.3.0 versionCode17, update channel",
+    "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
+    "G4": "PARTIAL owner inventory deployed 16/16 production negative checks, owner not enrolled, streamed file engine 23/23 local tests, durable job queue 14/14 local metadata tests",
+    "G5": "NOT_YET_PASS native ChatGPT BCP integration absent, Desktop Commander only",
+    "G6": "PARTIAL rollbacks; no full failover resilience",
+    "owner_profile": "NOT_ENROLLED",
+    "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
+  },
+  "next_execution": [
+    "1. device-specific Android Keystore P-256 keypair and signed request protocol with replay protection",
+    "2. Windows per-device public-key enrollment with explicit local consent and independent revoke/rotation",
+    "3. dual-safe migration: retain legacy G2 heartbeat/update; disallow legacy shared key from authorizing owner-general operations",
+    "4. authorized file engine G4 route and end-to-end approval/QA",
+    "5. durable jobs and tested process/kill/recovery, desktop GUI, services, installs",
+    "6. native ChatGPT action connector G5, USB/Bluetooth and G6 QA"
+  ],
+  "stage": "G4 owner identity individualized credential gate; do NOT enroll legacy key",
+  "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
+  "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030"
+}
