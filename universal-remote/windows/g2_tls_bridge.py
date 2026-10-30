@@ -79,6 +79,45 @@ def friendly_handler_factory(bridge):
             from datetime import datetime, timezone
             import json
             request_path = urlsplit(self.path).path[:120]
+            if request_path == "/download/BCP-Universal-G2.apk":
+                # Signed APK only; never expose an arbitrary filesystem path.
+                expected_host = "mbmpc.taild48ba2.ts.net"
+                if self.client_address[0] not in ("127.0.0.1", "::1") or \
+                   self.headers.get("Host", "").split(":")[0].lower() != expected_host:
+                    return self.response(404, {"ok": False, "reason": "NOT_FOUND"})
+                import hashlib
+                apk = ROOT / "G2-build" / "BCP-Universal-G2-v0.5.0-SIGNED.apk"
+                manifest = ROOT / "G2-build" / "G2_SIGNED_RELEASE_REPORT.json"
+                try:
+                    meta = json.loads(manifest.read_text("utf-8-sig"))
+                    length = apk.stat().st_size
+                    if not (meta.get("certificate_matches_R33") is True and
+                            meta.get("version_code") == 7 and
+                            meta.get("package") == "com.blessing.rescuebridge" and
+                            25000 < length < 35000000):
+                        raise ValueError("APK_NOT_VERIFIED")
+                    sha = hashlib.sha256()
+                    with apk.open("rb") as stream:
+                        for chunk in iter(lambda:stream.read(65536), b""):
+                            sha.update(chunk)
+                    if sha.hexdigest().lower() != meta.get("sha256", "").lower():
+                        raise ValueError("APK_HASH_MISMATCH")
+                except (OSError, ValueError, KeyError, TypeError):
+                    return self.response(503, {"ok": False, "reason": "SIGNED_APK_NOT_READY"})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/vnd.android.package-archive")
+                self.send_header("Content-Disposition", 'attachment; filename="BCP-Universal-G2-v0.5.0.apk"')
+                self.send_header("Content-Length", str(length))
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.end_headers()
+                try:
+                    with apk.open("rb") as stream:
+                        for chunk in iter(lambda:stream.read(65536), b""):
+                            self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+                return
             try:
                 log_path = ROOT / "state" / "g2-browser-requests.jsonl"
                 log_path.parent.mkdir(parents=True, exist_ok=True)
