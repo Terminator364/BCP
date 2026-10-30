@@ -10,7 +10,7 @@
   ],
   "repository": "Terminator364/BCP",
   "branch": "feat/universal-remote-transport-20261030",
-  "last_independently_verified_commit": "0e4660ee43e7716ca335fb0b83e2058f335658f6",
+  "last_independently_verified_commit": "a8d35beb14a01cb5708a4eba5e68079b82960ae2",
   "canonical_documents": [
     "universal-remote/CAHIER_MERE_20261030.md",
     "universal-remote/G4_OWNER_FULL_CONTROL_CANONICAL_ARCHITECTURE_20261030.md",
@@ -43,26 +43,29 @@
     "interrupt_only_for_irreplaceable_local_user_confirmation_or_blocking_external_access": true
   },
   "current_verified": {
-    "date": "2026-10-30",
+    "date": "2026-10-31",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "PARTIAL RECOVERY: real loopback TCP 8898 LIVE (BCP_G2_ALIVE=True; fast starter reported ALREADY_RUNNING); authenticated full G4 production gate TIMED OUT on /v1/g4/files/list due Windows PC slow, so stable G2 authenticated health NOT confirmed; signed Android stable v1.4 code18 remains published",
-    "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
-    "G4": "G4 previously live/verified, but current endpoint health UNVERIFIED because G2 local port down. Identity 34/34, inventory17, owner transactions16, RPC13, positive TLS30 pass LOCAL TESTS. New idempotent owner enrollment source not yet verified deployed.",
-    "G5": "Local-only idempotency 21/21; native custom MCP plugin not connected; private Secure MCP Tunnel architecture prepared, account/workspace write-access gating; existing Desktop Commander connected",
+    "G2": "PASS CURRENT DIRECT: singleton Pythonw PID17856 on 8898 loopback/LAN/Tailscale; loopback /health and signed update manifest HTTP200; Tailscale 100.109.148.51:443 with valid SNI certificate TLSv1.3 /health and /updates/stable.json HTTP200. Prior G2 outage historical.",
+    "G3": "NOT FIELD-VALIDATED: USB and Bluetooth rescue unproven.",
+    "G4": "PARTIAL CURRENT: startup-state READY but capability G4_AGENT_INITIALIZATION_ONLY and owner_profile_mutated=false; previous negative HMAC tests and scoped file route validated; positive real Samsung administrative action NOT verified.",
+    "G5": "NOT DELIVERED: native BCP ChatGPT MCP connector not connected; existing Desktop Commander available.",
     "G6": "Deterministic transport policy 19/19 + memory governor 24/24 native RAM sample + durable real process resource-aware 26/26; no physical USB/Bluetooth verified",
     "owner_profile": "NOT_ENROLLED",
-    "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
+    "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity",
+    "android_stable": "versionCode19 v1.5.0 stable.json; signed sha256 d66725f11ebdd86b96b86d6f57834d86c82fe8bcb131d5c8bfd2377d555263bf",
+    "real_samsung_telemetry": "2026-10-30T23:36:31Z version_code19, wifi, update_state=current, app_visible=true; physical interactive field approval NOT proven",
+    "windows_control_center": "single Desktop launcher BCP - OUVRIR confirmed, visual UI interactions NOT field-tested",
+    "dns_caveat": "Windows MagicDNS lookup of mbmpc.taild48ba2.ts.net failed in diagnostic; direct IP plus certificate-validated SNI works; do not infer phone DNS failure"
   },
   "next_execution": [
-    "Check pending Remote Desktop Commander writes and device responsiveness without duplicate calls",
-    "Verify fast G2 starter latest file + start local server + test 127.0.0.1:8898 signed TLS/HMAC + Tailscale",
-    "Apply backed-up lightweight autostart wrapper to avoid hanging Get-NetTCPConnection",
-    "Verify new idempotent owner enrollment live; NO bypass of local owner consent",
-    "Only after G2 healthy promote signed v1.5 code19 to stable with rollback, then observe real Samsung update telemetry",
-    "Validate actual one-window UI visible; no desktop duplicate shortcuts"
+    "Confirm Android v1.5 code19 live UI behavior (no IllegalState), owner enrollment request and single Windows consent after matching code; never auto-authorize.",
+    "Test real signed Samsung G4 scoped action/readback/rollback with local ACL/UAC boundaries, then safe file routes.",
+    "Verify one-window Windows GUI responds to click, X minimizes, autostart and reconnect under 4GB RAM.",
+    "Diagnose Windows-only Tailscale MagicDNS failure only if it affects delivery; retest failover after reboot.",
+    "Prove physical USB/Bluetooth rescue and resilient transport transition; add G5 native integration only after authorization boundaries pass."
   ],
-  "stage": "BCP Desktop one launcher installed, owner enroll source corrected, Android v1.5 signed but withheld; G2 loopback live yet full secure API health not validated under PC RAM load",
+  "stage": "G2 SINGLETON HEALTHY DIRECT TEST 2026-10-31; v1.5 code19 STABLE and Android version19 telemetry observed; owner enrollment and real G4 operations NOT YET PROVEN; G5 absent.",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -118,5 +121,67 @@
       "Remote PowerShell fast wrapper install session 13172 output pending",
       "G2 signed TLS serve verification session 15736 output pending"
     ]
+  },
+  "last_live_sync": {
+    "checkpoint": "BCP_UNIVERSAL_MASTER_SAVE02_20261031",
+    "captured_local": "2026-10-31 00:47-00:53 Africa/Kinshasa",
+    "pre_sync_head": "a8d35beb14a01cb5708a4eba5e68079b82960ae2",
+    "observation_source": "MBMPC Remote Desktop Commander read-only commands + trusted local state files",
+    "current_process": {
+      "g2_pid": 17856,
+      "port": 8898,
+      "listener_instances_observed": 1
+    },
+    "transport_proofs": [
+      {
+        "path": "/health",
+        "via": "loopback",
+        "http": 200,
+        "elapsed_seconds": 0.1487
+      },
+      {
+        "path": "/updates/stable.json",
+        "via": "loopback authorized Host",
+        "http": 200,
+        "elapsed_seconds": 0.165
+      },
+      {
+        "path": "/health",
+        "via": "Tailscale IP 443 certificate-valid SNI",
+        "http": 200,
+        "tls": "TLSv1.3",
+        "elapsed_seconds": 1.766
+      },
+      {
+        "path": "/updates/stable.json",
+        "via": "Tailscale IP 443 certificate-valid SNI",
+        "http": 200,
+        "tls": "TLSv1.3",
+        "elapsed_seconds": 0.467
+      }
+    ],
+    "remote_android_report": {
+      "utc": "2026-10-30T23:36:31.119242+00:00",
+      "version_code": 19,
+      "network": "wifi",
+      "update_state": "current",
+      "app_visible": true
+    },
+    "g4_startup": {
+      "status": "READY",
+      "capability": "G4_AGENT_INITIALIZATION_ONLY",
+      "owner_profile_mutated": false
+    },
+    "unverified": [
+      "real interactive owner consent",
+      "real administrative Samsung commands",
+      "Windows UI visual acceptance",
+      "Android IllegalState regression",
+      "physical USB/Bluetooth rescue",
+      "native G5 MCP"
+    ],
+    "drive_journal": "https://docs.google.com/document/d/1fP_EVr2dAIomD3w3BW8Z0FG4hzJEokARYLjgGyPbH7s/edit",
+    "provenance": "Direct tests only; historic fields preserved unchanged in development_checkpoint.",
+    "no_silent_privileges": true
   }
 }
