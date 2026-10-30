@@ -18,7 +18,8 @@
     "universal-remote/G4_V130_ANDROID_SCOPED_SESSIONS_RELEASE_20261030.md",
     "universal-remote/G4_APPROVAL_POLICY_AND_FIELD_PASS_20261030.md",
     "universal-remote/BCP_G4_DEVICE_IDENTITY_CHECKPOINT_20261030.md",
-    "universal-remote/BCP_G4_1_V140_PRODUCTION_HANDOFF_20261030.md"
+    "universal-remote/BCP_G4_1_V140_PRODUCTION_HANDOFF_20261030.md",
+    "universal-remote/G5_CHATGPT_NATIVE_MCP_ARCHITECTURE_20261030.md"
   ],
   "canonical_constraints": {
     "no_restart": true,
@@ -43,7 +44,7 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "Private TLS G2 channel + real Android v1.3.0 code17 telemetry, new signed v1.4.0 code18 PUBLISHED on stable feed but real phone installation unverified",
+    "G2": "G2 LIVE PASS; signed Android v1.4.0 versionCode18 REAL Samsung field telemetry (2026-10-30T21:49:26.526731+00:00, wifi, app_visible=true, update_state=current), paired channel retained",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
     "G4": "G4.1 owner inventory+individually signed /v1/g4/owner/files route DEPLOYED on MBMPC; 16/16 G4 production negative, 12/12 G4 owner-file negative over live TLS, signed Tailscale RPC/pairing PASS; real owner NOT enrolled; synthetic positive TLS file test 28/28 PASS",
     "G5": "21/21 local idempotency ledger tests, native ChatGPT BCP connector absent",
@@ -52,13 +53,13 @@
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "Confirm real Samsung Android v18 installation; owner local code confirmation remains human gate",
-    "Add Android resumable arbitrary-size file upload/download UI against live signed owner route; keep app v1.4 stable until CI and testing",
-    "Implement owner-scoped durable job queue and high-risk local consent without arbitrary operation/time caps",
-    "Extend BCP-native ChatGPT integration and G6 physical fallback under user-approved trust",
-    "Preserve rollback, G2 autostart and audit production after each release"
+    "Verify whether a pending Samsung individual enrollment request exists; never invent an enrollment or local owner confirmation",
+    "Owner action: in Samsung BCP v1.4 Fichiers > Identité propriétaire G4 request six-digit code, on MBMPC open BCP - Profil proprietaire and approve; then test genuine phone-signed G4 inventory",
+    "Validate and package v1.5 Android SAF resumable file upload; repair Gradle dependency resolution safely, keep stable v1.4 untouched until signed upgrade tested",
+    "Continue resource-aware G6 and owner-scoped durable Windows jobs work in independent lanes",
+    "Direct ChatGPT G5 MCP through Secure MCP Tunnel only if account/workspace supports write tools; existing Desktop Commander works as fallback; no public Funnel"
   ],
-  "stage": "G4.1 individually authenticated streamed-file RPC is LIVE DEFAULT-DENY, pending real Samsung v18 installation and local owner enrollment; G4 jobs/G5 native/G6 physical failover still unfinished",
+  "stage": "G4.1+owner file RPC LIVE, Samsung signed v1.4.0 code18 installed, next human gate: local per-device six-digit owner confirmation; v1.5 upload source compile PASS, release blocked on Gradle dependency",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -70,7 +71,7 @@
     "android": "v1.4.0-g4-individual-identity versionCode18 locally signed original R3.3 certificate, 70391B sha256 efe81bdb9658e164d848f68477c5590b97979d0f2d7458016bdec683f9d7a70c; publisher PASS",
     "android_release_backup": "%LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_V140_STABLE_PREVIOUS",
     "https_distribution_proof": "Private Tailscale Serve HTTPS with explicit private-IP resolver produced 70391B matching signed SHA256 and manifest code18; PC local MagicDNS lookup independently failed, no claim about phone DNS",
-    "real_phone_last_report": "versionCode17 at 2026-10-30T20:54:13Z wifi; cannot claim code18 installed",
+    "real_phone_last_report": "REAL Samsung versionCode18 at 2026-10-30T21:49:26.526731Z, wifi, app_visible=true, update_state=current (previous code17 superseded)",
     "lab_checks": {
       "individual_identity": 29,
       "general_inventory": 17,
@@ -92,6 +93,8 @@
       "real_owner": "NOT_ENROLLED",
       "real_samsung_write": "NOT_PROVEN",
       "boundaries": "No unapproved legacy G2 key may write; no user files changed by deployment"
-    }
+    },
+    "android_v15": "code19 source candidate with Android SAF resumable streamed owner upload, directly compiled Java via GitHub workflow 41135627880 SUCCESS; Gradle APK workflow blocked by intermittent Maven/Kotlin artifact resolution; NOT SIGNED, NOT PUBLISHED, NOT INSTALLED",
+    "file_receipt_upgrade": "G4 live endpoint updated and verified with committed SHA receipt after lost ACK, 105 predeployment assertions + 16/16 owner-negative + 12/12 owner-file-negative; rollback backup %LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_230328; process exit 0"
   }
 }
