@@ -62,7 +62,8 @@ with tempfile.TemporaryDirectory(prefix="bcp-ownerfiles-") as temp:
     restarted.append(b,own_b["upload_id"],0,"Yg==")
     restarted.commit(b,own_b["upload_id"],hashlib.sha256(b"b").hexdigest())
     ok("other_phone_remains_authorized",(root/"second_phone.txt").read_bytes()==b"b")
-    deny("private_credential_denied",lambda:restarted.begin(b,str(root/"device-state"/"enrolled-devices"/(b+".json"))))
+    from g4_owner_gateway import ROOT as BCP_ROOT
+    deny("private_credential_denied",lambda:restarted.begin(b,str(BCP_ROOT/"private-state"/"g4"/"owner-hmac-key")))
 print({"schema":"BCP_G4_OWNER_BOUND_FILES_LAB_V1","passed":len(checks),
        "checks":checks,"PASS":all(checks.values()),"real_owner_enrolled":False,
        "user_files_modified":False})
