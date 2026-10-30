@@ -1,0 +1,42 @@
+name: BCP Single Window & Android Autopair Security Tests
+on:
+  push:
+    branches: [feat/universal-remote-transport-20261030]
+    paths:
+      - 'universal-remote/windows/bcp_control_center.pyw'
+      - 'universal-remote/windows/g4_device_identity.py'
+      - 'universal-remote/tests/g4_device_identity_test.py'
+      - 'universal-remote/scripts/install_one_button_bcp.ps1'
+      - '.github/workflows/bcp-one-button-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verified-single-button:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax-check GUI and identity
+        shell: pwsh
+        run: |
+          python -m py_compile universal-remote/windows/bcp_control_center.pyw
+          if ($LASTEXITCODE -ne 0) { throw 'GUI failed to compile' }
+          python -m py_compile universal-remote/windows/g4_device_identity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Identity failed to compile' }
+      - name: Exercise idempotent enrollment and owner trust
+        shell: pwsh
+        run: |
+          python -u universal-remote/tests/g4_device_identity_test.py
+          if ($LASTEXITCODE -ne 0) { throw 'Identity regression' }
+      - name: Verify no desktop mutation in dry run
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA=Join-Path $env:RUNNER_TEMP 'BCP-Universal-Remote'
+          New-Item -ItemType Directory -Path "$env:LOCALAPPDATA/build-repo/universal-remote/windows" -Force|Out-Null
+          Copy-Item universal-remote/windows/bcp_control_center.pyw "$env:LOCALAPPDATA/build-repo/universal-remote/windows/"
+          & powershell -NoProfile -ExecutionPolicy Bypass -File universal-remote/scripts/install_one_button_bcp.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Single-button installer dry run failed' }
