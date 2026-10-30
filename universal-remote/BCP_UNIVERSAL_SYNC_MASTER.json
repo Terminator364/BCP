@@ -46,23 +46,22 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "PARTIAL RECOVERY: real loopback TCP 8898 LIVE (BCP_G2_ALIVE=True; fast starter reported ALREADY_RUNNING); authenticated full G4 production gate TIMED OUT on /v1/g4/files/list due Windows PC slow, so stable G2 authenticated health NOT confirmed; signed Android stable v1.4 code18 remains published",
+    "G2": "RECOVERED: 9 verified duplicate g2_tls_bridge.py listener processes stopped; fresh single process PID17856 started on loopback/LAN/Tailscale, G4 production negative 16/16 PASS, Tailscale Serve TLS1.3 HTTP200 response HMAC PASS, pairing probe PASS; exact field verdict BCP_SINGLE_G2_SERVER_RESTORED_AND_AUTHENTICATED_PASS. Recount after recovery remains a follow-up test.",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
-    "G4": "G4 previously live/verified, but current endpoint health UNVERIFIED because G2 local port down. Identity 34/34, inventory17, owner transactions16, RPC13, positive TLS30 pass LOCAL TESTS. New idempotent owner enrollment source not yet verified deployed.",
+    "G4": "Authenticated G4 production negative 16/16 PASS after exclusive recovery; actual Samsung owner individual enrollment remains pending, no implicit owner profile.",
     "G5": "Local-only idempotency 21/21; native custom MCP plugin not connected; private Secure MCP Tunnel architecture prepared, account/workspace write-access gating; existing Desktop Commander connected",
     "G6": "Deterministic transport policy 19/19 + memory governor 24/24 native RAM sample + durable real process resource-aware 26/26; no physical USB/Bluetooth verified",
     "owner_profile": "NOT_ENROLLED",
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "Check pending Remote Desktop Commander writes and device responsiveness without duplicate calls",
-    "Verify fast G2 starter latest file + start local server + test 127.0.0.1:8898 signed TLS/HMAC + Tailscale",
-    "Apply backed-up lightweight autostart wrapper to avoid hanging Get-NetTCPConnection",
-    "Verify new idempotent owner enrollment live; NO bypass of local owner consent",
-    "Only after G2 healthy promote signed v1.5 code19 to stable with rollback, then observe real Samsung update telemetry",
-    "Validate actual one-window UI visible; no desktop duplicate shortcuts"
+    "Recheck single live g2_tls_bridge.py PID and signed TLS/HMAC over LAN/Tailscale",
+    "Verify no GUI disappearance after X and screen state",
+    "Publish signed Android v1.5 code19 via publish_v150_safe.py only after live G2 healthy",
+    "Verify actual Samsung update and one-time Windows owner authorization",
+    "Complete USB/Bluetooth physical failover and native MCP integration only with evidence"
   ],
-  "stage": "BCP Desktop one launcher installed, owner enroll source corrected, Android v1.5 signed but withheld; G2 loopback live yet full secure API health not validated under PC RAM load",
+  "stage": "G2 single-instance recovery authenticated PASS, desktop single BCP shortcut installed, Android v1.5 candidate signed but UNPUBLISHED; next verify singleton and then safe stable v19 promotion plus real handset verification",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -113,10 +112,11 @@
       "visual_UI_field_proof": "NOT_CONFIRMED",
       "latest_UI_file_refresh": "PENDING_REMOTE_WRITE"
     },
-    "g2_recovery": "Loopback recovered; official authenticated G4 negative gate times out on file list; G2 signed Tailscale test independently started pending. GUI code and fast starter root write confirmed completed; lightweight PS wrapper installation started and output pending. v1.5 signed still NOT published.",
+    "g2_recovery": "END_STATE_PASS: BCP_SINGLE_G2_SERVER_RESTORED_AND_AUTHENTICATED_PASS, backup %LOCALAPPDATA%/BCP-Universal-Remote/backups/G2_EXCLUSIVE_FIX_20261031_002149; nine prior PIDs terminated, new pid17856. Nonblocking TLS concurrency tests PASS (0.109-0.734s on lab); mutex/exclusive addr in deployed bridge. Repeat real live process count before v1.5 promotion.",
     "pending_processes": [
       "Remote PowerShell fast wrapper install session 13172 output pending",
       "G2 signed TLS serve verification session 15736 output pending"
-    ]
+    ],
+    "mnemOS": "User invoked MNEMOS/SAVE; full checkpoint and partial raw capture stored in canonical MNEMOS Drive P02 and 01_INBOX folders. Native chat-ID unavailable, PARTIAL_GAPS."
   }
 }
