@@ -35,8 +35,8 @@ jobs:
       - name: Verify no desktop mutation in dry run
         shell: pwsh
         run: |
-          $env:LOCALAPPDATA=Join-Path $env:RUNNER_TEMP 'BCP-Universal-Remote'
-          New-Item -ItemType Directory -Path "$env:LOCALAPPDATA/build-repo/universal-remote/windows" -Force|Out-Null
+          $env:LOCALAPPDATA=Join-Path $env:RUNNER_TEMP 'BCP-TestAppData'
+          New-Item -ItemType Directory -Path "$env:LOCALAPPDATA/BCP-Universal-Remote/build-repo/universal-remote/windows" -Force|Out-Null
           Copy-Item universal-remote/windows/bcp_control_center.pyw "$env:LOCALAPPDATA/build-repo/universal-remote/windows/"
           & powershell -NoProfile -ExecutionPolicy Bypass -File universal-remote/scripts/install_one_button_bcp.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Single-button installer dry run failed' }
