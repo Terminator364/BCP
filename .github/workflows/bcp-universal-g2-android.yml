@@ -1,0 +1,48 @@
+name: BCP Universal G2 Android (branch CI)
+on:
+  push:
+    branches:
+      - feat/universal-remote-transport-20261030
+    paths:
+      - 'universal-remote/android-project/**'
+      - '.github/workflows/bcp-universal-g2-android.yml'
+permissions:
+  contents: read
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android build components
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile release APK (unsigned)
+        working-directory: universal-remote/android-project/android
+        run: gradle --no-daemon --stacktrace :app:assembleRelease
+      - name: Verify unsigned output
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=universal-remote/android-project/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          test -s "$APK"
+          "${ANDROID_HOME}/build-tools/35.0.0/aapt" dump badging "$APK" | tee g2-badging.txt
+          grep -F "name='com.blessing.rescuebridge'" g2-badging.txt
+          grep -F "versionCode='7'" g2-badging.txt
+          sha256sum "$APK" | tee g2-unsigned-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BCP-Universal-G2-v0.5-UNSIGNED
+          path: |
+            universal-remote/android-project/android/app/build/outputs/apk/release/app-release-unsigned.apk
+            g2-badging.txt
+            g2-unsigned-sha256.txt
+          retention-days: 5
+          if-no-files-found: error

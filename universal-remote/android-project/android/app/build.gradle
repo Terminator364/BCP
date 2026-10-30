@@ -1,0 +1,17 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.blessing.rescuebridge'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.blessing.rescuebridge'
+        minSdk 26
+        targetSdk 34
+        versionCode 7
+        versionName '0.5.0-g2-universal-lan-tailnet'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildTypes { release { minifyEnabled false } }
+}
