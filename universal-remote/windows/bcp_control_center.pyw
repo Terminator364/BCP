@@ -13,6 +13,18 @@ from datetime import datetime
 ROOT=Path(os.environ["LOCALAPPDATA"])/"BCP-Universal-Remote"
 REGISTRY_PATH=ROOT/"private-state"/"g4"/"device-registry"
 WINDOW_TITLE="BCP — Centre de contrôle"
+_registry_instance=None
+_registry_init_lock=threading.Lock()
+
+def registry_instance():
+    """Initialise Windows ACL-backed store only once per UI process."""
+    global _registry_instance
+    if _registry_instance is None:
+        with _registry_init_lock:
+            if _registry_instance is None:
+                from g4_device_identity import DeviceRegistry
+                _registry_instance=DeviceRegistry(REGISTRY_PATH)
+    return _registry_instance
 BG="#F3F6FA";INK="#132439";MUTED="#5C6B7A";BLUE="#1461AB";CARD="#FFFFFF"
 
 def read_json(path):
@@ -28,20 +40,22 @@ def latest_heartbeat():
     return read_json(ROOT/"state"/"g2-phone-status.json")
 
 def status_snapshot():
-    from g4_device_identity import DeviceRegistry
     connected=service_alive()
     heartbeat=latest_heartbeat()
     try:
-        registry=DeviceRegistry(REGISTRY_PATH)
+        registry=registry_instance()
         pending=registry.pending_public()
         enrolled=registry.enrolled_public()
         registry_problem=None
     except Exception as ex:
         pending=[];enrolled=[];registry_problem=type(ex).__name__
     try:
-        from g4_owner_gateway import public_status
+        from g4_owner_gateway import load_policy
+        from g4_owner_transactions import owner_hash
+        policy=load_policy()
         for device in enrolled:
-            device["owner"]=public_status(device["device_id"]).get("trusted",False)
+            device["owner"]=policy.public_status(
+                owner_hash(device["device_id"])).get("trusted",False)
     except Exception:
         for device in enrolled:device["owner"]=False
     return {"connected":connected,"phone":heartbeat,"pending":pending,
@@ -230,8 +244,7 @@ class Center:
             item=pending[0]
             self.selected_pending=item["device_id"]
             try:
-                from g4_device_identity import DeviceRegistry
-                code=DeviceRegistry(REGISTRY_PATH).pending_code_local(self.selected_pending)
+                code=registry_instance().pending_code_local(self.selected_pending)
                 self.challenge.set("Demande : "+item["label"]+"\nCode sur ce PC : "+code)
                 self.approve.state(["!disabled"])
             except Exception:
@@ -257,9 +270,8 @@ class Center:
         if not device:return
         self.approve.state(["disabled"])
         def work():
-            from g4_device_identity import DeviceRegistry
             from g4_owner_gateway import local_enroll_verified_device
-            registry=DeviceRegistry(REGISTRY_PATH)
+            registry=registry_instance()
             challenge=registry.pending_code_local(device)
             registry.approve_local(device,challenge,local_user_confirmed=True)
             return local_enroll_verified_device(device,"operator",
@@ -281,9 +293,8 @@ class Center:
         if not messagebox.askyesno("BCP", "Révoquer uniquement "+device["label"]+" ?",
                                    parent=self.root):return
         def work():
-            from g4_device_identity import DeviceRegistry
             from g4_owner_gateway import local_revoke
-            registry=DeviceRegistry(REGISTRY_PATH)
+            registry=registry_instance()
             registry.revoke_local(device["device_id"],local_user_confirmed=True)
             try:local_revoke(device["device_id"])
             except Exception:pass
