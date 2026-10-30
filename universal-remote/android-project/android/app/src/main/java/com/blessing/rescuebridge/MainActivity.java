@@ -221,6 +221,7 @@ public final class MainActivity extends Activity {
         g4Result=value("Sélectionne une opération. La liaison sécurisée sera vérifiée automatiquement.",13,ink,false);
         g4Result.setTextIsSelectable(true);
         windows.addView(g4Result);
+        secondary(windows,"Identité propriétaire G4",()->startActivity(new Intent(this,BCPG4EnrollmentActivity.class)));
         LinearLayout scoped=card();
         scoped.addView(smallCaps("G4 · AUTORISATION DE SESSION"));
         scoped.addView(value("Une seule confirmation sur MBMPC pour 30 minutes et 20 créations maximum, uniquement dans le dossier choisi. Aucune suppression, écrasement ni commande Windows.",13,muted,false));
