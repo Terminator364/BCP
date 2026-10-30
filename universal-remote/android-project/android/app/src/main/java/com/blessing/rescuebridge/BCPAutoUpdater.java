@@ -32,8 +32,8 @@ public final class BCPAutoUpdater {
     public static final String BASE="https://mbmpc.taild48ba2.ts.net";
     private static final String MANIFEST=BASE+"/updates/stable.json";
     private static final int JOB_ID=0x42435021;
-    private static final long INTERVAL=24L*60*60*1000;
-    private static final long FOREGROUND_INTERVAL=4L*60*60*1000;
+    private static final long INTERVAL=15L*60*1000;
+    private static final long FOREGROUND_INTERVAL=5L*60*1000;
     private static final long MAX_APK=30L*1024*1024;
     private static final ExecutorService POOL=Executors.newSingleThreadExecutor();
     private BCPAutoUpdater(){}
@@ -43,6 +43,17 @@ public final class BCPAutoUpdater {
     }
     public static String status(Context ctx) {
         return prefs(ctx).getString("status","Système de mise à jour prêt.");
+    }
+    public static String diagnostic(Context ctx) {
+        SharedPreferences p=prefs(ctx);
+        long t=p.getLong("last_check",0);
+        String last=t==0 ? "Pas encore vérifiée"
+            : new java.text.SimpleDateFormat("dd/MM HH:mm",
+                  java.util.Locale.FRANCE).format(new java.util.Date(t));
+        long pending=p.getLong("pending_version",0);
+        String wait=pending>0 ? " · fichier vérifié v"+pending+" en attente d'installation" : "";
+        return "Dernière vérification : "+last+
+            " · prochain contrôle : selon Android (cible 15 min)"+wait;
     }
     static void setStatus(Context ctx,String s) {
         prefs(ctx).edit().putString("status",s).putLong("status_at",System.currentTimeMillis()).apply();
@@ -55,11 +66,12 @@ public final class BCPAutoUpdater {
             // Replace an old unmetered-only job when upgrading from v0.7/v0.8.
             JobInfo prior=js.getPendingJob(JOB_ID);
             if(prior!=null){
-                if(prior.getNetworkType()==JobInfo.NETWORK_TYPE_ANY)return;
+                if(prior.getNetworkType()==JobInfo.NETWORK_TYPE_ANY &&
+                   prior.getIntervalMillis()==INTERVAL)return;
                 js.cancel(JOB_ID);
             }
             JobInfo info=new JobInfo.Builder(JOB_ID,new ComponentName(ctx,BCPUpdateJob.class))
-                .setPeriodic(INTERVAL,INTERVAL/4)
+                .setPeriodic(INTERVAL,INTERVAL/3)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setPersisted(true).build();
             if(js.schedule(info)!=JobScheduler.RESULT_SUCCESS) setStatus(ctx,"Planification différée.");

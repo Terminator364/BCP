@@ -218,7 +218,8 @@ public final class MainActivity extends Activity {
         safety.addView(value("Le câble ne donne pas à ChatGPT l'autorisation d'exécuter des commandes. Les actions restent bornées par l'agent Windows et nécessitent les permissions applicables.",13,muted,false));
         LinearLayout updateCard=card();
         updateCard.addView(smallCaps("MISES À JOUR AUTOMATIQUES"));
-        updaterState=value(BCPAutoUpdater.status(this),14,ink,false);
+        updaterState=value(BCPAutoUpdater.status(this)
+            +"\n"+BCPAutoUpdater.diagnostic(this),14,ink,false);
         updateCard.addView(updaterState);
         updateCard.addView(value("BCP recherche les mises à jour sur Wi-Fi ou données mobiles, vérifie la signature et tente une installation automatique. Android peut exceptionnellement demander ton accord.",12,muted,false));
         secondary(updateCard,"Vérifier la mise à jour",()->{
@@ -240,7 +241,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 1.0.0 · mise à jour avec reprise automatique",12,muted,false);
+        text("BCP Universal Remote · 1.0.1 · vérifications accélérées",12,muted,false);
         return v;
     }
 
@@ -538,7 +539,8 @@ public final class MainActivity extends Activity {
     }
 
     private void refreshUpdaterStatus(){
-        if(updaterState!=null)updaterState.setText(BCPAutoUpdater.status(this));
+        if(updaterState!=null)updaterState.setText(BCPAutoUpdater.status(this)
+            +"\n"+BCPAutoUpdater.diagnostic(this));
     }
 
     private void readFile(){execute("/read",args("path",fileName.getText().toString().trim()),false);}

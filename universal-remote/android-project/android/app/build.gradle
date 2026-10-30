@@ -6,8 +6,8 @@ android {
         applicationId 'com.blessing.rescuebridge'
         minSdk 26
         targetSdk 34
-        versionCode 12
-        versionName '1.0.0-update-resume'
+        versionCode 13
+        versionName '1.0.1-fast-updater'
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
