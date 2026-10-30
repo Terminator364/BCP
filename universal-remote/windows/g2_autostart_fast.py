@@ -73,8 +73,15 @@ def main():
     if not pythonw.is_file():
         log("FAIL","pythonw executable absent");return 3
     addresses=["127.0.0.1"]
-    for ip in previous_addresses()+wifi_addresses():
+    for ip in previous_addresses():
         if ip not in addresses and local_ip(ip):addresses.append(ip)
+    # Avoid expensive adapter enumeration on the normal path: only
+    # inspect ipconfig when the previous local Wi-Fi IP is unavailable.
+    has_lan=any(ipaddress.ip_address(ip) in ipaddress.ip_network("192.168.0.0/16")
+                for ip in addresses)
+    if not has_lan:
+        for ip in wifi_addresses():
+            if ip not in addresses and local_ip(ip):addresses.append(ip)
     argv=[str(pythonw),str(BRIDGE)]
     for ip in addresses:argv.extend(["--bind",ip])
     flags=getattr(subprocess,"CREATE_NO_WINDOW",0)
