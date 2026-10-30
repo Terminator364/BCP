@@ -68,6 +68,16 @@ def certificate(bindings):
     ctx.load_cert_chain(str(cert), str(key))
     return ctx, fingerprint
 
+def friendly_handler_factory(bridge):
+    """Keep /health canonical and accept '/' as a simple phone-ready check."""
+    base = handler_factory(bridge)
+    class FriendlyHandler(base):
+        def do_GET(self):
+            if self.path in ("/", "/health/"):
+                self.path = "/health"
+            return super().do_GET()
+    return FriendlyHandler
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--bind", action="append", default=[])
@@ -79,7 +89,7 @@ def main():
     bridge = ReadOnlyBridge(LEGACY / "private-state", LEGACY / "workspace")
     servers = []
     for ip in binds:
-        server = ThreadingHTTPServer((ip, args.port), handler_factory(bridge))
+        server = ThreadingHTTPServer((ip, args.port), friendly_handler_factory(bridge))
         server.daemon_threads = True
         server.socket = ctx.wrap_socket(server.socket, server_side=True)
         servers.append(server)
