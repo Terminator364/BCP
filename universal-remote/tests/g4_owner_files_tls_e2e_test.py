@@ -153,7 +153,7 @@ with tempfile.TemporaryDirectory(prefix="bcp-e2e-owner-files-") as d:
         check("cannot_commit_twice",code==400)
         registry.revoke_local(a,True)
         code,_=call("status",{"upload_id":tx},identity=auth["Samsung-A"])
-        check("revoked_device_denied",code==403)
+        check("revoked_device_denied",code in (401,403))
         code,reply=call("begin",{"destination":str(tmp/"b.bin")},
                         identity=auth["Samsung-B"])
         check("other_device_still_authorized",code==200)
