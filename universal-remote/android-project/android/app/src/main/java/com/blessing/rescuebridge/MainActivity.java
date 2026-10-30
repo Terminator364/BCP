@@ -206,7 +206,7 @@ public final class MainActivity extends Activity {
         windows.addView(smallCaps("G4 · MON PC WINDOWS"));
         windows.addView(value("Accès par Wi-Fi ou Tailscale, toujours chiffré et authentifié. Les dossiers protégés restent exclus. Aucune modification Windows depuis cet écran.",13,muted,false));
         filesInputLabel(windows,"Chemin Windows absolu");
-        g4WindowsPath=input(windows,"C:\\\\Users\\\\Lenovo\\\\Documents",InputType.TYPE_CLASS_TEXT,"C:\\\\Users\\\\Lenovo");
+        g4WindowsPath=input(windows,"C:\\Users\\Lenovo\\Documents",InputType.TYPE_CLASS_TEXT,"C:\\Users\\Lenovo");
         secondary(windows,"Afficher les informations du PC",
             ()->g4Request("/v1/g4/system",new JSONObject()));
         secondary(windows,"Voir les processus Windows",
@@ -599,11 +599,11 @@ public final class MainActivity extends Activity {
                 String formatted=parsed.optJSONObject("result")!=null
                     ?parsed.getJSONObject("result").toString(2):result;
                 if(formatted.length()>12000)formatted=formatted.substring(0,12000)+
-                    "\\n[Résultat tronqué pour protéger la mémoire du téléphone]";
+                    "\n[Résultat tronqué pour protéger la mémoire du téléphone]";
                 final String message=formatted;
                 runOnUiThread(()->{
                     g4Result.setText(message);
-                    latestResult=endpoint+"\\n"+message;
+                    latestResult=endpoint+"\n"+message;
                 });
             }catch(Exception error){
                 runOnUiThread(()->g4Result.setText(
