@@ -65,10 +65,10 @@ as core architecture. No restart of G0/G1/G2.
    do not restart or replace it before complete staging and rollback proof.
 3. The phone has NOT received an APK update past signed v1.3.0. No
    individual owner device has been enrolled; no owner profile activated.
-4. The owner-core CI suite was queued/running after migration of legacy
-   unit tests at checkpoint time. Reconfirm latest completion. An older run
-   failed due an indentation error in a migrated test, corrected in
+4. The migrated owner-core CI suite completed SUCCESS in run
+   `41124899649` after a test indentation error was corrected in
    commit `44b4790630f90d21b3d341dde571f22ceefd8790`.
+   This is source-level CI, NOT production owner activation.
 5. No generic file write, shell, desktop GUI, service or install command
    exposed to Android; no BCP-native ChatGPT connector.
 6. Existing unrelated GitHub Windows bootstrap workflow reports 0-job
