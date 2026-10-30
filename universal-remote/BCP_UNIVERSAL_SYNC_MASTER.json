@@ -45,21 +45,20 @@
     "G1": "PASS Tailscale link PC/phone field",
     "G2": "Private TLS G2 channel + real Android v1.3.0 code17 telemetry, new signed v1.4.0 code18 PUBLISHED on stable feed but real phone installation unverified",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
-    "G4": "G4.1 backend ACTIVE PRODUCTION on MBMPC (third controlled deploy PASS, 16/16 authenticated owner security checks + TLS1.3/HMAC G2 pairing); owner profile NOT ENROLLED; G4 file/job modules local lab only",
+    "G4": "G4.1 owner inventory+individually signed /v1/g4/owner/files route DEPLOYED on MBMPC; 16/16 G4 production negative, 12/12 G4 owner-file negative over live TLS, signed Tailscale RPC/pairing PASS; real owner NOT enrolled; synthetic positive TLS file test 28/28 PASS",
     "G5": "21/21 local idempotency ledger tests, native ChatGPT BCP connector absent",
     "G6": "19/19 deterministic G6 transport policy tests; no physical four-transport failover verification",
     "owner_profile": "NOT_ENROLLED",
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "Observe real Samsung v18 telemetry after Android has installed update (personal confirmation may be required); NEVER auto-enroll owner",
-    "Have owner confirm six-digit phone code locally on MBMPC using BCP - Profil proprietaire; verify actual phone-signed general inventory",
-    "Continue independent G4 per-phone file endpoint staging/tests with strict fail-closed identity and no older pairing privilege",
-    "Continue tested real job execution and process lifecycle server wiring behind owner controls",
-    "Design authenticated ChatGPT-native connector G5 and USB/Bluetooth fallback, resilience G6 without exposing secrets or using public Funnel",
-    "Update canonical ledger after each tested tranche, prefer moving to other lanes when one is blocked"
+    "Confirm real Samsung Android v18 installation; owner local code confirmation remains human gate",
+    "Add Android resumable arbitrary-size file upload/download UI against live signed owner route; keep app v1.4 stable until CI and testing",
+    "Implement owner-scoped durable job queue and high-risk local consent without arbitrary operation/time caps",
+    "Extend BCP-native ChatGPT integration and G6 physical fallback under user-approved trust",
+    "Preserve rollback, G2 autostart and audit production after each release"
   ],
-  "stage": "G4.1 backend and signed v1.4 stable deployed, awaiting genuine individual phone owner enrollment (human), parallel G4 files/G5/G6 staging may continue",
+  "stage": "G4.1 individually authenticated streamed-file RPC is LIVE DEFAULT-DENY, pending real Samsung v18 installation and local owner enrollment; G4 jobs/G5 native/G6 physical failover still unfinished",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -83,6 +82,16 @@
       "g5_idempotency": 21
     },
     "human_gate": "Open BCP on Samsung and allow version18 install if Android requests; in Fichiers > Identité propriétaire G4 request code and on MBMPC click BCP - Profil proprietaire, enter matching six digits and approve once; then confirm phone-signed general inventory",
-    "still_not_done": "Native G5 ChatGPT connector; G3 USB/Bluetooth physical failover; actual phone v18; owner enrolment; full remote file/command/desktop capability network routes; no silent admin"
+    "still_not_done": "Native G5 ChatGPT connector; G3 USB/Bluetooth physical failover; actual phone v18; owner enrolment; full remote file/command/desktop capability network routes; no silent admin",
+    "file_route_production": {
+      "status": "DEPLOYED_WITH_DEFAULT_DENY",
+      "backup": "%LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_225411",
+      "positive_synthetic_tls": "28/28 MBMPC synthetic devices TLS/HMAC streamed 130001 bytes, SHA256 PASS (isolated temporary directory)",
+      "predeployment_labs": "102/102 PASS (identity29, inventory17, owner_transactions15, rpc13, positive TLS28)",
+      "production_gates": "16/16 owner-negative, 12/12 owner-file-negative, G2 Tailscale TLS1.3 signed RPC PASS, pairing PASS, process exit 0",
+      "real_owner": "NOT_ENROLLED",
+      "real_samsung_write": "NOT_PROVEN",
+      "boundaries": "No unapproved legacy G2 key may write; no user files changed by deployment"
+    }
   }
 }
