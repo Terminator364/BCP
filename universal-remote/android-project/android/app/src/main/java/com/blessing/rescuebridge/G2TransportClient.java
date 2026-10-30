@@ -62,8 +62,23 @@ public final class G2TransportClient {
         SSLContext c=SSLContext.getInstance("TLS");c.init(null,new TrustManager[]{pinned},RANDOM);
         return c.getSocketFactory();
     }
+    private static byte[] decodeHex(String hex) {
+        byte[] raw=new byte[hex.length()/2];
+        for(int i=0;i<raw.length;i++)
+            raw[i]=(byte)Integer.parseInt(hex.substring(i*2,i*2+2),16);
+        return raw;
+    }
     public String perform(String endpoint,String json) throws Exception {
-        if(!endpoint.matches("(/v1/(status|diagnostics|audit|phone-state)|/v1/g4/(capabilities|system|processes|files/list|files/read|audit|changes/prepare|changes/status|session/use|session/status|session/revoke))"))throw new IllegalArgumentException("Endpoint G2 interdit");
+        return performInternal(endpoint,json,null,null);
+    }
+    public String performDevice(String endpoint,String json,String deviceId,String deviceSecret) throws Exception {
+        if(deviceId==null||!deviceId.matches("[0-9a-f]{32}")||
+           deviceSecret==null||!deviceSecret.matches("[0-9a-f]{64}"))
+            throw new SecurityException("INDIVIDUAL_DEVICE_CREDENTIAL_INVALID");
+        return performInternal(endpoint,json,deviceId,deviceSecret);
+    }
+    private String performInternal(String endpoint,String json,String deviceId,String deviceSecret) throws Exception {
+        if(!endpoint.matches("(/v1/(status|diagnostics|audit|phone-state)|/v1/g4/(capabilities|system|processes|files/list|files/read|audit|changes/prepare|changes/status|session/use|session/status|session/revoke|device/enroll/request|owner/status|universal/inventory))"))throw new IllegalArgumentException("Endpoint G2 interdit");
         byte[] body=json.getBytes(StandardCharsets.UTF_8);
         if(body.length>131072)throw new IllegalArgumentException("Request too large");
         byte[] random=new byte[16];RANDOM.nextBytes(random);String nonce=hex(random);
@@ -82,6 +97,18 @@ public final class G2TransportClient {
         c.setRequestProperty("X-Bridge-Nonce",nonce);
         c.setRequestProperty("X-Bridge-Signature",
             BridgeProtocol.signRequest(sharedKey,"POST",endpoint,ts,nonce,body));
+        if(deviceId!=null){
+            String individualNonce=hex(new java.security.SecureRandom().generateSeed(16));
+            String material="BCP_DEVICE_V1\n"+deviceId+"\nPOST\n"+endpoint+"\n"+ts+"\n"+
+                individualNonce+"\n"+BridgeProtocol.sha256(body);
+            javax.crypto.Mac mac=javax.crypto.Mac.getInstance("HmacSHA256");
+            mac.init(new javax.crypto.spec.SecretKeySpec(decodeHex(deviceSecret),"HmacSHA256"));
+            String individualSignature=hex(mac.doFinal(material.getBytes(StandardCharsets.US_ASCII)));
+            c.setRequestProperty("X-BCP-Device",deviceId);
+            c.setRequestProperty("X-BCP-Device-Time",ts);
+            c.setRequestProperty("X-BCP-Device-Nonce",individualNonce);
+            c.setRequestProperty("X-BCP-Device-Signature",individualSignature);
+        }
         try{
             try(OutputStream o=c.getOutputStream()){o.write(body);}
             int code=c.getResponseCode();
