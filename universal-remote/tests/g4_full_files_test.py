@@ -63,6 +63,16 @@ with tempfile.TemporaryDirectory(prefix="bcp-full-files-") as tmp:
     check("explicit_replacement_worked",dst.read_bytes()==replacement)
     check("backup_kept_in_recovery",changed["recoverable_original"] and
           (root/"state/files/recovery"/(tx+".bak")).read_bytes()==raw)
+    # Adversarial Windows race: a concurrent writer creates a new
+    # destination after upload begin. Committing must NEVER overwrite it.
+    contested=second/"concurrent-created.txt"
+    tx_race=engine.begin(str(contested))["upload_id"]
+    race_payload=b"BCP_UPLOAD_MUST_NOT_OVERRIDE"
+    engine.append(tx_race,0,base64.b64encode(race_payload).decode())
+    contested.write_bytes(b"ANOTHER_WRITER_WON")
+    denied("concurrent_new_file_must_never_be_overwritten",
+        lambda:engine.commit(tx_race,hashlib.sha256(race_payload).hexdigest()))
+    check("concurrent_original_remains_untouched",contested.read_bytes()==b"ANOTHER_WRITER_WON")
     # No fixed quota of 20, 30 minutes, or single directory.
     for i in range(26):
         target=first/("item_"+str(i)+".txt")
