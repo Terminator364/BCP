@@ -193,6 +193,22 @@ class DurableJobs:
             size=stream.seek(0,os.SEEK_END)
         return {"data_base64":base64.b64encode(part).decode("ascii"),
                 "size":size,"next_offset":offset+len(part) if offset+len(part)<size else None}
+    def execute_next_resource_aware(self,governor,sample=None):
+        """Only throttles NEW OPTIONAL background launches under RAM pressure.
+
+        An explicitly user-triggered action can still use execute_next().
+        This is not an arbitrary task count, runtime or file-size limit.
+        """
+        from g6_resource_governor import ResourceGovernor,windows_memory
+        if not isinstance(governor,ResourceGovernor):
+            raise JobError("RESOURCE_GOVERNOR_REQUIRED")
+        current=windows_memory() if sample is None else sample
+        decision=governor.decide(current)
+        if not decision["start_optional_heavy_job"]:
+            return {"executed":False,"deferred":True,
+                    "reason":decision["reason"],"free_ram_mib":decision["memory_free_mib"]}
+        return self.execute_next()
+
     def supervisor(self,interval=1):
         self.recover()
         while True:
