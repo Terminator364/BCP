@@ -125,7 +125,14 @@ public final class G2TransportClient {
                     BridgeProtocol.signResponse(sharedKey,nonce,code,reply),
                     c.getHeaderField("X-Bridge-Signature")))
                     throw new SecurityException("HMAC response mismatch");
-                if(code!=200)throw new IllegalStateException("Server declined: "+code);
+                if(code!=200){
+                    String msg=new String(reply,StandardCharsets.UTF_8);
+                    java.util.regex.Matcher reason=java.util.regex.Pattern
+                        .compile("\\\"reason\\\"\\s*:\\s*\\\"([A-Z_0-9-]{3,100})\\\"")
+                        .matcher(msg);
+                    String safe=reason.find()?reason.group(1):"SERVER_REFUSED";
+                    throw new IllegalStateException("BCP_HTTP_"+code+"_"+safe);
+                }
                 return new String(reply,StandardCharsets.UTF_8);
             }
         }finally{c.disconnect();}
