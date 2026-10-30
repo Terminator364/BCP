@@ -16,7 +16,8 @@
     "universal-remote/G4_OWNER_FULL_CONTROL_CANONICAL_ARCHITECTURE_20261030.md",
     "universal-remote/G4_OWNER_PRODUCTION_FILES_JOBS_CHECKPOINT_20261030.md",
     "universal-remote/G4_V130_ANDROID_SCOPED_SESSIONS_RELEASE_20261030.md",
-    "universal-remote/G4_APPROVAL_POLICY_AND_FIELD_PASS_20261030.md"
+    "universal-remote/G4_APPROVAL_POLICY_AND_FIELD_PASS_20261030.md",
+    "universal-remote/BCP_G4_DEVICE_IDENTITY_CHECKPOINT_20261030.md"
   ],
   "canonical_constraints": {
     "no_restart": true,
@@ -50,14 +51,24 @@
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "1. device-specific Android Keystore P-256 keypair and signed request protocol with replay protection",
+    "1. finish Android enrollment UI and verify owner Windows CI, run integrated test",
     "2. Windows per-device public-key enrollment with explicit local consent and independent revoke/rotation",
     "3. dual-safe migration: retain legacy G2 heartbeat/update; disallow legacy shared key from authorizing owner-general operations",
     "4. authorized file engine G4 route and end-to-end approval/QA",
     "5. durable jobs and tested process/kill/recovery, desktop GUI, services, installs",
     "6. native ChatGPT action connector G5, USB/Bluetooth and G6 QA"
   ],
-  "stage": "G4 owner identity individualized credential gate; do NOT enroll legacy key",
+  "stage": "G4.1 device identity sources built and 29 local assertions PASS; not deployed; owner disabled",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
-  "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030"
+  "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
+  "development_checkpoint": {
+    "branch_source_through": "fafce3b58c17e1f894f3ff57fd706811afa9d235",
+    "status": "SOURCE_ONLY_NOT_PRODUCTION",
+    "security_device_identity": "29/29 local Windows tests PASS; GitHub Windows CI 41124418894 SUCCESS",
+    "android_source": "New Keystore individual credential class and independent HMAC client built in Android CI; no new signed stable published",
+    "owner_window": "Local code-confirmation and individual revocation UI staged; no real approval",
+    "active_phone": "Signed v1.3.0 versionCode17; legacy G2 pairing still preserved",
+    "blocked": "Android main-screen enrollment UI not integrated; full isolated end-to-end staged G4.1 test not yet complete; wait for actual CI owner suite result",
+    "avoid": "Do not call any source-only code production; do not enroll the shared old G2 key"
+  }
 }
