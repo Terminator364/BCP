@@ -37,11 +37,11 @@ jobs:
           test -s "$APK"
           "${ANDROID_HOME}/build-tools/35.0.0/aapt" dump badging "$APK" | tee g2-badging.txt
           grep -F "name='com.blessing.rescuebridge'" g2-badging.txt
-          grep -F "versionCode='9'" g2-badging.txt
+          grep -F "versionCode='10'" g2-badging.txt
           sha256sum "$APK" | tee g2-unsigned-sha256.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: BCP-Universal-G2-v0.7-UNSIGNED
+          name: BCP-Universal-G2-v0.8-UNSIGNED
           path: |
             universal-remote/android-project/android/app/build/outputs/apk/release/app-release-unsigned.apk
             g2-badging.txt

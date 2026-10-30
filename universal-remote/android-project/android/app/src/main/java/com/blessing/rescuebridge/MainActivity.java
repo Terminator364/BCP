@@ -143,7 +143,7 @@ public final class MainActivity extends Activity {
         secondary(state,"Secours USB",()->connectOneTap(false));
         LinearLayout guide=card();
         guide.addView(smallCaps("CONNEXION EN 3 ÉTAPES"));
-        guide.addView(value("1. Sur le PC, ouvre BCP-Appairer-Telephone pour obtenir un code de 8 chiffres.\n2. Dans Réglages, saisis-le une seule fois.\n3. Ensuite BCP privilégie le Wi-Fi local, puis Tailscale, avec USB en secours.",14,ink,false));
+        guide.addView(value("1. Sur le PC, ouvre BCP - Appairer mon telephone pour obtenir un code de 8 chiffres.\n2. Dans Réglages, saisis-le une seule fois.\n3. Ensuite BCP privilégie le Wi-Fi local, puis Tailscale, avec USB en secours.",14,ink,false));
         secondary(guide,"Ouvrir les réglages réseau Android",this::openUsbSettings);
         LinearLayout network=card();
         network.addView(smallCaps("INDICE RÉSEAU LOCAL"));
@@ -158,7 +158,7 @@ public final class MainActivity extends Activity {
         return v;
     }
     private View buildMissions() {
-        ScrollView v=newPage("ACTIONS AUTORISÉES", "Mes missions", "Importer une mission préparée dans ChatGPT, sans connexion automatique au chat.");
+        ScrollView v=newPage("ACTIONS PILOTES", "Mes missions", "Mode USB historique : l'exécution directe depuis ChatGPT n'est pas encore activée.");
         LinearLayout importCard=card();
         importCard.addView(smallCaps("IMPORT JSON"));
         importCard.addView(value("Fichier de mission JSON, valide au maximum 24 heures. Une écriture nécessite ta confirmation explicite.",14,ink,false));
@@ -174,7 +174,7 @@ public final class MainActivity extends Activity {
         return v;
     }
     private View buildFiles() {
-        ScrollView v=newPage("ESPACE ISOLÉ", "Fichiers de test", "Lecture et écriture dans le seul dossier autorisé par l'agent Windows.");
+        ScrollView v=newPage("ESPACE ISOLÉ · USB", "Fichiers de test", "Fonctions héritées limitées au dossier de test : pas encore l'accès complet au PC.");
         LinearLayout actions=card();
         actions.addView(smallCaps("DOSSIER DE TEST WINDOWS"));
         primary(actions,"Lister les fichiers",()->execute("/files",new JSONObject(),false));
@@ -192,7 +192,7 @@ public final class MainActivity extends Activity {
         ScrollView v=newPage("PARAMÈTRES AVANCÉS", "Connexion et appairage", "À configurer une seule fois, puis à conserver lors des mises à jour compatibles.");
         LinearLayout pairing=card();
         pairing.addView(smallCaps("APPAIRAGE INITIAL · UNE SEULE FOIS"));
-        pairing.addView(value("Sur Windows, double-clique BCP-Appairer-Telephone. Entre le code à 8 chiffres affiché dans ce champ. La clé complète sera conservée chiffrée sur Android.",13,muted,false));
+        pairing.addView(value("Sur Windows, double-clique BCP - Appairer mon telephone. Entre le code à 8 chiffres affiché dans ce champ. La clé complète sera conservée chiffrée sur Android.",13,muted,false));
         filesInputLabel(pairing,"Code affiché sur MBMPC");
         pairPin=input(pairing,"8 chiffres",InputType.TYPE_CLASS_NUMBER,"");
         primary(pairing,"Associer définitivement mon téléphone",this::pairWithShortCode);
@@ -237,7 +237,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 0.7.0 · mise à jour automatique + appairage simple",12,muted,false);
+        text("BCP Universal Remote · 0.8.0 · liaison G2 et mise à jour automatique",12,muted,false);
         return v;
     }
 
@@ -260,9 +260,15 @@ public final class MainActivity extends Activity {
     }
     private boolean isConfigured(){return host!=null && secret!=null && BridgeClient.isPrivateIpv4(host.getText().toString().trim()) && secret.getText().toString().trim().matches("[0-9a-fA-F]{64}");}
     private void refreshSetupState(){
-        if(!isConfigured()){
-            status.setText("Configuration requise");
-            explanation.setText(host.getText().length()==0?RescueAdvisor.problem("CONFIGURATION_MISSING"):RescueAdvisor.problem("PAIRING_REQUIRED"));
+        // G2 is paired by Android Keystore, not by the legacy USB host textbox.
+        String key="";
+        try { key=SecurePairingStore.load(this); }catch(Exception ignored){}
+        if(key!=null && key.matches("[0-9a-fA-F]{64}")){
+            status.setText("Appairage enregistré");
+            explanation.setText("Ton téléphone possède la clé protégée. Appuie sur Connecter mon PC pour vérifier Wi-Fi/Tailscale.");
+        }else{
+            status.setText("Appairage initial nécessaire");
+            explanation.setText("Sur MBMPC, double-clique « BCP - Appairer mon telephone ». Dans Réglages, entre le code à 8 chiffres affiché. Aucun réglage d'adresse IP n'est nécessaire.");
         }
     }
 
