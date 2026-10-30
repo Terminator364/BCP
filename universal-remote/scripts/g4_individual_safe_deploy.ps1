@@ -7,7 +7,8 @@ $repo=Join-Path $root 'build-repo\universal-remote'
 $source=Join-Path $repo 'windows'
 $tests=Join-Path $repo 'tests'
 $autostart=Join-Path $root 'g2_autostart.ps1'
-$files=@('g2_tls_bridge.py','g4_owner_gateway.py','g4_owner_center.py','g4_device_identity.py')
+$files=@('g2_tls_bridge.py','g4_owner_gateway.py','g4_owner_center.py','g4_device_identity.py',
+        'g4_full_files.py','g4_owner_transactions.py','g4_owner_file_rpc.py')
 $checked=@()
 foreach($name in $files){
   $item=Join-Path $source $name
@@ -21,6 +22,12 @@ python -u (Join-Path $tests 'g4_device_identity_test.py')
 if($LASTEXITCODE -ne 0){throw 'IDENTITY_LAB_FAILED'}
 python -u (Join-Path $tests 'g4_owner_gateway_unit_test.py')
 if($LASTEXITCODE -ne 0){throw 'OWNER_POLICY_LAB_FAILED'}
+python -u (Join-Path $tests 'g4_owner_transactions_test.py')
+if($LASTEXITCODE -ne 0){throw 'OWNER_TRANSACTIONS_LAB_FAILED'}
+python -u (Join-Path $tests 'g4_owner_file_rpc_test.py')
+if($LASTEXITCODE -ne 0){throw 'OWNER_FILE_RPC_LAB_FAILED'}
+python -u (Join-Path $tests 'g4_owner_files_tls_e2e_test.py')
+if($LASTEXITCODE -ne 0){throw 'OWNER_FILES_TLS_E2E_FAILED'}
 if(-not $Apply){
   Write-Output 'BCP_G4_INDIVIDUAL_DRY_RUN_PASS'
   Write-Output 'No BCP production files or owner profiles have been changed'
@@ -92,6 +99,8 @@ try {
   if($LASTEXITCODE -ne 0){throw 'G2_TAILSCALE_REGRESSION'}
   python -u (Join-Path $root 'g2_pairing_proxy_probe.py')
   if($LASTEXITCODE -ne 0){throw 'G2_PAIRING_REGRESSION'}
+  python -u (Join-Path $tests 'g4_owner_files_loopback_negative_test.py') --port 8898
+  if($LASTEXITCODE -ne 0){throw 'G4_OWNER_FILE_REMOTE_NEGATIVE_GATE_FAILED'}
   Write-Output 'BCP_G4_INDIVIDUAL_PRODUCTION_NEGATIVE_GATE_PASS'
   Write-Output 'No device enrolled, no owner trust granted, no Windows user files changed'
   Write-Output ('BCP_G4_PREDEPLOY_BACKUP='+$backup)
