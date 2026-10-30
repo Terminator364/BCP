@@ -45,6 +45,51 @@ G4_ENDPOINTS={**G4_READ,**G4_APPROVED}
 PORT = 8898
 OPENSSL = Path(r"C:\Program Files\Git\usr\bin\openssl.exe")
 
+class BoundedTLSHTTPServer(ThreadingHTTPServer):
+    """Run TLS handshakes in bounded worker threads, never in accept loop.
+
+    A slow/stalled client previously blocked SSLSocket.accept(), making every
+    other HTTPS request time out while the TCP port still looked open.
+    """
+    daemon_threads=True
+    request_queue_size=16
+
+    def __init__(self,address,handler,context):
+        self.tls_context=context
+        self._slots=threading.BoundedSemaphore(16)
+        self._handshakes=threading.BoundedSemaphore(4)
+        super().__init__(address,handler)
+
+    def process_request(self,request,client_address):
+        if not self._slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request,client_address)
+        except Exception:
+            self._slots.release()
+            raise
+
+    def process_request_thread(self,request,client_address):
+        wrapped=None
+        try:
+            if not self._handshakes.acquire(blocking=False):
+                self.shutdown_request(request)
+                return
+            try:
+                request.settimeout(6)
+                wrapped=self.tls_context.wrap_socket(request,server_side=True)
+                wrapped.settimeout(25)
+            except (OSError,ssl.SSLError,TimeoutError):
+                self.shutdown_request(request)
+                return
+            finally:
+                self._handshakes.release()
+            super().process_request_thread(wrapped,client_address)
+        finally:
+            self._slots.release()
+
+
 class ReadOnlyBridge(Bridge):
     """Reuse the existing HMAC + anti-replay + audit ledger."""
     def operate(self, action, payload):
@@ -512,9 +557,8 @@ def main():
                      name="BCP-G4-Warmup").start()
     servers = []
     for ip in binds:
-        server = ThreadingHTTPServer((ip, args.port), friendly_handler_factory(bridge,get_g4))
-        server.daemon_threads = True
-        server.socket = ctx.wrap_socket(server.socket, server_side=True)
+        server = BoundedTLSHTTPServer(
+            (ip, args.port),friendly_handler_factory(bridge,get_g4),ctx)
         servers.append(server)
     print("G2_TLS_READY=true", flush=True)
     print("G2_SHA256_FINGERPRINT=" + fingerprint, flush=True)
