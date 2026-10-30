@@ -1,82 +1,135 @@
-"""BCP - local Windows owner profile manager. No API can self-enroll."""
+"""BCP local owner enrollment center. No enrollment via HTTP or legacy G2 token."""
 from __future__ import annotations
+import os
+from pathlib import Path
 import tkinter as tk
 from tkinter import ttk,messagebox
-import getpass
+from g4_device_identity import DeviceRegistry
 import g4_owner_gateway as owner
 
+ROOT=Path(os.environ["LOCALAPPDATA"])/"BCP-Universal-Remote"
+REGISTRY=ROOT/"private-state"/"g4"/"device-registry"
+
 def main():
+    registry=DeviceRegistry(REGISTRY)
     root=tk.Tk()
-    root.title("BCP - Confiance propriétaire durable")
-    root.geometry("700x480")
-    root.minsize(660,420)
-    body=ttk.Frame(root,padding=22)
+    root.title("BCP - Identité unique et confiance propriétaire")
+    root.geometry("750x620")
+    root.minsize(690,555)
+    body=ttk.Frame(root,padding=20)
     body.pack(fill="both",expand=True)
-    ttk.Label(body,text="BCP · PROFIL PROPRIÉTAIRE",
+    ttk.Label(body,text="BCP · IDENTITÉS ET DROITS WINDOWS",
               font=("Segoe UI",16,"bold")).pack(anchor="w")
-    ttk.Label(body,text=("Contrôlez les lecteurs et ressources de MBMPC selon "
-      "vos droits Windows, sans limite de dossier, de minutes ou de nombre d'opérations."),
-      wraplength=640).pack(anchor="w",pady=(12,8))
-    ttk.Label(body,text=("La première activation exige votre décision sur ce PC. "
-      "Elle n'autorise ni élévation UAC silencieuse ni accès Internet public."),
-      wraplength=640).pack(anchor="w")
-    status=tk.StringVar()
-    ttk.Label(body,textvariable=status,wraplength=640,
-              font=("Segoe UI",11,"bold")).pack(anchor="w",pady=(16,6))
-    ttk.Separator(body).pack(fill="x",pady=(8,12))
-    ttk.Label(body,text=("Important : l'appairage actuel utilise encore une clé "
-      "partagée historique. Le futur protocole donnera une identité unique à chaque "
-      "téléphone. Révoquer ce profil coupe l'autorisation de ce canal."),
-      wraplength=640).pack(anchor="w")
-    sensitive=tk.BooleanVar(value=True)
-    ttk.Checkbutton(body,
-      text="Conserver une confirmation contextuelle pour les actions sensibles",
-      variable=sensitive).pack(anchor="w",pady=(16,6))
-    ttk.Label(body,text=("La lecture générale des fichiers n'a pas de confirmation "
-       "répétée. Les commandes et changements sensibles restent gouvernés par "
-       "la préférence choisie ci-dessus et les droits Windows."),
-       wraplength=640).pack(anchor="w")
-    buttons=ttk.Frame(body);buttons.pack(fill="x",pady=(22,6))
+    ttk.Label(body,text=("Chaque Samsung doit prouver une clé indépendante, "
+        "puis recevoir une approbation sur ce PC. L'ancien code partagé G2 "
+        "ne donne aucun droit de contrôle général."),
+        wraplength=670).pack(anchor="w",pady=(9,12))
+    ttk.Label(body,text=("Après cette validation unique, le profil propriétaire "
+        "est durable jusqu'à révocation : pas de quota arbitraire de 30 minutes, "
+        "20 opérations ou dossier unique. Les ACL Windows et UAC restent applicables."),
+        wraplength=670).pack(anchor="w")
+    ttk.Separator(body).pack(fill="x",pady=13)
+    ttk.Label(body,text="Demandes reçues depuis Android",font=("Segoe UI",12,"bold")).pack(anchor="w")
+    pending=ttk.Combobox(body,state="readonly",width=75)
+    pending.pack(fill="x",pady=(7,7))
+    pending_map={}
+    code=ttk.Entry(body,width=16)
+    ttk.Label(body,text="Code à 6 chiffres affiché sur le téléphone").pack(anchor="w")
+    code.pack(anchor="w",pady=(5,8))
+    high_risk=tk.BooleanVar(value=True)
+    ttk.Checkbutton(body,variable=high_risk,
+      text="Confirmer les actions Windows sensibles (commandes, installations, bureau)"
+    ).pack(anchor="w",pady=6)
+    owner_status=tk.StringVar(value="Aucune activation non vérifiée.")
+    ttk.Label(body,textvariable=owner_status,wraplength=650,
+              font=("Segoe UI",10,"bold")).pack(anchor="w",pady=(8,6))
+    enrolled=ttk.Combobox(body,state="readonly",width=75)
+    ttk.Label(body,text="Appareils connus / révocation indépendante",
+              font=("Segoe UI",12,"bold")).pack(anchor="w",pady=(15,3))
+    enrolled.pack(fill="x",pady=(5,6))
+    enrolled_map={}
+
     def refresh():
-        s=owner.public_status()
-        status.set(("Actif : "+str(s["profile"])+" | catégories "+
-                  str(len(s["categories"]))+" | pas de quota ni expiration")
-                   if s["trusted"] else "Aucun profil propriétaire actif.")
-    def activate():
-        if not messagebox.askyesno("BCP : approbation locale",
-            "Autoriser durablement ce canal appairé à utiliser les capacités "
-            "BCP au niveau de votre compte Windows ?\n\n"
-            "Aucune durée de 30 minutes, aucun quota de 20 actions, "
-            "aucune limite à un seul dossier.\n\n"
-            "Pour les fonctions sensibles, Windows/UAC et votre préférence de "
-            "confirmation resteront applicables.",
-            parent=root,default="no"):
+        pending_map.clear()
+        requests=registry.pending_public()
+        choices=[]
+        for item in requests:
+            label=item["label"]+" · "+item["device_id"][:12]+" · attend approbation"
+            pending_map[label]=item["device_id"]
+            choices.append(label)
+        pending["values"]=choices
+        if choices:pending.current(0)
+        else:pending.set("")
+        enrolled_map.clear()
+        devices=registry.enrolled_public()
+        entries=[]
+        for item in devices:
+            status=owner.public_status(item["device_id"])
+            label=(item["label"]+" · "+item["device_id"][:12]+
+                  (" · RÉVOQUÉ" if item["revoked"] else
+                   " · PROPRIÉTAIRE" if status["trusted"] else " · identité validée"))
+            entries.append(label);enrolled_map[label]=item["device_id"]
+        enrolled["values"]=entries
+        if entries:enrolled.current(0)
+        else:enrolled.set("")
+        owner_status.set(str(len(requests))+" demande(s) en attente · "+
+                         str(sum(not x["revoked"] for x in devices))+
+                         " appareil(s) avec identité individuelle validée.")
+
+    def approve():
+        selected=pending_map.get(pending.get())
+        typed=code.get().strip()
+        if not selected:
+            messagebox.showwarning("BCP","Aucune demande Android en attente.",parent=root)
+            return
+        if len(typed)!=6 or not typed.isdecimal():
+            messagebox.showwarning("BCP","Saisir les six chiffres du Samsung.",parent=root)
+            return
+        if not messagebox.askyesno("BCP : confirmation locale",
+            "Vous confirmez que le code provient de VOTRE téléphone ?\n\n"
+            "BCP enregistrera cette identité et activera le profil propriétaire "
+            "révocable pour cet appareil uniquement.\n\n"
+            "Cela n'ouvre aucun accès public et ne contourne pas Windows/UAC.",
+            default="no",parent=root):
             return
         try:
-            profile=owner.local_enroll(profile="operator",
-                        high_risk_confirmation=sensitive.get())
-            messagebox.showinfo("BCP","Profil propriétaire activé sur MBMPC."
-                 "\nVous pouvez le révoquer dans cette même fenêtre.",parent=root)
-        except Exception as e:
-            messagebox.showerror("BCP","Activation impossible : "+
-                type(e).__name__+". Aucun droit n'a été accordé automatiquement.",parent=root)
+            identity=registry.approve_local(selected,typed,local_user_confirmed=True)
+            status=owner.local_enroll_verified_device(selected,"operator",
+                 high_risk_confirmation=high_risk.get())
+            code.delete(0,tk.END)
+            messagebox.showinfo("BCP",
+                "Téléphone reconnu individuellement. Profil propriétaire activé.\n"
+                "Le contrôle sensible reste soumis aux droits Windows.",parent=root)
+        except Exception as exc:
+            messagebox.showerror("BCP",
+                "Activation incomplète : "+type(exc).__name__+
+                "\nLe système refuse les opérations sans les deux preuves.",parent=root)
         refresh()
+
     def revoke():
-        if not messagebox.askyesno("BCP : révocation",
-            "Révoquer maintenant l'accès propriétaire de ce canal ?",
+        selected=enrolled_map.get(enrolled.get())
+        if not selected:
+            messagebox.showwarning("BCP","Sélectionnez un appareil.",parent=root);return
+        if not messagebox.askyesno("Révoquer cet appareil",
+            "Supprimer le droit de ce téléphone sans toucher aux autres appareils ?",
             default="no",parent=root):return
         try:
-            owner.local_revoke()
-            messagebox.showinfo("BCP","Profil propriétaire révoqué.",parent=root)
-        except Exception as e:
-            messagebox.showerror("BCP","Révocation impossible : "+
-                  type(e).__name__,parent=root)
+            registry.revoke_local(selected,local_user_confirmed=True)
+            try:owner.local_revoke(selected)
+            except Exception:pass
+            messagebox.showinfo("BCP","Appareil révoqué. Son HMAC individuel est refusé.",parent=root)
+        except Exception as exc:
+            messagebox.showerror("BCP","Révocation échouée : "+type(exc).__name__,parent=root)
         refresh()
-    ttk.Button(buttons,text="Activer une seule fois",command=activate).pack(side="left")
-    ttk.Button(buttons,text="Révoquer",command=revoke).pack(side="left",padx=12)
+
+    buttons=ttk.Frame(body);buttons.pack(fill="x",pady=12)
+    ttk.Button(buttons,text="Approuver ce téléphone une seule fois",command=approve).pack(side="left")
     ttk.Button(buttons,text="Actualiser",command=refresh).pack(side="right")
+    ttk.Button(body,text="Révoquer l'appareil sélectionné",command=revoke).pack(anchor="w",pady=10)
+    ttk.Label(body,text=("Aucune action ne s'active à l'ouverture de cette fenêtre. "
+        "Les secrets individuels restent hors des conversations et du dépôt GitHub."),
+        wraplength=670).pack(anchor="w",pady=10)
     refresh()
     root.mainloop()
 
-if __name__=="__main__":
-    main()
+if __name__=="__main__":main()
