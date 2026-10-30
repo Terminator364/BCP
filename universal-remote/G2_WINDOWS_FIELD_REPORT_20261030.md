@@ -36,3 +36,12 @@ Security: no SMS, email or third-party server required for LAN transport. Do not
 - Correctif dans `g2_tls_bridge.py` uniquement : GET `/` et GET `/health/` redirigés en interne vers GET `/health` ; POST et secrets inchangés.
 - Port 8899 : les trois URL retournent 200. Après redémarrage du port 8898 : suite TLS/HMAC 9/9 PASS, POST signé via Tailscale Serve PASS (TLS 1.3, HTTP 200, HMAC réponse valide).
 - Test navigateur Samsung après correction : encore à confirmer par une nouvelle capture ou ouverture.
+
+## Correction définitive du routage navigateur (suite à la seconde capture 16 h 09)
+- La seconde capture Samsung renvoyait encore `{"ok":false,"reason":"NOT_FOUND"}`. Le premier correctif ne couvrait que les chemins `/` et `/health/` exacts, sans tolérer les chemins ou paramètres ajoutés côté navigateur.
+- Nouveau comportement du serveur G2 pour **tous les GET** : réponse de santé non sensible `HTTP 200`, avec le marqueur `G2_ROUTE_FIX_20261030_1609`. Tous les POST restent inchangés, authentifiés par HMAC, et les commandes d'écriture restent bloquées dans le pilote G2.
+- Banc staging : 6/6 tests réussis (`/`, `/health`, `/health/?t=...`, chemin inconnu, `/favicon.ico`, POST non authentifié refusé).
+- Production : redémarrage contrôlé du seul processus G2 sur port 8898; instance vérifiée sur loopback, Wi-Fi LAN et adresse Tailscale.
+- Test **effectif à travers Tailscale Serve HTTPS** : 3/3 GET en HTTP 200 + marqueur G2, TLS 1.3, y compris route inconnue et paramétrée. POST authentifié via Serve également PASS avec signature de réponse HMAC vérifiée.
+- Les instances staging 8899 et 8900 ont été arrêtées pour économiser la RAM du PC.
+- Important : ces nouvelles vérifications proviennent encore du PC par le chemin HTTPS Serve; aucune nouvelle requête Android n'a encore été observée après ce correctif. La connexion préalable de l'appareil au tailnet et l'erreur d'origine confirment cependant que le navigateur Android atteignait le serveur.
