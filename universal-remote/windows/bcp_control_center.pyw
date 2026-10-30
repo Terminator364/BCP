@@ -171,9 +171,14 @@ class Center:
                         "ou autorisation sensible n'est lancée silencieusement.",
                   style="Sub.TLabel",wraplength=770).pack(anchor="w")
         ttk.Button(p,text="Actualiser maintenant",command=self.refresh).pack(anchor="w",pady=16)
+        ttk.Button(p,text="Quitter complètement BCP",command=self.quit).pack(anchor="w",pady=7)
 
     def hide(self):
-        # Explicit X closes the window normally. The G2 daemon continues.
+        # X minimizes instead of killing the only control center.
+        # Reopening the desktop icon restores the same window.
+        self.root.iconify()
+
+    def quit(self):
         self.done=True
         self.root.destroy()
 
