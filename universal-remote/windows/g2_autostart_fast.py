@@ -54,8 +54,6 @@ def wifi_addresses():
                               errors="replace",timeout=4,
                               creationflags=getattr(subprocess,"CREATE_NO_WINDOW",0))
         if result.returncode!=0:return []
-        current="","
-".join(result.stdout.splitlines())
     except (OSError,subprocess.TimeoutExpired):return []
     # IPv4 only; binding verifies that an address really belongs to MBMPC.
     return re.findall(r"(?:IPv4[^:\n]*:|IPv4[^:\n]*\.\s*:)[^\d]*(\d{1,3}(?:\.\d{1,3}){3})",
