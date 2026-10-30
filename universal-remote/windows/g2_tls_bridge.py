@@ -68,10 +68,62 @@ def certificate(bindings):
     ctx.load_cert_chain(str(cert), str(key))
     return ctx, fingerprint
 
+pairing_lock = threading.Lock()
+
 def friendly_handler_factory(bridge):
     """A GET is only a public health probe; all protected actions remain POST + HMAC."""
     base = handler_factory(bridge)
     class FriendlyHandler(base):
+        def do_POST(self):
+            from urllib.parse import urlsplit
+            if urlsplit(self.path).path!="/pair/v1":
+                return super().do_POST()
+            # Trusted Tailscale Serve HTTPS reverse proxy; never expose on LAN HTTP.
+            if (self.client_address[0] not in ("127.0.0.1", "::1") or
+                self.headers.get("Host","").split(":")[0].lower()!="mbmpc.taild48ba2.ts.net"):
+                return self.response(404, {"ok":False, "reason":"NOT_FOUND"})
+            import json, hmac, hashlib, re
+            try:
+                size=int(self.headers.get("Content-Length","0"))
+                if not (1<=size<=256):raise ValueError("BAD_SIZE")
+                request=json.loads(self.rfile.read(size))
+                code=request.get("code","")
+                if not isinstance(code,str) or not re.fullmatch(r"[0-9]{8}",code):
+                    raise ValueError("BAD_PIN")
+            except (ValueError,TypeError,UnicodeDecodeError,json.JSONDecodeError):
+                return self.response(400,{"ok":False,"reason":"INVALID_REQUEST"})
+            invite=ROOT/"private-state"/"pair-code.json"
+            try:
+                with pairing_lock:
+                    state=json.loads(invite.read_text("utf8"))
+                    import time
+                    if state.get("used") or int(state.get("expires",0))<int(time.time()) or                        int(state.get("attempts",0))>=5:
+                        return self.response(403,{"ok":False,"reason":"PAIRING_CODE_REJECTED"})
+                    salt=bytes.fromhex(state["salt"])
+                    expected=bytes.fromhex(state["digest"])
+                    actual=hashlib.pbkdf2_hmac("sha256",code.encode(),salt,120000)
+                    if not hmac.compare_digest(expected,actual):
+                        state["attempts"]=int(state.get("attempts",0))+1
+                        invite.write_text(json.dumps(state,separators=(",",":")),encoding="utf8")
+                        return self.response(403,{"ok":False,"reason":"PAIRING_CODE_REJECTED"})
+                    key=(LEGACY/"private-state"/"pairing-key.txt").read_text("utf8").strip()
+                    if not re.fullmatch(r"[0-9a-fA-F]{64}",key):
+                        raise ValueError("KEY_MISSING")
+                    state["used"]=True
+                    invite.write_text(json.dumps(state,separators=(",",":")),encoding="utf8")
+                # Return key only over TLS with explicit no-store. Never log the key.
+                data=json.dumps({"ok":True,"key":key},separators=(",",":")).encode("utf8")
+                self.send_response(200)
+                self.send_header("Content-Type","application/json; charset=utf-8")
+                self.send_header("Cache-Control","no-store")
+                self.send_header("Pragma","no-cache")
+                self.send_header("X-Content-Type-Options","nosniff")
+                self.send_header("Content-Length",str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except (OSError,ValueError,KeyError,TypeError):
+                return self.response(403,{"ok":False,"reason":"PAIRING_CODE_REJECTED"})
+
         def do_GET(self):
             # Accept Android browser-added paths, translation and cache-busting queries.
             # Never permit a GET to call a protected agent action.

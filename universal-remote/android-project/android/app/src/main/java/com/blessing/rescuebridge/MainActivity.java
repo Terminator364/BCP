@@ -43,7 +43,7 @@ public final class MainActivity extends Activity {
     private View homeScreen,missionsScreen,filesScreen,settingsScreen;
     private Button[] navButtons;
     private TextView status, explanation, localHint, lastAction, console, updaterState;
-    private EditText host,port,secret,fileName,fileContent;
+    private EditText host,port,secret,fileName,fileContent,pairPin;
     private String activeScreen="HOME";
 
     private final Runnable foregroundCheck=new Runnable() {
@@ -131,7 +131,7 @@ public final class MainActivity extends Activity {
         return scroll;
     }
     private View buildHome() {
-        ScrollView v=newPage("BCP  /  USB RESCUE", "Mon ordinateur", "État de MBMPC et réparation guidée");
+        ScrollView v=newPage("BCP  /  UNIVERSAL REMOTE", "Mon ordinateur", "Wi-Fi local, Tailscale et secours USB");
         LinearLayout state=card();
         state.addView(smallCaps("ÉTAT DU LIEN"));
         status=value("À vérifier",22,ink,true);
@@ -143,7 +143,7 @@ public final class MainActivity extends Activity {
         secondary(state,"Secours USB",()->connectOneTap(false));
         LinearLayout guide=card();
         guide.addView(smallCaps("CONNEXION EN 3 ÉTAPES"));
-        guide.addView(value("1. Branche le câble de données.\n2. Appuie sur Connecter mon PC : recherche USB et connexion automatiques.\n3. Si Android a désactivé le modem USB, ouvre les réglages système. Pour accéder aux fichiers, un appairage sécurisé initial est nécessaire.",14,ink,false));
+        guide.addView(value("1. Sur le PC, ouvre BCP-Appairer-Telephone pour obtenir un code de 8 chiffres.\n2. Dans Réglages, saisis-le une seule fois.\n3. Ensuite BCP privilégie le Wi-Fi local, puis Tailscale, avec USB en secours.",14,ink,false));
         secondary(guide,"Ouvrir les réglages réseau Android",this::openUsbSettings);
         LinearLayout network=card();
         network.addView(smallCaps("INDICE RÉSEAU LOCAL"));
@@ -190,8 +190,14 @@ public final class MainActivity extends Activity {
     }
     private View buildSettings() {
         ScrollView v=newPage("PARAMÈTRES AVANCÉS", "Connexion et appairage", "À configurer une seule fois, puis à conserver lors des mises à jour compatibles.");
+        LinearLayout pairing=card();
+        pairing.addView(smallCaps("APPAIRAGE INITIAL · UNE SEULE FOIS"));
+        pairing.addView(value("Sur Windows, double-clique BCP-Appairer-Telephone. Entre le code à 8 chiffres affiché dans ce champ. La clé complète sera conservée chiffrée sur Android.",13,muted,false));
+        filesInputLabel(pairing,"Code affiché sur MBMPC");
+        pairPin=input(pairing,"8 chiffres",InputType.TYPE_CLASS_NUMBER,"");
+        primary(pairing,"Associer définitivement mon téléphone",this::pairWithShortCode);
         LinearLayout connection=card();
-        connection.addView(smallCaps("MON PC WINDOWS"));
+        connection.addView(smallCaps("OPTIONS ANCIENNES · USB MANUEL"));
         filesInputLabel(connection,"Adresse du PC (détectée automatiquement sur USB)");
         host=input(connection,"192.168.x.x",InputType.TYPE_CLASS_PHONE,
                 getSharedPreferences(PREFS,MODE_PRIVATE).getString("host",""));
@@ -231,7 +237,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 0.6.0 socle de mise à jour · Android 8+",12,muted,false);
+        text("BCP Universal Remote · 0.7.0 · mise à jour automatique + appairage simple",12,muted,false);
         return v;
     }
 
@@ -487,6 +493,38 @@ public final class MainActivity extends Activity {
                 explanation.setText("Wi-Fi/Tailscale : "+reason+". Vérifie les connexions et garde la liaison USB comme secours.");
                 lastAction.setText("G2 : "+reason);
             });
+        });
+    }
+
+    private void pairWithShortCode(){
+        if(busy)return;
+        String pin=pairPin.getText().toString().trim();
+        if(!pin.matches("[0-9]{8}")){
+            append("Code d'appairage : il faut exactement 8 chiffres.");
+            return;
+        }
+        busy=true;
+        status.setText("Appairage en cours…");
+        io.execute(()->{
+            try{
+                String savedKey=BCPPairClient.redeem(pin);
+                SecurePairingStore.save(this,savedKey);
+                runOnUiThread(()->{
+                    pairPin.setText("");
+                    busy=false;
+                    status.setText("MBMPC appairé");
+                    explanation.setText("Identité du PC vérifiée par HTTPS ; clé enregistrée dans Android Keystore.");
+                    showScreen("HOME");
+                    connectUniversal(false);
+                });
+            }catch(Exception ex){
+                runOnUiThread(()->{
+                    busy=false;
+                    pairPin.setText("");
+                    status.setText("Code refusé ou expiré");
+                    explanation.setText("Regénère le code depuis le PC et vérifie Tailscale. Aucun secret complet n'est nécessaire.");
+                });
+            }
         });
     }
 
