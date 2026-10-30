@@ -42,8 +42,11 @@ public final class MainActivity extends Activity {
     private FrameLayout contentHost;
     private View homeScreen,missionsScreen,filesScreen,settingsScreen;
     private Button[] navButtons;
-    private TextView status, explanation, localHint, lastAction, console, updaterState, g4Result;
-    private EditText host,port,secret,fileName,fileContent,pairPin,g4WindowsPath;
+    private TextView status, explanation, localHint, lastAction, console, updaterState, g4Result, g4SessionInfo;
+    private EditText host,port,secret,fileName,fileContent,pairPin,g4WindowsPath,g4ScopeRoot,g4NewPath,g4NewText;
+    private String g4PendingTicket="";
+    private boolean g4ApprovalPolling=false;
+    private int g4ApprovalPolls=0;
     private String activeScreen="HOME";
 
     private final Runnable foregroundCheck=new Runnable() {
@@ -201,10 +204,10 @@ public final class MainActivity extends Activity {
         return v;
     }
     private View buildFiles() {
-        ScrollView v=newPage("BCP / G4 WINDOWS", "Mes fichiers Windows", "Accès authentifié aux dossiers et aux fichiers texte de MBMPC, en lecture uniquement.");
+        ScrollView v=newPage("BCP / G4 WINDOWS", "Mes fichiers Windows", "Lecture sécurisée et créations limitées par une autorisation temporaire Windows.");
         LinearLayout windows=card();
         windows.addView(smallCaps("G4 · MON PC WINDOWS"));
-        windows.addView(value("Accès par Wi-Fi ou Tailscale, toujours chiffré et authentifié. Les dossiers protégés restent exclus. Aucune modification Windows depuis cet écran.",13,muted,false));
+        windows.addView(value("Accès par Wi-Fi ou Tailscale, toujours chiffré et authentifié. Les consultations sont libres après appairage ; toute création exige une autorisation Windows temporaire limitée.",13,muted,false));
         filesInputLabel(windows,"Chemin Windows absolu");
         g4WindowsPath=input(windows,"C:\\Users\\Lenovo\\Documents",InputType.TYPE_CLASS_TEXT,"C:\\Users\\Lenovo");
         secondary(windows,"Afficher les informations du PC",
@@ -218,6 +221,25 @@ public final class MainActivity extends Activity {
         g4Result=value("Sélectionne une opération. La liaison sécurisée sera vérifiée automatiquement.",13,ink,false);
         g4Result.setTextIsSelectable(true);
         windows.addView(g4Result);
+        LinearLayout scoped=card();
+        scoped.addView(smallCaps("G4 · AUTORISATION DE SESSION"));
+        scoped.addView(value("Une seule confirmation sur MBMPC pour 30 minutes et 20 créations maximum, uniquement dans le dossier choisi. Aucune suppression, écrasement ni commande Windows.",13,muted,false));
+        String defaultRoot="C:\\Users\\Lenovo\\AppData\\Local\\BCP-Universal-Remote\\G4-Staging-Workspace";
+        filesInputLabel(scoped,"Dossier Windows à autoriser");
+        g4ScopeRoot=input(scoped,defaultRoot,InputType.TYPE_CLASS_TEXT,defaultRoot);
+        g4PendingTicket=getSharedPreferences(PREFS,MODE_PRIVATE).getString("g4_scope_ticket","");
+        g4SessionInfo=value(g4PendingTicket.isEmpty()?"Aucune autorisation de session.":"Autorisation antérieure : vérification nécessaire.",13,ink,false);
+        scoped.addView(g4SessionInfo);
+        primary(scoped,"Demander une autorisation de 30 minutes",this::g4RequestScopedGrant);
+        secondary(scoped,"Afficher la validité et le quota",this::g4CheckScopedGrant);
+        filesInputLabel(scoped,"Chemin du nouveau dossier ou fichier");
+        g4NewPath=input(scoped,defaultRoot+"\\nouvelle-note.txt",InputType.TYPE_CLASS_TEXT,defaultRoot+"\\nouvelle-note.txt");
+        filesInputLabel(scoped,"Contenu (pour un nouveau fichier .txt, .md ou .csv)");
+        g4NewText=input(scoped,"Note à créer",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE,"Note créée depuis BCP.");
+        g4NewText.setMinLines(3);
+        secondary(scoped,"Créer un dossier dans la portée",()->g4ScopedAction("mkdir"));
+        primary(scoped,"Créer un nouveau fichier texte",()->g4ScopedAction("write_text_new"));
+        secondary(scoped,"Révoquer la permission temporaire",this::g4RevokeScopedGrant);
         LinearLayout actions=card();
         actions.addView(smallCaps("HISTORIQUE · DOSSIER USB DE TEST"));
         primary(actions,"Lister les fichiers",()->execute("/files",new JSONObject(),false));
@@ -282,7 +304,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 1.2.0 · Explorateur Windows G4 sécurisé",12,muted,false);
+        text("BCP Universal Remote · 1.3.0 · G4 sessions autorisées",12,muted,false);
         return v;
     }
 
@@ -575,6 +597,138 @@ public final class MainActivity extends Activity {
                     status.setText("Code refusé ou expiré");
                     explanation.setText("Regénère le code depuis le PC et vérifie Tailscale. Aucun secret complet n'est nécessaire.");
                 });
+            }
+        });
+    }
+
+    /** All scoped actions remain authenticated; no shell or unrestricted file endpoint. */
+    private interface G4ScopedResult { void done(JSONObject result); }
+    private void g4ScopedInvoke(String endpoint,JSONObject payload,G4ScopedResult resultHandler){
+        final String pairing;
+        try{pairing=SecurePairingStore.load(this);}
+        catch(Exception err){
+            g4SessionInfo.setText("Appairage G2 indisponible : ouvre Réglages.");
+            return;
+        }
+        if(pairing==null||!pairing.matches("[0-9a-fA-F]{64}")){
+            g4SessionInfo.setText("Appaire le téléphone une seule fois dans Réglages.");
+            return;
+        }
+        io.execute(()->{
+            try{
+                String response=new G2TransportClient("mbmpc.taild48ba2.ts.net",443,pairing,"")
+                    .perform(endpoint,payload.toString());
+                JSONObject obj=new JSONObject(response);
+                if(!obj.optBoolean("ok"))throw new IllegalStateException("Réponse refusée");
+                JSONObject result=obj.getJSONObject("result");
+                runOnUiThread(()->resultHandler.done(result));
+            }catch(Exception ex){
+                runOnUiThread(()->{
+                    g4ApprovalPolling=false;
+                    g4SessionInfo.setText("G4 : "+ex.getClass().getSimpleName()+
+                        ". Vérifie la connexion Tailscale et le dossier autorisé.");
+                });
+            }
+        });
+    }
+
+    private void g4RequestScopedGrant(){
+        if(g4ApprovalPolling){
+            g4SessionInfo.setText("Une autorisation est déjà en attente sur Windows.");
+            return;
+        }
+        JSONObject q=new JSONObject();
+        try{
+            q.put("kind","grant_session").put("root",g4ScopeRoot.getText().toString().trim())
+             .put("actions",new org.json.JSONArray().put("mkdir").put("write_text_new"))
+             .put("duration_seconds",1800).put("max_operations",20)
+             .put("max_total_bytes",65536);
+        }catch(Exception ignored){}
+        g4SessionInfo.setText("Préparation d'une permission limitée sur MBMPC…");
+        g4ScopedInvoke("/v1/g4/changes/prepare",q,result->{
+            String ticket=result.optString("ticket","");
+            if(!ticket.matches("[0-9a-f]{32}")){
+                g4SessionInfo.setText("Ticket non reconnu.");return;
+            }
+            g4PendingTicket=ticket;
+            getSharedPreferences(PREFS,MODE_PRIVATE).edit()
+                .putString("g4_scope_ticket",ticket).apply();
+            g4ApprovalPolling=true;
+            g4ApprovalPolls=0;
+            g4SessionInfo.setText("Attente d'une confirmation unique sur MBMPC : ouvre « BCP - Autorisations G4 ». La vérification se fera automatiquement.");
+            mainHandler.postDelayed(()->g4PollScopedApproval(ticket),1000);
+        });
+    }
+
+    private void g4PollScopedApproval(String ticket){
+        if(!visible || !g4ApprovalPolling || !ticket.equals(g4PendingTicket))return;
+        if(++g4ApprovalPolls>30){
+            g4ApprovalPolling=false;
+            g4SessionInfo.setText("Autorisation non confirmée après cinq minutes : demande expirée.");
+            return;
+        }
+        g4ScopedInvoke("/v1/g4/changes/status",args("ticket",ticket),result->{
+            String status=result.optString("status","");
+            if("DONE".equals(status)){
+                g4ApprovalPolling=false;
+                g4SessionInfo.setText("Permission activée pour ce dossier : tu peux enchaîner les créations sans autre confirmation Windows.");
+            }else if("PENDING".equals(status)||"APPROVED".equals(status)){
+                mainHandler.postDelayed(()->g4PollScopedApproval(ticket),10000);
+            }else{
+                g4ApprovalPolling=false;
+                g4SessionInfo.setText("Autorisation non active : "+status);
+            }
+        });
+    }
+
+    private void g4CheckScopedGrant(){
+        if(!g4PendingTicket.matches("[0-9a-f]{32}")){
+            g4SessionInfo.setText("Aucune autorisation temporaire enregistrée.");return;
+        }
+        g4ScopedInvoke("/v1/g4/session/status",args("grant_id",g4PendingTicket),result->{
+            g4SessionInfo.setText("État : "+result.optString("state")+
+                " · restantes : "+result.optInt("operations_left")+
+                " · octets restants : "+result.optInt("bytes_left")+
+                (result.optBoolean("expired")?" · expirée":""));
+        });
+    }
+
+    private void g4ScopedAction(String kind){
+        if(!g4PendingTicket.matches("[0-9a-f]{32}")){
+            g4SessionInfo.setText("Demande d'abord une permission de session.");return;
+        }
+        JSONObject q=new JSONObject();
+        try{
+            q.put("grant_id",g4PendingTicket).put("operation_id",
+                java.util.UUID.randomUUID().toString().replace("-",""))
+             .put("kind",kind).put("path",g4NewPath.getText().toString().trim());
+            if("write_text_new".equals(kind)){
+                String note=g4NewText.getText().toString();
+                if(note.getBytes(StandardCharsets.UTF_8).length>8192){
+                    g4SessionInfo.setText("Note trop longue (8 KiB maximum).");return;
+                }
+                q.put("text",note);
+            }
+        }catch(Exception ignored){}
+        g4SessionInfo.setText("Vérification des limites et création sur MBMPC…");
+        g4ScopedInvoke("/v1/g4/session/use",q,result->{
+            g4SessionInfo.setText("Action "+result.optString("status")+
+                " · restantes : "+result.optInt("remaining")+
+                " · voir le dossier Windows autorisé.");
+        });
+    }
+
+    private void g4RevokeScopedGrant(){
+        if(!g4PendingTicket.matches("[0-9a-f]{32}")){
+            g4SessionInfo.setText("Aucune autorisation à révoquer.");return;
+        }
+        g4ScopedInvoke("/v1/g4/session/revoke",args("grant_id",g4PendingTicket),result->{
+            if("REVOKED".equals(result.optString("state"))){
+                g4ApprovalPolling=false;
+                g4PendingTicket="";
+                getSharedPreferences(PREFS,MODE_PRIVATE).edit()
+                    .remove("g4_scope_ticket").apply();
+                g4SessionInfo.setText("Permission révoquée : aucune autre écriture possible.");
             }
         });
     }
