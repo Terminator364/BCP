@@ -127,7 +127,26 @@ public final class BCPG4FileUploader {
             uploadId=old.getString("upload_id");
             if(!uploadId.matches("[0-9a-f]{32}"))
                 throw new SecurityException("CORRUPTED_UPLOAD_CHECKPOINT");
-            offset=confirmedOffset(ctx,uploadId,fp.size);
+            // If the final commit succeeded but the network lost the ACK,
+            // complete locally after verifying the server's stored digest.
+            JSONObject status=BCPG4DeviceEnrollment.ownerFiles(ctx,"status",
+                new JSONObject().put("upload_id",uploadId));
+            if(!destination.equals(status.getString("path")))
+                throw new SecurityException("RESUMED_DESTINATION_MISMATCH");
+            if("COMMITTED".equals(status.getString("state"))){
+                if(!fp.sha.equals(status.optString("sha256")) ||
+                   status.getLong("bytes")!=fp.size)
+                    throw new SecurityException("COMMITTED_DIGEST_MISMATCH");
+                if(!prefs.edit().remove(KEY).commit())
+                    throw new IllegalStateException("COMMITTED_CHECKPOINT_NOT_CLEARED");
+                return new JSONObject().put("status","COMMITTED")
+                    .put("path",destination).put("bytes",fp.size).put("sha256",fp.sha);
+            }
+            if(!"RECEIVING".equals(status.getString("state")))
+                throw new SecurityException("UPLOAD_NO_LONGER_RECEIVING");
+            offset=status.getLong("offset");
+            if(offset<0||offset>fp.size)
+                throw new SecurityException("RESUMED_OFFSET_INVALID");
         }else{
             JSONObject request=new JSONObject().put("destination",destination)
                 .put("overwrite",overwrite);
