@@ -19,7 +19,8 @@
     "universal-remote/G4_APPROVAL_POLICY_AND_FIELD_PASS_20261030.md",
     "universal-remote/BCP_G4_DEVICE_IDENTITY_CHECKPOINT_20261030.md",
     "universal-remote/BCP_G4_1_V140_PRODUCTION_HANDOFF_20261030.md",
-    "universal-remote/G5_CHATGPT_NATIVE_MCP_ARCHITECTURE_20261030.md"
+    "universal-remote/G5_CHATGPT_NATIVE_MCP_ARCHITECTURE_20261030.md",
+    "universal-remote/BCP_G4_1_FILE_RPC_V15_G6_CHECKPOINT_20261030.md"
   ],
   "canonical_constraints": {
     "no_restart": true,
@@ -44,11 +45,11 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "G2 LIVE PASS; signed Android v1.4.0 versionCode18 REAL Samsung field telemetry (2026-10-30T21:49:26.526731+00:00, wifi, app_visible=true, update_state=current), paired channel retained",
+    "G2": "LIVE: G2 HTTPS/HMAC + real Samsung v1.4 code18 installed and authenticated phone telemetry 2026-10-30T21:49:26.526731Z (wifi, app visible, update current)",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
-    "G4": "G4.1 owner inventory+individually signed /v1/g4/owner/files route DEPLOYED on MBMPC; 16/16 G4 production negative, 12/12 G4 owner-file negative over live TLS, signed Tailscale RPC/pairing PASS; real owner NOT enrolled; synthetic positive TLS file test 28/28 PASS",
-    "G5": "21/21 local idempotency ledger tests, native ChatGPT BCP connector absent",
-    "G6": "19/19 deterministic G6 transport policy tests; no physical four-transport failover verification",
+    "G4": "LIVE: per-device authenticated owner inventory and owner-file RPC; committed digest readback; 105/105 preflight synthetic + 16/16 G4 production-negative + 12/12 live file denial; no real owner enrolled, no phone positive owner transaction",
+    "G5": "Local-only idempotency 21/21; native custom MCP plugin not connected; private Secure MCP Tunnel architecture prepared, account/workspace write-access gating; existing Desktop Commander connected",
+    "G6": "Deterministic transport policy 19/19 + memory governor 24/24 native RAM sample + durable real process resource-aware 26/26; no physical USB/Bluetooth verified",
     "owner_profile": "NOT_ENROLLED",
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
@@ -59,7 +60,7 @@
     "Continue resource-aware G6 and owner-scoped durable Windows jobs work in independent lanes",
     "Direct ChatGPT G5 MCP through Secure MCP Tunnel only if account/workspace supports write tools; existing Desktop Commander works as fallback; no public Funnel"
   ],
-  "stage": "G4.1+owner file RPC LIVE, Samsung signed v1.4.0 code18 installed, next human gate: local per-device six-digit owner confirmation; v1.5 upload source compile PASS, release blocked on Gradle dependency",
+  "stage": "G4 owner-file API + lost-ACK receipt deployed; real Samsung v1.4 (18) installed; awaiting single local owner approval. Android v1.5 file transfer Java PASS, Gradle package blocked. G6 memory/resource tests PASS; G5 native MCP not installed",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -94,7 +95,11 @@
       "real_samsung_write": "NOT_PROVEN",
       "boundaries": "No unapproved legacy G2 key may write; no user files changed by deployment"
     },
-    "android_v15": "code19 source candidate with Android SAF resumable streamed owner upload, directly compiled Java via GitHub workflow 41135627880 SUCCESS; Gradle APK workflow blocked by intermittent Maven/Kotlin artifact resolution; NOT SIGNED, NOT PUBLISHED, NOT INSTALLED",
-    "file_receipt_upgrade": "G4 live endpoint updated and verified with committed SHA receipt after lost ACK, 105 predeployment assertions + 16/16 owner-negative + 12/12 owner-file-negative; rollback backup %LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_230328; process exit 0"
+    "android_v15": "versionCode19 source, Android Java17 compile GitHub run 41135627880 SUCCESS; Gradle APK blocked by upstream kotlin-stdlib-jdk8:1.9.20 dependency fetch after one retry; not signed, published, or installed",
+    "file_receipt_upgrade": "G4 live endpoint updated and verified with committed SHA receipt after lost ACK, 105 predeployment assertions + 16/16 owner-negative + 12/12 owner-file-negative; rollback backup %LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_230328; process exit 0",
+    "owner_enrollment_pending_count_last_checked": 0,
+    "windows_owner_shortcut": "BCP - Profil proprietaire.lnk exists",
+    "G6_real_sample": "3738 MiB usable RAM, 437 MiB free; memory guard tests 24/24 PASS, real durable job execution resource-aware 26/26 PASS",
+    "g3_probe": "adb not on PATH, PnP Bluetooth inventory stalled; no proven USB or Bluetooth session"
   }
 }
