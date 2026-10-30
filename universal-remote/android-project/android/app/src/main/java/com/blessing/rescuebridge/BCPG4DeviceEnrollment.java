@@ -78,6 +78,8 @@ public final class BCPG4DeviceEnrollment {
         JSONObject reply=new JSONObject(invoke(ctx,"/v1/g4/device/enroll/request",payload,null));
         if(!reply.optBoolean("ok"))throw new SecurityException("SERVER_REJECTED");
         JSONObject value=reply.getJSONObject("result");
+        if("ALREADY_ENROLLED".equals(value.optString("status")))
+            return "ALREADY_ENROLLED";
         String code=value.getString("verification_code");
         if(!code.matches("[0-9]{6}"))throw new SecurityException("ENROLLMENT_CODE_INVALID");
         return code;
