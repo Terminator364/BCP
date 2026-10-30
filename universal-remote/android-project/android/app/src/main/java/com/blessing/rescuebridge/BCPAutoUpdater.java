@@ -67,8 +67,18 @@ public final class BCPAutoUpdater {
     }
     public static void checkForeground(Context ctx) {
         long last=prefs(ctx).getLong("last_check",0);
-        if(System.currentTimeMillis()-last<FOREGROUND_INTERVAL)return;
+        long checkedVersion=prefs(ctx).getLong("last_checked_client_code",-1);
+        long installedVersion=-1;
+        try {installedVersion=currentCode(ctx);}catch(Exception ignored){}
+        // Check immediately when the app itself has just been upgraded, even
+        // if a previous version was checked less than four hours ago.
+        if(installedVersion==checkedVersion &&
+           System.currentTimeMillis()-last<FOREGROUND_INTERVAL)return;
         POOL.execute(()->check(ctx.getApplicationContext(),false));
+    }
+    public static void resumePending(Context ctx){
+        // Serialized with check() to avoid package file read/write races.
+        POOL.execute(()->installReady(ctx.getApplicationContext()));
     }
     public static void checkManually(Context ctx){
         POOL.execute(()->check(ctx.getApplicationContext(),true));
@@ -145,8 +155,15 @@ public final class BCPAutoUpdater {
             long next=m.getLong("versionCode"), current=currentCode(ctx);
             if(!ctx.getPackageName().equals(m.getString("package")) ||
                !"stable".equals(m.getString("channel")))throw new SecurityException("Manifeste invalide");
-            prefs(ctx).edit().putLong("last_check",System.currentTimeMillis()).apply();
-            if(next<=current){setStatus(ctx,"Application à jour · version "+current);return;}
+            prefs(ctx).edit().putLong("last_check",System.currentTimeMillis())
+                .putLong("last_checked_client_code",current).apply();
+            if(next<=current){
+                // A previous install may have completed while the app was not open.
+                prefs(ctx).edit().remove("pending_version").remove("pending_sha256")
+                    .remove("last_install_attempt_at").apply();
+                setStatus(ctx,"Application à jour · version "+current);
+                return;
+            }
             String url=m.getString("url");
             if(!url.matches("https://mbmpc[.]taild48ba2[.]ts[.]net/updates/stable[.]apk"))
                 throw new SecurityException("Adresse APK refusée");
@@ -198,14 +215,29 @@ public final class BCPAutoUpdater {
         String digest=prefs(ctx).getString("pending_sha256","");
         if(!f.isFile()||code<=0)return;
         try{
-            if(code<=currentCode(ctx)||!digest.equalsIgnoreCase(sha256(f))||!sameSigner(ctx,f))
+            if(code<=currentCode(ctx)){
+                prefs(ctx).edit().remove("pending_version").remove("pending_sha256")
+                    .remove("last_install_attempt_at").apply();
+                setStatus(ctx,"Mise à jour installée · version "+currentCode(ctx));
+                return;
+            }
+            if(!digest.equalsIgnoreCase(sha256(f))||!sameSigner(ctx,f))
                 throw new SecurityException("Paquet de mise à jour non reconnu");
             if(Build.VERSION.SDK_INT>=26 && !ctx.getPackageManager().canRequestPackageInstalls()){
                 setStatus(ctx,"Autorise les mises à jour de BCP dans les réglages Android.");
                 return;
             }
+            // Avoid launching two PackageInstaller sessions on repeated
+            // onResume callbacks while Android handles system confirmation.
+            long lastAttempt=prefs(ctx).getLong("last_install_attempt_at",0);
+            if(System.currentTimeMillis()-lastAttempt<90000)return;
+            prefs(ctx).edit().putLong("last_install_attempt_at",
+                System.currentTimeMillis()).apply();
             installVerified(ctx,f,code,digest);
-        }catch(Exception e){setStatus(ctx,"Installation différée : "+e.getClass().getSimpleName());}
+        }catch(Exception e){
+            prefs(ctx).edit().remove("last_install_attempt_at").apply();
+            setStatus(ctx,"Installation différée : "+e.getClass().getSimpleName());
+        }
     }
     private static void installVerified(Context ctx,File f,long code,String digest) throws Exception {
         PackageInstaller installer=ctx.getPackageManager().getPackageInstaller();

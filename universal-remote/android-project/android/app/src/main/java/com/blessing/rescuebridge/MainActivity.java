@@ -100,6 +100,9 @@ public final class MainActivity extends Activity {
         super.onResume();
         visible=true;
         BCPUpdateReceiver.foreground=this;
+        // After the one-time Android "allow this source" permission,
+        // resume the already verified download without a second button tap.
+        BCPAutoUpdater.resumePending(this);
         BCPAutoUpdater.checkForeground(this);
         mainHandler.postDelayed(()->refreshUpdaterStatus(),2500);
         mainHandler.removeCallbacks(foregroundCheck);
@@ -237,7 +240,7 @@ public final class MainActivity extends Activity {
             io.execute(()->BCPAutoUpdater.installReady(this));
             mainHandler.postDelayed(()->refreshUpdaterStatus(),1800);
         });
-        text("BCP Universal Remote · 0.9.0 · mises à jour Wi-Fi et données mobiles",12,muted,false);
+        text("BCP Universal Remote · 1.0.0 · mise à jour avec reprise automatique",12,muted,false);
         return v;
     }
 
