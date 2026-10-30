@@ -46,7 +46,7 @@
     "date": "2026-10-30",
     "G0": "PASS historical legacy and backups",
     "G1": "PASS Tailscale link PC/phone field",
-    "G2": "RECOVERED: 9 verified duplicate g2_tls_bridge.py listener processes stopped; fresh single process PID17856 started on loopback/LAN/Tailscale, G4 production negative 16/16 PASS, Tailscale Serve TLS1.3 HTTP200 response HMAC PASS, pairing probe PASS; exact field verdict BCP_SINGLE_G2_SERVER_RESTORED_AND_AUTHENTICATED_PASS. Recount after recovery remains a follow-up test.",
+    "G2": "LIVE VERIFIED: one g2_tls_bridge.py process PID17856; authenticated Tailscale Serve RPC TLS1.3, HTTP200 response HMAC PASS; G4 production negative 16/16 PASS.",
     "G3": "NOT_YET_PASS USB and Bluetooth fallbacks",
     "G4": "Authenticated G4 production negative 16/16 PASS after exclusive recovery; actual Samsung owner individual enrollment remains pending, no implicit owner profile.",
     "G5": "Local-only idempotency 21/21; native custom MCP plugin not connected; private Secure MCP Tunnel architecture prepared, account/workspace write-access gating; existing Desktop Commander connected",
@@ -55,13 +55,13 @@
     "identity_critical_gap": "legacy paired HMAC key can be shared across devices; cannot be used as unique administrative device identity"
   },
   "next_execution": [
-    "Recheck single live g2_tls_bridge.py PID and signed TLS/HMAC over LAN/Tailscale",
-    "Verify no GUI disappearance after X and screen state",
-    "Publish signed Android v1.5 code19 via publish_v150_safe.py only after live G2 healthy",
-    "Verify actual Samsung update and one-time Windows owner authorization",
-    "Complete USB/Bluetooth physical failover and native MCP integration only with evidence"
+    "Check phone-state telemetry for actual Samsung versionCode19; ensure Android OS installer permission if needed",
+    "Test real Samsung individual owner HMAC and one-time Windows approval",
+    "Confirm UI persistence and visible window, one desktop launcher only",
+    "Observe single G2 PID17856 stability and authenticated TLS under load",
+    "Only after proven physical tests pursue USB/Bluetooth and native MCP"
   ],
-  "stage": "G2 single-instance recovery authenticated PASS, desktop single BCP shortcut installed, Android v1.5 candidate signed but UNPUBLISHED; next verify singleton and then safe stable v19 promotion plus real handset verification",
+  "stage": "G2 single instance recovered with authenticated RPC PASS; desktop one BCP shortcut installed; Android v1.5 signed and PC stable channel v19 hash verified, real Samsung installation unverified; MNEMOS SAVE01 readback verified.",
   "handoff_protocol": "On seeing this code: use GitHub repo branch and this file; verify head, Windows artifacts and live service; avoid inferred claims; execute tests, journal results and update checkpoint after every completed tranche. No code grants authority or privileges by itself.",
   "previous_code": "BCP|UNIVERSAL|OWNER-TRUST|FULL-WINDOWS|G4-G5|20261030",
   "development_checkpoint": {
@@ -96,7 +96,7 @@
       "real_samsung_write": "NOT_PROVEN",
       "boundaries": "No unapproved legacy G2 key may write; no user files changed by deployment"
     },
-    "android_v15": "FULL Android CI BUILD SUCCESS run 41140142876; signed locally with legacy cert v1.5 code19, bytes78583 SHA256 d66725f11ebdd86b96b86d6f57834d86c82fe8bcb131d5c8bfd2377d555263bf; stable publisher STAGED but NOT RUN; v1.4 stable18 retained due G2 outage.",
+    "android_v15": "signed Android v1.5 code19, 78583 bytes; SHA256 d66725f11ebdd86b96b86d6f57834d86c82fe8bcb131d5c8bfd2377d555263bf. NOW PUBLISHED ON PC STABLE CHANNEL: updates/stable.json reports versionCode19, stable.apk exists and verified SHA match. Actual Samsung installation version19 remains UNKNOWN pending phone telemetry.",
     "file_receipt_upgrade": "G4 live endpoint updated and verified with committed SHA receipt after lost ACK, 105 predeployment assertions + 16/16 owner-negative + 12/12 owner-file-negative; rollback backup %LOCALAPPDATA%\\BCP-Universal-Remote\\backups\\G4_1_INDIVIDUAL_20261030_230328; process exit 0",
     "owner_enrollment_pending_count_last_checked": 0,
     "windows_owner_shortcut": "BCP - Profil proprietaire.lnk exists",
@@ -117,6 +117,6 @@
       "Remote PowerShell fast wrapper install session 13172 output pending",
       "G2 signed TLS serve verification session 15736 output pending"
     ],
-    "mnemOS": "User invoked MNEMOS/SAVE; full checkpoint and partial raw capture stored in canonical MNEMOS Drive P02 and 01_INBOX folders. Native chat-ID unavailable, PARTIAL_GAPS."
+    "mnemOS": "SAVE01 three Drive docs readback verified: BCP journal 1fP_EVr2dAIomD3w3BW8Z0FG4hzJEokARYLjgGyPbH7s; raw partial 1JtQ7eiTRQG0DVonG9ved6B1cEWhVbWjt9Pkv7eJMkHM; index 1GeHFpVkJLby-no545GIsZQGqFJu_27MnqO3lNh1rrP8. PARTIAL_GAPS 5 exact visible user messages; actual native chat ID unknown."
   }
 }
