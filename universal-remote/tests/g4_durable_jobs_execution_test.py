@@ -21,7 +21,7 @@ def wait_state(engine,ident,states,seconds=10):
         time.sleep(.05)
     raise AssertionError("TIMEOUT_"+str(states))
 
-with tempfile.TemporaryDirectory(prefix="bcp-g4-real-jobs-") as d:
+with tempfile.TemporaryDirectory(prefix="bcp-g4-real-jobs-",ignore_cleanup_errors=True) as d:
     root=Path(d);jobs=DurableJobs(root/"jobs")
     job=jobs.enqueue(sys.executable,["-c","import sys; print('BCP_JOB_OK');sys.stderr.write('BCP_ERR_OK\\n')"],cwd=str(root))["job_id"]
     result=jobs.execute_next()
