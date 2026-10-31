@@ -42,21 +42,21 @@ def latest_heartbeat():
 def phone_report_label(phone, now_utc=None):
     """A status heartbeat is historical evidence, not a live connection."""
     code=phone.get("version_code")
-    if code is None:return "Samsung : aucun rapport re\\u00e7u"
-    prefix="Samsung : version "+str(code)+" \\u00b7 "+str(phone.get("network","r\\u00e9seau inconnu"))
+    if code is None:return "Samsung : aucun rapport re\u00e7u"
+    prefix="Samsung : version "+str(code)+" \u00b7 "+str(phone.get("network","r\u00e9seau inconnu"))
     try:
         stamp=datetime.fromisoformat(str(phone.get("utc","")).replace("Z","+00:00"))
         if stamp.tzinfo is None:raise ValueError("missing timezone")
         current=now_utc if now_utc is not None else datetime.now(timezone.utc)
         age=(current-stamp).total_seconds()
-        if age < -120:return prefix+" \\u00b7 horloge du t\\u00e9l\\u00e9phone \\u00e0 v\\u00e9rifier"
+        if age < -120:return prefix+" \u00b7 horloge du t\u00e9l\u00e9phone \u00e0 v\u00e9rifier"
         if age <= 120:
-            return prefix+" \\u00b7 signal r\\u00e9cent"+(" \\u00b7 application visible au dernier rapport" if phone.get("app_visible") else "")
+            return prefix+" \u00b7 signal r\u00e9cent"+(" \u00b7 application visible au dernier rapport" if phone.get("app_visible") else "")
         if age < 3600:
-            return prefix+" \\u00b7 dernier signal il y a "+str(max(2,int(age//60)))+" min (connexion non confirm\\u00e9e)"
-        return prefix+" \\u00b7 dernier signal il y a "+str(max(1,int(age//3600)))+" h ou plus (connexion non confirm\\u00e9e)"
+            return prefix+" \u00b7 dernier signal il y a "+str(max(2,int(age//60)))+" min (connexion non confirm\u00e9e)"
+        return prefix+" \u00b7 dernier signal il y a "+str(max(1,int(age//3600)))+" h ou plus (connexion non confirm\u00e9e)"
     except (ValueError,TypeError,OverflowError):
-        return prefix+" \\u00b7 heure du dernier rapport inconnue (connexion non confirm\\u00e9e)"
+        return prefix+" \u00b7 heure du dernier rapport inconnue (connexion non confirm\u00e9e)"
 
 
 def status_snapshot():
