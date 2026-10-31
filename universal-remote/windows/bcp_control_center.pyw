@@ -8,7 +8,7 @@ import json,os,socket,subprocess,sys,threading,time
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
-from datetime import datetime
+from datetime import datetime,timezone
 
 ROOT=Path(os.environ["LOCALAPPDATA"])/"BCP-Universal-Remote"
 REGISTRY_PATH=ROOT/"private-state"/"g4"/"device-registry"
@@ -38,6 +38,26 @@ def service_alive():
 
 def latest_heartbeat():
     return read_json(ROOT/"state"/"g2-phone-status.json")
+
+def phone_report_label(phone, now_utc=None):
+    """A status heartbeat is historical evidence, not a live connection."""
+    code=phone.get("version_code")
+    if code is None:return "Samsung : aucun rapport re\u00e7u"
+    prefix="Samsung : version "+str(code)+" \u00b7 "+str(phone.get("network","r\u00e9seau inconnu"))
+    try:
+        stamp=datetime.fromisoformat(str(phone.get("utc","")).replace("Z","+00:00"))
+        if stamp.tzinfo is None:raise ValueError("missing timezone")
+        current=now_utc if now_utc is not None else datetime.now(timezone.utc)
+        age=(current-stamp).total_seconds()
+        if age < -120:return prefix+" \u00b7 horloge du t\u00e9l\u00e9phone \u00e0 v\u00e9rifier"
+        if age <= 120:
+            return prefix+" \u00b7 signal r\u00e9cent"+(" \u00b7 application visible au dernier rapport" if phone.get("app_visible") else "")
+        if age < 3600:
+            return prefix+" \u00b7 dernier signal il y a "+str(max(2,int(age//60)))+" min (connexion non confirm\u00e9e)"
+        return prefix+" \u00b7 dernier signal il y a "+str(max(1,int(age//3600)))+" h ou plus (connexion non confirm\u00e9e)"
+    except (ValueError,TypeError,OverflowError):
+        return prefix+" \u00b7 heure du dernier rapport inconnue (connexion non confirm\u00e9e)"
+
 
 def status_snapshot():
     connected=service_alive()
@@ -230,10 +250,7 @@ class Center:
         self.status.set("● PC connecté — service BCP disponible" if connected else
                         "● Service BCP indisponible — reconnexion automatique")
         phone=value["phone"]
-        code=phone.get("version_code")
-        self.phone.set("Samsung : version "+str(code)+" · "+str(phone.get("network","inconnu"))+
-              (" · connecté" if phone.get("app_visible") else " · dernière activité connue")
-              if code else "Samsung : aucun rapport récent")
+        self.phone.set(phone_report_label(phone))
         registry_problem=value["registry_problem"]
         self.log.set("BCP local : "+("actif" if connected else "vérification")+
                      " ; registre : "+("opérationnel" if not registry_problem else registry_problem)+
