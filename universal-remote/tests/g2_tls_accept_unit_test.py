@@ -5,6 +5,7 @@ never reaches BCP production or the user's local PC.
 """
 import ast
 import os
+import shutil
 from pathlib import Path
 import socket,ssl,subprocess,tempfile,threading,time
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
@@ -30,7 +31,8 @@ class Handler(BaseHTTPRequestHandler):
 with tempfile.TemporaryDirectory(prefix="bcp-tls-") as d:
     cert=Path(d)/"cert.pem"
     key=Path(d)/"key.pem"
-    subprocess.run(["openssl","req","-x509","-newkey","rsa:2048",
+    openssl=shutil.which("openssl") or r"C:\Program Files\Git\usr\bin\openssl.exe"
+    subprocess.run([openssl,"req","-x509","-newkey","rsa:2048",
         "-sha256","-nodes","-days","1","-subj","/CN=BCP Lab",
         "-addext","subjectAltName=IP:127.0.0.1",
         "-keyout",str(key),"-out",str(cert)],
